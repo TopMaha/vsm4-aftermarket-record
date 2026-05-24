@@ -1,0 +1,3745 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>VSM4 AFTERMARKET RECORD</title>
+<meta name="theme-color" content="#1A56DB">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{
+  --blue:#1A56DB; --blue-dark:#1E3A8A; --blue-light:#EBF4FF; --blue-soft:#BFDBFE;
+  --bg:#F0F4FF; --card:#fff; --border:#DBEAFE; --text:#0F172A; --muted:#64748B; --muted2:#94A3B8;
+  --green:#059669; --green-bg:#ECFDF5; --green-bd:#A7F3D0;
+  --orange:#D97706; --orange-bg:#FFFBEB; --orange-bd:#FDE68A;
+  --red:#DC2626; --red-bg:#FEF2F2; --red-bd:#FECACA;
+  --shadow:0 1px 8px rgba(30,66,159,.1); --shadow-lg:0 4px 16px rgba(30,66,159,.2);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:'Sarabun',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+body{min-height:100vh;padding-bottom:80px}
+a{color:var(--blue);text-decoration:none}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* ===== HEADER ===== */
+.hdr{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(26,86,219,.3)}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hdr-title{font-size:16px;font-weight:800}
+.hdr-sub{font-size:11px;opacity:.75;margin-top:2px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
+.badge .dot{width:7px;height:7px;border-radius:50%;background:#9ca3af}
+.badge.online{background:rgba(110,231,183,.25)}
+.badge.online .dot{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+.badge.local{background:rgba(252,165,165,.25)}
+.badge.local .dot{background:#fbbf24}
+
+/* ===== HEADER ICON BUTTONS ===== */
+.hdr-icon-btn{width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:16px;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .15s}
+.hdr-icon-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px)}
+.hdr-icon-btn:active{transform:scale(.95)}
+
+/* ===== BOTTOM NAV (with prominent center FAB) ===== */
+nav.bnav{display:flex;gap:4px;background:#fff;border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:50;box-shadow:0 -6px 20px rgba(13,17,23,.1);padding:8px 8px 10px;align-items:flex-end}
+nav.bnav button{flex:1;background:transparent;border:0;padding:8px 4px 4px;cursor:pointer;font-size:11px;color:var(--muted2);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:12px;position:relative;transition:all .2s}
+nav.bnav button:hover{color:var(--blue);background:var(--blue-light)}
+nav.bnav button.active{color:var(--blue);background:var(--blue-light)}
+nav.bnav button.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:3px;background:var(--blue);border-radius:0 0 4px 4px}
+nav.bnav .ico{font-size:20px;line-height:1}
+nav.bnav .lbl{font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.2px}
+
+/* Highlighted center FAB button (บันทึกข้อมูล) */
+nav.bnav button.fab{flex:0 0 auto;width:74px;background:linear-gradient(135deg,#1E3A8A 0%,#1A56DB 50%,#3B82F6 100%);color:#fff;margin-top:-18px;border-radius:50%;width:64px;height:64px;justify-content:center;box-shadow:0 8px 22px rgba(26,86,219,.45),0 0 0 4px #fff;padding:0;gap:0;align-self:flex-end;position:relative}
+nav.bnav button.fab:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(26,86,219,.55),0 0 0 4px #fff;color:#fff;background:linear-gradient(135deg,#1E3A8A,#1A56DB)}
+nav.bnav button.fab::before{display:none}
+nav.bnav button.fab .ico{font-size:24px}
+nav.bnav button.fab .lbl{font-size:9px;color:#fff;margin-top:1px}
+nav.bnav button.fab.active{background:linear-gradient(135deg,#047857 0%,#10B981 50%,#34D399 100%);box-shadow:0 8px 22px rgba(16,185,129,.5),0 0 0 4px #fff}
+nav.bnav button.fab .pulse{position:absolute;inset:-3px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#10B981);opacity:.35;z-index:-1;animation:pulseRing 2.2s ease-out infinite}
+@keyframes pulseRing{0%{transform:scale(1);opacity:.4}100%{transform:scale(1.5);opacity:0}}
+
+@media(max-width:480px){
+  nav.bnav button.fab{width:58px;height:58px;margin-top:-14px}
+  nav.bnav button.fab .ico{font-size:22px}
+}
+
+/* ===== LAYOUT ===== */
+main{padding:12px 10px 90px;max-width:1280px;margin:0 auto}
+section.pane{display:none;animation:fade .2s ease}
+section.pane.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card-title .ci{width:24px;height:24px;background:linear-gradient(135deg,var(--blue-dark),var(--blue));border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.section-title{font-size:16px;font-weight:800;color:var(--blue-dark);margin:12px 4px 8px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:5px;height:20px;background:var(--blue);border-radius:3px}
+
+/* ===== FORM ===== */
+.fr{margin-bottom:10px}
+.fr label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:4px;letter-spacing:.3px;text-transform:uppercase}
+.fr input,.fr select,.fr textarea{width:100%;padding:10px 12px;border:1.5px solid var(--blue-soft);border-radius:9px;font-weight:700;background:#fff;color:var(--text);outline:none;transition:border .15s}
+.fr input:focus,.fr select:focus,.fr textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.fr input::placeholder{color:var(--muted2);font-weight:400}
+.fr input.err,.fr select.err{border-color:var(--red);background:#fff8f8}
+.err-msg{font-size:10px;color:var(--red);font-weight:700;margin-top:3px;display:none}
+.err-msg.show{display:block}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fg-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+
+/* ===== BUTTON ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:scale(.97)}
+.btn-blue{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;box-shadow:0 4px 12px rgba(26,86,219,.3)}
+.btn-green{background:linear-gradient(135deg,#047857,#10B981);color:#fff;box-shadow:0 4px 12px rgba(5,150,105,.3)}
+.btn-red{background:linear-gradient(135deg,#B91C1C,#EF4444);color:#fff}
+.btn-outline{background:#fff;border:1.5px solid var(--blue);color:var(--blue)}
+.btn-ghost{background:transparent;border:1.5px dashed var(--blue-soft);color:var(--blue)}
+.btn-sm{padding:7px 10px;font-size:12px;border-radius:8px}
+.btn-block{display:flex;width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== ZONE TABS ===== */
+.ztabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.zt{border:2px solid var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:11px;padding:8px 4px;text-align:center;cursor:pointer;font-weight:800;font-size:11px;transition:all .15s}
+.zt.active{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;border-color:var(--blue-dark)}
+.zt-num{font-size:18px;display:block;line-height:1.2}
+
+/* ===== MACHINE CARD ===== */
+.mc{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px}
+.mc.off{opacity:.5;border-style:dashed}
+.mc-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mc-id{font-size:13px;font-weight:800;color:var(--blue);background:var(--blue-light);border-radius:7px;padding:3px 10px}
+.mc-std{font-size:10px;color:var(--muted);margin-top:2px}
+.sw{position:relative;width:42px;height:22px}
+.sw input{opacity:0;width:0;height:0}
+.sw-sl{position:absolute;inset:0;background:#CBD5E0;border-radius:22px;cursor:pointer;transition:.2s}
+.sw-sl:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.sw-sl{background:linear-gradient(135deg,#047857,#10B981)}
+input:checked+.sw-sl:before{transform:translateX(20px)}
+.mc-body{display:none}
+.mc-body.show{display:block}
+.mc-off-lbl{text-align:center;color:var(--muted2);font-size:11px;padding:3px 0}
+
+/* ===== SHIFT BLOCK ===== */
+.shift{background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px;margin-bottom:7px}
+.shift-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.shift-lbl{font-size:11px;font-weight:800;color:var(--blue)}
+.shift-del{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;cursor:pointer}
+.shift-total{margin-top:5px;background:#fff;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--blue-dark)}
+.shift-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px;border:2px dashed var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;margin-top:4px}
+.time-row{display:flex;align-items:center;gap:5px}
+.time-row select{flex:1;padding:7px;border:1.5px solid var(--blue-soft);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--text);outline:none}
+.time-sep{font-size:13px;font-weight:800;color:var(--muted)}
+
+/* ===== AUTOCOMPLETE ===== */
+.ac{position:relative}
+.ac input{padding-right:32px!important}
+.ac-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
+.ac-dd{position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:9px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(26,86,219,.2);display:none}
+.ac-dd.open{display:block}
+.ac-item{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.hover{background:var(--blue-light)}
+.ac-id{font-size:11px;font-weight:800;color:var(--blue);min-width:80px}
+.ac-nm{font-size:11px;color:var(--muted);flex:1}
+
+/* ===== TAGS / BADGES ===== */
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.tag-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+.tag-orange{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd)}
+.tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+.tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-soft)}
+
+/* ===== STATS ===== */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.stat{background:#fff;border:1.5px solid var(--border);border-radius:11px;padding:10px;text-align:center}
+.stat .v{font-size:24px;font-weight:800;line-height:1.1}
+.stat .l{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin-top:3px}
+.stat.green{border-color:var(--green-bd);background:var(--green-bg)}
+.stat.green .v{color:var(--green)}
+.stat.orange{border-color:var(--orange-bd);background:var(--orange-bg)}
+.stat.orange .v{color:var(--orange)}
+
+/* ===== KPI BOX (in shift card) ===== */
+.kbox{background:linear-gradient(135deg,var(--blue-dark),var(--blue));border-radius:11px;padding:10px;color:#fff;margin-top:7px}
+.kbox-tt{font-size:11px;font-weight:800;opacity:.8;margin-bottom:6px}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.kpi{background:rgba(255,255,255,.13);border-radius:8px;padding:5px;text-align:center}
+.kpi-l{font-size:9px;font-weight:800;opacity:.8;letter-spacing:.3px}
+.kpi-v{font-size:13px;font-weight:800;line-height:1.3}
+.kpi-v.good{color:#6EE7B7}
+.kpi-v.warn{color:#FCD34D}
+.kpi-v.bad{color:#FCA5A5}
+.kpi-t{font-size:8px;opacity:.7}
+
+/* ===== TABLES ===== */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--blue-light);color:var(--blue-dark);font-weight:800;font-size:11px;letter-spacing:.3px;position:sticky;top:0}
+tr:hover{background:#FAFBFF}
+.tbl-wrap{overflow:auto;max-height:60vh;border:1.5px solid var(--border);border-radius:11px}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(13,17,23,.6);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(13,17,23,.4);overflow:hidden}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1.5px solid var(--border)}
+.modal-tt{font-size:15px;font-weight:800;color:var(--blue-dark)}
+.modal-cl{background:transparent;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:4px 8px}
+.modal-bd{padding:16px;max-height:75vh;overflow-y:auto}
+
+/* ===== TOAST ===== */
+.toast-wrap{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--text);color:#fff;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.3);animation:slide .3s ease}
+.toast.green{background:var(--green)}
+.toast.red{background:var(--red)}
+.toast.orange{background:var(--orange)}
+@keyframes slide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+
+/* ===== SLOT (Production Tracker) ===== */
+.slot{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;position:relative}
+.slot-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.slot-num{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.slot-rm{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;cursor:pointer}
+.proc-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.proc-pill{background:#fff;border:1.5px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;cursor:pointer}
+.proc-pill.done{background:var(--green-bg);color:var(--green);border-color:var(--green-bd)}
+.proc-pill.cur{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-bd);box-shadow:0 0 0 2px var(--orange-bd)}
+.proc-pill.future{opacity:.6}
+
+/* ===== UTIL ===== */
+.row{display:flex;align-items:center;gap:8px}
+.flex1{flex:1}
+.ml-auto{margin-left:auto}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.mb-8{margin-bottom:8px}
+.muted{color:var(--muted)}
+.hide{display:none!important}
+.center{text-align:center}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,86,219,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== DESKTOP ===== */
+@media(min-width:768px){
+  main{padding:16px 20px 100px}
+  .fg-auto{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  nav.bnav button .lbl{font-size:11px}
+  nav.bnav button .ico{font-size:22px}
+}
+
+/* ===== LOCK SCREEN ===== */
+.lock-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1E3A8A 0%,#1A56DB 50%,#3B82F6 100%);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
+.lock-overlay.hide{display:none}
+.lock-card{background:#fff;border-radius:22px;padding:36px 28px;width:100%;max-width:420px;box-shadow:0 30px 80px rgba(0,0,0,.3);text-align:center;animation:lockIn .35s ease-out}
+@keyframes lockIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:none}}
+.lock-logo{width:72px;height:72px;background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 16px;box-shadow:0 8px 20px rgba(26,86,219,.4)}
+.lock-title{font-size:22px;font-weight:800;color:#0F172A;margin-bottom:4px}
+.lock-sub{font-size:13px;color:#64748B;margin-bottom:24px}
+.lock-input-wrap{position:relative;margin-bottom:14px}
+.lock-input{width:100%;padding:14px 18px;border:2px solid #DBEAFE;border-radius:12px;font-size:18px;font-weight:800;text-align:center;letter-spacing:2px;color:#1E3A8A;outline:none;font-family:inherit;text-transform:uppercase}
+.lock-input:focus{border-color:#1A56DB;box-shadow:0 0 0 4px rgba(26,86,219,.15)}
+.lock-input.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lock-suggest{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:2px solid #1A56DB;border-radius:12px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);display:none;z-index:10;text-align:left}
+.lock-suggest.show{display:block}
+.lock-suggest-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;gap:10px;align-items:center}
+.lock-suggest-item:last-child{border-bottom:none}
+.lock-suggest-item:hover,.lock-suggest-item.active{background:#EBF4FF}
+.lock-suggest-id{font-size:13px;font-weight:800;color:#1A56DB;min-width:70px}
+.lock-suggest-name{font-size:13px;color:#64748B}
+.lock-btn{display:block;width:100%;padding:14px;border-radius:12px;border:none;font-size:16px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#047857,#10B981);color:#fff;box-shadow:0 6px 16px rgba(16,185,129,.3);font-family:inherit;letter-spacing:.5px}
+.lock-btn:hover{transform:translateY(-1px)}
+.lock-btn:disabled{opacity:.5;cursor:not-allowed}
+.lock-err{color:#DC2626;font-size:12px;font-weight:700;margin-top:8px;min-height:18px}
+.lock-foot{margin-top:18px;font-size:11px;color:#94A3B8}
+
+/* ===== USER CHIP ===== */
+.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700}
+.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+
+/* ===== ZONE-KPI CARDS ===== */
+.zkpi-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;overflow:hidden;position:relative}
+.zkpi-card.summary{background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;border-color:#1E3A8A}
+.zkpi-card.summary .zkpi-h{color:#fff}
+.zkpi-card.summary .zkpi-l,.zkpi-card.summary .zkpi-t{color:rgba(255,255,255,.85)}
+.zkpi-card.summary .zkpi-v{color:#fff}
+.zkpi-card.summary .zkpi-box{background:rgba(255,255,255,.13)}
+.zkpi-h{font-size:14px;font-weight:800;color:var(--blue-dark);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.zkpi-h .zn{width:30px;height:30px;background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.zkpi-card.summary .zkpi-h .zn{background:rgba(255,255,255,.25)}
+.zkpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media(max-width:480px){.zkpi-grid{grid-template-columns:repeat(3,1fr)}}
+.zkpi-box{background:var(--blue-light);border-radius:10px;padding:8px;text-align:center}
+.zkpi-l{font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.4px}
+.zkpi-v{font-size:18px;font-weight:800;color:var(--blue-dark);line-height:1.1;margin:3px 0}
+.zkpi-v.good{color:#10B981}
+.zkpi-v.warn{color:#F59E0B}
+.zkpi-v.bad{color:#EF4444}
+.zkpi-card.summary .zkpi-v.good{color:#6EE7B7}
+.zkpi-card.summary .zkpi-v.warn{color:#FCD34D}
+.zkpi-card.summary .zkpi-v.bad{color:#FCA5A5}
+.zkpi-t{font-size:9px;color:var(--muted2)}
+.zkpi-bar{height:3px;background:rgba(0,0,0,.08);border-radius:3px;margin-top:4px;overflow:hidden}
+.zkpi-card.summary .zkpi-bar{background:rgba(255,255,255,.2)}
+.zkpi-bf{height:100%;border-radius:3px;background:#10B981}
+.zkpi-empty{padding:14px;text-align:center;color:var(--muted2);font-size:12px;background:#FAFBFF;border-radius:10px}
+
+/* ===== CLICKABLE STAT ===== */
+.stat.click{cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative}
+.stat.click:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,86,219,.15)}
+.stat.click::after{content:'→';position:absolute;top:6px;right:8px;font-size:14px;font-weight:800;opacity:.5}
+
+/* ===== BARCODE SCANNER ===== */
+.scan-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:4000;display:none;align-items:center;justify-content:center;padding:20px}
+.scan-modal.open{display:flex}
+.scan-card{background:#fff;border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.scan-hd{background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.scan-tt{font-size:15px;font-weight:800}
+.scan-cl{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.scan-cl:hover{background:rgba(255,255,255,.35)}
+.scan-bd{padding:14px}
+#scan-reader{border-radius:10px;overflow:hidden;border:2px solid var(--blue-soft);display:none}
+#scan-reader.show{display:block}
+#scan-reader video{width:100%!important;border-radius:8px}
+#scan-reader__dashboard_section_csr{padding:8px!important}
+#scan-reader__dashboard_section_csr button{padding:7px 12px!important;border-radius:8px!important;background:var(--blue)!important;color:#fff!important;border:none!important;font-weight:700!important;font-size:12px!important}
+.scan-result{margin-top:10px;background:var(--green-bg);border:1.5px solid var(--green-bd);color:var(--green);padding:10px;border-radius:9px;font-size:12px;display:none}
+.scan-result.show{display:block}
+.scan-result.err{background:var(--orange-bg);border-color:var(--orange-bd);color:var(--orange)}
+.scan-manual{margin-top:8px;display:flex;gap:6px}
+.scan-manual input{flex:1;padding:12px;border:2px solid var(--blue);border-radius:10px;font-family:Consolas,Monaco,monospace;font-size:16px;letter-spacing:.5px;text-align:center}
+.scan-manual input:focus{outline:none;box-shadow:0 0 0 4px rgba(26,86,219,.15)}
+.scan-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.scan-btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(26,86,219,.3)}
+.scan-btn .ico{font-size:14px}
+.scan-mode-tabs{display:flex;gap:4px;margin-bottom:10px;background:var(--blue-light);padding:3px;border-radius:10px}
+.scan-mode-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted)}
+.scan-mode-tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.scan-preview{background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:10px;margin-top:8px;font-size:12px;display:none}
+.scan-preview.show{display:block}
+.scan-preview-row{display:flex;justify-content:space-between;padding:3px 0;font-family:Consolas,Monaco,monospace}
+.scan-preview-row b{color:var(--blue-dark)}
+
+/* ===== SHIFT FILTER TABS ===== */
+.shift-tab{transition:all .15s;flex:1;min-width:90px}
+.shift-tab.active{transform:scale(1.02);box-shadow:0 4px 14px rgba(26,86,219,.3)}
+.shift-tab.day.active{background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#78350F;border:none}
+.shift-tab.night.active{background:linear-gradient(135deg,#312E81,#6366F1);color:#fff;border:none}
+</style>
+</head>
+<body>
+
+<!-- ============== LOCK IN OVERLAY ============== -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-logo">🔐</div>
+    <div class="lock-title">VSM4 AFTERMARKET RECORD</div>
+    <div class="lock-sub">กรอกรหัสพนักงานเพื่อเข้าใช้งาน</div>
+    <div class="lock-input-wrap">
+      <input type="text" class="lock-input" id="lockInput" placeholder="L-1827" autocomplete="off"
+             oninput="lockSuggest(event)" onkeydown="lockKey(event)">
+      <div class="lock-suggest" id="lockSuggest"></div>
+    </div>
+    <div class="lock-err" id="lockErr"></div>
+    <button class="lock-btn" id="lockBtn" onclick="lockSubmit()">เข้าใช้งาน →</button>
+    <div class="lock-foot">รหัสพนักงานจากระบบ (ตัวอย่าง: L-1827, G-260, PST742)</div>
+  </div>
+</div>
+
+<!-- ============== HEADER ============== -->
+<header class="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="hdr-title">⚙️ VSM4 AFTERMARKET RECORD</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI</div>
+    </div>
+    <div class="row" style="gap:6px;align-items:center">
+      <span class="user-chip" id="userChip" style="display:none">
+        <span class="av" id="userAv">?</span>
+        <span id="userName">—</span>
+        <button onclick="lockOut()" style="background:transparent;border:none;color:#fff;cursor:pointer;font-size:13px;padding:0 4px" title="Logout">⏏</button>
+      </span>
+      <span class="badge" id="connBadge"><span class="dot"></span><span id="connText">เชื่อมต่อ…</span></span>
+      <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่">🔄</button>
+      <button class="hdr-icon-btn" onclick="setPane('settings')" title="ตั้งค่า">⚙️</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============== TAB: DASHBOARD KPI ============== -->
+<section id="pane-home" class="pane">
+  <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin:6px 4px 10px">
+    <div style="font-size:18px;font-weight:800;color:var(--blue-dark);display:flex;align-items:center;gap:8px">
+      <span style="font-size:22px">📈</span> Dashboard KPI
+    </div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600" id="todayStr"></div>
+  </div>
+
+  <!-- Shift filter + date -->
+  <div class="card" style="padding:10px">
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn btn-blue btn-sm shift-tab all active"   data-shift="all"   onclick="setShiftFilter('all')">🔄 รวมทุกกะ</button>
+      <button class="btn btn-outline btn-sm shift-tab day"        data-shift="day"   onclick="setShiftFilter('day')">☀️ กะกลางวัน</button>
+      <button class="btn btn-outline btn-sm shift-tab night"      data-shift="night" onclick="setShiftFilter('night')">🌙 กะกลางคืน</button>
+    </div>
+    <div class="fg" style="margin:0">
+      <div class="fr" style="margin:0"><label>จากวันที่</label><input type="date" id="dashFrom" onchange="renderHome()"></div>
+      <div class="fr" style="margin:0"><label>ถึงวันที่</label><input type="date" id="dashTo" onchange="renderHome()"></div>
+    </div>
+  </div>
+
+  <!-- Summary card (รวมทุก Zone) -->
+  <div id="kpiSummary"></div>
+
+  <!-- Per-Zone cards -->
+  <div id="kpiPerZone"></div>
+</section>
+
+<!-- ============== TAB: บันทึกข้อมูล (default landing) ============== -->
+<section id="pane-kpi" class="pane active">
+  <div class="card">
+    <div class="card-title"><span class="ci">📥</span>บันทึกข้อมูล</div>
+    <div class="fg">
+      <div class="fr"><label>วันที่ผลิต</label><input type="date" id="prod-date"></div>
+      <div class="fr"><label>กะ (ตรวจจับจากเวลา)</label><input type="text" id="shift-detect" readonly placeholder="— กรอกเวลาก่อน —"></div>
+    </div>
+    <div class="fr" style="margin-bottom:0">
+      <label>👤 ผู้บันทึก (จาก Lock In)</label>
+      <input type="text" id="op-name" readonly style="background:#F8FAFF;border-style:dashed;text-align:center;font-weight:800;color:var(--blue-dark);font-size:15px">
+    </div>
+  </div>
+
+  <div class="ztabs">
+    <button class="zt active" data-z="ZONE1" onclick="setZone('ZONE1')"><span class="zt-num">1</span>AFTERMARKET</button>
+    <button class="zt" data-z="ZONE2" onclick="setZone('ZONE2')"><span class="zt-num">2</span>INDUCTION</button>
+    <button class="zt" data-z="ZONE3" onclick="setZone('ZONE3')"><span class="zt-num">3</span>FORD6 & PERKINS</button>
+  </div>
+
+  <div id="zone-machines"></div>
+
+  <button class="btn btn-green btn-block mt-12" onclick="saveKpi()" style="padding:14px;font-size:16px">💾 บันทึกข้อมูลทั้งหมด</button>
+  <div class="muted center mt-8" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:8px;border-radius:9px">
+    ☁️ ข้อมูลจะถูกบันทึกลงฐานข้อมูลกลาง (D1) ทันที — ผู้ใช้คนอื่นสามารถเปิดดูข้อมูลย้อนหลังได้
+  </div>
+</section>
+
+<!-- ============== TAB: ติดตามงาน ============== -->
+<section id="pane-prod" class="pane">
+
+  <!-- ภาพรวมวันนี้ -->
+  <div class="card">
+    <div class="card-title"><span class="ci">📊</span>ภาพรวมวันนี้</div>
+    <div class="stats-row">
+      <div class="stat green click" onclick="showCompletedDetail()"><div class="v" id="hCompleted">0</div><div class="l">✓ ผลิตเสร็จ (ชิ้น) — กดดูรายการ</div></div>
+      <div class="stat orange"><div class="v" id="hWip">0</div><div class="l">▶ WIP (กำลังผลิต)</div></div>
+    </div>
+    <div class="fg" style="margin-top:8px">
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue)" id="hKpiToday">0</div><div class="l">📝 KPI วันนี้ (record)</div></div>
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue)" id="hProdToday">0</div><div class="l">📦 Production วันนี้</div></div>
+    </div>
+  </div>
+
+  <!-- สรุปลูกค้า -->
+  <div class="card">
+    <div class="card-title"><span class="ci">👥</span>สรุปยอดผลิตตามลูกค้า</div>
+    <div class="tbl-wrap" style="max-height:none">
+      <table id="custTable">
+        <thead><tr><th>ลูกค้า</th><th class="center">WIP</th><th class="center">เสร็จ</th><th class="center">รวม</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- งานในแต่ละ Process -->
+  <div class="card">
+    <div class="card-title"><span class="ci">🛠️</span>งานในแต่ละ Process</div>
+    <div class="tbl-wrap" style="max-height:none">
+      <table id="procTable">
+        <thead><tr><th>Process</th><th class="center">จำนวน (ชิ้น)</th><th class="center">รายการ</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ค้นหา -->
+  <div class="card">
+    <div class="card-title"><span class="ci">🔍</span>ค้นหา Process จาก Valve No</div>
+    <div class="fg">
+      <div class="fr ac">
+        <label>Valve No</label>
+        <input type="search" id="searchValve" placeholder="เช่น VF1349M0" oninput="acValveSearch(event,'searchValve')" autocomplete="off">
+        <div class="ac-dd" id="searchValve_dd"></div>
+      </div>
+      <div class="fr" style="display:flex;align-items:flex-end">
+        <button class="btn btn-blue btn-block" onclick="searchProcess()">🔍 ค้นหา</button>
+      </div>
+    </div>
+    <div id="searchResult" class="mt-8"></div>
+  </div>
+</section>
+
+<!-- ============== TAB: HISTORY ============== -->
+<section id="pane-history" class="pane">
+  <div class="card">
+    <div class="card-title"><span class="ci">🗂️</span>ประวัติ</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn btn-blue btn-sm" data-htype="kpi" onclick="setHistTab('kpi')">📥 KPI</button>
+      <button class="btn btn-outline btn-sm" data-htype="prod" onclick="setHistTab('prod')">📝 Production</button>
+    </div>
+    <div class="fg-auto">
+      <div class="fr"><label>จาก</label><input type="date" id="histFrom" onchange="loadHistory()"></div>
+      <div class="fr"><label>ถึง</label><input type="date" id="histTo" onchange="loadHistory()"></div>
+      <div class="fr"><label>Zone</label><select id="histZone" onchange="loadHistory()"><option value="">ทั้งหมด</option><option>ZONE1</option><option>ZONE2</option><option>ZONE3</option></select></div>
+      <div class="fr"><label>ค้นหา Valve/Machine/Lot</label><input type="search" id="histSearch" oninput="loadHistory()"></div>
+    </div>
+    <div class="row mt-8" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
+      <span class="muted" style="font-size:12px"><span id="histCount">0</span> รายการ</span>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-blue btn-sm" onclick="histShowAll()" title="ลบฟิลเตอร์ทั้งหมด ดูข้อมูลย้อนหลังทั้งหมด">📚 ดูทั้งหมด</button>
+        <button class="btn btn-outline btn-sm" onclick="histPullCloud()" title="ดึงข้อมูลล่าสุดจาก D1">☁️ ดึงจาก Cloud</button>
+        <button class="btn btn-outline btn-sm" onclick="exportHistory()">⬇️ Export Excel</button>
+      </div>
+    </div>
+    <div class="tbl-wrap mt-8">
+      <table id="histTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TAB: วางแผนการผลิต ============== -->
+<section id="pane-plan" class="pane">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      <div class="card-title" style="margin:0"><span class="ci">📅</span>วางแผนการผลิต</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-blue btn-sm" onclick="addPlanRow()">➕ เพิ่มแผน</button>
+        <button class="btn btn-green btn-sm" onclick="openPastePlan()">📋 วางแผน (Excel)</button>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteIdsModal()">🆔 วาง IDs (Excel)</button>
+        <button class="btn btn-outline btn-sm" onclick="exportPlans()">⬇️ Export</button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="fg-auto mb-8" style="background:var(--blue-light);padding:10px;border-radius:10px">
+      <div class="fr" style="margin:0"><label>วันที่ขาย ตั้งแต่</label><input type="date" id="planFrom" oninput="renderPlans()"></div>
+      <div class="fr" style="margin:0"><label>ถึง</label><input type="date" id="planTo" oninput="renderPlans()"></div>
+      <div class="fr" style="margin:0"><label>สถานะ</label>
+        <select id="planStatus" oninput="renderPlans()">
+          <option value="">ทั้งหมด</option>
+          <option value="planned">📋 วางแผน</option>
+          <option value="in_progress">⚙️ กำลังผลิต</option>
+          <option value="done">✅ เสร็จแล้ว</option>
+          <option value="cancelled">❌ ยกเลิก</option>
+        </select>
+      </div>
+      <div class="fr" style="margin:0"><label>Valve No</label><input type="search" id="planValve" placeholder="ค้นหา" oninput="renderPlans()"></div>
+      <div class="fr" style="margin:0"><label>Lot</label><input type="search" id="planLot" placeholder="ค้นหา" oninput="renderPlans()"></div>
+      <div class="fr" style="margin:0;display:flex;align-items:flex-end">
+        <button class="btn btn-outline btn-sm btn-block" onclick="resetPlanFilter()" style="padding:8px">↺ ล้าง Filter</button>
+      </div>
+    </div>
+
+    <!-- Stats summary -->
+    <div class="stats-row mb-8" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="planCntPlanned">0</div><div class="l">📋 วางแผน</div></div>
+      <div class="stat orange" style="padding:8px"><div class="v" style="font-size:18px" id="planCntInProgress">0</div><div class="l">⚙️ กำลังผลิต</div></div>
+      <div class="stat green" style="padding:8px"><div class="v" style="font-size:18px" id="planCntDone">0</div><div class="l">✅ เสร็จ</div></div>
+      <div class="stat" style="background:#FEF2F2;border-color:#FECACA;padding:8px"><div class="v" style="color:#DC2626;font-size:18px" id="planCntCancel">0</div><div class="l">❌ ยกเลิก</div></div>
+    </div>
+
+    <div class="tbl-wrap" style="max-height:70vh">
+      <table id="planTable">
+        <thead><tr>
+          <th style="width:130px">📅 วันที่ขาย</th>
+          <th style="width:140px">Valve No</th>
+          <th style="width:90px">Lot</th>
+          <th class="center" style="width:80px">Qty</th>
+          <th style="width:130px">สถานะ</th>
+          <th>หมายเหตุ</th>
+          <th class="center" style="width:80px">จัดการ</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="muted center mt-8" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:8px;border-radius:9px">
+      ☁️ แผนทุกรายการ sync ลง D1 — ทุกคนที่ login จะเห็นและแก้ไขร่วมกันได้
+    </div>
+  </div>
+</section>
+
+<!-- ============== TAB: SETTINGS ============== -->
+<section id="pane-settings" class="pane">
+  <div class="section-title">🌐 การเชื่อมต่อ Cloud</div>
+  <div class="card">
+    <div class="fr">
+      <label>Worker API URL <span style="color:var(--green);font-weight:800">🔒 ล็อกไว้ (admin เท่านั้น)</span></label>
+      <input type="text" id="apiUrl" readonly style="background:#F0F4FF;color:var(--muted);cursor:not-allowed">
+    </div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="reload()">🔄 โหลดข้อมูลใหม่</button>
+      <button class="btn btn-outline btn-sm" onclick="testApi()">🧪 ทดสอบการเชื่อมต่อ</button>
+      <button class="btn btn-ghost btn-sm" id="adminBtn" onclick="adminToggle()">🔑 Admin Mode</button>
+    </div>
+    <div id="adminPanel" class="mt-8" style="display:none;background:#FEF3C7;border:1.5px solid #FCD34D;padding:10px;border-radius:9px">
+      <div class="row" style="gap:6px;flex-wrap:wrap;align-items:flex-end">
+        <button class="btn btn-blue btn-sm" onclick="adminSaveUrl()">💾 บันทึก URL ใหม่</button>
+        <button class="btn btn-green btn-sm" onclick="syncAllToCloud()">☁️ Sync ทั้งหมดไป Cloud</button>
+        <button class="btn btn-outline btn-sm" onclick="adminLock()">🔒 ล็อกกลับ</button>
+      </div>
+      <div class="muted mt-8" style="font-size:11px">⚠️ คุณกำลังอยู่ใน Admin Mode — สามารถแก้ไข URL และ sync ข้อมูลทั้งระบบได้</div>
+    </div>
+    <div id="apiStatus" class="mt-8 muted" style="font-size:12px"></div>
+  </div>
+
+  <div class="section-title">💾 ข้อมูลในเครื่อง (Local)</div>
+  <div class="card">
+    <div class="fg-auto">
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="lsKpiCount">0</div><div class="l">KPI Records</div></div>
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="lsProdCount">0</div><div class="l">Production Records</div></div>
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="lsValveCount">0</div><div class="l">Valves</div></div>
+      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="lsEmpCount">0</div><div class="l">พนักงาน</div></div>
+    </div>
+    <div class="row mt-8" style="gap:6px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="exportBackup()">⬇️ Backup (JSON)</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('restoreFile').click()">📥 Restore</button>
+      <input type="file" id="restoreFile" accept=".json" class="hide" onchange="restoreBackup(event)">
+      <button class="btn btn-outline btn-sm" onclick="resetToDefaults()">🔄 รีเซ็ต Master Data</button>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="clearAllRecords()">🗑️ ล้าง Records ทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="section-title">🎯 ค่าเป้าหมาย KPI (แยกตาม Zone)</div>
+  <div class="card">
+    <div id="zoneTargetsWrap"></div>
+    <button class="btn btn-blue btn-sm" onclick="saveTargets()">💾 บันทึก Targets ทั้งหมด</button>
+    <div class="muted mt-8" style="font-size:11px">หมายเหตุ: PPLH ของ Zone 2 (INDUCTION) สูงกว่า Zone อื่นเพราะเครื่อง induction มีรอบเร็วกว่า</div>
+  </div>
+
+  <div class="section-title">🗂️ Master Data: Valves</div>
+  <div class="card">
+    <div class="row mb-8" style="gap:6px;flex-wrap:wrap">
+      <input type="search" id="vSearch" placeholder="🔎 ค้นหา Valve" oninput="renderValveList()" style="flex:1;min-width:140px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
+      <button class="btn btn-blue btn-sm" onclick="openValveModal()">➕ Valve</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('vImport').click()">📥 Import</button>
+      <input type="file" id="vImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importValves(event)">
+      <button class="btn btn-outline btn-sm" onclick="exportValves()">⬇️ Export</button>
+    </div>
+    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="section-title">🆔 Valve IDs (1 Valve มีหลาย ID)</div>
+  <div class="card">
+    <div class="row mb-8" style="gap:6px;flex-wrap:wrap;align-items:center">
+      <input type="search" id="idSearch" placeholder="🔎 ค้นหา ID / Valve / Lot" oninput="renderIdList()" style="flex:1;min-width:180px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
+      <button class="btn btn-blue btn-sm" onclick="openIdModal()">➕ เพิ่ม ID</button>
+      <button class="btn btn-green btn-sm" onclick="openPasteIdsModal()">📋 วางจาก Excel</button>
+      <button class="btn btn-outline btn-sm" onclick="exportIds()">⬇️ Export CSV</button>
+    </div>
+    <div class="muted mb-8" style="font-size:12px">รวม <b id="idCount">0</b> รายการ — เก็บเป็น 7 ตัวขวาของบาร์โค้ด เช่น <code>1990918</code></div>
+    <div class="tbl-wrap" style="max-height:60vh"><table id="idTable"><thead><tr><th>ID Code</th><th>Valve No</th><th>Lot</th><th>หมายเหตุ</th><th class="center" style="width:70px">จัดการ</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="section-title">👥 พนักงาน</div>
+  <div class="card">
+    <div class="fg mb-8">
+      <div class="fr" style="margin:0"><label>รหัส</label><input type="text" id="newEmpId" placeholder="เช่น L-9999"></div>
+      <div class="fr" style="margin:0"><label>ชื่อ</label><input type="text" id="newEmpName" placeholder="ชื่อ-นามสกุล"></div>
+    </div>
+    <button class="btn btn-blue btn-sm mb-8" onclick="addEmployee()">➕ เพิ่ม/แก้ไข</button>
+    <div class="muted mb-8" style="font-size:12px">รวม <span id="empCount">0</span> คน</div>
+    <div class="tbl-wrap"><table id="empTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="section-title">🏭 เครื่องจักร</div>
+  <div class="card">
+    <div class="fr"><label>Zone</label>
+      <select id="mcZone" onchange="renderMachineList()">
+        <option value="ZONE1">ZONE 1 — AFTERMARKET</option>
+        <option value="ZONE2">ZONE 2 — INDUCTION</option>
+        <option value="ZONE3">ZONE 3 — FORD6 & PERKINS</option>
+      </select>
+    </div>
+    <div class="fg3 mb-8">
+      <div class="fr" style="margin:0"><label>รหัส</label><input type="text" id="newMcId" placeholder="L-999"></div>
+      <div class="fr" style="margin:0"><label>Target</label><input type="number" id="newMcTgt" placeholder="0"></div>
+      <div class="fr" style="margin:0"><label>Man_STD</label><input type="number" id="newMcStd" step="0.01" placeholder="0.5"></div>
+    </div>
+    <button class="btn btn-blue btn-sm mb-8" onclick="addMachine()">➕ เพิ่ม/แก้ไข</button>
+    <div class="tbl-wrap"><table id="mcTable"><thead><tr><th>รหัส</th><th>Target</th><th>Man_STD</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+</section>
+
+</main>
+
+<!-- ============== BOTTOM NAV (5 tabs — FAB บันทึก ตรงกลาง, วางแผน ขวาสุด) ============== -->
+<nav class="bnav">
+  <button data-pane="home"    onclick="setPane('home')"><span class="ico">📈</span><span class="lbl">Dashboard</span></button>
+  <button data-pane="prod"    onclick="setPane('prod')"><span class="ico">📝</span><span class="lbl">ติดตามงาน</span></button>
+  <button data-pane="kpi"     class="fab active" onclick="setPane('kpi')" title="บันทึกข้อมูล KPI + Production"><span class="pulse"></span><span class="ico">✏️</span><span class="lbl">บันทึก</span></button>
+  <button data-pane="history" onclick="setPane('history')"><span class="ico">🗂️</span><span class="lbl">ประวัติ</span></button>
+  <button data-pane="plan"    onclick="setPane('plan')"><span class="ico">📅</span><span class="lbl">วางแผน</span></button>
+</nav>
+
+<!-- ============== SHARED DATALISTS ============== -->
+<datalist id="valveList"></datalist>
+
+<!-- ============== MODALS ============== -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-tt" id="modalTt">รายละเอียด</span><button class="modal-cl" onclick="closeModal()">✕</button></div>
+    <div class="modal-bd" id="modalBd"></div>
+  </div>
+</div>
+
+<!-- ============== BARCODE SCAN MODAL ============== -->
+<div class="scan-modal" id="scanModal" onclick="if(event.target===this)closeScanner()">
+  <div class="scan-card">
+    <div class="scan-hd">
+      <span class="scan-tt">📷 สแกน / พิมพ์ บาร์โค้ด</span>
+      <button class="scan-cl" onclick="closeScanner()">✕</button>
+    </div>
+    <div class="scan-bd">
+      <!-- Mode tabs -->
+      <div class="scan-mode-tabs">
+        <button class="scan-mode-tab" id="modeCam"    onclick="setScanMode('cam')">📷 กล้อง</button>
+        <button class="scan-mode-tab active" id="modeType" onclick="setScanMode('type')">⌨️ พิมพ์เอง</button>
+      </div>
+
+      <!-- Camera mode -->
+      <div id="scan-reader"></div>
+      <div class="muted center mt-8" id="scanCamHelp" style="font-size:11px;display:none">ยกบาร์โค้ดให้อยู่ในกรอบ — สแกนอัตโนมัติ</div>
+
+      <!-- Manual entry mode (default) -->
+      <div id="scanManualWrap">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;text-transform:uppercase">บาร์โค้ด (18 หลัก)</label>
+        <div class="scan-manual">
+          <input type="text" id="scanManualInput" placeholder="2604S0403821990918" autocomplete="off"
+                 oninput="livePreview()" onkeydown="if(event.key==='Enter')submitManualScan()" inputmode="text" autocapitalize="characters">
+          <button class="scan-btn" style="padding:12px 14px;font-size:13px" onclick="submitManualScan()">✓ ตกลง</button>
+        </div>
+        <!-- Live preview -->
+        <div class="scan-preview" id="scanPreview">
+          <div class="scan-preview-row"><span class="muted">Lot (1-11):</span> <b id="prevLot">—</b></div>
+          <div class="scan-preview-row"><span class="muted">Code (11-18):</span> <b id="prevCode">—</b></div>
+          <div class="scan-preview-row"><span class="muted">→ Valve:</span> <b id="prevValve" style="color:var(--green)">—</b></div>
+        </div>
+      </div>
+
+      <div class="scan-result" id="scanResult"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ============================================================
+   STATE & STORAGE  (Local-first — works immediately, no setup needed)
+   ============================================================ */
+const LS = {
+  API:       'vsm4_api_url',
+  OP:        'vsm4_op_name',
+  PROD:      'vsm4_prod_date',
+  DRAFT:     'vsm4_kpi_draft',
+  SLOTS:     'vsm4_prod_slots',
+  VALVES:    'vsm4_valves',
+  MACHINES:  'vsm4_machines',
+  EMPLOYEES: 'vsm4_employees',
+  TARGETS:   'vsm4_targets',
+  IDS:       'vsm4_valve_ids',
+  KPI:       'vsm4_kpi_records',
+  PROD_REC:  'vsm4_prod_records',
+  PLANS:     'vsm4_plans',
+};
+// ❗ Hard-coded URL — locked by default; admin จะปลด lock ผ่านปุ่มใน Settings
+const DEFAULT_API = 'https://vsm4-api.wiphawas-sketchup.workers.dev';
+let API = localStorage.getItem(LS.API) || DEFAULT_API;
+if (!localStorage.getItem(LS.API)) localStorage.setItem(LS.API, DEFAULT_API);
+let OP  = localStorage.getItem(LS.OP)  || '';
+
+// Lock-in user
+const LS_USER = 'vsm4_user';
+let CURRENT_USER = null;
+try { CURRENT_USER = JSON.parse(localStorage.getItem(LS_USER) || 'null'); } catch (e) {}
+
+/* ============================================================
+   EMBEDDED DEFAULTS — เปิดมาใช้งานได้ทันที ไม่ต้องตั้งค่า
+   (ตรงกับ ZONES_DEF / EMPS_DEF / Valve samples เดิม)
+   ============================================================ */
+const DEFAULT_MACHINES = {
+  ZONE1: [
+    {id:'L-247',target:3000,man_std:0.5},{id:'L-256',target:3500,man_std:0.33},{id:'L-253',target:2000,man_std:0.33},
+    {id:'G-1108',target:0,man_std:0.33},{id:'G-220',target:0,man_std:0.33},{id:'G-2034',target:0,man_std:0.33},
+    {id:'L-235',target:0,man_std:0.5},{id:'L-263',target:0,man_std:0.33},{id:'L-236',target:0,man_std:0.33},
+    {id:'G-2022',target:0,man_std:0.5},{id:'G-2023',target:0,man_std:0.5}
+  ],
+  ZONE2: [
+    {id:'H-222',target:2500,man_std:0.5},{id:'H-212',target:2500,man_std:0.5},{id:'H-217',target:2500,man_std:0.5},
+    {id:'H-219',target:3000,man_std:1},{id:'H-213',target:3000,man_std:1},
+    {id:'G-273',target:2000,man_std:0.5},{id:'G-243',target:2000,man_std:0.5},{id:'G-217',target:2000,man_std:0.33}
+  ],
+  ZONE3: [
+    {id:'G-1109',target:2000,man_std:0.33},{id:'G-254',target:2000,man_std:0.5},{id:'G-255',target:2000,man_std:0.5},
+    {id:'L-237',target:1500,man_std:0.33},{id:'L-238',target:1500,man_std:0.5},{id:'G-232',target:1500,man_std:0.33},
+    {id:'G-253',target:2000,man_std:0.5},{id:'G-262',target:2000,man_std:0.5}
+  ]
+};
+
+const DEFAULT_EMPLOYEES = [
+  {id:'G-260',name:'น.ส.เพชรลดา พรมมา'},{id:'L-1827',name:'นายสุทิศ ภูถมดี'},{id:'L-2101',name:'นายนพรัตน์ พวงพันธ์'},
+  {id:'L-3501',name:'นายสุภัค โจนรัมย์'},{id:'L-1928',name:'นายกันยา สวนธิ'},{id:'L-3096',name:'นายบรรหาญ แสงอ่อน'},
+  {id:'L-2480',name:'นายสมคิด ทรทึก'},{id:'L-3582',name:'นายกิตติภพ บัวองค์'},{id:'L-3012',name:'นายจีราวัฒน์ บวรเกษมพงศ์'},
+  {id:'PST742',name:'นางสาวจีรนันท์ ลดาพัน'},{id:'S-067',name:'นายจำเนียร ทาเทพ'},{id:'L-603',name:'นายรุ่งโรจน์ วรรณสุทธะ'},
+  {id:'L-1101',name:'นายเดชา คำพิมูล'},{id:'PST802',name:'นายวรรณชัย โพธิ์หล้า'},{id:'L-3591',name:'นายณัฐพงษ์ สีสันงาม'},
+  {id:'PST709',name:'นายวัชรินทร์ ยอดดี'},{id:'L-3609',name:'นายภคินัย สาผม'},{id:'Temp117',name:'นายคมกริช มุ่งงาม'},
+  {id:'S-057',name:'นายวิภาวัส จันทะคาม'},{id:'S-059',name:'นายเกรียงไกร โพธิ์ศรี'},{id:'L-1879',name:'นายวิฑูรย์ สุขเลิศ'},
+  {id:'T-204',name:'นายวิรัตน์ หวังชอบ'},{id:'PST759',name:'นายเอกชัย โก้พิมาย'},{id:'L-3610',name:'นายวัชรินทร์ คำศรี'},
+  {id:'L-2488',name:'นายสราวุฒิ ปานทอง'},{id:'L-3527',name:'นายเกียรติศักดิ์ หล้ามณี'},{id:'S-046',name:'นายสมศักดิ์ เครือลัดดา'},
+  {id:'L-2499',name:'นายทรงศักดิ์ สืบเสระ'},{id:'L-3608',name:'นายประเวท กิ่งพุ่ม'},{id:'T-441',name:'นายธนาศักดิ์ สุกระวัน'},
+  {id:'L-2935',name:'นายพิสิษฐ์ อิ่มเพ็ง'},{id:'L-1058',name:'นายสรศักดิ์ สุริยะ'},{id:'L-3378',name:'นายจักรพันธ์ เทียนหอม'},
+  {id:'L-2677',name:'นายชาคริต บุญศิริกร'},{id:'L-3583',name:'นายวันทนา สอนไชย'},{id:'S-038',name:'นายณรงค์ งิ้วเขียว'},
+  {id:'L-2929',name:'นายสุวรรณ สุขสถิตย์'},{id:'PST755',name:'นายอำนาจ ดำรงกิจ'},{id:'L-2634',name:'นายภูณัทกิจ อ่อนวิมล'},
+  {id:'L-3374',name:'นายปัญญา ประวันนา'},{id:'L-3431',name:'นายกฤษณ์ ซื้อจริง'},{id:'L-2659',name:'นายณรงค์ จอดพิมาย'},
+  {id:'L-2658',name:'น.ส.มาลิณี จอดพิมาย'},{id:'L-1763',name:'นายสมชาย พรมชาติ'},{id:'L-3062',name:'นายอภิวัฒน์ หาดจันทร์'},
+  {id:'L-1598',name:'นายสัญญา คิดโสดา'},{id:'L-3015',name:'นายวิรุต การุณรัตน์'},{id:'L-3035',name:'นายจักรินทร์ นิสสัยดี'},
+  {id:'L-3611',name:'นายธีรพัฒน์ อินทร์สีดา'}
+];
+
+const DEFAULT_VALVES = [
+  {valveNo:'VF1349M0',customer:'MSI',description:'Aftermarket VSM4 Sample 1',processes:['SSG','TOP&HOD','VET','COT','IND','TG','SFG','FG','P/T','QC']},
+  {valveNo:'VF1350M0',customer:'SWE',description:'Aftermarket VSM4 Sample 2',processes:['SSG','VET','IND','TG','SFG','FG','QC']},
+  {valveNo:'VF1351M0',customer:'OES&OEM',description:'Aftermarket VSM4 Sample 3',processes:['SSG','TOP&HOD','COT','IND','SFG','FG','P/T','QC']},
+  {valveNo:'VF1352M0',customer:'Other',description:'Aftermarket VSM4 Sample 4',processes:['SSG','VET','COT','TG','SFG','FG','QC']},
+  {valveNo:'VF1353M0',customer:'MSI',description:'Aftermarket VSM4 Sample 5',processes:['SSG','TOP&HOD','VET','IND','TG','SFG','FG','P/T','QC']}
+];
+
+const DEFAULT_TARGETS = {
+  // flat (legacy/fallback)
+  oae:0.75, dle:0.85, pplh:350, pdac:0.9, scrap:0.0012,
+  // per-zone (Zone 1 AFTERMARKET / Zone 2 INDUCTION / Zone 3 FORD6 & PERKINS)
+  'zone1.oae':0.75, 'zone1.dle':0.85, 'zone1.pdac':0.9, 'zone1.scrap':0.0012, 'zone1.pplh':300,
+  'zone2.oae':0.75, 'zone2.dle':0.85, 'zone2.pdac':0.9, 'zone2.scrap':0.0012, 'zone2.pplh':400,
+  'zone3.oae':0.75, 'zone3.dle':0.85, 'zone3.pdac':0.9, 'zone3.scrap':0.0012, 'zone3.pplh':300,
+};
+
+/* loader: ดึงจาก LocalStorage ก่อน ถ้าไม่มีใช้ default */
+function lsLoad(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key)); return v === null || v === undefined ? fallback : v; }
+  catch (e) { return fallback; }
+}
+function lsSave(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+let state = {
+  online:    false,
+  valves:    lsLoad(LS.VALVES,    DEFAULT_VALVES),
+  machines:  lsLoad(LS.MACHINES,  DEFAULT_MACHINES),
+  employees: lsLoad(LS.EMPLOYEES, DEFAULT_EMPLOYEES),
+  targets:   lsLoad(LS.TARGETS,   DEFAULT_TARGETS),
+  ids:         lsLoad(LS.IDS,     []),       // [{id_code, valve_no, lot, note}]
+  prodRecords: lsLoad(LS.PROD_REC, []),
+  kpiRecords:  lsLoad(LS.KPI,      []),
+  plans:       lsLoad(LS.PLANS,    []),
+  zone:      'ZONE1',
+  histType:  'kpi',
+  shiftFilter: 'all',  // 'all' | 'day' | 'night'
+  adminUnlocked: false,
+};
+
+const ZONE_LABEL = {ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS'};
+const ZONE_KEYS  = ['zone1','zone2','zone3'];
+const TGT_LBL    = {oae:'OAE', dle:'DLE', pplh:'PPLH', pdac:'PDAC', scrap:'SCRAP'};
+
+/* cache row สำหรับ edit/delete ในหน้าประวัติ */
+let _histKpiRows  = [];
+let _histProdRows = [];
+
+/* ===== HARDCODED API URL + ADMIN LOCK ===== */
+const DEFAULT_API_URL  = 'https://vsm4-api.wiphawas-sketchup.workers.dev';
+const ADMIN_PASSWORD   = 'vsm4admin';
+
+/* ===== Lookup helper: id_code → {valve_no, lot} ===== */
+const idMap = () => {
+  const m = new Map();
+  for (const r of state.ids || []) m.set(String(r.id_code || '').trim(), r);
+  return m;
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $  = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+const P  = (n) => String(n).padStart(2,'0');
+const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`; };
+const pct = (v) => (+v*100).toFixed(2)+'%';
+const nn  = (v) => Math.round(+v||0).toLocaleString();
+const escapeHtml = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, type='') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  $('toastWrap').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function setConnBadge(mode) {
+  state.online = mode === 'online';
+  const b = $('connBadge'), t = $('connText');
+  if (mode === 'online') { b.className = 'badge online'; t.textContent = 'Online (D1)'; }
+  else if (mode === 'local') { b.className = 'badge local'; t.textContent = 'Local (LocalStorage)'; }
+  else { b.className = 'badge'; t.textContent = mode || 'รอ…'; }
+}
+
+async function api(path, opts = {}) {
+  if (!API) throw new Error('ยังไม่ตั้งค่า API URL');
+  const url = API.replace(/\/+$/, '') + path;
+  const res = await fetch(url, {
+    method: opts.method || (opts.body ? 'POST' : 'GET'),
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({ok:false, error:'invalid response'}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+
+function openModal(title, html) {
+  $('modalTt').textContent = title;
+  $('modalBd').innerHTML = html;
+  $('modalBg').classList.add('open');
+}
+function closeModal() { $('modalBg').classList.remove('open'); }
+
+/* ===== ตรวจว่ามีข้อมูล KPI ค้างใน form หรือไม่ ===== */
+function hasUnsavedKpiData() {
+  // หากมีเครื่องที่เปิดไว้ + มี opr/scrap ใน shift ใดๆ → ถือว่ามีข้อมูลค้าง
+  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+    const machines = state.machines[z] || [];
+    for (let mi = 0; mi < machines.length; mi++) {
+      const on = $(`${z}_${mi}_on`);
+      if (!on?.checked) continue;
+      const body = $(`${z}_${mi}_body`);
+      if (!body) continue;
+      const shifts = body.querySelectorAll('.shift');
+      for (const sb of shifts) {
+        const sid = sb.id.replace('_block', '');
+        const opr   = +($(sid+'_opr')?.value || 0);
+        const scrap = +($(sid+'_sc')?.value || 0);
+        if (opr || scrap) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* ===== Admin guard สำหรับ Settings ===== */
+function guardSettings() {
+  if (state.adminUnlocked) return true;
+  const pw = prompt('🔐 หน้าตั้งค่าเฉพาะ Admin\n\nกรอก Admin Password:');
+  if (pw === null) return false;
+  if (pw !== ADMIN_PASSWORD) {
+    toast('❌ รหัสผ่านไม่ถูกต้อง', 'red');
+    return false;
+  }
+  state.adminUnlocked = true;
+  toast('🔓 ปลดล็อก Admin Mode', 'green');
+  return true;
+}
+
+function setPane(name) {
+  // ฟังก์ชัน 2: Settings เปิดได้เฉพาะ admin
+  if (name === 'settings' && !guardSettings()) return;
+
+  // ฟังก์ชัน 1: ถ้ากด tab "บันทึก" ขณะมีข้อมูลค้างในฟอร์ม → save ทันที (ไม่ว่าจะอยู่หน้าไหน)
+  if (name === 'kpi' && hasUnsavedKpiData()) {
+    saveKpi();
+    return;
+  }
+
+  $$('section.pane').forEach(p => p.classList.remove('active'));
+  $('pane-' + name).classList.add('active');
+  $$('nav.bnav button').forEach(b => b.classList.toggle('active', b.dataset.pane === name));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (name === 'home')     renderHome();
+  if (name === 'kpi')      renderZone();
+  if (name === 'prod')     renderHome();
+  if (name === 'history')  loadHistory();
+  if (name === 'plan')     pullPlans();
+  if (name === 'settings') renderSettings();
+}
+
+function setZone(z) {
+  state.zone = z;
+  $$('.zt').forEach(b => b.classList.toggle('active', b.dataset.z === z));
+  renderZone();
+}
+
+/* ============================================================
+   BARCODE SCANNER — เปิดกล้องสแกน → parse Lot + Valve code → fill fields
+   ============================================================ */
+let scanInstance = null;
+let scanTargetSid = null;   // sid ของ shift block ที่จะ fill ผลกลับ
+
+function openScanner(sid) {
+  scanTargetSid = sid;
+  $('scanModal').classList.add('open');
+  $('scanResult').classList.remove('show');
+  $('scanResult').textContent = '';
+  $('scanManualInput').value = '';
+  $('scanPreview').classList.remove('show');
+  // ตรวจ secure context — ถ้า HTTPS/localhost ให้เริ่มที่ tab กล้อง, ถ้าไม่ใช่ก็ tab พิมพ์
+  const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  setScanMode(isSecure ? 'cam' : 'type');
+}
+
+function setScanMode(mode) {
+  $('modeCam').classList.toggle('active', mode === 'cam');
+  $('modeType').classList.toggle('active', mode === 'type');
+  const camHelp = $('scanCamHelp'), reader = $('scan-reader'), manual = $('scanManualWrap');
+  if (mode === 'cam') {
+    reader.classList.add('show');
+    camHelp.style.display = 'block';
+    manual.style.display = 'none';
+    setTimeout(() => initScanner(), 200);
+  } else {
+    reader.classList.remove('show');
+    camHelp.style.display = 'none';
+    manual.style.display = 'block';
+    // หยุดกล้องถ้ากำลังทำงาน
+    if (scanInstance) {
+      try {
+        if (typeof scanInstance.stop === 'function') scanInstance.stop().catch(()=>{});
+      } catch(e) {}
+      scanInstance = null;
+    }
+    // auto-focus input
+    setTimeout(() => $('scanManualInput')?.focus(), 100);
+  }
+}
+
+function livePreview() {
+  const raw = $('scanManualInput').value.trim();
+  const prev = $('scanPreview');
+  if (!raw) { prev.classList.remove('show'); return; }
+  const parsed = parseBarcode(raw);
+  $('prevLot').textContent = parsed.lot || '—';
+  $('prevCode').textContent = parsed.code || '—';
+  if (parsed.valveNo) {
+    $('prevValve').textContent = parsed.valveNo;
+    $('prevValve').style.color = 'var(--green)';
+  } else if (parsed.code) {
+    $('prevValve').innerHTML = `<span style="color:var(--orange)">ไม่พบ map ของ ${escapeHtml(parsed.code)}</span>`;
+  } else {
+    $('prevValve').textContent = '—';
+  }
+  prev.classList.add('show');
+}
+
+async function closeScanner() {
+  $('scanModal').classList.remove('open');
+  if (scanInstance) {
+    try {
+      // Html5Qrcode instance ใช้ stop(), Html5QrcodeScanner ใช้ clear()
+      if (typeof scanInstance.stop === 'function') {
+        await scanInstance.stop().catch(()=>{});
+        if (typeof scanInstance.clear === 'function') scanInstance.clear();
+      } else if (typeof scanInstance.clear === 'function') {
+        scanInstance.clear();
+      }
+    } catch (e) {}
+    scanInstance = null;
+  }
+  setTimeout(() => { const r = $('scan-reader'); if (r) r.innerHTML = ''; }, 200);
+}
+
+async function initScanner() {
+  if (!window.Html5Qrcode) {
+    $('scanResult').className = 'scan-result show err';
+    $('scanResult').innerHTML = '⚠️ ไลบรารีกล้องโหลดไม่ได้ — ตรวจอินเทอร์เน็ตหรือใช้ "พิมพ์เอง" ด้านล่าง';
+    return;
+  }
+  // ตรวจ HTTPS / camera permission
+  if (location.protocol === 'file:' || (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')) {
+    $('scanResult').className = 'scan-result show err';
+    $('scanResult').innerHTML = '⚠️ เบราว์เซอร์ไม่อนุญาตกล้องบน <code>'+location.protocol+'</code><br><b>วิธีแก้:</b> เปิดผ่าน Worker URL (HTTPS) แทน — หรือ <b>พิมพ์เอง</b> ด้านล่าง';
+    return;
+  }
+
+  try {
+    const html5QrCode = new Html5Qrcode('scan-reader', { verbose: false });
+    scanInstance = html5QrCode;
+    const cams = await Html5Qrcode.getCameras().catch(() => []);
+    if (!cams.length) {
+      $('scanResult').className = 'scan-result show err';
+      $('scanResult').innerHTML = '⚠️ ไม่พบกล้อง — ตรวจ permission ในเบราว์เซอร์ หรือใช้ "พิมพ์เอง"';
+      return;
+    }
+    // เลือกกล้องหลัง (environment) ถ้ามี ไม่งั้นเอาตัวสุดท้าย (มักเป็นกล้องหลัง)
+    let camId = cams[cams.length - 1].id;
+    const rear = cams.find(c => /back|rear|environment/i.test(c.label));
+    if (rear) camId = rear.id;
+
+    await html5QrCode.start(
+      camId,
+      {
+        fps: 10,
+        qrbox: { width: 280, height: 120 },
+        aspectRatio: 1.7777,
+      },
+      (decoded) => onScanSuccess(decoded),
+      () => {}
+    );
+  } catch (e) {
+    $('scanResult').className = 'scan-result show err';
+    let hint = '';
+    if (/permission|denied|notallowed/i.test(e.message||'')) hint = '<br><b>คุณต้องอนุญาต permission กล้องในเบราว์เซอร์</b> — กดที่ icon 🔒 ใน address bar';
+    $('scanResult').innerHTML = '⚠️ เปิดกล้องไม่ได้: ' + escapeHtml(e.message||String(e)) + hint;
+  }
+}
+
+function onScanSuccess(decoded) {
+  // เด้งผลกลับไปฟอร์ม
+  applyScanResult(decoded);
+  // stop scanner
+  if (scanInstance) {
+    try { scanInstance.clear(); } catch (e) {}
+    scanInstance = null;
+  }
+}
+
+function submitManualScan() {
+  const v = $('scanManualInput').value.trim();
+  if (!v) { toast('กรอกข้อมูลก่อน', 'orange'); return; }
+  applyScanResult(v);
+}
+
+/* ============================================================
+   BARCODE PARSING — บาร์โค้ด 17-18 ตัว
+   - ตัด 7 ตัวขวามือ = ID code → lookup ใน valve_ids → ดึง valve_no + lot
+   - ถ้าตัวที่ 3 จากซ้าย เป็นอักษรอังกฤษ A-Z → แจ้งให้ใช้บาร์โค้ดหน้าที่ 2
+   - กรณีอื่น (ไม่เจอใน DB) → แจ้งว่าข้อมูลไม่ตรงกับฐาน
+   ============================================================ */
+function parseBarcode(raw) {
+  const clean = (raw || '').replace(/\s/g, '');
+  // ตัวที่ 3 จากซ้าย (index 2)
+  const ch3 = clean.charAt(2) || '';
+  const isPage2Marker = /^[A-Za-z]$/.test(ch3);
+
+  if (clean.length < 7) {
+    return { ok: false, reason: 'too_short', clean };
+  }
+  if (isPage2Marker) {
+    return { ok: false, reason: 'page2', clean, ch3 };
+  }
+  // ดึง 7 ตัวขวามือ = ID
+  const idCode = clean.slice(-7);
+
+  // lookup จาก state.ids
+  const found = idMap().get(idCode);
+  if (!found) {
+    return { ok: false, reason: 'not_found', clean, idCode };
+  }
+  return { ok: true, clean, idCode, valveNo: found.valve_no, lot: found.lot || '' };
+}
+
+function applyScanResult(decoded) {
+  const parsed = parseBarcode(decoded);
+
+  if (!parsed.ok) {
+    let title, msg, type;
+    if (parsed.reason === 'page2') {
+      title = '⚠️ ใช้บาร์โค้ดหน้าที่ 2';
+      msg   = `บาร์โค้ดที่สแกนมีตัวอักษรภาษาอังกฤษ (<b>${escapeHtml(parsed.ch3)}</b>) ตำแหน่งที่ 3 จากซ้าย<br><b>กรุณาใช้บาร์โค้ดหน้าที่ 2</b>`;
+      type  = 'orange';
+    } else if (parsed.reason === 'not_found') {
+      title = '❌ ข้อมูลบาร์โค้ดไม่ถูกต้องกับฐานข้อมูล';
+      msg   = `ID <code>${escapeHtml(parsed.idCode)}</code> ไม่พบในระบบ — กรุณาตรวจสอบ หรือเพิ่มที่ <b>⚙️ Master Data → Valve IDs</b>`;
+      type  = 'red';
+    } else {
+      title = '❌ บาร์โค้ดสั้นเกินไป';
+      msg   = `อ่านได้ <code>${escapeHtml(parsed.clean)}</code> — ต้องมีอย่างน้อย 7 หลัก`;
+      type  = 'red';
+    }
+    $('scanResult').className = 'scan-result show err';
+    $('scanResult').innerHTML = `<b>${title}</b><div style="margin-top:6px;font-size:12px">${msg}</div>`;
+    toast(title, type);
+    // ❌ ไม่ปิด modal อัตโนมัติ ให้ user กดดู error เอง
+    return;
+  }
+
+  // ✅ เจอใน DB
+  const lotInput   = document.getElementById(scanTargetSid + '_lot');
+  const valveInput = document.getElementById(scanTargetSid + '_v');
+  if (lotInput)   lotInput.value   = parsed.lot;
+  if (valveInput) valveInput.value = parsed.valveNo;
+
+  $('scanResult').className = 'scan-result show';
+  $('scanResult').innerHTML = `✓ ID: <b>${escapeHtml(parsed.idCode)}</b>
+    → Valve: <b style="color:var(--green)">${escapeHtml(parsed.valveNo)}</b>
+    · Lot: <b>${escapeHtml(parsed.lot)}</b>`;
+  toast(`✓ ${parsed.valveNo} / Lot ${parsed.lot}`, 'green');
+  setTimeout(() => closeScanner(), 1200);
+}
+
+/* ============================================================
+   PRODUCTION PLAN — วางแผนการผลิต (Valve / Lot / Date / Status)
+   ============================================================ */
+const PLAN_STATUS = {
+  planned:     { label:'📋 วางแผน',    color:'tag-blue' },
+  in_progress: { label:'⚙️ กำลังผลิต', color:'tag-orange' },
+  done:        { label:'✅ เสร็จแล้ว',  color:'tag-green' },
+  cancelled:   { label:'❌ ยกเลิก',     color:'tag-red' },
+};
+
+function planNewId() { return 'P-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function filteredPlans() {
+  const f = {
+    from:   $('planFrom')?.value || '',
+    to:     $('planTo')?.value   || '',
+    status: $('planStatus')?.value || '',
+    valve:  ($('planValve')?.value || '').toLowerCase(),
+    lot:    ($('planLot')?.value || '').toLowerCase(),
+  };
+  return state.plans.filter(p => {
+    const d = p.plan_date || '';
+    if (f.from && d < f.from) return false;
+    if (f.to   && d > f.to)   return false;
+    if (f.status && p.status !== f.status) return false;
+    if (f.valve && !(p.valve_no||'').toLowerCase().includes(f.valve)) return false;
+    if (f.lot   && !(p.lot||'').toLowerCase().includes(f.lot)) return false;
+    return true;
+  }).sort((a,b) => (a.plan_date||'').localeCompare(b.plan_date||''));
+}
+
+// pure render — ไม่ดึง API (กันชน state)
+function renderPlans() {
+  // populate valve datalist
+  const dl = $('valveList');
+  if (dl) dl.innerHTML = state.valves.map(v => `<option value="${escapeHtml(v.valveNo)}">${escapeHtml(v.description||'')}</option>`).join('');
+  const rows = filteredPlans();
+  const tbody = $('planTable')?.querySelector('tbody');
+  if (!tbody) return;
+  // count by status
+  const cnt = { planned:0, in_progress:0, done:0, cancelled:0 };
+  for (const p of rows) if (cnt[p.status] !== undefined) cnt[p.status]++;
+  if ($('planCntPlanned'))    $('planCntPlanned').textContent    = cnt.planned;
+  if ($('planCntInProgress')) $('planCntInProgress').textContent = cnt.in_progress;
+  if ($('planCntDone'))       $('planCntDone').textContent       = cnt.done;
+  if ($('planCntCancel'))     $('planCntCancel').textContent     = cnt.cancelled;
+
+  tbody.innerHTML = rows.length ? rows.map(p => planRowHtml(p)).join('')
+    : '<tr><td colspan="7" class="center muted" style="padding:20px">ยังไม่มีแผนผลิต — กด <b>➕ เพิ่มแผน</b> หรือ <b>📋 วางจาก Excel</b></td></tr>';
+}
+
+// ดึงจาก D1 + merge กับ local แล้ว render
+async function pullPlans() {
+  if (!API) { renderPlans(); return; }
+  try {
+    const res = await api('/api/plans?limit=5000').catch(()=>null);
+    if (res?.plans) {
+      // merge: server data + local plans ที่ยังไม่มีใน server (กันชน race condition)
+      const serverIds = new Set(res.plans.map(p => p.plan_id));
+      const localOnly = state.plans.filter(p => !serverIds.has(p.plan_id));
+      state.plans = [...localOnly, ...res.plans];
+      lsSave(LS.PLANS, state.plans);
+    }
+  } catch (e) {}
+  renderPlans();
+}
+
+function planRowHtml(p) {
+  const sts = PLAN_STATUS[p.status] || PLAN_STATUS.planned;
+  return `<tr data-pid="${escapeHtml(p.plan_id||'')}">
+    <td><input type="date" value="${escapeHtml(p.plan_date||'')}" onchange="updatePlan('${escapeHtml(p.plan_id)}','plan_date',this.value)" style="border:1px solid var(--blue-soft);padding:5px 8px;border-radius:7px;font-weight:700;font-size:13px;width:100%"></td>
+    <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${escapeHtml(p.plan_id)}','valve_no',this.value)" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 8px;border-radius:7px;font-weight:800;color:var(--blue);font-size:13px;width:100%;text-transform:uppercase"></td>
+    <td><input type="text" value="${escapeHtml(p.lot||'')}" oninput="updatePlan('${escapeHtml(p.plan_id)}','lot',this.value)" placeholder="L1" style="border:1px solid var(--blue-soft);padding:5px 8px;border-radius:7px;font-weight:700;font-size:13px;width:100%"></td>
+    <td><input type="number" value="${p.quantity||''}" oninput="updatePlan('${escapeHtml(p.plan_id)}','quantity',this.value)" min="0" placeholder="0" style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:700;font-size:13px;width:100%;text-align:center"></td>
+    <td><select onchange="updatePlan('${escapeHtml(p.plan_id)}','status',this.value)" style="border:1px solid var(--blue-soft);padding:5px 8px;border-radius:7px;font-weight:700;font-size:12px;width:100%;background:#fff">
+      ${Object.entries(PLAN_STATUS).map(([k,v]) => `<option value="${k}"${p.status===k?' selected':''}>${v.label}</option>`).join('')}
+    </select></td>
+    <td><input type="text" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${escapeHtml(p.plan_id)}','note',this.value)" placeholder="หมายเหตุ" style="border:1px solid var(--blue-soft);padding:5px 8px;border-radius:7px;font-size:13px;width:100%"></td>
+    <td class="center"><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:5px 9px" onclick="deletePlanRow('${escapeHtml(p.plan_id)}')">🗑️</button></td>
+  </tr>`;
+}
+
+let planSaveTimer;
+async function updatePlan(planId, field, value) {
+  const idx = state.plans.findIndex(p => p.plan_id === planId);
+  if (idx < 0) return;
+  state.plans[idx][field] = field === 'quantity' ? Number(value || 0) : value;
+  lsSave(LS.PLANS, state.plans);
+  // อัพเดต stat counts ทันทีเมื่อเปลี่ยน status / date (ไม่ทำ full render เพื่อไม่ blur input)
+  if (field === 'status' || field === 'plan_date') {
+    const cnt = { planned:0, in_progress:0, done:0, cancelled:0 };
+    for (const p of filteredPlans()) if (cnt[p.status] !== undefined) cnt[p.status]++;
+    if ($('planCntPlanned'))    $('planCntPlanned').textContent    = cnt.planned;
+    if ($('planCntInProgress')) $('planCntInProgress').textContent = cnt.in_progress;
+    if ($('planCntDone'))       $('planCntDone').textContent       = cnt.done;
+    if ($('planCntCancel'))     $('planCntCancel').textContent     = cnt.cancelled;
+  }
+  // debounce push API
+  clearTimeout(planSaveTimer);
+  planSaveTimer = setTimeout(async () => {
+    if (API) { try { await api('/api/plans', { body: state.plans[idx] }); } catch (e) {} }
+  }, 600);
+}
+
+async function addPlanRow() {
+  const id = planNewId();
+  const newPlan = {
+    plan_id: id,
+    valve_no: '',
+    lot: '',
+    plan_date: todayISO(),
+    quantity: 0,
+    status: 'planned',
+    note: '',
+    created_by: CURRENT_USER?.id || '',
+  };
+  state.plans.unshift(newPlan);
+  lsSave(LS.PLANS, state.plans);
+  renderPlans();
+  if (API) { try { await api('/api/plans', { body: newPlan }); } catch (e) {} }
+}
+
+async function deletePlanRow(planId) {
+  if (!confirm('ลบแผนนี้?')) return;
+  state.plans = state.plans.filter(p => p.plan_id !== planId);
+  lsSave(LS.PLANS, state.plans);
+  renderPlans();
+  if (API) { try { await api('/api/plans/delete', { body: { plan_id: planId } }); } catch (e) {} }
+}
+
+function openPastePlan() {
+  openModal('📋 วางข้อมูลจาก Excel', `
+    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:10px;font-size:12px;color:var(--blue-dark);margin-bottom:10px;line-height:1.7">
+      <b>วิธีใช้:</b> Copy cells จาก Excel (Ctrl+C) แล้ว Ctrl+V ในกล่องด้านล่าง<br>
+      <b>คอลัมน์ที่ระบบรู้จัก (ตามลำดับ):</b><br>
+      &nbsp;&nbsp;1. วันที่ขาย/Date &nbsp; 2. Valve No &nbsp; 3. Lot &nbsp; 4. Qty &nbsp; 5. สถานะ &nbsp; 6. หมายเหตุ<br>
+      <span class="muted" style="font-size:11px">รองรับ: BE (พ.ศ.), Excel serial date, DD/MM/YYYY, ตัวเลข 1,000 (มี comma), ไทย "20 พ.ค. 2569"</span><br>
+      <span class="muted" style="font-size:11px">ถ้ามี header row ระบบจะ auto-detect ลำดับ column ให้</span>
+    </div>
+    <textarea id="pasteArea" placeholder="ตัวอย่าง: copy ข้อมูล Excel แล้ว Ctrl+V ในกล่องนี้
+2026-05-20	VF1349M0	L1	1,000	planned	เร่งด่วน
+2026-05-21	VF1350M0	L2	500		" style="width:100%;min-height:160px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;white-space:pre" oninput="previewPaste()"></textarea>
+    <div id="pastePreview" class="mt-8"></div>
+    <div class="row mt-8" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green btn-sm" id="pasteConfirmBtn" onclick="confirmPaste()" disabled>💾 บันทึกแผน</button>
+    </div>
+  `);
+  setTimeout(() => $('pasteArea')?.focus(), 200);
+}
+
+function parsePasteText(text) {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).map(l => l).filter(l => l.trim());
+  if (!lines.length) return [];
+
+  // Auto-detect separator (tab default — Excel uses tab; csv falls back)
+  let sep = '\t';
+  if (!lines[0].includes('\t')) {
+    // ถ้าไม่มี tab ลอง semicolon ก่อน (Excel ภาษาไทย/EU บางเครื่อง)
+    if (lines[0].includes(';')) sep = ';';
+    else if (lines[0].includes(',')) sep = ',';
+    else sep = /\s{2,}/;  // ใช้ space 2 ตัวขึ้นไป
+  }
+
+  const splitLine = (ln) => sep instanceof RegExp ? ln.split(sep).map(c=>c.trim()) : ln.split(sep).map(c=>c.trim());
+
+  // ตรวจหา header row + map columns
+  const headers = splitLine(lines[0]).map(h => h.toLowerCase());
+  const colMap = detectColumns(headers);
+  const hasHeader = colMap !== null;
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const defaultOrder = ['plan_date','valve_no','lot','quantity','status','note'];
+  const order = hasHeader ? colMap : defaultOrder;
+
+  const rows = [];
+  for (const ln of dataLines) {
+    const cols = splitLine(ln);
+    if (cols.length < 2) continue;
+    const obj = { plan_date:'', valve_no:'', lot:'', quantity:0, status:'planned', note:'' };
+    order.forEach((field, i) => {
+      if (!field) return;
+      const v = cols[i] || '';
+      if (field === 'plan_date')      obj.plan_date = parseDate(v);
+      else if (field === 'valve_no')  obj.valve_no = v.toUpperCase().trim();
+      else if (field === 'lot')       obj.lot = v.trim();
+      else if (field === 'quantity')  obj.quantity = Number(v.replace(/[,\s]/g,'').replace(/[^\d.-]/g,'')) || 0;
+      else if (field === 'status')    obj.status = parseStatus(v);
+      else if (field === 'note')      obj.note = v.trim();
+    });
+    if (!obj.valve_no) continue;
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// ตรวจหา header — คืนลำดับ field ตาม header ที่เจอ, ถ้าไม่ใช่ header คืน null
+function detectColumns(headers) {
+  const mapping = {
+    plan_date: /^(date|วัน|วันที่|วันที่ส่ง|ship|delivery|ขาย|due)/i,
+    valve_no:  /^(valve|วาล์ว|รหัส|item|part|รุ่น|model)/i,
+    lot:       /^(lot|ล็อต|batch)/i,
+    quantity:  /^(qty|จำนวน|ชิ้น|amount|amt|pcs)/i,
+    status:    /^(status|สถานะ|state)/i,
+    note:      /^(note|หมายเหตุ|remark|memo|description|desc)/i,
+  };
+  let matched = 0;
+  const order = headers.map(h => {
+    for (const [field, re] of Object.entries(mapping)) {
+      if (re.test(h)) { matched++; return field; }
+    }
+    return null;
+  });
+  // ต้องเจออย่างน้อย 2 column ที่ตรง mapping ถึงนับว่าเป็น header
+  return matched >= 2 ? order : null;
+}
+
+function parseDate(s) {
+  if (!s) return '';
+  s = String(s).trim();
+  // Excel serial number (เช่น 46172 = 2026-05-20)
+  if (/^\d{5}$/.test(s)) {
+    const days = parseInt(s, 10);
+    const d = new Date(Date.UTC(1899, 11, 30) + days * 86400000);
+    if (!isNaN(d)) return `${d.getUTCFullYear()}-${P(d.getUTCMonth()+1)}-${P(d.getUTCDate())}`;
+  }
+  // YYYY-MM-DD (ตรง format อยู่แล้ว)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    let [y,mo,da] = s.split('-').map(Number);
+    if (y > 2500) y -= 543;  // BE → CE
+    return `${y}-${P(mo)}-${P(da)}`;
+  }
+  // DD/MM/YYYY or D/M/YYYY (รวม BE)
+  let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) {
+    let [_, d, mo, y] = m;
+    y = +y; mo = +mo; d = +d;
+    if (y < 100) y += 2000;       // 25 → 2025
+    if (y > 2500) y -= 543;       // 2569 → 2026 (BE→CE)
+    return `${y}-${P(mo)}-${P(d)}`;
+  }
+  // YYYY/MM/DD
+  m = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (m) {
+    let [_, y, mo, d] = m;
+    y = +y; if (y > 2500) y -= 543;
+    return `${y}-${P(mo)}-${P(d)}`;
+  }
+  // ไทย: "20 พ.ค. 2569" หรือ "20 พฤษภาคม 2569"
+  const thaiMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const thaiFull = ['มกรา','กุมภา','มีนา','เมษา','พฤษภา','มิถุนา','กรกฎา','สิงหา','กันยา','ตุลา','พฤศจิกา','ธันวา'];
+  m = s.match(/^(\d{1,2})\s*([ก-๙\.]+)\s*(\d{2,4})$/);
+  if (m) {
+    let [_, d, monStr, y] = m;
+    let mo = thaiMonths.findIndex(t => monStr.startsWith(t)) + 1;
+    if (mo === 0) mo = thaiFull.findIndex(t => monStr.startsWith(t)) + 1;
+    if (mo > 0) {
+      y = +y; if (y > 2500) y -= 543; if (y < 100) y += 2000;
+      return `${y}-${P(mo)}-${P(d)}`;
+    }
+  }
+  // fallback Date.parse
+  const dt = new Date(s);
+  if (!isNaN(dt)) return `${dt.getFullYear()}-${P(dt.getMonth()+1)}-${P(dt.getDate())}`;
+  return s;
+}
+
+function parseStatus(s) {
+  const k = (s||'').toLowerCase().trim();
+  if (!k) return 'planned';
+  if (/plan|วางแผน/.test(k)) return 'planned';
+  if (/progress|กำลัง/.test(k)) return 'in_progress';
+  if (/done|complete|เสร็จ/.test(k)) return 'done';
+  if (/cancel|ยกเลิก/.test(k)) return 'cancelled';
+  return 'planned';
+}
+
+function previewPaste() {
+  const text = $('pasteArea').value;
+  const prev = $('pastePreview');
+  if (!text.trim()) {
+    prev.innerHTML = '';
+    $('pasteConfirmBtn').disabled = true;
+    return;
+  }
+  const rows = parsePasteText(text);
+  // diagnose: detect separator and rows for feedback
+  const firstLine = text.split(/\r?\n/)[0] || '';
+  let sepUsed = 'tab';
+  if (!firstLine.includes('\t')) {
+    if (firstLine.includes(';'))      sepUsed = 'semicolon';
+    else if (firstLine.includes(',')) sepUsed = 'comma';
+    else                              sepUsed = 'space';
+  }
+  if (!rows.length) {
+    prev.innerHTML = `<div class="warn" style="background:#FFFBEB;border:1.5px solid #FDE68A;padding:10px;border-radius:9px;font-size:12px;color:#92400E">
+      ⚠️ ยัง parse ข้อมูลไม่ได้<br>
+      <span style="font-size:11px">ตรวจพบ separator: <b>${sepUsed}</b> · ${text.split(/\r?\n/).filter(l=>l.trim()).length} บรรทัด · บรรทัดแรกแยกได้ ${(sepUsed==='tab'?firstLine.split('\t'):firstLine.split(/[,;]/)).length} คอลัมน์<br>
+      อาจติดที่: <b>ไม่มี Valve No</b> ที่ตำแหน่งคาดหวัง (คอลัมน์ที่ 2) — ลองตรวจลำดับคอลัมน์ใหม่</span>
+    </div>`;
+    $('pasteConfirmBtn').disabled = true;
+    return;
+  }
+  prev.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">
+      ✓ พบ ${rows.length} รายการ <span class="muted" style="font-weight:400;font-size:11px">(separator: ${sepUsed})</span>
+    </div>
+    <div class="tbl-wrap" style="max-height:180px">
+      <table style="font-size:11px">
+        <thead><tr><th>วันที่</th><th>Valve</th><th>Lot</th><th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>${rows.slice(0,12).map(r => `<tr>
+          <td>${escapeHtml(r.plan_date) || '<span style="color:var(--red)">⚠️</span>'}</td>
+          <td><b>${escapeHtml(r.valve_no)}</b></td>
+          <td>${escapeHtml(r.lot)}</td>
+          <td class="center">${nn(r.quantity)}</td>
+          <td>${PLAN_STATUS[r.status]?.label || r.status}</td>
+          <td>${escapeHtml(r.note||'')}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    ${rows.length > 12 ? `<div class="muted mt-8" style="font-size:11px">…และอีก ${rows.length-12} รายการ</div>` : ''}
+  `;
+  $('pasteConfirmBtn').disabled = false;
+  window._pasteRows = rows;
+}
+
+async function confirmPaste() {
+  const rows = window._pasteRows || [];
+  if (!rows.length) return;
+  const plans = rows.map(r => ({
+    ...r,
+    plan_id: planNewId(),
+    created_by: CURRENT_USER?.id || '',
+  }));
+  // 1) push ขึ้น D1 ก่อน (ถ้ามี API) — กัน race condition กับ auto-pull
+  if (API) {
+    try { await api('/api/plans/bulk', { body: { plans } }); }
+    catch (e) { toast('Sync ไม่สำเร็จ — เก็บ Local แล้ว', 'orange'); }
+  }
+  // 2) อัพเดต state local + render
+  state.plans = [...plans, ...state.plans];
+  lsSave(LS.PLANS, state.plans);
+  closeModal();
+  renderPlans();
+  toast(`เพิ่ม ${plans.length} แผน`, 'green');
+}
+
+function resetPlanFilter() {
+  $('planFrom').value = '2020-01-01';
+  $('planTo').value   = '2099-12-31';
+  $('planStatus').value = '';
+  $('planValve').value = '';
+  $('planLot').value = '';
+  renderPlans();
+  toast('ล้าง Filter — ดูแผนทั้งหมด', 'green');
+}
+
+// Ctrl+V บน plan tab → เปิด modal พร้อมเนื้อหา paste ทันที
+document.addEventListener('paste', (ev) => {
+  const activePane = document.querySelector('section.pane.active')?.id;
+  if (activePane !== 'pane-plan') return;
+  if (document.querySelector('#modalBg.open')) return;  // กำลัง paste ใน modal อยู่แล้ว
+  if (ev.target?.tagName === 'INPUT' || ev.target?.tagName === 'TEXTAREA') return;
+  const text = (ev.clipboardData || window.clipboardData).getData('text');
+  if (!text || !text.includes('\t') && !text.includes('\n')) return;
+  ev.preventDefault();
+  openPastePlan();
+  setTimeout(() => {
+    const pa = $('pasteArea');
+    if (pa) { pa.value = text; previewPaste(); }
+  }, 250);
+});
+
+function exportPlans() {
+  const rows = filteredPlans();
+  if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  const data = rows.map(p => ({
+    'วันที่ขาย': p.plan_date,
+    'Valve No': p.valve_no,
+    'Lot': p.lot,
+    'Qty': p.quantity,
+    'สถานะ': PLAN_STATUS[p.status]?.label || p.status,
+    'หมายเหตุ': p.note,
+    'ผู้สร้าง': p.created_by,
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Plans');
+  XLSX.writeFile(wb, `vsm4-plans-${todayISO()}.xlsx`);
+}
+
+/* ============================================================
+   LOCK IN — ใส่รหัสพนักงานเท่านั้น
+   ============================================================ */
+function showLock() {
+  document.getElementById('lockOverlay').classList.remove('hide');
+  document.getElementById('userChip').style.display = 'none';
+  setTimeout(() => document.getElementById('lockInput').focus(), 200);
+}
+function hideLock() {
+  document.getElementById('lockOverlay').classList.add('hide');
+  if (CURRENT_USER) {
+    const c = document.getElementById('userChip');
+    c.style.display = 'inline-flex';
+    document.getElementById('userAv').textContent = (CURRENT_USER.id || '?').slice(0, 2).toUpperCase();
+    document.getElementById('userName').textContent = CURRENT_USER.name || CURRENT_USER.id;
+    // ใส่ค่าใน op-name field
+    const op = document.getElementById('op-name');
+    if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
+  }
+}
+function lockSuggest(ev) {
+  const q = ev.target.value.trim().toLowerCase();
+  const dd = document.getElementById('lockSuggest');
+  document.getElementById('lockErr').textContent = '';
+  if (!q || q.length < 1) { dd.classList.remove('show'); return; }
+  const matches = state.employees
+    .filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q))
+    .slice(0, 8);
+  if (!matches.length) { dd.classList.remove('show'); return; }
+  dd.innerHTML = matches.map((e, i) => `
+    <div class="lock-suggest-item" onmousedown="lockPick('${escapeHtml(e.id)}')">
+      <span class="lock-suggest-id">${escapeHtml(e.id)}</span>
+      <span class="lock-suggest-name">${escapeHtml(e.name||'')}</span>
+    </div>`).join('');
+  dd.classList.add('show');
+}
+function lockPick(id) {
+  document.getElementById('lockInput').value = id;
+  document.getElementById('lockSuggest').classList.remove('show');
+  lockSubmit();
+}
+function lockKey(ev) {
+  if (ev.key === 'Enter') { ev.preventDefault(); lockSubmit(); }
+  if (ev.key === 'Escape') document.getElementById('lockSuggest').classList.remove('show');
+}
+function lockSubmit() {
+  const v = document.getElementById('lockInput').value.trim().toUpperCase();
+  if (!v) { lockFail('กรอกรหัสพนักงาน'); return; }
+  const emp = state.employees.find(e => (e.id||'').toUpperCase() === v);
+  if (!emp) { lockFail('ไม่พบรหัส "' + v + '" ในระบบ'); return; }
+  CURRENT_USER = { id: emp.id, name: emp.name, login_at: new Date().toISOString() };
+  localStorage.setItem(LS_USER, JSON.stringify(CURRENT_USER));
+  OP = `${emp.id} — ${emp.name || ''}`;
+  localStorage.setItem(LS.OP, OP);
+  hideLock();
+  toast(`ยินดีต้อนรับ ${emp.name || emp.id}`, 'green');
+}
+function lockFail(msg) {
+  const inp = document.getElementById('lockInput');
+  document.getElementById('lockErr').textContent = '⚠️ ' + msg;
+  inp.classList.add('shake');
+  setTimeout(() => inp.classList.remove('shake'), 500);
+}
+function lockOut() {
+  if (!confirm('ออกจากระบบ?')) return;
+  CURRENT_USER = null;
+  localStorage.removeItem(LS_USER);
+  document.getElementById('lockInput').value = '';
+  document.getElementById('lockErr').textContent = '';
+  showLock();
+}
+
+/* ============================================================
+   INIT — load master data on app start
+   (Local-first: render ทันทีจาก LocalStorage, แล้วค่อย sync จาก API ถ้าตั้งไว้)
+   ============================================================ */
+async function init() {
+  $('prod-date').value = todayISO();
+  $('todayStr').textContent = new Date().toLocaleDateString('th-TH');
+  $('op-name').value = OP;
+  $('apiUrl').value  = API;
+  $('histTo').value  = todayISO();
+  const d = new Date(); d.setDate(d.getDate() - 30);
+  $('histFrom').value = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+  // Dashboard KPI default = วันนี้
+  if ($('dashFrom')) { $('dashFrom').value = todayISO(); $('dashTo').value = todayISO(); }
+  // Plan filter default = วันนี้ → +60 วัน
+  if ($('planFrom')) {
+    $('planFrom').value = todayISO();
+    const future = new Date(); future.setDate(future.getDate() + 60);
+    $('planTo').value = `${future.getFullYear()}-${P(future.getMonth()+1)}-${P(future.getDate())}`;
+  }
+
+  // Lock In check
+  if (CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id)) hideLock();
+  else showLock();
+
+  // render ทันทีจาก state ปัจจุบัน (LocalStorage หรือ default)
+  setConnBadge('local');
+  renderHome();
+  renderZone();
+  renderSettings();
+
+  // ถ้ามี API URL ก็ลอง sync เพิ่ม (ไม่บล็อก UI)
+  if (API) { reload(); startAutoSync(); }
+}
+
+async function reload() {
+  if (!API) {
+    // re-render จาก LocalStorage
+    setConnBadge('local');
+    renderHome(); renderZone(); renderSettings();
+    toast('ใช้ข้อมูลใน LocalStorage (โหมด Local)', 'green');
+    return;
+  }
+  try {
+    // 1) master data — รวม valve_ids
+    const res = await api('/api/init');
+    state.valves    = res.valves    || state.valves;
+    state.machines  = res.machines  || state.machines;
+    state.employees = res.employees || state.employees;
+    state.targets   = res.targets   || state.targets;
+    state.ids       = res.ids       || state.ids || [];
+    lsSave(LS.VALVES,    state.valves);
+    lsSave(LS.MACHINES,  state.machines);
+    lsSave(LS.EMPLOYEES, state.employees);
+    lsSave(LS.TARGETS,   state.targets);
+    lsSave(LS.IDS,       state.ids);
+
+    // 2) ดึง records 30 วันล่าสุด เพื่อ multi-user view
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    const fromDate = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+    try {
+      const [k, p, pl] = await Promise.all([
+        api(`/api/kpi?from=${fromDate}&to=${todayISO()}&limit=2000`).catch(()=>null),
+        api(`/api/records?from=${fromDate}T00:00:00&to=${todayISO()}&limit=2000`).catch(()=>null),
+        api(`/api/plans?limit=5000`).catch(()=>null),
+      ]);
+      if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
+      if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+      if (pl?.plans)  { state.plans = pl.plans; lsSave(LS.PLANS, state.plans); }
+    } catch (e) {}
+
+    setConnBadge('online');
+    toast('Sync ข้อมูลจาก Cloud สำเร็จ', 'green');
+    renderHome(); renderZone(); renderSettings();
+  } catch (e) {
+    setConnBadge('local');
+    toast('Sync ไม่สำเร็จ — ยังใช้ Local ได้ปกติ', 'orange');
+  }
+}
+
+/* ============================================================
+   HOME / DASHBOARD  (Local-first: คำนวณจาก state ตรง ๆ)
+   ============================================================ */
+function computeLocalStats() {
+  const vMap = {};
+  for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
+
+  // latest record per (valve, lot) — normalize valve_no/valveNo ก่อน
+  const latest = {};
+  for (const r of state.prodRecords) {
+    const vno = (r.valve_no || r.valveNo || '').trim();
+    const k = `${vno}::${r.lot||''}`;
+    if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) {
+      latest[k] = { ...r, valve_no: vno }; // normalize ให้ใช้ valve_no เสมอ
+    }
+  }
+  let totalDone = 0, totalWip = 0;
+  const byCust = {}, byProc = {};
+  for (const r of Object.values(latest)) {
+    const vno  = r.valve_no || '';
+    const cust = vMap[vno]?.customer || 'Other';
+    const procs = vMap[vno]?.procs || [];
+    const last = procs[procs.length-1] || '';
+    const q = +(r.quantity||0);
+    const proc = (r.current_process || r.currentProcess || '').trim();
+    byCust[cust] = byCust[cust] || {done:0, wip:0};
+    if (r.status === 'Completed' || (last && proc === last)) {
+      totalDone += q; byCust[cust].done += q;
+    } else {
+      totalWip += q; byCust[cust].wip += q;
+      if (proc) byProc[proc] = (byProc[proc]||0) + q;
+    }
+  }
+  return { total_done: totalDone, total_wip: totalWip, by_customer: byCust, by_process: byProc };
+}
+
+// Helper: ดึง target ตาม zone (เช่น zoneKey='ZONE1' → zone1) — fallback กลับเป็น flat key
+function tgtOf(zoneKey, field) {
+  const T = state.targets || {};
+  const zk = (zoneKey || '').toString().toLowerCase().replace(/zone/i, 'zone');
+  const specific = T[`${zk}.${field}`];
+  if (specific !== undefined && specific !== null && specific !== '') return Number(specific);
+  return Number(T[field] || 0);
+}
+
+function zoneTargetsObj(zoneKey) {
+  return {
+    oae:   tgtOf(zoneKey, 'oae'),
+    dle:   tgtOf(zoneKey, 'dle'),
+    pplh:  tgtOf(zoneKey, 'pplh'),
+    pdac:  tgtOf(zoneKey, 'pdac'),
+    scrap: tgtOf(zoneKey, 'scrap'),
+  };
+}
+
+function zoneKpiInner(krecs, dark=false, zoneKey='') {
+  if (!krecs.length) return '<div class="zkpi-empty">ยังไม่มีข้อมูลในกะนี้</div>';
+  const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
+  const avg = (k) => krecs.length ? sum(k)/krecs.length : 0;
+  const cls = (v, t, rev=false) => {
+    const r = rev ? +t/Math.max(+v,1e-9) : +v/Math.max(+t,1e-9);
+    return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad';
+  };
+  // ใช้ per-zone target ถ้ามี zoneKey, ไม่งั้น fallback to flat
+  const t = zoneKey ? zoneTargetsObj(zoneKey) : (state.targets || {});
+  const textColor = dark ? 'rgba(255,255,255,.9)' : 'var(--blue-dark)';
+  const boxBg = dark ? 'rgba(255,255,255,.13)' : 'var(--blue-light)';
+  return `<div class="zkpi-grid">
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${cls(avg('oae'), t.oae)}">${pct(avg('oae'))}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${cls(avg('dle'), t.dle)}">${pct(avg('dle'))}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${pct(avg('pdac_val'))}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">SCRAP</div><div class="zkpi-v ${cls(t.scrap, avg('scrap_rate'), true)}">${pct(avg('scrap_rate'))}</div><div class="zkpi-t">≤ ${pct(t.scrap)}</div></div>
+  </div>
+  <div class="row mt-8" style="gap:8px;flex-wrap:wrap;font-size:11px;font-weight:700;color:${textColor}">
+    <span>OPR: <b>${nn(sum('opr'))}</b></span>
+    <span>·</span>
+    <span>SCRAP: <b>${nn(sum('scrap'))}</b></span>
+    <span>·</span>
+    <span>Target: <b>${nn(sum('target'))}</b></span>
+    <span>·</span>
+    <span>${krecs.length} record</span>
+  </div>`;
+}
+
+function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
+  const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
+  const avg = (k) => krecs.length ? sum(k)/krecs.length : 0;
+  const cls = (v, t, rev=false) => {
+    const r = rev ? +t/Math.max(+v,1e-9) : +v/Math.max(+t,1e-9);
+    return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad';
+  };
+  // ใช้ per-zone targets (summary ใช้ zone1 เป็น default หรือ flat ก็ได้)
+  const t = summary ? (state.targets || {}) : zoneTargetsObj(zoneKey);
+  const oae   = avg('oae');
+  const dle   = avg('dle');
+  const pplh  = avg('pplh');
+  const pdac  = avg('pdac_val');
+  const scrap = avg('scrap_rate');
+  const totalOpr = sum('opr');
+  const totalScrap = sum('scrap');
+
+  if (!krecs.length) {
+    return `<div class="zkpi-card ${summary?'summary':''}">
+      <div class="zkpi-h"><span class="zn">${summary?'∑':zoneKey.slice(-1)}</span>${zoneLabel}</div>
+      <div class="zkpi-empty">ยังไม่มีข้อมูล KPI วันนี้</div>
+    </div>`;
+  }
+  return `<div class="zkpi-card ${summary?'summary':''}">
+    <div class="zkpi-h"><span class="zn">${summary?'∑':zoneKey.slice(-1)}</span>${zoneLabel}
+      <span style="margin-left:auto;font-size:11px;font-weight:600;opacity:.7">${krecs.length} record</span>
+    </div>
+    <div class="zkpi-grid">
+      <div class="zkpi-box">
+        <div class="zkpi-l">OAE</div>
+        <div class="zkpi-v ${cls(oae, t.oae)}">${pct(oae)}</div>
+        <div class="zkpi-t">เป้า ${pct(t.oae)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, oae/t.oae*100)}%"></div></div>
+      </div>
+      <div class="zkpi-box">
+        <div class="zkpi-l">DLE</div>
+        <div class="zkpi-v ${cls(dle, t.dle)}">${pct(dle)}</div>
+        <div class="zkpi-t">เป้า ${pct(t.dle)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, dle/t.dle*100)}%"></div></div>
+      </div>
+      <div class="zkpi-box">
+        <div class="zkpi-l">PPLH</div>
+        <div class="zkpi-v ${cls(pplh, t.pplh)}">${nn(pplh)}</div>
+        <div class="zkpi-t">เป้า ${nn(t.pplh)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, pplh/t.pplh*100)}%"></div></div>
+      </div>
+      <div class="zkpi-box">
+        <div class="zkpi-l">PDAC</div>
+        <div class="zkpi-v ${cls(pdac, t.pdac)}">${pct(pdac)}</div>
+        <div class="zkpi-t">เป้า ${pct(t.pdac)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, pdac/t.pdac*100)}%"></div></div>
+      </div>
+      <div class="zkpi-box">
+        <div class="zkpi-l">SCRAP</div>
+        <div class="zkpi-v ${cls(t.scrap, scrap, true)}">${pct(scrap)}</div>
+        <div class="zkpi-t">≤ ${pct(t.scrap)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, t.scrap/Math.max(scrap,1e-9)*100)}%"></div></div>
+      </div>
+    </div>
+    <div class="row mt-8" style="gap:8px;flex-wrap:wrap;font-size:11px;font-weight:700;color:${summary?'rgba(255,255,255,.9)':'var(--blue-dark)'}">
+      <span>OPR รวม: <b>${nn(totalOpr)}</b> ชิ้น</span>
+      <span>·</span>
+      <span>SCRAP รวม: <b>${nn(totalScrap)}</b> ชิ้น</span>
+      <span>·</span>
+      <span>ขั้น Target: <b>${nn(sum('target'))}</b></span>
+    </div>
+  </div>`;
+}
+
+function setShiftFilter(s) {
+  state.shiftFilter = s;
+  document.querySelectorAll('.shift-tab').forEach(b => {
+    const active = b.dataset.shift === s;
+    b.classList.toggle('active', active);
+    b.classList.toggle('btn-blue', active && s === 'all');
+    b.classList.toggle('btn-outline', !active);
+  });
+  renderHome();
+}
+
+/* ============================================================
+   ZONE DRILLDOWN — กดดูแยกเครื่อง
+   ============================================================ */
+async function showZoneDetail(zone) {
+  const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
+  const dFrom = $('dashFrom')?.value || todayISO();
+  const dTo   = $('dashTo')?.value   || todayISO();
+  const shiftF = state.shiftFilter || 'all';
+
+  // ดึง records ของ zone นี้ในช่วงที่เลือก
+  let records = state.kpiRecords.filter(r => {
+    if (r.zone !== zone) return false;
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    if (d < dFrom || d > dTo) return false;
+    if (shiftF !== 'all' && r.shift_type !== shiftF) return false;
+    return true;
+  });
+  if (API) {
+    try {
+      const params = new URLSearchParams({ from: dFrom, to: dTo, zone });
+      if (shiftF !== 'all') params.set('shift', shiftF);
+      const r = await api('/api/kpi?' + params).catch(()=>null);
+      if (r?.records) records = r.records;
+    } catch (e) {}
+  }
+
+  // group ตามเครื่องจักร
+  const byMc = {};
+  for (const r of records) {
+    const mc = r.machine_id || '(unknown)';
+    byMc[mc] = byMc[mc] || [];
+    byMc[mc].push(r);
+  }
+
+  const mcList = state.machines[zone] || [];
+  const shiftLabel = shiftF === 'day' ? '☀️ กลางวัน' : shiftF === 'night' ? '🌙 กลางคืน' : '🔄 รวมทุกกะ';
+
+  const mcCards = mcList.map(mc => {
+    const recs = byMc[mc.id] || [];
+    return zoneMachineCard(mc, recs);
+  }).join('');
+
+  // เครื่องที่ไม่อยู่ใน master แต่มี record
+  const orphanMc = Object.keys(byMc).filter(id => !mcList.find(m => m.id === id));
+  const orphanCards = orphanMc.map(id => zoneMachineCard({id, target:0, man_std:0}, byMc[id])).join('');
+
+  openModal(
+    `${zone === 'ZONE1' ? '🅰️' : zone === 'ZONE2' ? '🅱️' : '🅲'} Zone ${zone.slice(-1)} — ${zoneLabels[zone]}`,
+    `<div class="muted mb-8" style="font-size:12px">${shiftLabel} · ${dFrom === dTo ? dFrom : `${dFrom} → ${dTo}`}</div>
+    <div class="muted mb-8" style="font-size:11px">${mcList.length} เครื่อง · ${records.length} record</div>
+    ${zoneKpiCard(zone, `📊 สรุปรวมของ Zone นี้`, records, true)}
+    <div style="font-size:13px;font-weight:800;color:var(--blue-dark);margin:14px 0 8px">🏭 รายเครื่องจักร</div>
+    ${mcCards || '<div class="muted center" style="padding:20px">ยังไม่มีเครื่องจักรในโซนนี้</div>'}
+    ${orphanCards}
+    `
+  );
+}
+
+function zoneMachineCard(mc, records) {
+  const sum = (k) => records.reduce((s,r)=>s + (Number(r[k])||0), 0);
+  const avg = (k) => records.length ? sum(k)/records.length : 0;
+  const t = state.targets;
+  const cls = (v, tt, rev=false) => {
+    const r = rev ? +tt/Math.max(+v,1e-9) : +v/Math.max(+tt,1e-9);
+    return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad';
+  };
+  if (!records.length) {
+    return `<div class="zkpi-card" style="border-style:dashed;opacity:.6">
+      <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
+        <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">Target ${nn(mc.target)} · Man_STD ${mc.man_std}</span>
+      </div>
+      <div class="zkpi-empty">ยังไม่มีข้อมูล KPI ในช่วงนี้</div>
+    </div>`;
+  }
+  return `<div class="zkpi-card">
+    <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
+      <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">${records.length} record</span>
+    </div>
+    <div class="zkpi-grid">
+      <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${cls(avg('oae'), t.oae)}">${pct(avg('oae'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${cls(avg('dle'), t.dle)}">${pct(avg('dle'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${avg('pdac_val')>=t.pdac?'✓':'✗'}</div></div>
+    </div>
+    <div class="row mt-8" style="gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted)">
+      <span>Scrap: <b style="color:var(--orange)">${nn(sum('scrap'))}</b></span>
+      <span>·</span>
+      <span>Target: <b>${nn(sum('target'))}</b></span>
+      <span>·</span>
+      <span>WT: <b>${avg('wt').toFixed(2)}</b> ชม.</span>
+    </div>
+    <div style="margin-top:8px">
+      <details>
+        <summary style="cursor:pointer;font-size:11px;color:var(--blue);font-weight:700">▶ ดูรายการ ${records.length} record</summary>
+        <div style="margin-top:6px;max-height:200px;overflow-y:auto">
+          ${records.map(r => `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:11px;display:flex;flex-wrap:wrap;gap:6px">
+            <span style="font-weight:800;color:var(--blue)">${escapeHtml(r.shift_date||r.record_date||'-')}</span>
+            <span class="tag ${r.shift_type==='day'?'tag-orange':'tag-blue'}">${r.shift_type==='day'?'☀️':'🌙'}</span>
+            <span>OPR <b>${nn(r.opr)}</b></span>
+            ${r.valve_no?`<span class="tag tag-green">${escapeHtml(r.valve_no)}${r.lot?` · L${escapeHtml(r.lot)}`:''}${r.last_process?` · ${escapeHtml(r.last_process)}`:''}</span>`:''}
+            <span style="margin-left:auto;color:var(--muted)">${escapeHtml(r.operator||'')}</span>
+          </div>`).join('')}
+        </div>
+      </details>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   AUTO-REFRESH — pull latest data from D1 every 30s if API set
+   ============================================================ */
+let autoSyncTimer = null;
+function startAutoSync() {
+  if (autoSyncTimer) clearInterval(autoSyncTimer);
+  if (!API) return;
+  autoSyncTimer = setInterval(async () => {
+    if (document.hidden) return;
+    const activePane = document.querySelector('section.pane.active')?.id;
+    try {
+      if (activePane === 'pane-home' || activePane === 'pane-prod') {
+        // refetch records to show others' updates
+        const today = todayISO();
+        const dFrom = $('dashFrom')?.value || today;
+        const dTo   = $('dashTo')?.value   || today;
+        const [k, p] = await Promise.all([
+          api(`/api/kpi?from=${dFrom}&to=${dTo}`).catch(()=>null),
+          api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
+        ]);
+        if (k?.records) state.kpiRecords  = mergeRecords(state.kpiRecords,  k.records, 'record_id');
+        if (p?.records) state.prodRecords = mergeRecords(state.prodRecords, p.records, 'recordId');
+        lsSave(LS.KPI,      state.kpiRecords);
+        lsSave(LS.PROD_REC, state.prodRecords);
+        if (activePane === 'pane-home') renderHome();
+        if (activePane === 'pane-prod') renderHome();
+      } else if (activePane === 'pane-history') {
+        loadHistory();
+      } else if (activePane === 'pane-plan') {
+        pullPlans();
+      }
+    } catch (e) {}
+  }, 30000);
+}
+function mergeRecords(local, remote, idKey) {
+  const ids = new Set(remote.map(r => r[idKey] || r.record_id));
+  const remaining = local.filter(r => !ids.has(r[idKey] || r.record_id));
+  return [...remote, ...remaining];
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && API) {
+    const activePane = document.querySelector('section.pane.active')?.id;
+    if (activePane === 'pane-home' || activePane === 'pane-prod') renderHome();
+    if (activePane === 'pane-history') loadHistory();
+  }
+});
+
+async function renderHome() {
+  // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
+  const today = todayISO();
+  const dFrom = $('dashFrom')?.value || today;
+  const dTo   = $('dashTo')?.value   || today;
+  const shiftF = state.shiftFilter || 'all';
+
+  // KPI records ในช่วงที่เลือก + shift filter
+  let kpiInRange = state.kpiRecords.filter(r => {
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    if (d < dFrom || d > dTo) return false;
+    if (shiftF !== 'all' && r.shift_type !== shiftF) return false;
+    return true;
+  });
+
+  // ถ้ามี API ลอง refresh ทับ
+  if (API) {
+    try {
+      const params = new URLSearchParams({ from: dFrom, to: dTo });
+      if (shiftF !== 'all') params.set('shift', shiftF);
+      const k = await api('/api/kpi?' + params).catch(()=>null);
+      if (k?.records) kpiInRange = k.records;
+    } catch (e) {}
+  }
+
+  // ภาพรวมวันนี้ (ติดตามงาน) — local
+  const stats = computeLocalStats();
+  const todayProds = state.prodRecords.filter(r => (r.timestamp||'').slice(0,10) === today);
+  const todayKpis  = state.kpiRecords.filter(r => (r.shift_date||r.record_date||'').slice(0,10) === today);
+  let prodRes = { records: todayProds };
+  let kpiRes  = { records: todayKpis };
+  let statsRes = stats;
+  if (API) {
+    try {
+      const [p, k, s] = await Promise.all([
+        api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
+        api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
+        api(`/api/stats`).catch(()=>null),
+      ]);
+      if (p) prodRes = p;
+      if (k) kpiRes  = k;
+      // Smart merge: ใช้ API เฉพาะ field ที่มีข้อมูล ไม่ทับ local ทั้งดุ้น
+      if (s) statsRes = {
+        total_done:  (s.total_done  != null) ? s.total_done  : stats.total_done,
+        total_wip:   (s.total_wip   != null) ? s.total_wip   : stats.total_wip,
+        by_customer: Object.keys(s.by_customer||{}).length ? s.by_customer : stats.by_customer,
+        by_process:  Object.keys(s.by_process||{}).length  ? s.by_process  : stats.by_process,
+      };
+    } catch (e) {}
+  }
+
+  // ========== Dashboard KPI per-zone (ใช้ kpiInRange + shift filter) ==========
+  const shiftLabel = shiftF === 'day' ? '☀️ กะกลางวัน' : shiftF === 'night' ? '🌙 กะกลางคืน' : '🔄 รวมทุกกะ';
+  const dateLabel = dFrom === dTo ? dFrom : `${dFrom} → ${dTo}`;
+
+  if ($('kpiSummary')) {
+    if (shiftF === 'all') {
+      // โหมดรวม — โชว์ summary + day/night แยกเป็น 2 แถว stack vertical
+      const dayRecs = kpiInRange.filter(r => r.shift_type === 'day');
+      const nightRecs = kpiInRange.filter(r => r.shift_type === 'night');
+      $('kpiSummary').innerHTML =
+        zoneKpiCard('ALL', `รวมทุก Zone · ${shiftLabel} · ${dateLabel}`, kpiInRange, true) +
+        `<div style="margin-bottom:6px"><div class="zkpi-card" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-color:#F59E0B">
+          <div class="zkpi-h" style="color:#78350F"><span class="zn" style="background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#78350F">☀️</span>เฉพาะกะกลางวัน</div>
+          ${zoneKpiInner(dayRecs)}
+        </div></div>` +
+        `<div style="margin-bottom:10px"><div class="zkpi-card" style="background:linear-gradient(135deg,#312E81,#4338CA);border-color:#312E81;color:#fff">
+          <div class="zkpi-h" style="color:#fff"><span class="zn" style="background:rgba(255,255,255,.25);color:#fff">🌙</span>เฉพาะกะกลางคืน</div>
+          ${zoneKpiInner(nightRecs, true)}
+        </div></div>`;
+    } else {
+      $('kpiSummary').innerHTML = zoneKpiCard('ALL', `รวมทุก Zone · ${shiftLabel} · ${dateLabel}`, kpiInRange, true);
+    }
+  }
+  if ($('kpiPerZone')) {
+    const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
+    $('kpiPerZone').innerHTML = ['ZONE1','ZONE2','ZONE3'].map(z => {
+      const card = zoneKpiCard(z, `Zone ${z.slice(-1)} — ${zoneLabels[z]}`, kpiInRange.filter(r => r.zone === z));
+      // wrap in clickable container
+      return `<div style="cursor:pointer;transition:transform .12s" onclick="showZoneDetail('${z}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">${card}<div style="text-align:right;font-size:11px;color:var(--blue);font-weight:700;margin:-4px 4px 8px;letter-spacing:.3px">กดเพื่อดูรายละเอียดแต่ละเครื่อง →</div></div>`;
+    }).join('');
+  }
+
+  try {
+    if ($('hProdToday')) $('hProdToday').textContent = prodRes.records.length;
+    if ($('hKpiToday'))  $('hKpiToday').textContent  = kpiRes.records.length;
+    if ($('hCompleted')) $('hCompleted').textContent = nn(statsRes.total_done);
+    if ($('hWip'))       $('hWip').textContent       = nn(statsRes.total_wip);
+
+    // Customer table (อยู่ในแท็บติดตามงาน)
+    const custTable = $('custTable');
+    if (custTable) {
+      const custBody = custTable.querySelector('tbody');
+      const cust = statsRes.by_customer || {};
+      custBody.innerHTML = Object.keys(cust).length
+        ? Object.entries(cust).map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v.wip)}</span></td><td class="center"><span class="tag tag-green">${nn(v.done)}</span></td><td class="center"><b>${nn(v.wip+v.done)}</b></td></tr>`).join('')
+        : '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
+    }
+    // Process table
+    const procTable = $('procTable');
+    if (procTable) {
+      const procBody = procTable.querySelector('tbody');
+      const procs = statsRes.by_process || {};
+      procBody.innerHTML = Object.keys(procs).length
+        ? Object.entries(procs).map(([p, q]) => `<tr><td><span class="tag tag-blue">${escapeHtml(p)}</span></td><td class="center"><b>${nn(q)}</b></td><td class="center"><a href="javascript:" onclick="filterByProcess('${escapeHtml(p)}')">→ ดู</a></td></tr>`).join('')
+        : '<tr><td colspan="3" class="center muted">ไม่มีงาน WIP</td></tr>';
+    }
+  } catch (e) {
+    toast('โหลด dashboard ไม่สำเร็จ', 'red');
+  }
+}
+
+/* ============================================================
+   COMPLETED DETAIL — popup รายการผลิตเสร็จ + filter
+   ============================================================ */
+let completedFilter = { from:'', to:'', valve:'', customer:'' };
+function showCompletedDetail() {
+  // เริ่ม default จาก 30 วันที่ผ่านมา → วันนี้
+  if (!completedFilter.from) {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    completedFilter.from = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+    completedFilter.to = todayISO();
+  }
+  openModal('📋 รายการผลิตเสร็จ', `
+    <div class="fg-auto mb-8">
+      <div class="fr" style="margin:0"><label>วันที่ผลิตจบ ตั้งแต่</label><input type="date" id="cfFrom" value="${completedFilter.from}" oninput="completedFilter.from=this.value;renderCompletedList()"></div>
+      <div class="fr" style="margin:0"><label>ถึง</label><input type="date" id="cfTo" value="${completedFilter.to}" oninput="completedFilter.to=this.value;renderCompletedList()"></div>
+      <div class="fr" style="margin:0"><label>Valve No</label><input type="search" id="cfValve" value="${escapeHtml(completedFilter.valve)}" placeholder="กรอกค้น" oninput="completedFilter.valve=this.value;renderCompletedList()"></div>
+      <div class="fr" style="margin:0"><label>ลูกค้า</label>
+        <select id="cfCust" oninput="completedFilter.customer=this.value;renderCompletedList()">
+          <option value="">ทั้งหมด</option>
+          <option ${completedFilter.customer==='MSI'?'selected':''}>MSI</option>
+          <option ${completedFilter.customer==='SWE'?'selected':''}>SWE</option>
+          <option ${completedFilter.customer==='OES&OEM'?'selected':''}>OES&OEM</option>
+          <option ${completedFilter.customer==='Other'?'selected':''}>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="row mb-8" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
+      <div class="muted" style="font-size:12px"><span id="cfCount">0</span> รายการ · รวม <b id="cfSum">0</b> ชิ้น</div>
+      <button class="btn btn-outline btn-sm" onclick="exportCompleted()">⬇️ Export</button>
+    </div>
+    <div class="tbl-wrap"><table id="cfTable"><thead><tr><th>วันที่ผลิตจบ</th><th>Valve</th><th>ลูกค้า</th><th>Lot</th><th class="center">Qty</th><th>Process สุดท้าย</th><th>Operator</th></tr></thead><tbody></tbody></table></div>
+  `);
+  renderCompletedList();
+}
+
+function getCompletedRecords() {
+  const vMap = {};
+  for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
+  // latest per (valve, lot)
+  const latest = {};
+  for (const r of state.prodRecords) {
+    const k = `${r.valve_no}::${r.lot||''}`;
+    if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) latest[k] = r;
+  }
+  // เฉพาะที่ done = process สุดท้าย หรือ status=Completed
+  return Object.values(latest).filter(r => {
+    const procs = vMap[r.valve_no]?.procs || [];
+    const last = procs[procs.length-1] || '';
+    return r.status === 'Completed' || (last && r.current_process === last);
+  }).map(r => ({
+    ...r,
+    _customer: vMap[r.valve_no]?.customer || 'Other',
+    _date: (r.timestamp || '').slice(0,10),
+  }));
+}
+
+function renderCompletedList() {
+  const all = getCompletedRecords();
+  const f = completedFilter;
+  const filt = all.filter(r => {
+    if (f.from && r._date < f.from) return false;
+    if (f.to   && r._date > f.to)   return false;
+    if (f.valve && !(r.valve_no||'').toLowerCase().includes(f.valve.toLowerCase())) return false;
+    if (f.customer && r._customer !== f.customer) return false;
+    return true;
+  }).sort((a,b) => String(b.timestamp||'').localeCompare(String(a.timestamp||'')));
+  const tb = $('cfTable')?.querySelector('tbody');
+  if (!tb) return;
+  tb.innerHTML = filt.length ? filt.map(r => `
+    <tr>
+      <td>${new Date(r.timestamp).toLocaleString('th-TH', {dateStyle:'short', timeStyle:'short'})}</td>
+      <td><b>${escapeHtml(r.valve_no)}</b></td>
+      <td><span class="tag tag-blue">${escapeHtml(r._customer)}</span></td>
+      <td>${escapeHtml(r.lot||'-')}</td>
+      <td class="center"><b>${nn(r.quantity)}</b></td>
+      <td><span class="tag tag-green">${escapeHtml(r.current_process||'-')}</span></td>
+      <td>${escapeHtml(r.operator||'-')}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="7" class="center muted">ไม่มีข้อมูล</td></tr>';
+  $('cfCount').textContent = filt.length;
+  $('cfSum').textContent   = nn(filt.reduce((s, r) => s + (+r.quantity || 0), 0));
+  window._completedFiltered = filt;
+}
+
+function exportCompleted() {
+  const list = window._completedFiltered || [];
+  if (!list.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  const data = list.map(r => ({
+    'วันที่ผลิตจบ': new Date(r.timestamp).toLocaleString('th-TH'),
+    'Valve No': r.valve_no,
+    'ลูกค้า': r._customer,
+    'Lot': r.lot,
+    'Qty': r.quantity,
+    'Process สุดท้าย': r.current_process,
+    'Operator': r.operator,
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Completed');
+  XLSX.writeFile(wb, `vsm4-completed-${todayISO()}.xlsx`);
+}
+
+/* ============================================================
+   KPI ENTRY
+   ============================================================ */
+function timeOpts(sel = '') {
+  let o = '<option value="">-- เวลา --</option>';
+  for (let h = 6; h <= 22; h++) for (let m = 0; m < 60; m += 30) { const t = `${P(h)}:${P(m)}`; o += `<option value="${t}"${t===sel?' selected':''}>${t}</option>`; }
+  ['23:00','23:30','00:00','00:30','01:00','01:30','02:00','02:30','03:00','03:30','04:00','04:30','05:00','05:30'].forEach(t => o += `<option value="${t}"${t===sel?' selected':''}>${t}</option>`);
+  return o;
+}
+
+function calcWT(s, e) {
+  if (!s || !e) return { hr: 0, wt: 0 };
+  const tm = (t) => { const [h, m] = t.split(':').map(Number); return h*60 + m; };
+  let sm = tm(s), em = tm(e);
+  if (em < sm) em += 24*60;
+  if (em <= sm) return { hr: 0, wt: 0 };
+  const hr = (em - sm) / 60;
+  let ded = 0;
+  if (sm < 780 && em > 720) ded = (Math.min(em, 780) - Math.max(sm, 720)) / 60; // lunch 12:00-13:00
+  return { hr, wt: Math.max(hr - ded, 0) };
+}
+
+function renderZone() {
+  const zone = state.zone;
+  const machines = state.machines[zone] || [];
+  const cont = $('zone-machines');
+  cont.innerHTML = machines.length ? machines.map((m, mi) => mcHtml(zone, mi, m)).join('')
+    : '<div class="card center muted">ยังไม่มีเครื่องจักรในโซนนี้ — ไปที่ ⚙️ ตั้งค่า → เครื่องจักร เพื่อเพิ่ม</div>';
+}
+
+function mcHtml(zone, mi, m) {
+  const pid = `${zone}_${mi}`;
+  return `<div class="mc" id="${pid}">
+    <div class="mc-hd">
+      <div>
+        <span class="mc-id">${escapeHtml(m.id)}</span>
+        <div class="mc-std">Target: ${nn(m.target)} | Man_STD: ${m.man_std}</div>
+      </div>
+      <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
+    </div>
+    <div class="mc-body" id="${pid}_body">${shiftHtml(zone, mi, 0, m)}<button class="shift-add" onclick="addShift('${zone}',${mi})">➕ เพิ่มช่วงเวลา</button></div>
+    <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
+  </div>`;
+}
+
+function shiftHtml(zone, mi, si, m) {
+  const sid = `${zone}_${mi}_s${si}`;
+  const label = si === 0 ? 'ช่วง 1 (หลัก)' : `ช่วง ${si+1}`;
+  return `<div class="shift" id="${sid}_block">
+    <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShift('${zone}',${mi},${si})">✕ ลบ</button>`:''}</div>
+    <div class="fg">
+      <div class="fr" style="margin:0"><label>OPR (ชิ้น) *</label><input type="number" id="${sid}_opr" min="0" placeholder="0" oninput="updShiftTotal('${zone}',${mi})"></div>
+      <div class="fr" style="margin:0"><label>Scrap (ชิ้น)</label><input type="number" id="${sid}_sc" min="0" placeholder="0"></div>
+      <div class="fr" style="margin:0"><label>Target</label><input type="number" id="${sid}_tgt" min="0" placeholder="${m.target||'0'}"></div>
+      <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0"></div>
+    </div>
+    <div class="fr" style="margin-top:6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
+      <div class="time-row"><select id="${sid}_ts" onchange="updWT('${zone}',${mi},${si});updShiftDetect()">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onchange="updWT('${zone}',${mi},${si})">${timeOpts()}</select></div>
+      <div id="${sid}_wt" class="muted" style="font-size:11px;margin-top:3px"></div>
+    </div>
+    <div class="fr ac" style="margin:0"><label>👤 พนักงาน (พิมพ์ค้น)</label>
+      <input type="text" id="${sid}_emp" placeholder="ค้นรหัส/ชื่อ" oninput="acEmpSearch(event,'${sid}_emp')" autocomplete="off">
+      <div class="ac-dd" id="${sid}_emp_dd"></div>
+    </div>
+    <div class="fr" style="margin-top:6px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
+        <div style="font-size:10px;font-weight:800;color:var(--blue)">🧩 ข้อมูลงานที่ผลิต (link → Production Tracker)</div>
+        <button type="button" class="scan-btn" onclick="openScanner('${sid}')"><span class="ico">📷</span>สแกนบาร์โค้ด</button>
+      </div>
+      <div class="fg">
+        <div class="fr ac" style="margin:0"><label>Valve No</label>
+          <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" autocomplete="off">
+          <div class="ac-dd" id="${sid}_v_dd"></div>
+        </div>
+        <div class="fr" style="margin:0"><label>Lot</label><input type="text" id="${sid}_lot" placeholder="L1"></div>
+      </div>
+      <div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
+        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
+        <div class="ac-dd" id="${sid}_p_dd"></div>
+      </div>
+    </div>
+    <div class="shift-total" id="${sid}_total">OPR: 0 · WT: 0 ชม.</div>
+  </div>`;
+}
+
+let zoneShiftCount = { ZONE1:{}, ZONE2:{}, ZONE3:{} };
+
+function toggleMc(pid) {
+  const on   = $(pid + '_on').checked;
+  $(pid + '_body').classList.toggle('show', on);
+  $(pid + '_off').style.display = on ? 'none' : 'block';
+}
+function addShift(zone, mi) {
+  const cnt = (zoneShiftCount[zone][mi] || 0) + 1;
+  if (cnt >= 4) { toast('สูงสุด 4 ช่วงต่อเครื่อง', 'orange'); return; }
+  zoneShiftCount[zone][mi] = cnt;
+  const m = state.machines[zone][mi];
+  const html = shiftHtml(zone, mi, cnt, m);
+  const body = $(`${zone}_${mi}_body`);
+  body.insertBefore(document.createRange().createContextualFragment(html), body.querySelector('.shift-add'));
+}
+function delShift(zone, mi, si) {
+  $(`${zone}_${mi}_s${si}_block`)?.remove();
+}
+function updWT(zone, mi, si) {
+  const sid = `${zone}_${mi}_s${si}`;
+  const s = $(sid + '_ts').value, e = $(sid + '_te').value;
+  const { hr, wt } = calcWT(s, e);
+  $(sid + '_wt').textContent = (hr ? `ชั่วโมงทำงาน: ${hr.toFixed(2)} ชม. — WT (หักพักเที่ยง): ${wt.toFixed(2)} ชม.` : '');
+  updShiftTotal(zone, mi);
+}
+function updShiftTotal(zone, mi) {
+  // sum opr + wt of all shifts in this machine
+  const body = $(`${zone}_${mi}_body`);
+  let totalOpr = 0, totalWT = 0, si = 0;
+  body.querySelectorAll('.shift').forEach(sb => {
+    const sid = sb.id.replace('_block', '');
+    totalOpr += +($(sid+'_opr')?.value || 0);
+    const wt = calcWT($(sid+'_ts')?.value, $(sid+'_te')?.value).wt;
+    totalWT += wt;
+    $(sid + '_total').textContent = `OPR: ${nn($(sid+'_opr')?.value||0)} · WT: ${wt.toFixed(2)} ชม.`;
+  });
+}
+function updShiftDetect() {
+  const prod = $('prod-date').value || todayISO();
+  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+    const machines = state.machines[z] || [];
+    for (let mi = 0; mi < machines.length; mi++) {
+      const on = $(`${z}_${mi}_on`);
+      if (!on?.checked) continue;
+      const ts = $(`${z}_${mi}_s0_ts`)?.value;
+      if (ts) {
+        const [h,m] = ts.split(':').map(Number);
+        const mins = h*60 + (m||0);
+        let st = '', sd = prod;
+        if (mins >= 480 && mins < 1200) st = 'day';
+        else if (mins >= 1200) st = 'night';
+        else { st = 'night'; const d = new Date(prod+'T12:00:00'); d.setDate(d.getDate()-1); sd = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`; }
+        $('shift-detect').value = `${st === 'day' ? '☀️ กะกลางวัน' : '🌙 กะกลางคืน'} (${sd})`;
+        return;
+      }
+    }
+  }
+  $('shift-detect').value = '— กรอกเวลาก่อน —';
+}
+
+async function saveKpi() {
+  OP = $('op-name').value.trim();
+  if (!OP) { toast('กรุณากรอกชื่อผู้บันทึก', 'orange'); return; }
+  localStorage.setItem(LS.OP, OP);
+
+  const prodDate = $('prod-date').value;
+  if (!prodDate) { toast('เลือกวันที่', 'orange'); return; }
+
+  const records = [];
+  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+    const machines = state.machines[z] || [];
+    for (let mi = 0; mi < machines.length; mi++) {
+      const on = $(`${z}_${mi}_on`);
+      if (!on?.checked) continue;
+      const m = machines[mi];
+      const body = $(`${z}_${mi}_body`);
+      const shifts = [];
+      let mainShiftType = '', shiftDate = prodDate;
+      body.querySelectorAll('.shift').forEach((sb, si) => {
+        const sid = sb.id.replace('_block', '');
+        const opr = +($(sid+'_opr')?.value || 0);
+        const scrap = +($(sid+'_sc')?.value || 0);
+        const target = +($(sid+'_tgt')?.value || m.target || 0);
+        const ct = +($(sid+'_ct')?.value || 0);
+        const ts = $(sid+'_ts')?.value || '';
+        const te = $(sid+'_te')?.value || '';
+        const emp = $(sid+'_emp')?.value || '';
+        const valve = $(sid+'_v')?.value || '';
+        const lot = $(sid+'_lot')?.value || '';
+        const proc = $(sid+'_p')?.value || '';
+        const { wt } = calcWT(ts, te);
+        if (!opr && !scrap) return;
+        if (si === 0 && ts) {
+          const [h,mm] = ts.split(':').map(Number);
+          const mins = h*60 + (mm||0);
+          if (mins >= 480 && mins < 1200) { mainShiftType = 'day'; shiftDate = prodDate; }
+          else if (mins >= 1200) { mainShiftType = 'night'; shiftDate = prodDate; }
+          else { mainShiftType = 'night'; const d = new Date(prodDate+'T12:00:00'); d.setDate(d.getDate()-1); shiftDate = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`; }
+        }
+        shifts.push({ si, opr, scrap, target, ct, ts, te, wt, emp, valve, lot, proc });
+      });
+      if (!shifts.length) continue;
+      const tOpr   = shifts.reduce((s,x)=>s+x.opr, 0);
+      const tScrap = shifts.reduce((s,x)=>s+x.scrap, 0);
+      const tTarget= shifts.reduce((s,x)=>s+x.target, 0);
+      const tWT    = shifts.reduce((s,x)=>s+x.wt, 0);
+      const avgCT  = shifts.filter(x=>x.ct).reduce((s,x,_,a)=>s+x.ct/a.length, 0);
+      const manUsed = m.man_std; // simplification: assume 1 operator per shift
+      const cap = manUsed * tWT * 3600;
+      const oae   = tTarget ? tOpr/tTarget : 0;
+      const dle   = cap ? (tOpr * avgCT * m.man_std) / cap : 0;
+      const pplh  = tWT ? tOpr/tWT : 0;
+      const oprPdac = tTarget * 0.85;
+      const pdac  = oprPdac ? tOpr/oprPdac : 0;
+      const scrapRate = (tOpr+tScrap) ? tScrap/(tOpr+tScrap) : 0;
+      const pdacPass = pdac >= 0.9 ? 'PASS' : 'FAIL';
+      // pick valve/lot/proc from first non-empty shift
+      const meta = shifts.find(s => s.valve || s.lot || s.proc) || {};
+      records.push({
+        record_date: prodDate, shift_date: shiftDate, shift_type: mainShiftType,
+        zone: z, zone_label: ZONE_LABEL[z], machine_id: m.id,
+        emp_id: shifts[0]?.emp || '', emp_name: shifts[0]?.emp || '',
+        shift_ids: shifts.map(s=>s.emp).join(','),
+        shifts: shifts,
+        opr: tOpr, target: tTarget, scrap: tScrap, ct: avgCT, wt: tWT,
+        man_std: m.man_std, man_used: manUsed,
+        oae, dle, pplh, pdac_val: pdac, pdac_pass: pdacPass, scrap_rate: scrapRate, opr_pdac: oprPdac,
+        operator: OP, shift_detail: shifts.map(s=>`${s.ts}-${s.te}:OPR=${s.opr}`).join('|'),
+        valve_no: meta.valve || '', lot: meta.lot || '', last_process: meta.proc || '',
+      });
+    }
+  }
+
+  if (!records.length) { toast('ไม่มีข้อมูลให้บันทึก — เปิดเครื่องและกรอก OPR ก่อน', 'orange'); return; }
+
+  // ใส่ record_id + saved_at ให้ทุกแถวก่อนเก็บ
+  const now = new Date().toISOString();
+  records.forEach((r, i) => {
+    r.record_id = `K-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2,6)}`;
+    r.saved_at  = now;
+  });
+
+  // สร้าง production records ที่ link จาก KPI (ถ้ามี valve+lot)
+  const prodRecs = records.filter(r => r.valve_no && r.lot).map(r => ({
+    record_id:       'R-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    timestamp:       now,
+    valve_no:        r.valve_no,
+    lot:             r.lot,
+    quantity:        r.opr,
+    current_process: r.last_process,
+    status:          'In Progress',
+    operator:        r.operator,
+    note:            `auto-linked KPI ${r.zone}/${r.machine_id}`,
+  }));
+
+  // 1) เก็บลง LocalStorage ทันที (เร็ว, ใช้งานต่อได้แม้ offline)
+  state.kpiRecords = [...records, ...state.kpiRecords];
+  state.prodRecords = [...prodRecs, ...state.prodRecords];
+  lsSave(LS.KPI,      state.kpiRecords);
+  lsSave(LS.PROD_REC, state.prodRecords);
+  toast(`บันทึก KPI ${records.length} record + Production ${prodRecs.length}`, 'green');
+
+  // 2) reset form
+  $$('.mc').forEach(mc => { const cb = mc.querySelector('input[type=checkbox]'); if (cb) cb.checked = false; toggleMc(mc.id); });
+
+  // 3) ฟังก์ชัน 3: หลังบันทึกสำเร็จ → ไปหน้า Dashboard อัตโนมัติ
+  setTimeout(() => setPane('home'), 900);
+
+  // 3) ถ้ามี API ลอง sync ไป D1 (background)
+  if (API) {
+    try {
+      await api('/api/kpi', { body: { records } });
+      if (prodRecs.length) await api('/api/records/bulk', { body: { records: prodRecs } });
+      toast('Sync ไป Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('Sync ไม่สำเร็จ — ข้อมูลเก็บใน Local แล้ว', 'orange');
+    }
+  }
+}
+
+/* ============================================================
+   AUTOCOMPLETE — valve / employee / process
+   ============================================================ */
+function acDropdown(inputId, items, onPick) {
+  const dd = $(inputId + '_dd');
+  if (!items.length) { dd.classList.remove('open'); return; }
+  dd.innerHTML = items.slice(0, 12).map((it, i) =>
+    `<div class="ac-item" onclick="(${onPick.toString()})(${JSON.stringify(it).replace(/"/g,'&quot;')},'${inputId}')">
+      <span class="ac-id">${escapeHtml(it.id || it.valveNo || it.proc || '')}</span>
+      <span class="ac-nm">${escapeHtml(it.name || it.description || it.label || '')}</span>
+    </div>`).join('');
+  dd.classList.add('open');
+}
+function acClose(id) { setTimeout(() => $(id + '_dd')?.classList.remove('open'), 200); }
+
+function acEmpSearch(ev, id) {
+  const q = ev.target.value.trim().toLowerCase();
+  if (!q) { $(id + '_dd').classList.remove('open'); return; }
+  const list = state.employees.filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q)).slice(0, 12);
+  acDropdown(id, list, function pickEmp(it, inputId) {
+    document.getElementById(inputId).value = `${it.id} — ${it.name}`;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+  });
+}
+function acValveSearch(ev, id) {
+  const q = ev.target.value.trim().toLowerCase();
+  if (!q) { $(id + '_dd').classList.remove('open'); return; }
+  const list = state.valves
+    .filter(v => v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q))
+    .slice(0, 12)
+    .map(v => ({ id: v.valveNo, valveNo: v.valveNo, description: `${v.customer} · ${v.description||''}` }));
+  acDropdown(id, list, function pickValve(it, inputId) {
+    document.getElementById(inputId).value = it.valveNo;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+    // auto fill process if there's a process input alongside
+    const procInputId = inputId.replace('_v', '_p');
+    if (document.getElementById(procInputId)) {
+      // suggest the first process of this valve
+      const v = state.valves.find(x => x.valveNo === it.valveNo);
+      if (v && v.processes[0] && !document.getElementById(procInputId).value) {
+        document.getElementById(procInputId).value = v.processes[0];
+      }
+    }
+  });
+}
+function acProcSearch(ev, id, valveInputId) {
+  const q = ev.target.value.trim().toLowerCase();
+  const valveNo = document.getElementById(valveInputId)?.value || '';
+  const v = state.valves.find(x => x.valveNo === valveNo);
+  const procs = v ? v.processes : ['SSG','TOP&HOD','VET','COT','COPY','CB','IND','TG','SFG','FG','P/T','QC'];
+  const list = procs.filter(p => !q || p.toLowerCase().includes(q)).map(p => ({ id: p, proc: p, label: '' }));
+  acDropdown(id, list, function pickProc(it, inputId) {
+    document.getElementById(inputId).value = it.proc;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ac')) $$('.ac-dd').forEach(d => d.classList.remove('open'));
+});
+
+/* ============================================================
+   PRODUCTION TRACKER — slots
+   ============================================================ */
+let slotCounter = 0;
+function addSlot(n = 1) {
+  const cur = document.querySelectorAll('#slots .slot').length;
+  if (cur + n > 30) { toast('สูงสุด 30 slot', 'orange'); return; }
+  for (let i = 0; i < n; i++) {
+    slotCounter++;
+    const sid = 'slot_' + slotCounter;
+    const html = `<div class="slot" id="${sid}">
+      <div class="slot-hd">
+        <span class="slot-num">${cur + i + 1}</span>
+        <button class="slot-rm" onclick="$('${sid}').remove();updSlotCount()">✕</button>
+      </div>
+      <div class="fg">
+        <div class="fr ac" style="margin:0"><label>Valve No *</label>
+          <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" onblur="onValveSet('${sid}')" autocomplete="off">
+          <div class="ac-dd" id="${sid}_v_dd"></div>
+        </div>
+        <div class="fr" style="margin:0"><label>Lot *</label><input type="text" id="${sid}_lot" placeholder="L1"></div>
+      </div>
+      <div class="fg">
+        <div class="fr" style="margin:0"><label>Qty *</label><input type="number" id="${sid}_q" min="0" placeholder="0"></div>
+        <div class="fr ac" style="margin:0"><label>Process ปัจจุบัน</label>
+          <input type="text" id="${sid}_p" placeholder="เลือก process" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
+          <div class="ac-dd" id="${sid}_p_dd"></div>
+        </div>
+      </div>
+      <div class="fr" style="margin:0"><label>หมายเหตุ</label><input type="text" id="${sid}_n" placeholder="(ไม่บังคับ)"></div>
+      <div class="proc-pills" id="${sid}_pills"></div>
+    </div>`;
+    $('slots').insertAdjacentHTML('beforeend', html);
+  }
+  updSlotCount();
+}
+function clearSlots() { if (!confirm('ล้างทั้งหมด?')) return; $('slots').innerHTML = ''; slotCounter = 0; updSlotCount(); }
+function updSlotCount() { /* removed slot counter UI */ }
+function onValveSet(sid) {
+  const valveNo = $(sid+'_v')?.value || '';
+  const v = state.valves.find(x => x.valveNo === valveNo);
+  const pills = $(sid + '_pills');
+  if (!v) { pills.innerHTML = ''; return; }
+  const cur = $(sid+'_p')?.value || v.processes[0];
+  pills.innerHTML = v.processes.map(p => {
+    const idx = v.processes.indexOf(p), ci = v.processes.indexOf(cur);
+    let cls = 'proc-pill ' + (idx < ci ? 'done' : idx === ci ? 'cur' : 'future');
+    return `<span class="${cls}" onclick="$('${sid}_p').value='${escapeHtml(p)}';onValveSet('${sid}')">${escapeHtml(p)}</span>`;
+  }).join('');
+}
+
+async function saveSlots() {
+  const slots = document.querySelectorAll('#slots .slot');
+  if (!slots.length) { toast('ยังไม่มี slot', 'orange'); return; }
+  const records = [];
+  let invalid = 0;
+  const now = new Date().toISOString();
+  slots.forEach((s, i) => {
+    const id = s.id;
+    const v   = $(id+'_v')?.value.trim();
+    const lot = $(id+'_lot')?.value.trim();
+    const q   = +($(id+'_q')?.value || 0);
+    const p   = $(id+'_p')?.value.trim();
+    const n   = $(id+'_n')?.value.trim();
+    if (!v || !lot || !q) { invalid++; return; }
+    records.push({
+      record_id: `R-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2,6)}`,
+      timestamp: now,
+      valve_no: v, lot, quantity: q,
+      current_process: p, status: 'In Progress',
+      operator: $('op-name').value || OP, note: n,
+    });
+  });
+  if (invalid) toast(`ข้าม ${invalid} slot ที่กรอกไม่ครบ`, 'orange');
+  if (!records.length) return;
+
+  // 1) เก็บลง LocalStorage ทันที
+  state.prodRecords = [...records, ...state.prodRecords];
+  lsSave(LS.PROD_REC, state.prodRecords);
+  toast(`บันทึก Production ${records.length} record`, 'green');
+  $('slots').innerHTML = ''; slotCounter = 0; updSlotCount();
+
+  // 2) Sync ไป API ถ้ามี (background)
+  if (API) {
+    try {
+      await api('/api/records/bulk', { body: { records } });
+      toast('Sync ไป Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('Sync ไม่สำเร็จ — ข้อมูลเก็บ Local แล้ว', 'orange');
+    }
+  }
+}
+
+async function searchProcess() {
+  const q = $('searchValve').value.trim();
+  if (!q) return;
+  try {
+    const valve = state.valves.find(v => v.valveNo.toLowerCase() === q.toLowerCase());
+    if (!valve) { $('searchResult').innerHTML = `<div class="muted center">ไม่พบ Valve "${escapeHtml(q)}"</div>`; return; }
+    // ดึง records จาก LocalStorage หรือ API ถ้าออนไลน์
+    let records = state.prodRecords.filter(r => r.valve_no && r.valve_no.toLowerCase() === q.toLowerCase())
+      .map(r => ({ ...r, valveNo: r.valve_no, currentProcess: r.current_process }));
+    if (API) {
+      try {
+        const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
+        if (rRes.records?.length) records = rRes.records;
+      } catch (e) { /* fallback to local */ }
+    }
+    // group by lot, find latest process
+    const byLot = {};
+    for (const r of records) {
+      const key = r.lot || '(no lot)';
+      if (!byLot[key] || new Date(r.timestamp) > new Date(byLot[key].timestamp)) byLot[key] = r;
+    }
+    const pills = valve.processes.map(p => `<span class="proc-pill">${escapeHtml(p)}</span>`).join('');
+    const lotsHtml = Object.keys(byLot).length ? `<table class="mt-8"><thead><tr><th>Lot</th><th>Qty</th><th>Process ปัจจุบัน</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${
+      Object.values(byLot).map(r => `<tr><td><b>${escapeHtml(r.lot||'-')}</b></td><td>${nn(r.quantity)}</td><td><span class="tag tag-orange">${escapeHtml(r.currentProcess)}</span></td><td>${escapeHtml(r.status)}</td><td>${new Date(r.timestamp).toLocaleString('th-TH')}</td></tr>`).join('')
+    }</tbody></table>` : '<div class="muted mt-8">ยังไม่มี Production records</div>';
+    $('searchResult').innerHTML = `
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title"><span class="ci">📋</span>${escapeHtml(valve.valveNo)} — ${escapeHtml(valve.customer)}</div>
+        <div class="muted" style="font-size:12px;margin-bottom:6px">${escapeHtml(valve.description||'')}</div>
+        <div class="proc-pills">${pills}</div>
+        <div style="margin-top:10px;font-size:12px;font-weight:800;color:var(--blue)">📦 Records แยกตาม Lot:</div>
+        ${lotsHtml}
+      </div>`;
+  } catch (e) {
+    toast('ค้นหาไม่สำเร็จ: ' + e.message, 'red');
+  }
+}
+function filterByProcess(p) {
+  setPane('history');
+  setHistTab('prod');
+  $('histSearch').value = p;
+  loadHistory();
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function setHistTab(t) {
+  state.histType = t;
+  $$('button[data-htype]').forEach(b => b.className = 'btn btn-' + (b.dataset.htype === t ? 'blue' : 'outline') + ' btn-sm');
+  loadHistory();
+}
+function filterLocal(records, filt, type) {
+  return records.filter(r => {
+    const dateKey = type === 'kpi'
+      ? (r.shift_date || r.record_date || '').slice(0,10)
+      : (r.timestamp || '').slice(0,10);
+    if (filt.from && dateKey < filt.from) return false;
+    if (filt.to   && dateKey > filt.to)   return false;
+    if (filt.zone && r.zone !== filt.zone) return false;
+    if (filt.q) {
+      const haystack = [r.valve_no, r.lot, r.machine_id, r.current_process, r.emp_id, r.emp_name]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(filt.q.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+function histShowAll() {
+  $('histFrom').value = '2020-01-01';
+  $('histTo').value   = todayISO();
+  $('histZone').value = '';
+  $('histSearch').value = '';
+  loadHistory();
+  toast('แสดงข้อมูลทั้งหมด', 'green');
+}
+async function histPullCloud() {
+  if (!API) { toast('ยังไม่ตั้งค่า Worker URL (ใช้ข้อมูล Local ได้)', 'orange'); return; }
+  toast('กำลังดึงข้อมูลจาก D1…', 'green');
+  try {
+    const [k, p] = await Promise.all([
+      api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=5000').catch(()=>null),
+      api('/api/records?from=2020-01-01T00:00:00&to=' + todayISO() + '&limit=5000').catch(()=>null),
+    ]);
+    if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
+    if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+    loadHistory();
+    toast(`ดึง ${(k?.records?.length||0) + (p?.records?.length||0)} รายการจาก Cloud`, 'green');
+  } catch (e) { toast('ดึงไม่สำเร็จ: ' + e.message, 'red'); }
+}
+
+/* helper: render history จาก local state เท่านั้น (ไม่ดึง API) */
+function _renderHistLocal() {
+  const from = $('histFrom')?.value||'', to = $('histTo')?.value||'';
+  const zone = $('histZone')?.value||'', q = ($('histSearch')?.value||'').trim();
+  const filt = { from, to, zone, q };
+  if (state.histType === 'kpi') {
+    const rows = filterLocal(state.kpiRecords, filt, 'kpi')
+      .sort((a,b) => String(b.saved_at||'').localeCompare(String(a.saved_at||'')));
+    renderKpiHist(rows);
+  } else {
+    const rows = filterLocal(state.prodRecords, filt, 'prod')
+      .sort((a,b) => String(b.timestamp||'').localeCompare(String(a.timestamp||'')))
+      .map(r => ({ ...r, valveNo: r.valve_no||r.valveNo, currentProcess: r.current_process||r.currentProcess }));
+    renderProdHist(rows);
+  }
+}
+
+/* helper: sync API records เข้า local state สำหรับช่วงวันที่ที่กำหนด */
+function _syncKpiFromApi(apiRecords, from, to) {
+  // สำหรับ range นี้ ให้ API เป็น source of truth → ลบ local ที่อยู่ใน range แต่ไม่มีใน API
+  const apiIds = new Set(apiRecords.map(r => r.record_id));
+  const outside = state.kpiRecords.filter(r => {
+    const d = (r.shift_date||r.record_date||'').slice(0,10);
+    const inRange = (!from || d >= from) && (!to || d <= to);
+    return !inRange; // เก็บเฉพาะที่อยู่นอก range
+  });
+  state.kpiRecords = [...outside, ...apiRecords];
+  lsSave(LS.KPI, state.kpiRecords);
+}
+
+function _syncProdFromApi(apiRecords, from, to) {
+  const norm = apiRecords.map(r => ({
+    ...r,
+    valve_no: r.valveNo||r.valve_no||'',
+    current_process: r.currentProcess||r.current_process||'',
+  }));
+  const outside = state.prodRecords.filter(r => {
+    const d = (r.timestamp||'').slice(0,10);
+    const inRange = (!from || d >= from) && (!to || d <= to);
+    return !inRange;
+  });
+  state.prodRecords = [...outside, ...norm];
+  lsSave(LS.PROD_REC, state.prodRecords);
+}
+
+async function loadHistory() {
+  const from = $('histFrom').value, to = $('histTo').value;
+  const zone = $('histZone').value, q = $('histSearch').value.trim();
+  const filt = { from, to, zone, q };
+
+  // แสดง local ก่อน (เร็ว ไม่ต้องรอ API)
+  _renderHistLocal();
+
+  if (!API) return;
+
+  try {
+    if (state.histType === 'kpi') {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to)   params.set('to', to);
+      if (zone) params.set('zone', zone);
+      if (q)    params.set('machine', q);
+      const res = await api('/api/kpi?' + params);
+      if (res?.records !== undefined) {
+        // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
+        if (!q && !zone) _syncKpiFromApi(res.records, from, to);
+        renderKpiHist(res.records);
+      }
+    } else {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from + 'T00:00:00');
+      if (to)   params.set('to', to);
+      if (q)    params.set('valve', q);
+      const res = await api('/api/records?' + params);
+      if (res?.records !== undefined) {
+        // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
+        if (!q) _syncProdFromApi(res.records, from, to);
+        renderProdHist(res.records);
+      }
+    }
+  } catch (e) {
+    // API ล้มเหลว — local ที่แสดงอยู่ถูกต้องแล้ว
+  }
+}
+function renderKpiHist(rows) {
+  _histKpiRows = rows;
+  $('histCount').textContent = rows.length;
+  const t = $('histTable');
+  t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>กะ</th><th>Zone</th><th>เครื่อง</th><th>OPR</th><th>OAE</th><th>DLE</th><th>Valve</th><th>Lot</th><th>Process</th><th class="center" style="width:90px">จัดการ</th></tr>';
+  t.querySelector('tbody').innerHTML = rows.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
+    <td>${escapeHtml(r.shift_date || r.record_date)}</td>
+    <td>${r.shift_type === 'day' ? '☀️ Day' : '🌙 Night'}</td>
+    <td><span class="tag tag-blue">${escapeHtml(r.zone)}</span></td>
+    <td><b>${escapeHtml(r.machine_id)}</b></td>
+    <td>${nn(r.opr)}</td>
+    <td><span class="tag ${r.oae>=.85?'tag-green':r.oae>=.75?'tag-orange':'tag-red'}">${pct(r.oae)}</span></td>
+    <td>${pct(r.dle)}</td>
+    <td>${escapeHtml(r.valve_no||'-')}</td>
+    <td>${escapeHtml(r.lot||'-')}</td>
+    <td>${escapeHtml(r.last_process||'-')}</td>
+    <td class="center" style="white-space:nowrap">
+      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="editKpiRecord('${escapeHtml(r.record_id||'')}')">✏️</button>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px" onclick="deleteKpiRecord('${escapeHtml(r.record_id||'')}')">🗑️</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="11" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+function renderProdHist(rows) {
+  _histProdRows = rows;
+  $('histCount').textContent = rows.length;
+  const t = $('histTable');
+  t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>Valve</th><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>Operator</th><th class="center" style="width:90px">จัดการ</th></tr>';
+  t.querySelector('tbody').innerHTML = rows.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
+    <td>${new Date(r.timestamp).toLocaleString('th-TH')}</td>
+    <td><b>${escapeHtml(r.valveNo||r.valve_no||'-')}</b></td>
+    <td>${escapeHtml(r.lot||'-')}</td>
+    <td>${nn(r.quantity)}</td>
+    <td><span class="tag tag-orange">${escapeHtml(r.currentProcess||r.current_process||'-')}</span></td>
+    <td>${escapeHtml(r.status||'-')}</td>
+    <td>${escapeHtml(r.operator||'-')}</td>
+    <td class="center" style="white-space:nowrap">
+      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="editProdRecord('${escapeHtml(r.record_id||'')}')">✏️</button>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px" onclick="deleteProdRecord('${escapeHtml(r.record_id||'')}')">🗑️</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="8" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+function exportHistory() {
+  const table = $('histTable');
+  const ws = XLSX.utils.table_to_sheet(table);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'History');
+  XLSX.writeFile(wb, `vsm4-history-${state.histType}-${todayISO()}.xlsx`);
+}
+
+/* ============================================================
+   HISTORY — DELETE
+   ============================================================ */
+async function deleteKpiRecord(rid) {
+  if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
+  if (!confirm('⚠️ ลบ KPI record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
+
+  // 1) ลบ local ทันที + render local (กัน race condition กับ API fetch)
+  state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== rid);
+  lsSave(LS.KPI, state.kpiRecords);
+  _renderHistLocal();
+  toast('ลบออกจาก Local แล้ว', 'green');
+
+  // 2) ลบจาก Cloud → แล้ว reload ข้อมูลสดเพื่อ sync state
+  if (API) {
+    try {
+      await api('/api/kpi/delete', { body: { record_id: rid } });
+      toast('✅ ลบจาก Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('ลบ Local แล้ว — Cloud: ' + e.message, 'orange');
+    }
+    await loadHistory(); // reload หลัง API op เสร็จ (ไม่ก่อน)
+  }
+}
+
+async function deleteProdRecord(rid) {
+  if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
+  if (!confirm('⚠️ ลบ Production record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
+
+  // 1) ลบ local ทันที + render local (กัน race condition กับ API fetch)
+  state.prodRecords = state.prodRecords.filter(r => r.record_id !== rid);
+  lsSave(LS.PROD_REC, state.prodRecords);
+  _renderHistLocal();
+  toast('ลบออกจาก Local แล้ว', 'green');
+
+  // 2) ลบจาก Cloud → แล้ว reload ข้อมูลสดเพื่อ sync state
+  if (API) {
+    try {
+      await api('/api/records/delete', { body: { record_id: rid } });
+      toast('✅ ลบจาก Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('ลบ Local แล้ว — Cloud: ' + e.message, 'orange');
+    }
+    await loadHistory(); // reload หลัง API op เสร็จ (ไม่ก่อน)
+  }
+}
+
+/* ============================================================
+   HISTORY — EDIT KPI
+   ============================================================ */
+function editKpiRecord(rid) {
+  const r = _histKpiRows.find(x => x.record_id === rid)
+         || state.kpiRecords.find(x => x.record_id === rid);
+  if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
+  openModal('✏️ แก้ไข KPI Record', `
+    <input type="hidden" id="editKpiRid" value="${escapeHtml(rid)}">
+    <div class="fg">
+      <div class="fr"><label>วันที่</label>
+        <input type="date" id="editKpiDate" value="${escapeHtml(r.shift_date||r.record_date||'')}">
+      </div>
+      <div class="fr"><label>กะ</label>
+        <select id="editKpiShift">
+          <option value="day"   ${r.shift_type==='day'  ?'selected':''}>☀️ กะกลางวัน</option>
+          <option value="night" ${r.shift_type==='night'?'selected':''}>🌙 กะกลางคืน</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Zone</label>
+        <input type="text" value="${escapeHtml(r.zone||'')}" readonly style="background:#F0F4FF;color:var(--muted)">
+      </div>
+      <div class="fr"><label>เครื่องจักร</label>
+        <input type="text" value="${escapeHtml(r.machine_id||'')}" readonly style="background:#F0F4FF;color:var(--muted)">
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>OPR (ชิ้นผลิต)</label>
+        <input type="number" id="editKpiOpr" value="${r.opr||0}" min="0">
+      </div>
+      <div class="fr"><label>Scrap (ชิ้นเสีย)</label>
+        <input type="number" id="editKpiScrap" value="${r.scrap||0}" min="0">
+      </div>
+    </div>
+    <div class="fr"><label>Valve No</label>
+      <input type="text" id="editKpiValve" value="${escapeHtml(r.valve_no||'')}">
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Lot</label>
+        <input type="text" id="editKpiLot" value="${escapeHtml(r.lot||'')}">
+      </div>
+      <div class="fr"><label>Last Process</label>
+        <input type="text" id="editKpiProc" value="${escapeHtml(r.last_process||'')}">
+      </div>
+    </div>
+    <div class="fr"><label>Operator</label>
+      <input type="text" id="editKpiOp" value="${escapeHtml(r.operator||'')}">
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="saveKpiEdit()">💾 บันทึกการแก้ไข</button>
+    </div>
+  `);
+}
+
+async function saveKpiEdit() {
+  const rid = $('editKpiRid').value;
+  const idx = state.kpiRecords.findIndex(x => x.record_id === rid);
+  if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
+  const r = state.kpiRecords[idx];
+  const newOpr   = +($('editKpiOpr').value   || 0);
+  const newScrap = +($('editKpiScrap').value  || 0);
+  const tTarget  = r.target || 0;
+  const tWT      = r.wt     || 0;
+  const avgCT    = r.ct     || 0;
+  const manStd   = r.man_std || 1;
+  const oae      = tTarget ? newOpr / tTarget : 0;
+  const cap      = manStd * tWT * 3600;
+  const dle      = cap ? (newOpr * avgCT * manStd) / cap : 0;
+  const pplh     = tWT ? newOpr / tWT : 0;
+  const scrapRate = (newOpr + newScrap) ? newScrap / (newOpr + newScrap) : 0;
+  const newDate  = $('editKpiDate').value;
+  Object.assign(state.kpiRecords[idx], {
+    shift_date:   newDate || r.shift_date,
+    record_date:  newDate || r.record_date,
+    shift_type:   $('editKpiShift').value,
+    opr:          newOpr,
+    scrap:        newScrap,
+    valve_no:     $('editKpiValve').value.trim(),
+    lot:          $('editKpiLot').value.trim(),
+    last_process: $('editKpiProc').value.trim(),
+    operator:     $('editKpiOp').value.trim(),
+    oae, dle, pplh, scrap_rate: scrapRate,
+    updated_at:   new Date().toISOString(),
+  });
+  lsSave(LS.KPI, state.kpiRecords);
+  closeModal();
+  loadHistory();
+  toast('แก้ไขแล้ว (local)', 'green');
+  if (API) {
+    try {
+      // ลบอันเดิมออกก่อน แล้ว insert ใหม่ที่แก้แล้ว (ป้องกัน duplicate)
+      await api('/api/kpi/delete', { body: { record_id: rid } });
+      await api('/api/kpi', { body: { records: [state.kpiRecords[idx]] } });
+      toast('✅ อัพเดต Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('แก้ไข Local แล้ว — Cloud: ' + e.message, 'orange');
+    }
+  }
+}
+
+/* ============================================================
+   HISTORY — EDIT PRODUCTION
+   ============================================================ */
+function editProdRecord(rid) {
+  const r = _histProdRows.find(x => x.record_id === rid)
+         || state.prodRecords.find(x => x.record_id === rid);
+  if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
+  const statusOpts = ['In Progress','Completed','Cancelled'].map(s =>
+    `<option value="${s}" ${(r.status||'')=== s?'selected':''}>${s}</option>`).join('');
+  openModal('✏️ แก้ไข Production Record', `
+    <input type="hidden" id="editProdRid" value="${escapeHtml(rid)}">
+    <div class="fg">
+      <div class="fr"><label>Valve No</label>
+        <input type="text" id="editProdValve" value="${escapeHtml(r.valveNo||r.valve_no||'')}">
+      </div>
+      <div class="fr"><label>Lot</label>
+        <input type="text" id="editProdLot" value="${escapeHtml(r.lot||'')}">
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Quantity (ชิ้น)</label>
+        <input type="number" id="editProdQty" value="${r.quantity||0}" min="0">
+      </div>
+      <div class="fr"><label>Process</label>
+        <input type="text" id="editProdProc" value="${escapeHtml(r.currentProcess||r.current_process||'')}">
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Status</label>
+        <select id="editProdStatus">${statusOpts}</select>
+      </div>
+      <div class="fr"><label>Operator</label>
+        <input type="text" id="editProdOp" value="${escapeHtml(r.operator||'')}">
+      </div>
+    </div>
+    <div class="fr"><label>หมายเหตุ</label>
+      <input type="text" id="editProdNote" value="${escapeHtml(r.note||'')}">
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="saveProdEdit()">💾 บันทึกการแก้ไข</button>
+    </div>
+  `);
+}
+
+async function saveProdEdit() {
+  const rid = $('editProdRid').value;
+  const idx = state.prodRecords.findIndex(x => x.record_id === rid);
+  if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
+  const valve = $('editProdValve').value.trim();
+  const proc  = $('editProdProc').value.trim();
+  Object.assign(state.prodRecords[idx], {
+    valve_no:        valve,
+    valveNo:         valve,
+    lot:             $('editProdLot').value.trim(),
+    quantity:        +($('editProdQty').value || 0),
+    current_process: proc,
+    currentProcess:  proc,
+    status:          $('editProdStatus').value,
+    operator:        $('editProdOp').value.trim(),
+    note:            $('editProdNote').value.trim(),
+    updated_at:      new Date().toISOString(),
+  });
+  lsSave(LS.PROD_REC, state.prodRecords);
+  closeModal();
+  loadHistory();
+  toast('แก้ไขแล้ว (local)', 'green');
+  if (API) {
+    try {
+      // ลบอันเดิมออกก่อน แล้ว insert ใหม่ที่แก้แล้ว (ป้องกัน duplicate)
+      await api('/api/records/delete', { body: { record_id: rid } });
+      await api('/api/records/bulk', { body: { records: [state.prodRecords[idx]] } });
+      toast('✅ อัพเดต Cloud สำเร็จ', 'green');
+    } catch (e) {
+      toast('แก้ไข Local แล้ว — Cloud: ' + e.message, 'orange');
+    }
+  }
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function renderSettings() {
+  if ($('apiUrl')) $('apiUrl').value = API;
+  renderZoneTargets();
+  // Local data counts
+  if ($('lsKpiCount'))   $('lsKpiCount').textContent   = state.kpiRecords.length;
+  if ($('lsProdCount'))  $('lsProdCount').textContent  = state.prodRecords.length;
+  if ($('lsValveCount')) $('lsValveCount').textContent = state.valves.length;
+  if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
+  renderValveList(); renderIdList(); renderEmployeeList(); renderMachineList();
+}
+
+/* ===== ZONE TARGETS UI ===== */
+const ZONE_TGT_TITLE = {
+  zone1: 'Zone 1 — AFTERMARKET',
+  zone2: 'Zone 2 — INDUCTION',
+  zone3: 'Zone 3 — FORD6 & PERKINS'
+};
+function renderZoneTargets() {
+  const wrap = $('zoneTargetsWrap');
+  if (!wrap) return;
+  const T = state.targets || {};
+  const tgt = (zoneKey, field) => {
+    const v = T[`${zoneKey}.${field}`];
+    if (v !== undefined && v !== null) return v;
+    return T[field] !== undefined ? T[field] : '';
+  };
+  wrap.innerHTML = ZONE_KEYS.map(zk => `
+    <div style="border:1.5px solid var(--blue-soft);border-radius:11px;padding:12px;margin-bottom:10px;background:var(--blue-light)">
+      <div style="font-weight:800;color:var(--blue-dark);margin-bottom:8px;font-size:13px">📍 ${ZONE_TGT_TITLE[zk]}</div>
+      <div class="fg-auto">
+        <div class="fr" style="margin:0"><label>OAE (%)</label><input type="number" id="tgt-${zk}-oae"   step="0.01"   value="${tgt(zk,'oae')}"></div>
+        <div class="fr" style="margin:0"><label>DLE (%)</label><input type="number" id="tgt-${zk}-dle"   step="0.01"   value="${tgt(zk,'dle')}"></div>
+        <div class="fr" style="margin:0"><label>PDAC (%)</label><input type="number" id="tgt-${zk}-pdac" step="0.01"   value="${tgt(zk,'pdac')}"></div>
+        <div class="fr" style="margin:0"><label>SCRAP สูงสุด (%)</label><input type="number" id="tgt-${zk}-scrap" step="0.0001" value="${tgt(zk,'scrap')}"></div>
+        <div class="fr" style="margin:0"><label>PPLH</label><input type="number" id="tgt-${zk}-pplh"  value="${tgt(zk,'pplh')}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function syncAllToCloud() {
+  if (!API) { toast('ตั้ง Worker URL ก่อน', 'orange'); return; }
+  $('apiStatus').innerHTML = '<span class="spinner"></span> กำลัง Sync…';
+  try {
+    let synced = 0;
+    if (state.valves.length)    { await api('/api/valves/bulk', { body: { valves: state.valves } }); synced += state.valves.length; }
+    if (state.ids && state.ids.length) { await api('/api/ids/bulk', { body: { ids: state.ids } }); synced += state.ids.length; }
+    for (const e of state.employees) { await api('/api/employees', { body: e }); }
+    synced += state.employees.length;
+    for (const z of ['ZONE1','ZONE2','ZONE3']) {
+      for (const m of (state.machines[z]||[])) { await api('/api/machines', { body: { zone: z, ...m } }); synced++; }
+    }
+    if (state.kpiRecords.length)  { await api('/api/kpi',          { body: { records: state.kpiRecords  } }); synced += state.kpiRecords.length; }
+    if (state.prodRecords.length) { await api('/api/records/bulk', { body: { records: state.prodRecords } }); synced += state.prodRecords.length; }
+    await api('/api/targets', { body: state.targets });
+    $('apiStatus').innerHTML = `<span class="tag tag-green">✓ Sync สำเร็จ ${synced} รายการ</span>`;
+    toast(`Sync ${synced} รายการไป Cloud`, 'green');
+  } catch (e) {
+    $('apiStatus').innerHTML = `<span class="tag tag-red">✗ ${escapeHtml(e.message)}</span>`;
+    toast('Sync ล้มเหลว: ' + e.message, 'red');
+  }
+}
+
+function exportBackup() {
+  const backup = {
+    version: 'vsm4-unified-v1',
+    exported_at: new Date().toISOString(),
+    valves:    state.valves,
+    machines:  state.machines,
+    employees: state.employees,
+    targets:   state.targets,
+    kpi_records:  state.kpiRecords,
+    prod_records: state.prodRecords,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `vsm4-backup-${todayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Backup สำเร็จ', 'green');
+}
+
+function restoreBackup(ev) {
+  const f = ev.target.files[0]; if (!f) return;
+  if (!confirm('Restore จากไฟล์จะทับข้อมูลปัจจุบันทั้งหมด — ดำเนินการ?')) return;
+  const r = new FileReader();
+  r.onload = (e) => {
+    try {
+      const b = JSON.parse(e.target.result);
+      if (b.valves)       { state.valves       = b.valves;       lsSave(LS.VALVES,    state.valves); }
+      if (b.machines)     { state.machines     = b.machines;     lsSave(LS.MACHINES,  state.machines); }
+      if (b.employees)    { state.employees    = b.employees;    lsSave(LS.EMPLOYEES, state.employees); }
+      if (b.targets)      { state.targets      = b.targets;      lsSave(LS.TARGETS,   state.targets); }
+      if (b.kpi_records)  { state.kpiRecords   = b.kpi_records;  lsSave(LS.KPI,       state.kpiRecords); }
+      if (b.prod_records) { state.prodRecords  = b.prod_records; lsSave(LS.PROD_REC,  state.prodRecords); }
+      toast('Restore สำเร็จ', 'green');
+      renderHome(); renderZone(); renderSettings();
+    } catch (e) { toast('ไฟล์ไม่ถูกต้อง: ' + e.message, 'red'); }
+  };
+  r.readAsText(f);
+  ev.target.value = '';
+}
+
+function resetToDefaults() {
+  if (!confirm('รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ')) return;
+  state.valves    = JSON.parse(JSON.stringify(DEFAULT_VALVES));
+  state.machines  = JSON.parse(JSON.stringify(DEFAULT_MACHINES));
+  state.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+  state.targets   = {...DEFAULT_TARGETS};
+  lsSave(LS.VALVES,    state.valves);
+  lsSave(LS.MACHINES,  state.machines);
+  lsSave(LS.EMPLOYEES, state.employees);
+  lsSave(LS.TARGETS,   state.targets);
+  toast('รีเซ็ตเป็นค่าเริ่มต้นแล้ว', 'green');
+  renderHome(); renderZone(); renderSettings();
+}
+
+function clearAllRecords() {
+  if (!confirm('ลบ KPI Records และ Production Records ทั้งหมด — กู้คืนไม่ได้!')) return;
+  if (!confirm('ยืนยันอีกครั้ง — ข้อมูลจะหายทั้งหมด')) return;
+  state.kpiRecords  = [];
+  state.prodRecords = [];
+  lsSave(LS.KPI,      []);
+  lsSave(LS.PROD_REC, []);
+  toast('ลบ Records ทั้งหมดแล้ว', 'orange');
+  renderHome(); renderSettings();
+}
+/* ===== ADMIN LOCK ===== */
+function adminToggle() {
+  if (state.adminUnlocked) { adminLock(); return; }
+  const pw = prompt('🔑 Admin Password:');
+  if (pw === null) return;
+  if (pw !== ADMIN_PASSWORD) { toast('❌ รหัสผ่านไม่ถูกต้อง', 'red'); return; }
+  state.adminUnlocked = true;
+  $('apiUrl').readOnly = false;
+  $('apiUrl').style.background = '#fff';
+  $('apiUrl').style.cursor = 'text';
+  $('adminPanel').style.display = 'block';
+  $('adminBtn').textContent = '🔓 Admin (กดเพื่อล็อก)';
+  toast('🔓 ปลดล็อก Admin Mode', 'green');
+}
+function adminLock() {
+  state.adminUnlocked = false;
+  $('apiUrl').readOnly = true;
+  $('apiUrl').style.background = '#F0F4FF';
+  $('apiUrl').style.cursor = 'not-allowed';
+  $('apiUrl').value = API;
+  $('adminPanel').style.display = 'none';
+  $('adminBtn').textContent = '🔑 Admin Mode';
+  toast('🔒 ล็อกแล้ว', 'orange');
+}
+async function adminSaveUrl() {
+  if (!state.adminUnlocked) { toast('ต้องปลดล็อก Admin ก่อน', 'orange'); return; }
+  const u = $('apiUrl').value.trim().replace(/\/+$/, '');
+  if (!u) { toast('กรอก URL', 'orange'); return; }
+  API = u;
+  localStorage.setItem(LS.API, API);
+  toast('💾 บันทึก URL ใหม่', 'green');
+  await testApi();
+}
+async function testApi() {
+  $('apiStatus').innerHTML = '<span class="spinner"></span> กำลังทดสอบ…';
+  try {
+    const r = await api('/api/ping');
+    $('apiStatus').innerHTML = `<span class="tag tag-green">✓ เชื่อมต่อสำเร็จ</span> ${escapeHtml(r.message||'')}`;
+    setConnBadge('online');
+    await reload();
+  } catch (e) {
+    $('apiStatus').innerHTML = `<span class="tag tag-red">✗ เชื่อมต่อล้มเหลว</span> ${escapeHtml(e.message)}`;
+    setConnBadge('local');
+  }
+}
+
+/* ===== SAVE TARGETS — per-zone ===== */
+async function saveTargets() {
+  const payload = {};
+  for (const zk of ZONE_KEYS) {
+    for (const f of ['oae','dle','pplh','pdac','scrap']) {
+      const el = $(`tgt-${zk}-${f}`);
+      if (!el) continue;
+      const v = +el.value;
+      if (!isNaN(v)) payload[`${zk}.${f}`] = v;
+    }
+  }
+  state.targets = {...state.targets, ...payload};
+  lsSave(LS.TARGETS, state.targets);
+  toast('💾 บันทึก Targets ทั้ง 3 Zones', 'green');
+  if (API) { try { await api('/api/targets', { body: payload }); } catch (e) {} }
+}
+function renderValveList() {
+  const q = ($('vSearch').value || '').toLowerCase();
+  // นับจำนวน ID ต่อ valve
+  const idCounts = {};
+  for (const r of state.ids || []) {
+    const v = String(r.valve_no || '').trim();
+    if (v) idCounts[v] = (idCounts[v] || 0) + 1;
+  }
+  const rows = state.valves
+    .filter(v => !q || v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q))
+    .map(v => {
+      const n = idCounts[v.valveNo] || 0;
+      const idCell = n > 0
+        ? `<span class="tag tag-green" onclick="filterIdsByValve('${escapeHtml(v.valveNo)}')" style="cursor:pointer">${n} IDs</span>`
+        : `<span class="muted" style="font-size:11px">—</span>`;
+      return `<tr>
+        <td><b>${escapeHtml(v.valveNo)}</b></td>
+        <td><span class="tag tag-blue">${escapeHtml(v.customer)}</span></td>
+        <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span></td>
+        <td class="center">${idCell}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="openValveModal('${escapeHtml(v.valveNo)}')">แก้</button>
+            <button class="btn btn-sm" onclick="delValve('${escapeHtml(v.valveNo)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">ลบ</button></td>
+      </tr>`;
+    }).join('');
+  $('vTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="5" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+
+function filterIdsByValve(valveNo) {
+  const s = $('idSearch'); if (s) { s.value = valveNo; renderIdList(); s.scrollIntoView({behavior:'smooth', block:'center'}); }
+}
+
+/* ============================================================
+   VALVE IDS — render / add / edit / delete / bulk-paste / export
+   ============================================================ */
+function renderIdList() {
+  const q = ($('idSearch')?.value || '').toLowerCase();
+  const rows = (state.ids || [])
+    .filter(r => !q || (r.id_code||'').toLowerCase().includes(q) || (r.valve_no||'').toLowerCase().includes(q) || (r.lot||'').toLowerCase().includes(q))
+    .slice(0, 2000)
+    .map(r => `<tr>
+      <td><code style="font-family:Consolas,Monaco,monospace;background:var(--blue-light);padding:2px 6px;border-radius:5px;color:var(--blue-dark);font-weight:700">${escapeHtml(r.id_code)}</code></td>
+      <td><b style="color:var(--blue)">${escapeHtml(r.valve_no)}</b></td>
+      <td>${escapeHtml(r.lot||'')}</td>
+      <td><span class="muted" style="font-size:11px">${escapeHtml(r.note||'')}</span></td>
+      <td class="center"><button class="btn btn-outline btn-sm" onclick="openIdModal('${escapeHtml(r.id_code)}')">แก้</button>
+        <button class="btn btn-sm" onclick="delIdEntry('${escapeHtml(r.id_code)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">x</button></td>
+    </tr>`).join('');
+  const tbody = $('idTable')?.querySelector('tbody');
+  if (tbody) tbody.innerHTML = rows || '<tr><td colspan="5" class="center muted">ยังไม่มีข้อมูล — กด <b>📋 วางจาก Excel</b> เพื่อนำเข้า</td></tr>';
+  if ($('idCount')) $('idCount').textContent = (state.ids || []).length;
+}
+
+function openIdModal(idCode) {
+  const r = idCode ? (state.ids||[]).find(x => x.id_code === idCode) : null;
+  openModal(r ? 'แก้ไข ID' : 'เพิ่ม ID ใหม่', `
+    <div class="fr"><label>ID Code (7 ตัวขวาของบาร์โค้ด)</label>
+      <input type="text" id="modIdCode" value="${escapeHtml(r?.id_code||'')}" placeholder="1990918" ${r?'readonly':''}></div>
+    <div class="fr"><label>Valve No</label>
+      <input type="text" id="modIdValve" list="valveList" value="${escapeHtml(r?.valve_no||'')}" placeholder="VF..." style="text-transform:uppercase"></div>
+    <div class="fr"><label>Lot</label>
+      <input type="text" id="modIdLot" value="${escapeHtml(r?.lot||'')}" placeholder="L1"></div>
+    <div class="fr"><label>หมายเหตุ</label>
+      <input type="text" id="modIdNote" value="${escapeHtml(r?.note||'')}" placeholder=""></div>
+    <button class="btn btn-blue mt-8" onclick="saveIdModal()">💾 บันทึก</button>
+  `);
+}
+
+async function saveIdModal() {
+  const id    = $('modIdCode').value.trim();
+  const valve = $('modIdValve').value.trim();
+  const lot   = $('modIdLot').value.trim();
+  const note  = $('modIdNote').value.trim();
+  if (!id)    { toast('กรอก ID Code', 'orange'); return; }
+  if (!valve) { toast('กรอก Valve No', 'orange'); return; }
+  const arr = state.ids || [];
+  const i = arr.findIndex(x => x.id_code === id);
+  const rec = { id_code: id, valve_no: valve, lot, note };
+  if (i >= 0) arr[i] = rec; else arr.unshift(rec);
+  state.ids = arr;
+  lsSave(LS.IDS, state.ids);
+  renderIdList(); renderValveList();
+  closeModal();
+  toast('💾 บันทึก', 'green');
+  if (API) { try { await api('/api/ids', { body: rec }); } catch (e) {} }
+}
+
+async function delIdEntry(idCode) {
+  if (!confirm(`ลบ ID ${idCode}?`)) return;
+  state.ids = (state.ids||[]).filter(x => x.id_code !== idCode);
+  lsSave(LS.IDS, state.ids);
+  renderIdList(); renderValveList();
+  toast('ลบแล้ว', 'orange');
+  if (API) { try { await api('/api/ids/delete', { body: { id_code: idCode } }); } catch (e) {} }
+}
+
+function openPasteIdsModal() {
+  openModal('📋 วาง IDs จาก Excel', `
+    <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px">
+      <b>วิธีใช้:</b> Copy ใน Excel แล้ว Paste ลงช่องด้านล่าง — รับ 3 คอลัมน์: <b>ID</b> | <b>LOT</b> | <b>Valve No</b><br>
+      ตัวอย่าง:<br>
+      <code style="font-size:11px;background:#fff;padding:2px 4px;display:inline-block;margin-top:4px">1990918&nbsp;&nbsp;L1&nbsp;&nbsp;VF12345</code>
+    </div>
+    <textarea id="pasteIdsBox" rows="10" placeholder="วางข้อมูลจาก Excel ที่นี่..." style="width:100%;font-family:Consolas,Monaco,monospace;font-size:13px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
+    <div class="row mt-8" style="gap:6px">
+      <button class="btn btn-outline btn-sm" onclick="previewPasteIds()">👁️ Preview</button>
+      <button class="btn btn-green btn-sm" onclick="commitPasteIds()">💾 บันทึกลงระบบ</button>
+    </div>
+    <div id="pasteIdsResult" class="mt-8" style="font-size:12px"></div>
+  `);
+}
+
+/* Auto-detect column order:
+   ตัวอย่างที่รองรับ (รับลำดับใดก็ได้):
+   - LOT, ID, Valve   ← ตามไฟล์ Planning ID.xlsx
+   - ID, LOT, Valve
+   - ID, Valve
+   หลักการ: หา "Valve" จาก column ที่ขึ้นต้นด้วยตัวอักษร V/F (เช่น VF1349M1, VV7252M0)
+            หา "ID" จาก column ที่เป็นตัวเลขล้วน 6-8 หลัก
+            ที่เหลือ = LOT
+*/
+function _parsePasteIdsRows() {
+  const txt = $('pasteIdsBox').value || '';
+  const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const rows = [];
+  const seen = new Set();
+  let dup = 0, skipped = 0;
+  for (const line of lines) {
+    const parts = line.split(/\t|,|\s{2,}/).map(s => s.trim()).filter(Boolean);
+    if (parts.length < 2) { skipped++; continue; }
+    // skip header rows
+    const lower = parts.map(p => p.toLowerCase());
+    if (lower.some(p => p === 'valve no' || p === 'valveno' || p === 'valve') &&
+        lower.some(p => p === 'id' || p === 'lot' || /รหัส|^lot$/i.test(p))) continue;
+
+    // Auto-detect each column by content pattern
+    let id = '', lot = '', valve = '';
+    for (const p of parts) {
+      if (!valve && /^[A-Z][A-Z0-9]/i.test(p) && /[A-Z]/i.test(p.replace(/^\d+/, ''))) {
+        // มีตัวอักษรอังกฤษ + ขึ้นต้นด้วยตัวอักษร → Valve (เช่น VF1349M1, V78064M0-CV)
+        valve = p.toUpperCase();
+      } else if (!id && /^\d{6,8}$/.test(p)) {
+        // ตัวเลขล้วน 6-8 หลัก → ID
+        id = p;
+      } else if (!lot) {
+        // ที่เหลือ → LOT
+        lot = p;
+      }
+    }
+    // fallback ถ้า auto-detect ไม่ได้ → ใช้ลำดับ
+    if (!id || !valve) {
+      if (parts.length === 2) { [id, valve] = parts; }
+      else { [lot, id, valve] = parts; }    // default = LOT, ID, Valve (ตามไฟล์ user)
+      valve = String(valve||'').toUpperCase();
+    }
+    id = String(id||'').trim();
+    valve = String(valve||'').trim().toUpperCase();
+    if (!id || !valve) { skipped++; continue; }
+    if (seen.has(id)) { dup++; continue; }
+    seen.add(id);
+    rows.push({ id_code: id, valve_no: valve, lot: String(lot||'').trim(), note: '' });
+  }
+  // เก็บสถิติไว้ให้ preview แสดง
+  rows._meta = { total: lines.length, parsed: rows.length, dup, skipped };
+  return rows;
+}
+
+function previewPasteIds() {
+  const rows = _parsePasteIdsRows();
+  if (!rows.length) { $('pasteIdsResult').innerHTML = '<span class="tag tag-red">ไม่พบข้อมูลที่อ่านได้</span>'; return; }
+  const m = rows._meta || {};
+  const preview = rows.slice(0, 10).map(r => `<tr><td><code>${escapeHtml(r.id_code)}</code></td><td>${escapeHtml(r.valve_no)}</td><td>${escapeHtml(r.lot)}</td></tr>`).join('');
+  $('pasteIdsResult').innerHTML = `
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      <span class="tag tag-blue">📥 ทั้งหมด ${m.total||rows.length} บรรทัด</span>
+      <span class="tag tag-green">✓ พร้อมบันทึก ${rows.length}</span>
+      ${m.dup ? `<span class="tag tag-orange">⏭️ ID ซ้ำ ${m.dup}</span>` : ''}
+      ${m.skipped ? `<span class="tag tag-red">✗ Skip ${m.skipped}</span>` : ''}
+    </div>
+    <table class="mt-8" style="font-size:12px"><thead><tr><th>ID</th><th>Valve</th><th>Lot</th></tr></thead><tbody>${preview}</tbody></table>
+    <div class="muted mt-8" style="font-size:11px">ตัวอย่าง 10 แถวแรก — กด <b>บันทึกลงระบบ</b> เพื่อบันทึกทั้งหมด</div>`;
+}
+
+async function commitPasteIds() {
+  const rows = _parsePasteIdsRows();
+  if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  // merge: ใหม่ทับเก่า (by id_code)
+  const map = new Map((state.ids||[]).map(r => [r.id_code, r]));
+  for (const r of rows) map.set(r.id_code, r);
+  state.ids = Array.from(map.values());
+  lsSave(LS.IDS, state.ids);
+  renderIdList(); renderValveList();
+
+  // แสดงสถานะใน modal แทนการปิดทันที — เพื่อให้เห็น progress ตอน sync
+  const result = $('pasteIdsResult');
+  if (result) result.innerHTML = `<span class="tag tag-blue">📋 อ่านได้ ${rows.length} แถว — กำลัง sync ไป Cloud…</span>`;
+  toast(`💾 บันทึก Local ${rows.length} IDs`, 'green');
+
+  if (!API) { closeModal(); return; }
+
+  // ❗ Chunk เป็นรอบละ 400 — กัน batch limit ของ D1 (~1000 statements)
+  const CHUNK = 400;
+  let synced = 0, failed = 0, errMsg = '';
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const part = rows.slice(i, i + CHUNK);
+    try {
+      const r = await api('/api/ids/bulk', { body: { ids: part } });
+      synced += (r.count || part.length);
+      if (result) result.innerHTML = `<span class="tag tag-blue">☁️ Sync แล้ว ${synced}/${rows.length} (${Math.round(synced/rows.length*100)}%)…</span>`;
+    } catch (e) {
+      failed += part.length;
+      errMsg  = e.message || String(e);
+    }
+  }
+
+  if (failed === 0) {
+    if (result) result.innerHTML = `<span class="tag tag-green">✓ Sync สำเร็จ ${synced} IDs ไป Cloud</span>`;
+    toast(`☁️ Sync ${synced} IDs สำเร็จ`, 'green');
+    setTimeout(() => closeModal(), 1200);
+  } else {
+    if (result) result.innerHTML = `<span class="tag tag-red">⚠️ บันทึก Local ${rows.length} ครบ — แต่ Sync Cloud ล้มเหลว ${failed} (สำเร็จ ${synced})</span>
+      <div class="muted mt-8" style="font-size:11px">${escapeHtml(errMsg)}</div>
+      <button class="btn btn-outline btn-sm mt-8" onclick="retrySyncIds()">🔄 ลอง Sync ใหม่</button>`;
+    toast(`⚠️ Sync ไม่สำเร็จ ${failed} รายการ`, 'orange');
+  }
+}
+
+// ลอง sync IDs ทั้งหมดจาก local → Cloud (กรณีเดิม sync ไม่สำเร็จ)
+async function retrySyncIds() {
+  if (!API) { toast('ยังไม่ตั้ง API', 'orange'); return; }
+  const rows = state.ids || [];
+  if (!rows.length) { toast('ไม่มี IDs ใน Local', 'orange'); return; }
+  const CHUNK = 400;
+  let synced = 0, failed = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const part = rows.slice(i, i + CHUNK);
+    try {
+      const r = await api('/api/ids/bulk', { body: { ids: part } });
+      synced += (r.count || part.length);
+      toast(`☁️ ${synced}/${rows.length}`, 'blue');
+    } catch (e) {
+      failed += part.length;
+    }
+  }
+  toast(failed ? `Sync เสร็จ ${synced} / ล้มเหลว ${failed}` : `✓ Sync ครบ ${synced}`, failed ? 'orange' : 'green');
+}
+
+function exportIds() {
+  const rows = state.ids || [];
+  if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  const header = 'ID,Valve No,Lot,Note';
+  const body = rows.map(r => [r.id_code, r.valve_no, r.lot, (r.note||'').replace(/,/g,';')].join(',')).join('\n');
+  const blob = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `valve-ids-${todayISO()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Export CSV', 'green');
+}
+
+async function pullIds() {
+  if (!API) return;
+  try {
+    const r = await api('/api/ids?limit=50000');
+    if (r.ids) {
+      state.ids = r.ids;
+      lsSave(LS.IDS, state.ids);
+    }
+  } catch (e) {}
+}
+function openValveModal(valveNo) {
+  const v = valveNo ? state.valves.find(x => x.valveNo === valveNo) : null;
+  const PROCS_ALL = ['SSG','TOP&HOD','VET','COT','COPY','CB','IND','TG','SFG','FG','P/T','QC'];
+  const selProcs = v?.processes || [];
+  openModal(v ? 'แก้ไข Valve' : 'เพิ่ม Valve', `
+    <div class="fr"><label>Valve No</label><input type="text" id="m_v" value="${escapeHtml(v?.valveNo||'')}" ${v?'readonly':''}></div>
+    <div class="fr"><label>ลูกค้า</label>
+      <select id="m_c"><option ${v?.customer==='MSI'?'selected':''}>MSI</option><option ${v?.customer==='SWE'?'selected':''}>SWE</option><option ${v?.customer==='OES&OEM'?'selected':''}>OES&OEM</option><option ${(!v||v?.customer==='Other')?'selected':''}>Other</option></select>
+    </div>
+    <div class="fr"><label>Description</label><input type="text" id="m_d" value="${escapeHtml(v?.description||'')}"></div>
+    <div class="fr"><label>Process (ลำดับการผลิต)</label>
+      <div class="proc-pills" id="m_procs">${PROCS_ALL.map(p => `<span class="proc-pill ${selProcs.includes(p)?'done':''}" onclick="this.classList.toggle('done')">${p}</span>`).join('')}</div>
+      <div class="muted mt-8" style="font-size:11px">คลิกเลือก/ไม่เลือก — ลำดับตามที่กดทีหลังจะเรียงต่อท้าย</div>
+    </div>
+    <button class="btn btn-blue btn-block" onclick="saveValve('${escapeHtml(v?.valveNo||'')}')">💾 บันทึก</button>
+  `);
+}
+async function saveValve(orig) {
+  const valveNo  = $('m_v').value.trim();
+  const customer = $('m_c').value;
+  const desc     = $('m_d').value;
+  const procs    = [...$('m_procs').children].filter(el => el.classList.contains('done')).map(el => el.textContent);
+  if (!valveNo) { toast('กรอก Valve No', 'orange'); return; }
+  const existing = state.valves.findIndex(v => v.valveNo === valveNo);
+  const entry = { valveNo, customer, description: desc, processes: procs, barcode_id: '' };
+  if (existing >= 0) state.valves[existing] = entry; else state.valves.push(entry);
+  lsSave(LS.VALVES, state.valves);
+  toast('บันทึก Valve', 'green');
+  closeModal(); renderValveList();
+  if (API) { try { await api('/api/valves', { body: entry }); } catch (e) {} }
+}
+async function delValve(valveNo) {
+  if (!confirm(`ลบ ${valveNo}?`)) return;
+  state.valves = state.valves.filter(v => v.valveNo !== valveNo);
+  lsSave(LS.VALVES, state.valves);
+  renderValveList();
+  toast('ลบแล้ว', 'green');
+  if (API) { try { await api('/api/valves/delete', { body: { valveNo } }); } catch (e) {} }
+}
+
+function importValves(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    const wb = XLSX.read(e.target.result, { type:'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const valves = rows.map(r => ({
+      valveNo:     r.ValveNo || r['Valve No'] || r.valveNo,
+      customer:    r.Customer || r.customer || 'Other',
+      description: r.Description || r.description || '',
+      processes:   String(r.Processes||r.processes||'').split(',').map(s=>s.trim()).filter(Boolean),
+      barcode_id:  String(r.Barcode || r.BarcodeID || r.barcode_id || ''),
+    })).filter(v => v.valveNo);
+    if (!valves.length) { toast('ไม่พบข้อมูล', 'orange'); return; }
+    // merge into local
+    for (const v of valves) {
+      const idx = state.valves.findIndex(x => x.valveNo === v.valveNo);
+      if (idx >= 0) state.valves[idx] = v; else state.valves.push(v);
+    }
+    lsSave(LS.VALVES, state.valves);
+    renderValveList();
+    toast(`Import ${valves.length} valves`, 'green');
+    if (API) { try { await api('/api/valves/bulk', { body: { valves } }); } catch (e) {} }
+  };
+  r.readAsArrayBuffer(f);
+  ev.target.value = '';
+}
+function exportValves() {
+  const data = state.valves.map(v => ({
+    ValveNo: v.valveNo, Customer: v.customer, Description: v.description,
+    Processes: v.processes.join(','), Barcode: v.barcode_id || '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Valves');
+  XLSX.writeFile(wb, `vsm4-valves-${todayISO()}.xlsx`);
+}
+
+function renderEmployeeList() {
+  $('empCount').textContent = state.employees.length;
+  const rows = state.employees.map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
+  $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="3" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+async function addEmployee() {
+  const id = $('newEmpId').value.trim();
+  const name = $('newEmpName').value.trim();
+  if (!id) { toast('กรอกรหัสพนักงาน', 'orange'); return; }
+  const existing = state.employees.findIndex(e => e.id === id);
+  if (existing >= 0) state.employees[existing] = { id, name }; else state.employees.push({ id, name });
+  lsSave(LS.EMPLOYEES, state.employees);
+  toast('บันทึกพนักงาน', 'green');
+  $('newEmpId').value=''; $('newEmpName').value='';
+  renderEmployeeList();
+  if (API) { try { await api('/api/employees', { body: { id, name } }); } catch (e) {} }
+}
+async function delEmployee(id) {
+  if (!confirm(`ลบ ${id}?`)) return;
+  state.employees = state.employees.filter(e => e.id !== id);
+  lsSave(LS.EMPLOYEES, state.employees);
+  renderEmployeeList();
+  toast('ลบแล้ว', 'green');
+  if (API) { try { await api('/api/employees/delete', { body: { id } }); } catch (e) {} }
+}
+
+function renderMachineList() {
+  const z = $('mcZone').value;
+  const rows = (state.machines[z]||[]).map(m => `<tr><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delMachine('${z}','${escapeHtml(m.id)}')">ลบ</button></td></tr>`).join('');
+  $('mcTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+async function addMachine() {
+  const zone = $('mcZone').value;
+  const id   = $('newMcId').value.trim();
+  const target = +$('newMcTgt').value || 0;
+  const std    = +$('newMcStd').value || 0;
+  if (!id) { toast('กรอกรหัสเครื่อง', 'orange'); return; }
+  if (!state.machines[zone]) state.machines[zone] = [];
+  const existing = state.machines[zone].findIndex(m => m.id === id);
+  const entry = { id, target, man_std: std };
+  if (existing >= 0) state.machines[zone][existing] = entry; else state.machines[zone].push(entry);
+  lsSave(LS.MACHINES, state.machines);
+  toast('บันทึกเครื่องจักร', 'green');
+  $('newMcId').value=''; $('newMcTgt').value=''; $('newMcStd').value='';
+  renderMachineList(); renderZone();
+  if (API) { try { await api('/api/machines', { body: { zone, id, target, man_std: std } }); } catch (e) {} }
+}
+async function delMachine(zone, id) {
+  if (!confirm(`ลบ ${id}?`)) return;
+  if (state.machines[zone]) state.machines[zone] = state.machines[zone].filter(m => m.id !== id);
+  lsSave(LS.MACHINES, state.machines);
+  renderMachineList(); renderZone();
+  toast('ลบแล้ว', 'green');
+  if (API) { try { await api('/api/machines/delete', { body: { zone, id } }); } catch (e) {} }
+}
+
+/* ============================================================
+   GO
+   ============================================================ */
+init();
+</script>
+</body>
+</html>
