@@ -853,6 +853,14 @@ let state = {
 };
 
 const ZONE_LABEL = {ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS'};
+
+/* ===== TOMBSTONE — เก็บ record_id ที่ถูกลบ เพื่อกรองไม่ให้ sync กลับมาจาก API ===== */
+let _deletedKpiIds  = new Set(JSON.parse(localStorage.getItem('vsm4_deleted_kpi_ids')  || '[]'));
+let _deletedProdIds = new Set(JSON.parse(localStorage.getItem('vsm4_deleted_prod_ids') || '[]'));
+function _saveTombstones() {
+  localStorage.setItem('vsm4_deleted_kpi_ids',  JSON.stringify([..._deletedKpiIds]));
+  localStorage.setItem('vsm4_deleted_prod_ids', JSON.stringify([..._deletedProdIds]));
+}
 const ZONE_KEYS  = ['zone1','zone2','zone3'];
 const TGT_LBL    = {oae:'OAE', dle:'DLE', pplh:'PPLH', pdac:'PDAC', scrap:'SCRAP'};
 
@@ -987,9 +995,11 @@ function setZone(z) {
    ============================================================ */
 let scanInstance = null;
 let scanTargetSid = null;   // sid ของ shift block ที่จะ fill ผลกลับ
+let scanProcessing = false; // ป้องกัน callback ซ้ำเมื่อกล้องสแกนตรวจจับหลายครั้งก่อน stop
 
 function openScanner(sid) {
   scanTargetSid = sid;
+  scanProcessing = false;   // reset ทุกครั้งที่เปิด scanner ใหม่
   $('scanModal').classList.add('open');
   $('scanResult').classList.remove('show');
   $('scanResult').textContent = '';
@@ -1044,6 +1054,7 @@ function livePreview() {
 }
 
 async function closeScanner() {
+  scanProcessing = false;   // reset เมื่อปิด scanner
   $('scanModal').classList.remove('open');
   if (scanInstance) {
     try {
@@ -1106,12 +1117,23 @@ async function initScanner() {
 }
 
 function onScanSuccess(decoded) {
+  if (scanProcessing) return;   // ป้องกัน callback ซ้ำจากกล้องที่สแกนหลายครั้ง
+  scanProcessing = true;
   // เด้งผลกลับไปฟอร์ม
   applyScanResult(decoded);
-  // stop scanner
+  // stop scanner อย่างถูกต้อง: stop() ก่อน แล้วค่อย clear()
   if (scanInstance) {
-    try { scanInstance.clear(); } catch (e) {}
-    scanInstance = null;
+    try {
+      const _inst = scanInstance;
+      scanInstance = null;
+      if (typeof _inst.stop === 'function') {
+        _inst.stop().catch(()=>{}).finally(() => {
+          try { if (typeof _inst.clear === 'function') _inst.clear(); } catch(e){}
+        });
+      } else if (typeof _inst.clear === 'function') {
+        _inst.clear();
+      }
+    } catch (e) { scanInstance = null; }
   }
 }
 
@@ -2042,7 +2064,11 @@ function startAutoSync() {
 function mergeRecords(local, remote, idKey) {
   const ids = new Set(remote.map(r => r[idKey] || r.record_id));
   const remaining = local.filter(r => !ids.has(r[idKey] || r.record_id));
-  return [...remote, ...remaining];
+  // กรอง tombstones ออก (records ที่ถูกลบแล้ว ไม่ควร sync กลับ)
+  return [...remote, ...remaining].filter(r => {
+    const rid = r.record_id || r[idKey];
+    return !_deletedKpiIds.has(rid) && !_deletedProdIds.has(rid);
+  });
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && API) {
@@ -2091,10 +2117,18 @@ async function renderHome() {
         api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
         api(`/api/stats`).catch(()=>null),
       ]);
-      if (p) prodRes = p;
-      if (k) kpiRes  = k;
+      // กรอง tombstones ออกจาก API records
+      if (p?.records) {
+        const _fr = p.records.filter(r => !_deletedProdIds.has(r.record_id || r.recordId));
+        prodRes = { ...p, records: _fr };
+      } else if (p) prodRes = p;
+      if (k?.records) {
+        const _fk = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
+        kpiRes = { ...k, records: _fk };
+      } else if (k) kpiRes = k;
       // Smart merge: ใช้ API เฉพาะ field ที่มีข้อมูล ไม่ทับ local ทั้งดุ้น
-      if (s) statsRes = {
+      // ถ้ามี tombstones ให้ใช้ local stats เสมอ (กัน API คืน records ที่ลบแล้ว)
+      if (s && _deletedProdIds.size === 0) statsRes = {
         total_done:  (s.total_done  != null) ? s.total_done  : stats.total_done,
         total_wip:   (s.total_wip   != null) ? s.total_wip   : stats.total_wip,
         by_customer: Object.keys(s.by_customer||{}).length ? s.by_customer : stats.by_customer,
@@ -2803,7 +2837,9 @@ function _syncKpiFromApi(apiRecords, from, to) {
     const inRange = (!from || d >= from) && (!to || d <= to);
     return !inRange; // เก็บเฉพาะที่อยู่นอก range
   });
-  state.kpiRecords = [...outside, ...apiRecords];
+  // กรอง tombstones ออกก่อน save
+  const _filtKpi = apiRecords.filter(r => !_deletedKpiIds.has(r.record_id));
+  state.kpiRecords = [...outside, ..._filtKpi];
   lsSave(LS.KPI, state.kpiRecords);
 }
 
@@ -2818,7 +2854,9 @@ function _syncProdFromApi(apiRecords, from, to) {
     const inRange = (!from || d >= from) && (!to || d <= to);
     return !inRange;
   });
-  state.prodRecords = [...outside, ...norm];
+  // กรอง tombstones ออกก่อน save
+  const _filtProd = norm.filter(r => !_deletedProdIds.has(r.record_id));
+  state.prodRecords = [...outside, ..._filtProd];
   lsSave(LS.PROD_REC, state.prodRecords);
 }
 
@@ -2917,9 +2955,10 @@ async function deleteKpiRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
   if (!confirm('⚠️ ลบ KPI record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
 
-  // 1) ลบ local ทันที + render local (กัน race condition กับ API fetch)
+  // 1) ลบ local ทันที + บันทึก tombstone + render local
   state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== rid);
   lsSave(LS.KPI, state.kpiRecords);
+  _deletedKpiIds.add(rid); _saveTombstones();  // tombstone: ป้องกัน sync กลับ
   _renderHistLocal();
   toast('ลบออกจาก Local แล้ว', 'green');
 
@@ -2939,9 +2978,10 @@ async function deleteProdRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
   if (!confirm('⚠️ ลบ Production record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
 
-  // 1) ลบ local ทันที + render local (กัน race condition กับ API fetch)
+  // 1) ลบ local ทันที + บันทึก tombstone + render local
   state.prodRecords = state.prodRecords.filter(r => r.record_id !== rid);
   lsSave(LS.PROD_REC, state.prodRecords);
+  _deletedProdIds.add(rid); _saveTombstones();  // tombstone: ป้องกัน sync กลับ
   _renderHistLocal();
   toast('ลบออกจาก Local แล้ว', 'green');
 
