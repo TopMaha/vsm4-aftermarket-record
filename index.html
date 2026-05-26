@@ -629,6 +629,7 @@ tr:hover{background:#FAFBFF}
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('vImport').click()">📥 Import</button>
       <input type="file" id="vImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importValves(event)">
       <button class="btn btn-outline btn-sm" onclick="exportValves()">⬇️ Export</button>
+      <button class="btn btn-green btn-sm" onclick="openPasteValvesModal()">📋 วางจาก Excel</button>
     </div>
     <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
   </div>
@@ -3720,6 +3721,86 @@ function exportValves() {
   XLSX.writeFile(wb, `vsm4-valves-${todayISO()}.xlsx`);
 }
 
+function openPasteValvesModal() {
+  openModal('📋 วาง Valve Master Data จาก Excel',
+    '<div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px">' +
+    '<b>วิธีใช้:</b> Copy จาก Excel → Valve No | Customer | Process1 | Process2 | ...<br>' +
+    'จำนวน Process ต่างกันได้แต่ละแถว — Valve No <b>ซ้ำ</b> จะแจ้งและแทนที่ Process อัตโนมัติ</div>' +
+    '<textarea id="pasteValvesBox" rows="10" placeholder="วางข้อมูลจาก Excel ที่นี่..." style="width:100%;font-family:Consolas,Monaco,monospace;font-size:13px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>' +
+    '<div class="row mt-8" style="gap:6px">' +
+    '<button class="btn btn-outline btn-sm" onclick="previewPasteValves()">👁️ Preview</button>' +
+    '<button class="btn btn-green btn-sm" onclick="commitPasteValves()">💾 บันทึกลงระบบ</button>' +
+    '</div><div id="pasteValvesResult" class="mt-8" style="font-size:12px"></div>'
+  );
+}
+function _parsePasteValveRows() {
+  var el = document.getElementById('pasteValvesBox');
+  var txt = el ? el.value : '';
+  var lines = txt.split(/[\r\n]+/).map(function(l){return l.trim();}).filter(Boolean);
+  var rows = [], skipped = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var parts = lines[i].split('\t').map(function(s){return s.trim();});
+    var v0 = parts[0] || '';
+    if (!v0) { skipped++; continue; }
+    var lower = v0.toLowerCase();
+    if (lower === 'valve no' || lower === 'valveno' || lower === 'valve') continue;
+    var customer = parts[1] || 'Other';
+    var procs = parts.slice(2).filter(function(p){return p !== '';});
+    rows.push({valveNo: v0.toUpperCase(), customer: customer, procs: procs});
+  }
+  rows._meta = {total: lines.length, parsed: rows.length, skipped: skipped};
+  return rows;
+}
+function previewPasteValves() {
+  var rows = _parsePasteValveRows();
+  var res = document.getElementById('pasteValvesResult');
+  if (!rows.length) { res.innerHTML = '<span class="tag tag-red">ไม่พบข้อมูลที่อ่านได้</span>'; return; }
+  var m = rows._meta || {};
+  var dups = rows.filter(function(r){return state.valves.find(function(v){return v.valveNo === r.valveNo;});});
+  var preview = rows.slice(0, 8).map(function(r) {
+    var isDup = state.valves.find(function(v){return v.valveNo === r.valveNo;});
+    return '<tr><td><b>' + escapeHtml(r.valveNo) + '</b>' +
+      (isDup ? ' <span class="tag tag-orange" style="font-size:10px">ซ้ำ→แทนที่</span>' : '') +
+      '</td><td>' + escapeHtml(r.customer) + '</td><td style="font-size:11px">' +
+      r.procs.map(function(p){return '<span class="tag tag-blue" style="font-size:10px;padding:1px 5px">' + escapeHtml(p) + '</span>';}).join(' ') +
+      '</td></tr>';
+  }).join('');
+  res.innerHTML =
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">' +
+    '<span class="tag tag-blue">📥 ทั้งหมด ' + rows.length + ' แถว</span>' +
+    '<span class="tag tag-green">✨ ใหม่ ' + (rows.length - dups.length) + '</span>' +
+    (dups.length ? '<span class="tag tag-orange">⚠️ ซ้ำ ' + dups.length + ' รายการ (จะแทนที่ Process)</span>' : '') +
+    (m.skipped ? '<span class="tag tag-red">✗ Skip ' + m.skipped + '</span>' : '') +
+    '</div>' +
+    '<table style="font-size:12px;width:100%"><thead><tr><th>Valve No</th><th>Customer</th><th>Processes</th></tr></thead><tbody>' + preview + '</tbody></table>' +
+    '<div class="muted mt-8" style="font-size:11px">แสดง ' + Math.min(8, rows.length) + ' แถวแรก — กด <b>บันทึกลงระบบ</b> เพื่อบันทึกทั้งหมด</div>';
+}
+async function commitPasteValves() {
+  var rows = _parsePasteValveRows();
+  if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  var added = 0, replaced = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var idx = state.valves.findIndex(function(v){return v.valveNo === r.valveNo;});
+    var entry = {
+      valveNo: r.valveNo, customer: r.customer,
+      description: idx >= 0 ? (state.valves[idx].description || '') : '',
+      processes: r.procs,
+      barcode_id: idx >= 0 ? (state.valves[idx].barcode_id || '') : ''
+    };
+    if (idx >= 0) { state.valves[idx] = entry; replaced++; } else { state.valves.push(entry); added++; }
+  }
+  lsSave(LS.VALVES, state.valves);
+  renderValveList();
+  var res = document.getElementById('pasteValvesResult');
+  if (res) res.innerHTML = '<span class="tag tag-green">✅ บันทึกแล้ว — ใหม่ ' + added + ' · แทนที่ Process ' + replaced + '</span>';
+  toast('✅ Valve ใหม่ ' + added + ' · แทนที่ Process ' + replaced, 'green');
+  if (replaced > 0) toast('⚠️ ' + replaced + ' Valve ซ้ำ — แทนที่ Process แล้ว', 'orange');
+  if (typeof API !== 'undefined' && API) {
+    var s = rows.map(function(r){return state.valves.find(function(v){return v.valveNo === r.valveNo;});}).filter(Boolean);
+    try { await api('/api/valves/bulk', {body: {valves: s}}); } catch(e) {}
+  }
+}
 function renderEmployeeList() {
   $('empCount').textContent = state.employees.length;
   const rows = state.employees.map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
