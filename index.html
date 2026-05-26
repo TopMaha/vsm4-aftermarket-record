@@ -3643,9 +3643,25 @@ async function pullIds() {
     }
   } catch (e) {}
 }
+function toggleProcPill(el) {
+  if (el.classList.contains('done')) {
+    el.classList.remove('done');
+    delete el.dataset.order;
+    var b = el.querySelector('.pob');
+    if (b) { b.textContent = ''; b.style.display = 'none'; }
+  } else {
+    el.classList.add('done');
+    var existing = Array.from(document.querySelectorAll('#m_procs .proc-pill.done'));
+    var maxOrd = existing.reduce(function(m,e){return Math.max(m,+(e.dataset.order||0));},0);
+    var newOrd = maxOrd + 1;
+    el.dataset.order = newOrd;
+    var b = el.querySelector('.pob');
+    if (b) { b.textContent = newOrd; b.style.display = 'inline'; }
+  }
+}
 function openValveModal(valveNo) {
   const v = valveNo ? state.valves.find(x => x.valveNo === valveNo) : null;
-  const PROCS_ALL = ['SSG','TOP&HOD','VET','COT','COPY','CB','IND','TG','SFG','FG','P/T','QC'];
+  const PROCS_ALL = ['AW','BLEND','BUFF','CAR','CB','CCOT','COPY','COPY CUP','COT','COT+TIP','COT1','COT2','CUP','D/B','DOUBLE','F.IND','FACE IND','FFT','FG','FH','HOD','HOD&FRG','HOD+FG',"HOD'C",'IND',"IND P'",'IND P"','IND T"','P/T','POL','PQ','QC','RADIUS','RE/R','RED','RED/F','RED/R','REDUC','ROLL','ROLL M.','SEMI','SFG','SFG*2','SRG','SRG*2','SRG*3','SRG*5','SRG*6','SSG','SSG*2','SSG*3','SSG*4','SSG*6','SSG+RED','SWIRL','T.IND','T/T','TG','TG-R','TH','TIP C"','TIP IND','TIP IND.','TIPC"','TL','TOP','TOP&HOD','TRG','TRG.','TW','UN/H','UND','UNDER','UNDER H.','VET','XRAY'];
   const selProcs = v?.processes || [];
   openModal(v ? 'แก้ไข Valve' : 'เพิ่ม Valve', `
     <div class="fr"><label>Valve No</label><input type="text" id="m_v" value="${escapeHtml(v?.valveNo||'')}" ${v?'readonly':''}></div>
@@ -3654,8 +3670,8 @@ function openValveModal(valveNo) {
     </div>
     <div class="fr"><label>Description</label><input type="text" id="m_d" value="${escapeHtml(v?.description||'')}"></div>
     <div class="fr"><label>Process (ลำดับการผลิต)</label>
-      <div class="proc-pills" id="m_procs">${PROCS_ALL.map(p => `<span class="proc-pill ${selProcs.includes(p)?'done':''}" onclick="this.classList.toggle('done')">${p}</span>`).join('')}</div>
-      <div class="muted mt-8" style="font-size:11px">คลิกเลือก/ไม่เลือก — ลำดับตามที่กดทีหลังจะเรียงต่อท้าย</div>
+      <div class="proc-pills" id="m_procs">${PROCS_ALL.map((p)=>{ const idx=selProcs.indexOf(p); const done=idx>=0; const ord=done?idx+1:0; const ps=p.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); return '<span class="proc-pill '+(done?'done':'')+'" data-proc="'+ps+'" '+(done?'data-order="'+ord+'"':'')+' onclick="toggleProcPill(this)">'+p+'<b class="pob" style="display:'+(done?'inline':'none')+';background:var(--green);color:#fff;border-radius:50%;min-width:14px;height:14px;padding:0 3px;font-size:9px;text-align:center;line-height:14px;margin-left:3px">'+(done?ord:'')+'</b></span>'; }).join('')}</div>
+      <div class="muted mt-8" style="font-size:11px">คลิกเลือก — <b>ตัวเลขบน pill = ลำดับการผลิต</b> กดซ้ำเพื่อยกเลิก</div>
     </div>
     <button class="btn btn-blue btn-block" onclick="saveValve('${escapeHtml(v?.valveNo||'')}')">💾 บันทึก</button>
   `);
@@ -3664,7 +3680,7 @@ async function saveValve(orig) {
   const valveNo  = $('m_v').value.trim();
   const customer = $('m_c').value;
   const desc     = $('m_d').value;
-  const procs    = [...$('m_procs').children].filter(el => el.classList.contains('done')).map(el => el.textContent);
+  const procs    = [...$('m_procs').querySelectorAll('.proc-pill.done')].sort((a,b)=>(+(a.dataset.order||0))-(+(b.dataset.order||0))).map(el=>el.dataset.proc||el.textContent.replace(/\d+$/,'').trim());
   if (!valveNo) { toast('กรอก Valve No', 'orange'); return; }
   const existing = state.valves.findIndex(v => v.valveNo === valveNo);
   const entry = { valveNo, customer, description: desc, processes: procs, barcode_id: '' };
