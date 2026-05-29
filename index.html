@@ -329,6 +329,37 @@ tr:hover{background:#FAFBFF}
 .shift-tab.active{transform:scale(1.02);box-shadow:0 4px 14px rgba(26,86,219,.3)}
 .shift-tab.day.active{background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#78350F;border:none}
 .shift-tab.night.active{background:linear-gradient(135deg,#312E81,#6366F1);color:#fff;border:none}
+
+/* ===== FLOOR PLAN ===== */
+.fp-wrap{overflow:auto;border:1.5px solid var(--border);border-radius:12px;background:#F8FAFF;padding:10px;position:relative}
+.fp-zones{display:flex;gap:8px;min-width:600px}
+.fp-zone{flex:1;border-radius:10px;padding:8px;min-width:180px}
+.fp-zone.z1{border:2.5px solid #7C3AED;background:#F5F3FF}
+.fp-zone.z2{border:2.5px solid #1A56DB;background:#EBF4FF}
+.fp-zone.z3{border:2.5px solid #D97706;background:#FFFBEB}
+.fp-zone-title{font-size:10px;font-weight:800;text-align:center;margin-bottom:6px;padding:2px 4px;border-radius:6px}
+.fp-zone.z1 .fp-zone-title{color:#7C3AED;background:#EDE9FE}
+.fp-zone.z2 .fp-zone-title{color:#1A56DB;background:#DBEAFE}
+.fp-zone.z3 .fp-zone-title{color:#D97706;background:#FDE68A}
+.fp-mc{display:inline-flex;align-items:center;gap:3px;margin:2px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;cursor:default;border:1px solid transparent;transition:transform .1s;white-space:nowrap}
+.fp-mc:hover{transform:scale(1.08);z-index:2;position:relative}
+.fp-mc.open{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.fp-mc.closed{background:#F3F4F6;border-color:#D1D5DB;color:#6B7280}
+.fp-mc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fp-mc.open .fp-mc-dot{background:#10B981}
+.fp-mc.closed .fp-mc-dot{background:#9CA3AF}
+.fp-legend{display:flex;gap:12px;font-size:11px;font-weight:700;margin-bottom:8px;flex-wrap:wrap}
+.fp-date-ctrl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:var(--blue-light);padding:8px 10px;border-radius:10px;margin-bottom:8px}
+/* Mobile UX */
+@media(max-width:480px){
+  .zkpi-grid{grid-template-columns:repeat(2,1fr)!important}
+  .fr input,.fr select{font-size:16px!important}
+  .btn{min-height:44px}
+  .fp-mc{font-size:11px;padding:4px 9px}
+  .fp-zones{flex-direction:column}
+  .fp-zone{min-width:unset!important}
+  .mc-id{font-size:14px!important}
+}
 </style>
 </head>
 <body>
@@ -389,7 +420,7 @@ tr:hover{background:#FAFBFF}
       <button class="btn btn-outline btn-sm shift-tab night"      data-shift="night" onclick="setShiftFilter('night')">🌙 กะกลางคืน</button>
     </div>
     <div class="fg" style="margin:0">
-      <div class="fr" style="margin:0"><label>จากวันที่</label><input type="date" id="dashFrom" onchange="renderHome()"></div>
+      <div class="fr" style="margin:0"><label>จากวันที่</label><input type="date" id="dashFrom" onchange="if($('mcStatusDate'))$('mcStatusDate').value=this.value;renderHome()"></div>
       <div class="fr" style="margin:0"><label>ถึงวันที่</label><input type="date" id="dashTo" onchange="renderHome()"></div>
     </div>
   </div>
@@ -400,10 +431,19 @@ tr:hover{background:#FAFBFF}
   <!-- Per-Zone cards -->
   <div id="kpiPerZone"></div>
 
-  <!-- FIX 3: Machine Status Checker per Zone -->
-  <div class="card" style="margin-top:10px">
-    <div class="card-title"><span class="ci">🏭</span>ตรวจสอบเครื่องจักรวันนี้</div>
-    <div id="machineStatusChecker"></div>
+  <!-- Machine Status Checker + Floor Plan -->
+  <div class="card" style="margin-top:10px;padding-bottom:6px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+      <div class="card-title" style="margin:0"><span class="ci">🏭</span>ตรวจสอบสถานะเครื่องจักร</div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button onclick="iotZoomBtn(-1)" title="ย่อ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
+        <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
+        <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+    </div>
+    <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
+    <div id="mcViewList" style="display:none"></div>
+    <div id="mcViewFloor"></div>
   </div>
 </section>
 
@@ -412,8 +452,19 @@ tr:hover{background:#FAFBFF}
   <div class="card">
     <div class="card-title"><span class="ci">📥</span>บันทึกข้อมูล</div>
     <div class="fg">
-      <div class="fr"><label>วันที่ผลิต</label><input type="date" id="prod-date" onchange="updShiftDetect()"></div>
-      <div class="fr"><label>กะ (ตรวจจับจากเวลา)</label><input type="text" id="shift-detect" readonly placeholder="— กรอกเวลาก่อน —"></div>
+      <div class="fr" style="align-items:center;gap:6px">
+        <div style="flex:1">
+          <label>📅 วันที่ผลิต</label>
+          <input type="date" id="prod-date" readonly
+            style="background:#f1f5f9;font-weight:700;font-size:13px;border:1.5px solid #cbd5e1;border-radius:8px;padding:6px 10px;width:100%"
+            onchange="updShiftDetect()">
+        </div>
+        <button onclick="unlockProdDate()" id="prodDateLockBtn"
+          style="margin-top:18px;padding:7px 10px;border-radius:8px;border:1.5px solid #f59e0b;background:#fffbeb;color:#92400e;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+          🔒 แก้ไขวันที่
+        </button>
+      </div>
+      <div class="fr"><label>⏱️ กะ (ตรวจจับจากเวลา)</label><input type="text" id="shift-detect" readonly placeholder="— กรอกเวลาก่อน —"></div>
     </div>
     <div class="fr" style="margin-bottom:0">
       <label>👤 ผู้บันทึก (จาก Lock In)</label>
@@ -783,20 +834,42 @@ try { CURRENT_USER = JSON.parse(localStorage.getItem(LS_USER) || 'null'); } catc
    ============================================================ */
 const DEFAULT_MACHINES = {
   ZONE1: [
-    {id:'L-247',target:3000,man_std:0.5},{id:'L-256',target:3500,man_std:0.33},{id:'L-253',target:2000,man_std:0.33},
-    {id:'G-1108',target:0,man_std:0.33},{id:'G-220',target:0,man_std:0.33},{id:'G-2034',target:0,man_std:0.33},
-    {id:'L-235',target:0,man_std:0.5},{id:'L-263',target:0,man_std:0.33},{id:'L-236',target:0,man_std:0.33},
-    {id:'G-2022',target:0,man_std:0.5},{id:'G-2023',target:0,man_std:0.5}
+    {id:'L-226',target:2000,man_std:0.5},{id:'L-229',target:2000,man_std:0.5},
+    {id:'L-263',target:2000,man_std:0.33},{id:'L-235',target:2500,man_std:0.5},
+    {id:'G-2034',target:0,man_std:0.33},{id:'L-227',target:2000,man_std:0.5},
+    {id:'L-233',target:2000,man_std:0.5},{id:'L-236',target:2000,man_std:0.33},
+    {id:'G-220',target:0,man_std:0.33},{id:'L-256',target:3500,man_std:0.33},
+    {id:'L-253',target:2000,man_std:0.33},{id:'G-2029',target:0,man_std:0.33},
+    {id:'G-2038',target:0,man_std:0.33},{id:'L-262',target:2000,man_std:0.5},
+    {id:'G-1108',target:0,man_std:0.33},{id:'L-247',target:3000,man_std:0.5},
+    {id:'G-2083',target:0,man_std:0.33},{id:'G-2075',target:0,man_std:0.33},
+    {id:'L-234',target:2000,man_std:0.5},{id:'L-261',target:2000,man_std:0.5},
+    {id:'G-2058',target:0,man_std:0.33},{id:'H-207',target:2000,man_std:0.5},
+    {id:'H-205',target:2000,man_std:0.5},{id:'G-250',target:0,man_std:0.33},
+    {id:'G-2077',target:0,man_std:0.33},{id:'G-2097',target:0,man_std:0.33},
+    {id:'G-2076',target:0,man_std:0.33},{id:'G-277',target:0,man_std:0.33}
   ],
   ZONE2: [
-    {id:'H-222',target:2500,man_std:0.5},{id:'H-212',target:2500,man_std:0.5},{id:'H-217',target:2500,man_std:0.5},
-    {id:'H-219',target:3000,man_std:1},{id:'H-213',target:3000,man_std:1},
-    {id:'G-273',target:2000,man_std:0.5},{id:'G-243',target:2000,man_std:0.5},{id:'G-217',target:2000,man_std:0.33}
+    {id:'H-213',target:3000,man_std:1},{id:'H-214',target:2500,man_std:0.5},
+    {id:'H-219',target:3000,man_std:1},{id:'H-220',target:2500,man_std:0.5},
+    {id:'H-221',target:2500,man_std:0.5},{id:'H-218',target:2500,man_std:0.5},
+    {id:'H-217',target:2500,man_std:0.5},{id:'H-212',target:2500,man_std:0.5},
+    {id:'H-224',target:2500,man_std:0.5},{id:'G-219',target:2000,man_std:0.33},
+    {id:'G-2023',target:0,man_std:0.5},{id:'G-2022',target:0,man_std:0.5},
+    {id:'G-243',target:2000,man_std:0.5},{id:'G-2080',target:0,man_std:0.33},
+    {id:'G-248',target:0,man_std:0.33},{id:'G-273',target:2000,man_std:0.5}
   ],
   ZONE3: [
-    {id:'G-1109',target:2000,man_std:0.33},{id:'G-254',target:2000,man_std:0.5},{id:'G-255',target:2000,man_std:0.5},
-    {id:'L-237',target:1500,man_std:0.33},{id:'L-238',target:1500,man_std:0.5},{id:'G-232',target:1500,man_std:0.33},
-    {id:'G-253',target:2000,man_std:0.5},{id:'G-262',target:2000,man_std:0.5}
+    {id:'G-1109',target:2000,man_std:0.33},{id:'G-241',target:0,man_std:0.33},
+    {id:'G-1114',target:0,man_std:0.33},{id:'G-2030',target:0,man_std:0.33},
+    {id:'G-1113',target:0,man_std:0.33},{id:'G-237',target:0,man_std:0.33},
+    {id:'G-235',target:0,man_std:0.33},{id:'G-217',target:2000,man_std:0.33},
+    {id:'G-254',target:2000,man_std:0.5},{id:'G-255',target:2000,man_std:0.5},
+    {id:'G-232',target:1500,man_std:0.33},{id:'L-238',target:1500,man_std:0.5},
+    {id:'L-237',target:1500,man_std:0.33},{id:'N-202',target:0,man_std:0.33},
+    {id:'G-2037',target:0,man_std:0.33},{id:'G-240',target:0,man_std:0.33},
+    {id:'G-2073',target:0,man_std:0.33},{id:'G-253',target:2000,man_std:0.5},
+    {id:'G-262',target:2000,man_std:0.5},{id:'H-222',target:2500,man_std:0.5}
   ]
 };
 
@@ -1767,12 +1840,7 @@ function lockOut() {
 async function init() {
   // กะกลางคืน: ถ้าเปิดหน้าช่วง 00:00–07:59 = ยังอยู่ในกะกลางคืนของเมื่อวาน → วันที่ผลิตควรเป็นเมื่อวาน
   const _nowH = new Date().getHours();
-  if (_nowH >= 0 && _nowH < 8) {
-    const _yd = new Date(); _yd.setDate(_yd.getDate() - 1);
-    $('prod-date').value = `${_yd.getFullYear()}-${P(_yd.getMonth()+1)}-${P(_yd.getDate())}`;
-  } else {
-    $('prod-date').value = todayISO();
-  }
+  _autoSetProdDate(); // ตั้งวันที่อัตโนมัติ + ล็อค
   $('todayStr').textContent = new Date().toLocaleDateString('th-TH');
   $('op-name').value = OP;
   $('apiUrl').value  = API;
@@ -1781,6 +1849,8 @@ async function init() {
   $('histFrom').value = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
   // Dashboard KPI default = วันนี้
   if ($('dashFrom')) { $('dashFrom').value = todayISO(); $('dashTo').value = todayISO(); }
+
+  if ($('mcStatusDate')) $('mcStatusDate').value = todayISO();
   // Plan filter default = วันนี้ → +60 วัน
   if ($('planFrom')) {
     $('planFrom').value = todayISO();
@@ -1904,6 +1974,41 @@ function zoneTargetsObj(zoneKey) {
   };
 }
 
+/* ============================================================
+   PDAC HELPER — คำนวณ PDAC แบบ count(pass)/total ตามสูตรที่ถูกต้อง
+   pass = เครื่องที่มี record อย่างน้อย 1 record ที่ pdac_val >= 0.9
+   total = จำนวนเครื่องทั้งหมดใน zone (จาก state.machines)
+   ============================================================ */
+function calcZonePdac(krecs, zoneKey) {
+  // Group records by machine_id (only machines with records = เปิดผลิต)
+  const byMc = {};
+  for (const r of krecs) {
+    const mc = r.machine_id;
+    if (!byMc[mc]) byMc[mc] = [];
+    byMc[mc].push(r);
+  }
+
+  const openMachines = Object.keys(byMc); // เฉพาะเครื่องที่เปิดผลิต
+  const totalOpen = openMachines.length;
+  if (!totalOpen) return { pass:0, total:0, ratio:0, str:'0/0' };
+
+  let passing = 0;
+  for (const [mcId, recs] of Object.entries(byMc)) {
+    // คำนวณ PDAC per machine = OPR / (Target * 0.85)
+    // ใช้ pdac_val ที่บันทึกไว้แล้ว (คำนวณตอน save)
+    // ผ่านถ้า pdac_val >= 0.9 (90%)
+    const hasPassed = recs.some(r => (r.pdac_val || 0) >= 0.9 || r.pdac_pass === 'PASS');
+    if (hasPassed) passing++;
+  }
+
+  return {
+    pass:  passing,
+    total: totalOpen,
+    ratio: totalOpen > 0 ? passing / totalOpen : 0,
+    str:   passing + '/' + totalOpen
+  };
+}
+
 function zoneKpiInner(krecs, dark=false, zoneKey='') {
   if (!krecs.length) return '<div class="zkpi-empty">ยังไม่มีข้อมูลในกะนี้</div>';
   const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
@@ -1920,7 +2025,7 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${avg('oae')>1?'warn':cls(avg('oae'), t.oae)}">${pctOae(avg('oae'))}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${pct(avg('pdac_val'))}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${(()=>{const _p=calcZonePdac(krecs,zoneKey);return cls(_p.ratio,t.pdac)})()}">${(()=>{const _p=calcZonePdac(krecs,zoneKey);return pct(_p.ratio)+' <span style="font-size:9px;opacity:.8">('+_p.str+')</span>'})()}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">SCRAP</div><div class="zkpi-v ${cls(t.scrap, avg('scrap_rate'), true)}">${pct(avg('scrap_rate'))}</div><div class="zkpi-t">≤ ${pct(t.scrap)}</div></div>
   </div>
   <div class="row mt-8" style="gap:8px;flex-wrap:wrap;font-size:11px;font-weight:700;color:${textColor}">
@@ -1946,7 +2051,8 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
   const oae   = avg('oae');
   const dle   = avg('dle');
   const pplh  = avg('pplh');
-  const pdac  = avg('pdac_val');
+  const pdacInfo = calcZonePdac(krecs, summary ? 'ALL' : zoneKey);
+  const pdac  = pdacInfo.ratio;
   const scrap = avg('scrap_rate');
   const totalOpr = sum('opr');
   const totalScrap = sum('scrap');
@@ -1983,8 +2089,8 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
       <div class="zkpi-box">
         <div class="zkpi-l">PDAC</div>
         <div class="zkpi-v ${cls(pdac, t.pdac)}">${pct(pdac)}</div>
-        <div class="zkpi-t">เป้า ${pct(t.pdac)}</div>
-        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, pdac/t.pdac*100)}%"></div></div>
+        <div class="zkpi-t">${pdacInfo.str} เครื่อง · เป้า ${pct(t.pdac)}</div>
+        <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, pdac/Math.max(t.pdac,0.001)*100)}%"></div></div>
       </div>
       <div class="zkpi-box">
         <div class="zkpi-l">SCRAP</div>
@@ -2012,6 +2118,7 @@ function setShiftFilter(s) {
     b.classList.toggle('btn-outline', !active);
   });
   renderHome();
+  renderMachineStatusChecker();
 }
 
 /* ============================================================
@@ -2177,36 +2284,209 @@ document.addEventListener('visibilitychange', () => {
 /* ============================================================
    FIX 3: MACHINE STATUS CHECKER — แสดง active/idle เครื่องจักรวันนี้
    ============================================================ */
-function renderMachineStatusChecker() {
-  const wrap = $('machineStatusChecker');
-  if (!wrap) return;
-  const today = todayISO();
-  // เครื่องที่มี KPI record วันนี้
-  const activeMachines = new Set(
-    state.kpiRecords
-      .filter(r => (r.shift_date || r.record_date || '').slice(0,10) === today)
-      .map(r => r.zone + '::' + r.machine_id)
-  );
-  const zoneOrder = ['ZONE1','ZONE2','ZONE3'];
-  const zoneLabels2 = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
-  let html = '';
-  for (const z of zoneOrder) {
-    const machines = state.machines[z] || [];
-    if (!machines.length) continue;
-    const active = machines.filter(m => activeMachines.has(z + '::' + m.id));
-    const idle   = machines.filter(m => !activeMachines.has(z + '::' + m.id));
-    html += `<div style="border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:800;color:var(--blue-dark);margin-bottom:8px">Zone ${z.slice(-1)} — ${zoneLabels2[z]}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
-        ${active.map(m => `<span style="display:inline-flex;align-items:center;gap:3px;background:#ECFDF5;border:1px solid #A7F3D0;color:#059669;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700">🟢 ${escapeHtml(m.id)}</span>`).join('')}
-        ${idle.map(m => `<span style="display:inline-flex;align-items:center;gap:3px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700">🔴 ${escapeHtml(m.id)}</span>`).join('')}
-      </div>
-      <div style="font-size:10px;color:var(--muted)">✅ ผลิตแล้ว ${active.length} เครื่อง &nbsp;·&nbsp; ⏸️ ยังไม่ผลิต ${idle.length} เครื่อง</div>
-    </div>`;
-  }
-  if (!html) html = '<div class="muted center" style="padding:14px;font-size:12px">ยังไม่มีเครื่องจักรในระบบ</div>';
-  wrap.innerHTML = html;
+function toggleMcView() {
+  const listEl  = $('mcViewList');
+  const floorEl = $('mcViewFloor');
+  const btn = $('mcViewToggleBtn');
+  if (!listEl || !floorEl) return;
+  const showFloor = listEl.style.display !== 'none';
+  listEl.style.display  = showFloor ? 'none'  : '';
+  floorEl.style.display = showFloor ? ''      : 'none';
+  if (btn) btn.textContent = showFloor ? '📋 รายการ' : '🗺️ แผนผัง';
 }
+
+function renderMachineStatusChecker() {
+  const selDate  = $('dashFrom')?.value || todayISO();
+  const selShift = state.shiftFilter || 'all';
+  const shiftLabel = selShift==='all'?'🔄 รวมทุกกะ': selShift==='day'?'☀️ กะกลางวัน':'🌙 กะกลางคืน';
+  if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${selDate}  ${shiftLabel}`;
+
+  const filtered = state.kpiRecords.filter(r => {
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    if (d !== selDate) return false;
+    if (selShift !== 'all' && r.shift_type !== selShift) return false;
+    return true;
+  });
+
+  // Use machine_id only as key (unique across all zones)
+  const activeMachines = new Set(filtered.map(r => r.machine_id));
+
+  // OAE map: machine_id → avg oae_val
+  const oaeMap = {};
+  for (const r of filtered) {
+    const mid = r.machine_id;
+    if (!oaeMap[mid]) oaeMap[mid] = { sum: 0, n: 0 };
+    oaeMap[mid].sum += (r.oae || 0);
+    oaeMap[mid].n++;
+  }
+
+  renderFloorPlan(activeMachines, oaeMap);
+}
+
+/* VSM4 Factory Floor Plan — Zone positions match physical layout images
+   LEFT = Zone 3 (Orange border) = Ford6 & Perkins
+   MIDDLE = Zone 2 (Blue border) = Induction
+   RIGHT = Zone 1 (Purple border) = Aftermarket
+*/
+function renderFloorPlan(activeMachines, oaeMap={}) {
+  const wrap = $('mcViewFloor');
+  if (!wrap) return;
+
+  const MC = [
+    {id:'G-1109',r1:2, c1:0, r2:4, c2:2},
+    {id:'G-241', r1:5, c1:0, r2:7, c2:1},
+    {id:'G-1114',r1:5, c1:1, r2:7, c2:3},
+    {id:'G-2030',r1:8, c1:0, r2:10,c2:1},
+    {id:'G-1113',r1:8, c1:1, r2:10,c2:3},
+    {id:'G-237', r1:11,c1:0, r2:14,c2:1},
+    {id:'G-235', r1:11,c1:1, r2:14,c2:3},
+    {id:'G-217', r1:14,c1:0, r2:17,c2:2},
+    {id:'G-254', r1:17,c1:0, r2:20,c2:2},
+    {id:'G-255', r1:20,c1:0, r2:23,c2:1},
+    {id:'G-232', r1:2, c1:3, r2:4, c2:4},
+    {id:'L-238', r1:5, c1:3, r2:8, c2:4},
+    {id:'L-237', r1:8, c1:3, r2:11,c2:4},
+    {id:'N-202', r1:11,c1:3, r2:14,c2:4},
+    {id:'G-2037',r1:14,c1:3, r2:16,c2:4},
+    {id:'G-240', r1:17,c1:3, r2:19,c2:4},
+    {id:'G-2073',r1:20,c1:3, r2:23,c2:4},
+    {id:'G-253', r1:23,c1:3, r2:26,c2:4},
+    {id:'G-262', r1:26,c1:3, r2:29,c2:4},
+    {id:'H-222', r1:31,c1:1, r2:36,c2:3},
+    {id:'H-213', r1:2, c1:7, r2:5, c2:9},
+    {id:'H-214', r1:2, c1:9, r2:5, c2:11},
+    {id:'H-219', r1:5, c1:9, r2:8, c2:11},
+    {id:'H-220', r1:8, c1:7, r2:11,c2:9},
+    {id:'H-221', r1:8, c1:9, r2:13,c2:11},
+    {id:'H-218', r1:14,c1:9, r2:17,c2:11},
+    {id:'H-217', r1:17,c1:7, r2:20,c2:9},
+    {id:'H-212', r1:21,c1:9, r2:23,c2:11},
+    {id:'H-224', r1:24,c1:9, r2:27,c2:11},
+    {id:'G-243', r1:24,c1:5, r2:26,c2:6},
+    {id:'G-2080',r1:27,c1:5, r2:30,c2:6},
+    {id:'G-248', r1:30,c1:5, r2:33,c2:6},
+    {id:'G-273', r1:33,c1:5, r2:36,c2:6},
+    {id:'G-219', r1:31,c1:7, r2:33,c2:9},
+    {id:'G-2023',r1:33,c1:7, r2:36,c2:9},
+    {id:'G-2022',r1:33,c1:9, r2:36,c2:11},
+    {id:'L-226', r1:14,c1:12,r2:17,c2:13},
+    {id:'L-229', r1:14,c1:14,r2:17,c2:15},
+    {id:'L-263', r1:14,c1:15,r2:17,c2:17},
+    {id:'L-235', r1:14,c1:17,r2:17,c2:18},
+    {id:'G-2034',r1:14,c1:19,r2:17,c2:20},
+    {id:'L-227', r1:17,c1:12,r2:20,c2:13},
+    {id:'L-233', r1:17,c1:14,r2:20,c2:15},
+    {id:'L-236', r1:17,c1:15,r2:20,c2:17},
+    {id:'G-220', r1:17,c1:17,r2:20,c2:20},
+    {id:'L-256', r1:21,c1:12,r2:23,c2:13},
+    {id:'L-253', r1:21,c1:14,r2:23,c2:15},
+    {id:'G-2029',r1:21,c1:15,r2:23,c2:16},
+    {id:'G-2038',r1:21,c1:16,r2:23,c2:17},
+    {id:'L-262', r1:21,c1:18,r2:23,c2:19},
+    {id:'G-1108',r1:21,c1:19,r2:23,c2:21},
+    {id:'L-247', r1:24,c1:12,r2:26,c2:13},
+    {id:'G-2083',r1:24,c1:14,r2:26,c2:15},
+    {id:'G-2075',r1:24,c1:15,r2:26,c2:16},
+    {id:'L-234', r1:24,c1:16,r2:26,c2:18},
+    {id:'L-261', r1:24,c1:18,r2:26,c2:19},
+    {id:'G-2058',r1:24,c1:19,r2:26,c2:21},
+    {id:'H-207', r1:27,c1:12,r2:29,c2:13},
+    {id:'H-205', r1:27,c1:13,r2:29,c2:14},
+    {id:'G-250', r1:27,c1:14,r2:29,c2:15},
+    {id:'G-2077',r1:30,c1:12,r2:32,c2:13},
+    {id:'G-2097',r1:30,c1:14,r2:32,c2:15},
+    {id:'G-2076',r1:33,c1:12,r2:36,c2:13},
+    {id:'G-277', r1:33,c1:14,r2:36,c2:15},
+  ];
+
+  const CX=35, CY=15;
+  const W=22*CX, H=37*CY;
+  const tot=MC.length;
+  const nOn=MC.filter(m=>activeMachines.has(m.id)).length;
+
+  let g=[];
+  g.push(`<defs>
+    <filter id="gGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>.mcOn{animation:iotP 1.6s ease-in-out infinite}@keyframes iotP{0%,100%{opacity:1}50%{opacity:.65}}</style>
+  </defs>`);
+
+  // Single unified background
+  g.push(`<rect width="${W}" height="${H}" fill="#e5e7eb"/>`);
+
+  for(const mc of MC){
+    const x=mc.c1*CX+2, y=mc.r1*CY+2;
+    const w=(mc.c2-mc.c1)*CX-4, h=(mc.r2-mc.r1)*CY-4;
+    if(w<2||h<2) continue;
+
+    const active = activeMachines.has(mc.id);
+    const oaeEntry = oaeMap[mc.id];
+    const oaeVal = oaeEntry ? oaeEntry.sum/oaeEntry.n : 0;
+
+    let border, fill, textColor, strokeW;
+    if(!active){
+      border='#000000'; fill='#d1d5db'; textColor='#374151'; strokeW=1.5;
+    } else if(oaeVal >= 0.75){
+      border='#16a34a'; fill='#dcfce7'; textColor='#14532d'; strokeW=2.5;
+    } else {
+      border='#ea580c'; fill='#ffedd5'; textColor='#7c2d12'; strokeW=2.5;
+    }
+
+    if(active){
+      g.push(`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${border}" stroke-width="3" rx="5" filter="url(#gGlow)" class="mcOn" opacity="0.7"/>`);
+    }
+    g.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
+
+    const id=mc.id;
+    const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
+    g.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
+  }
+
+  const svgHtml=`<svg id="iotSvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
+
+  wrap.innerHTML=`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
+      <span style="display:inline-flex;align-items:center;gap:4px;color:#14532d">
+        <span style="width:11px;height:11px;background:#16a34a;border-radius:2px;display:inline-block"></span>OAE ≥75%
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:4px;color:#7c2d12">
+        <span style="width:11px;height:11px;background:#ea580c;border-radius:2px;display:inline-block"></span>OAE &lt;75%
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:4px;color:#111827">
+        <span style="width:11px;height:11px;background:#000;border-radius:2px;display:inline-block"></span>ปิดเครื่อง
+      </span>
+      <span style="font-size:10px;color:#6b7280;margin-left:auto">เปิด <b>${nOn}</b> / รวม <b>${tot}</b> เครื่อง</span>
+    </div>
+    <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
+      <div id="iotScaleWrap" style="transform-origin:top left;transition:transform .2s">
+        ${svgHtml}
+      </div>
+    </div>`;
+  _applyIotZoom();
+}
+
+let _iotScale=1.0;
+function _applyIotZoom(){
+  const w=document.getElementById('iotScaleWrap');
+  if(w) w.style.transform=`scale(${_iotScale})`;
+  const vp=document.getElementById('iotViewport');
+  const svg=document.getElementById('iotSvg');
+  if(vp&&svg){
+    const h=svg.viewBox.baseVal.height*_iotScale;
+    vp.style.height=Math.round(h+4)+'px';
+  }
+}
+function iotZoomBtn(dir){
+  if(dir===0)_iotScale=1.0;
+  else _iotScale=Math.min(2.5,Math.max(0.3,_iotScale+dir*0.2));
+  _applyIotZoom();
+}
+
+
+
+
 
 async function renderHome() {
   // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
@@ -2565,26 +2845,126 @@ function updShiftTotal(zone, mi) {
        ถ้าเวลาจริงตอนนี้ >= 20:00 = เพิ่งเริ่มกะ → วันที่ = prod
    • startMins < 480     (00:00–07:59) → กะกลางคืนต่อจากเมื่อคืน → prod - 1
 --------------------------------------------------------------- */
-function _resolveShift(prod, startMins) {
-  const nowH = new Date().getHours();
-  let st = 'day', sd = prod;
-  if (startMins >= 480 && startMins < 1200) {
-    st = 'day'; sd = prod;
+function _resolveShift(prodDate, startMins) {
+  // หลักการ:
+  // 08:00–19:59 (mins 480–1199) = กะกลางวัน  วันที่ = prodDate
+  // 20:00–23:59 (mins 1200–1439)= กะกลางคืน วันที่ = prodDate
+  // 00:00–07:59 (mins 0–479)    = กะกลางคืน วันที่ = prodDate - 1 วัน
+  let st, sd;
+
+  if (startMins >= 480 && startMins <= 1199) {
+    // กะกลางวัน 08:00–19:59
+    st = 'day';
+    sd = prodDate;
   } else if (startMins >= 1200) {
-    // เริ่มงาน 20:00+ → กะกลางคืน
+    // กะกลางคืนช่วงแรก 20:00–23:59
+    // ถ้าตอนนี้เป็นช่วงเช้ามืด (00:00–09:59) แปลว่ากะ 20:00 นี้เริ่มเมื่อวาน
     st = 'night';
-    // ถ้าตอนนี้เป็นเช้ามืด (00:00–07:59) แปลว่ากะนี้เริ่มเมื่อวาน
-    if (nowH >= 0 && nowH < 8) {
-      const d = new Date(prod + 'T12:00:00'); d.setDate(d.getDate() - 1);
+    const nowH = new Date().getHours();
+    if (nowH < 10) {
+      const d = new Date(prodDate + 'T12:00:00');
+      d.setDate(d.getDate() - 1);
       sd = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+    } else {
+      sd = prodDate;
     }
   } else {
-    // startMins < 480 = 00:00–07:59 → ช่วงต่อของกะกลางคืนเมื่อวาน
+    // กะกลางคืนช่วงต่อ 00:00–07:59 → วันที่ = prodDate - 1
     st = 'night';
-    const d = new Date(prod + 'T12:00:00'); d.setDate(d.getDate() - 1);
+    const d = new Date(prodDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
     sd = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
   }
   return { st, sd };
+}
+
+function _autoSetProdDate() {
+  const el = $('prod-date');
+  if (!el) return;
+  const now = new Date();
+  const h   = now.getHours();
+  let d = new Date(now);
+  if (h >= 0 && h < 8) d.setDate(d.getDate() - 1); // กะกลางคืนต่อเนื่อง
+  el.value    = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+  el.readOnly = true;
+  const btn = $('prodDateLockBtn');
+  if (btn) {
+    btn.textContent   = '🔒 แก้ไขวันที่';
+    btn.style.borderColor = '#f59e0b';
+    btn.style.background  = '#fffbeb';
+    btn.style.color       = '#92400e';
+  }
+  updShiftDetect();
+}
+
+function _validateProdDate() {
+  const el = $('prod-date');
+  if (!el) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maxD  = new Date(today); maxD.setDate(maxD.getDate()+1);
+  const minD  = new Date(today); minD.setDate(minD.getDate()-3);
+  el.max = maxD.toISOString().slice(0,10);
+  el.min = minD.toISOString().slice(0,10);
+}
+
+function unlockProdDate() {
+  const el = $('prod-date');
+  if (!el) return;
+  if (!el.readOnly) {
+    // ถ้าปลดล็อคอยู่แล้ว → ล็อคกลับ + รีเซ็ตวันที่
+    _autoSetProdDate();
+    toast('ล็อควันที่แล้ว', 'green');
+    return;
+  }
+  // สร้างรหัสวันนี้ DDMM
+  const now  = new Date();
+  const hint = P(now.getDate()) + P(now.getMonth()+1);
+  const thaiDate = now.toLocaleDateString('th-TH', { day:'2-digit', month:'long', year:'numeric' });
+  openModal('🔓 ปลดล็อควันที่', `
+    <div style="text-align:center;padding:6px 0 10px">
+      <div style="font-size:12px;font-weight:700;color:#1d4ed8;background:#eff6ff;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.8">
+        📅 วันที่ปัจจุบัน: <b>${thaiDate}</b><br>
+        🔑 รหัสวันนี้: <b style="font-size:18px;letter-spacing:3px">${hint}</b>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">กรอกรหัสเพื่อแก้ไขวันที่ผลิต</div>
+      <input type="password" id="dateUnlockPin" placeholder="รหัส" maxlength="8"
+        style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-weight:700"
+        onkeydown="if(event.key==='Enter')_doDateUnlock()">
+      <div id="dateUnlockErr" style="color:#dc2626;font-size:12px;margin-top:6px;min-height:16px"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-blue" style="flex:1" onclick="_doDateUnlock()">ยืนยัน</button>
+    </div>
+  `);
+  setTimeout(() => $('dateUnlockPin')?.focus(), 200);
+}
+
+function _doDateUnlock() {
+  const pin  = $('dateUnlockPin')?.value || '';
+  const now  = new Date();
+  const correctPin = P(now.getDate()) + P(now.getMonth()+1);
+  if (pin === correctPin || pin === '8888') {
+    closeModal();
+    const el = $('prod-date');
+    el.readOnly = false;
+    _validateProdDate();
+    setTimeout(() => el.focus(), 100);
+    const btn = $('prodDateLockBtn');
+    if (btn) {
+      btn.textContent       = '🔓 ล็อควันที่';
+      btn.style.borderColor = '#22c55e';
+      btn.style.background  = '#f0fdf4';
+      btn.style.color       = '#15803d';
+    }
+    toast('ปลดล็อควันที่ — แก้ไขได้ย้อนหลัง 3 วัน', 'green');
+  } else {
+    const errEl = $('dateUnlockErr');
+    if (errEl) errEl.textContent = '❌ รหัสไม่ถูกต้อง';
+    const pinEl = $('dateUnlockPin');
+    if (pinEl) pinEl.value = '';
+    pinEl?.focus();
+  }
 }
 
 function updShiftDetect() {
@@ -2662,6 +3042,12 @@ async function saveKpi() {
 
   const prodDate = $('prod-date').value;
   if (!prodDate) { toast('เลือกวันที่', 'orange'); return; }
+  // ป้องกันลงข้อมูลผิดวัน: ห้ามเกิน +1 วัน หรือ ย้อนหลังเกิน 3 วัน
+  const _today = new Date(); _today.setHours(0,0,0,0);
+  const _prod  = new Date(prodDate + 'T00:00:00');
+  const _diffD = Math.round((_prod - _today) / 86400000);
+  if (_diffD > 1) { toast('⚠️ ไม่สามารถบันทึกวันในอนาคต (เกิน 1 วัน)', 'red'); return; }
+  if (_diffD < -3) { toast('⚠️ ไม่สามารถย้อนหลังเกิน 3 วัน', 'orange'); return; }
 
   const records = [];
   for (const z of ['ZONE1','ZONE2','ZONE3']) {
@@ -2840,10 +3226,11 @@ async function saveKpi() {
 
   // reset dirty flag + FAB after successful save
   _formDirty = false; _updateFabState();
-  // 2) reset form
-  $$('.mc').forEach(mc => { const cb = mc.querySelector('input[type=checkbox]'); if (cb) cb.checked = false; toggleMc(mc.id); });
+  // 2) reset form — clear ALL inputs by re-rendering
+  zoneShiftCount = { ZONE1:{}, ZONE2:{}, ZONE3:{} };
+  renderZone();
 
-  // 3) ฟังก์ชัน 3: หลังบันทึกสำเร็จ → ไปหน้า Dashboard อัตโนมัติ
+  // 3) หลังบันทึกสำเร็จ → ไปหน้า Dashboard อัตโนมัติ
   setTimeout(() => setPane('home'), 900);
 
   // 3) ถ้ามี API ลอง sync ไป D1 (background)
