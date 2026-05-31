@@ -490,6 +490,9 @@ tbody tr:last-child td{border-bottom:none}
   <!-- Summary card (รวมทุก Zone) -->
   <div id="kpiSummary"></div>
 
+  <!-- ขอความช่วยเหลือ (สรุป + ติดตามผล) -->
+  <div id="helpSummary"></div>
+
   <!-- Per-Zone cards -->
   <div id="kpiPerZone"></div>
 
@@ -2143,6 +2146,9 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
   if (!krecs.length) return '<div class="zkpi-empty">ยังไม่มีข้อมูลในกะนี้</div>';
   const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
   const avg = (k) => krecs.length ? sum(k)/krecs.length : 0;
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record) — แม่นยำเมื่อมีหลายช่วง/หลายเครื่อง
+  const oaeAgg  = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplhAgg = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const cls = (v, t, rev=false) => {
     const r = rev ? +t/Math.max(+v,1e-9) : +v/Math.max(+t,1e-9);
     return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad';
@@ -2152,9 +2158,9 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
   const textColor = dark ? 'rgba(255,255,255,.9)' : 'var(--blue-dark)';
   const boxBg = dark ? 'rgba(255,255,255,.13)' : 'var(--blue-light)';
   return `<div class="zkpi-grid">
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${avg('oae')>1?'warn':cls(avg('oae'), t.oae)}">${pctOae(avg('oae'))}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${(()=>{const _p=calcZonePdac(krecs,zoneKey);return cls(_p.ratio,t.pdac)})()}">${(()=>{const _p=calcZonePdac(krecs,zoneKey);return pct(_p.ratio)+' <span style="font-size:9px;opacity:.8">('+_p.str+')</span>'})()}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">SCRAP</div><div class="zkpi-v ${cls(t.scrap, avg('scrap_rate'), true)}">${pct(avg('scrap_rate'))}</div><div class="zkpi-t">≤ ${pct(t.scrap)}</div></div>
   </div>
@@ -2178,9 +2184,10 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
   };
   // ใช้ per-zone targets (summary ใช้ zone1 เป็น default หรือ flat ก็ได้)
   const t = summary ? (state.targets || {}) : zoneTargetsObj(zoneKey);
-  const oae   = avg('oae');
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
+  const oae   = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplh  = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const dle   = avg('dle');
-  const pplh  = avg('pplh');
   const pdacInfo = calcZonePdac(krecs, summary ? 'ALL' : zoneKey);
   const pdac  = pdacInfo.ratio;
   const scrap = avg('scrap_rate');
@@ -2254,6 +2261,69 @@ function setShiftFilter(s) {
 /* ============================================================
    ZONE DRILLDOWN — กดดูแยกเครื่อง
    ============================================================ */
+/* ============================================================
+   ขอความช่วยเหลือ (Assistance request) — เก็บใน record.shifts[0].help
+   { text, status:'open'|'done', by, at, done_by, done_at }  (sync ขึ้น D1 ผ่าน shifts)
+   ============================================================ */
+function _recHelp(r){ const h = r && r.shifts && r.shifts[0] && r.shifts[0].help; return (h && h.text) ? h : null; }
+function _recHelpOpen(r){ const h = _recHelp(r); return (h && h.status !== 'done') ? h : null; }
+function _zoneHasOpenHelp(recs){ return recs.some(r => _recHelpOpen(r)); }
+
+function renderHelpSummary(recs){
+  const box = $('helpSummary'); if (!box) return;
+  const withHelp = (recs||[]).filter(r => _recHelp(r));
+  const open = withHelp.filter(r => _recHelpOpen(r));
+  const done = withHelp.filter(r => !_recHelpOpen(r));
+  if (!withHelp.length){ box.innerHTML = ''; return; }
+  const row = (r, isOpen) => {
+    const h = _recHelp(r);
+    const oae = (Math.min(+r.oae||0,9.99)*100).toFixed(1);
+    const d = (r.shift_date||r.record_date||'').slice(0,10);
+    const sh = r.shift_type==='night'?'🌙':'☀️';
+    return `<div style="border:1.5px solid ${isOpen?'#FCA5A5':'#A7F3D0'};background:${isOpen?'#FEF2F2':'#F0FDF4'};border-radius:10px;padding:9px 11px;margin-bottom:7px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-weight:800;color:var(--blue-dark)">🆘 ${escapeHtml(r.machine_id||'-')}</span>
+        <span class="tag tag-blue">${escapeHtml(r.zone||'')}</span>
+        <span style="font-size:11px;color:var(--muted)">${sh} ${d}</span>
+        <span class="tag ${(+r.oae||0)<0.75?'tag-red':'tag-green'}">OAE ${oae}%</span>
+        <span style="margin-left:auto" class="tag ${isOpen?'tag-orange':'tag-green'}">${isOpen?'⏳ รอดำเนินการ':'✅ แก้ไขแล้ว'}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text);margin-top:5px;white-space:pre-wrap">${escapeHtml(h.text)}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:4px">โดย ${escapeHtml(h.by||'-')} · ${(h.at||'').slice(0,16).replace('T',' ')}${h.done_by?` · ปิดโดย ${escapeHtml(h.done_by)} ${(h.done_at||'').slice(0,16).replace('T',' ')}`:''}</div>
+      ${isOpen?`<button class="btn btn-green btn-sm mt-8" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ ทำเครื่องหมายแก้ไขแล้ว</button>`:''}
+    </div>`;
+  };
+  box.innerHTML = `<div class="card" style="border-color:#FCA5A5">
+    <div class="card-title" style="color:#B91C1C"><span class="ci" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🆘</span>ขอความช่วยเหลือ
+      <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)">รอ ${open.length} · เสร็จ ${done.length}</span>
+    </div>
+    ${open.length ? open.map(r=>row(r,true)).join('') : '<div class="muted center" style="font-size:12px;padding:6px">ไม่มีรายการที่รอดำเนินการ 🎉</div>'}
+    ${done.length ? `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">ดูที่แก้ไขแล้ว (${done.length})</summary><div style="margin-top:6px">${done.map(r=>row(r,false)).join('')}</div></details>` : ''}
+  </div>`;
+}
+
+async function resolveHelp(rid){
+  if (!rid) return;
+  const r = state.kpiRecords.find(x => x.record_id === rid);
+  if (!r){ toast('ไม่พบรายการ (ลองโหลดข้อมูลใหม่)', 'orange'); return; }
+  if (!r.shifts || !r.shifts[0]) r.shifts = [r.shifts && r.shifts[0] || {}];
+  r.shifts[0].help = Object.assign({}, r.shifts[0].help, {
+    status: 'done',
+    done_by: (CURRENT_USER && CURRENT_USER.id) || OP || '',
+    done_at: new Date().toISOString(),
+  });
+  lsSave(LS.KPI, state.kpiRecords);
+  toast('ทำเครื่องหมายแก้ไขแล้ว', 'green');
+  renderHome();
+  if (API){
+    try {
+      await api('/api/kpi/delete', { body: { record_id: rid } });
+      const ins = await api('/api/kpi', { body: { records: [r] } });
+      if (ins && ins.ids && ins.ids[0]){ r.record_id = ins.ids[0]; lsSave(LS.KPI, state.kpiRecords); }
+    } catch(e){ toast('บันทึกขึ้น Cloud ไม่สำเร็จ — เก็บ Local แล้ว', 'orange'); }
+  }
+}
+
 async function showZoneDetail(zone) {
   const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
   const dFrom = $('dashFrom')?.value || todayISO();
@@ -2312,6 +2382,9 @@ async function showZoneDetail(zone) {
 function zoneMachineCard(mc, records) {
   const sum = (k) => records.reduce((s,r)=>s + (Number(r[k])||0), 0);
   const avg = (k) => records.length ? sum(k)/records.length : 0;
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
+  const oaeAgg  = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplhAgg = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const t = state.targets;
   const cls = (v, tt, rev=false) => {
     const r = rev ? +tt/Math.max(+v,1e-9) : +v/Math.max(+tt,1e-9);
@@ -2325,14 +2398,27 @@ function zoneMachineCard(mc, records) {
       <div class="zkpi-empty">ยังไม่มีข้อมูล KPI ในช่วงนี้</div>
     </div>`;
   }
+  const helpList = records.filter(r => _recHelp(r));
+  const openHelpN = helpList.filter(r => _recHelpOpen(r)).length;
+  const helpBanner = helpList.length ? `<div style="margin:8px 0;border:1.5px solid ${openHelpN?'#FCA5A5':'#A7F3D0'};background:${openHelpN?'#FEF2F2':'#F0FDF4'};border-radius:9px;padding:8px 10px">
+    <div style="font-size:11px;font-weight:800;color:${openHelpN?'#B91C1C':'#047857'};margin-bottom:4px">🆘 ขอความช่วยเหลือ ${openHelpN?`(รอ ${openHelpN})`:'(แก้ไขแล้ว)'}</div>
+    ${helpList.map(r => { const h=_recHelp(r); const op=h.status!=='done'; return `<div style="font-size:12px;padding:4px 0;border-top:1px solid rgba(0,0,0,.05)">
+      <span class="tag ${op?'tag-orange':'tag-green'}">${op?'⏳':'✅'}</span>
+      <span style="color:var(--muted2);font-size:10px">${(r.shift_date||'').slice(5)} ${r.shift_type==='night'?'🌙':'☀️'} · OAE ${(Math.min(+r.oae||0,9.99)*100).toFixed(0)}%</span>
+      <div style="white-space:pre-wrap;margin:2px 0">${escapeHtml(h.text)}</div>
+      ${op?`<button class="btn btn-green btn-sm" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ แก้ไขแล้ว</button>`:`<span style="font-size:10px;color:var(--muted2)">ปิดโดย ${escapeHtml(h.done_by||'-')}</span>`}
+    </div>`; }).join('')}
+  </div>` : '';
   return `<div class="zkpi-card">
     <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
+      ${openHelpN?`<span class="tag tag-red" style="margin-left:6px">🆘 ${openHelpN}</span>`:''}
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">${records.length} record</span>
     </div>
+    ${helpBanner}
     <div class="zkpi-grid">
-      <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${avg('oae')>1?'warn':cls(avg('oae'), t.oae)}">${pctOae(avg('oae'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${avg('pdac_val')>=t.pdac?'✓':'✗'}</div></div>
     </div>
@@ -2703,11 +2789,15 @@ async function renderHome() {
   if ($('kpiPerZone')) {
     const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
     $('kpiPerZone').innerHTML = ['ZONE1','ZONE2','ZONE3'].map(z => {
-      const card = zoneKpiCard(z, `Zone ${z.slice(-1)} — ${zoneLabels[z]}`, kpiInRange.filter(r => r.zone === z));
+      const zRecs = kpiInRange.filter(r => r.zone === z);
+      const card = zoneKpiCard(z, `Zone ${z.slice(-1)} — ${zoneLabels[z]}`, zRecs);
+      const openHelp = zRecs.filter(r => _recHelpOpen(r)).length;
+      const helpBadge = openHelp ? `<span style="position:absolute;top:8px;right:10px;z-index:2;background:#DC2626;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;box-shadow:0 2px 6px rgba(220,38,38,.4)">🆘 ${openHelp}</span>` : '';
       // wrap in clickable container
-      return `<div style="cursor:pointer;transition:transform .12s" onclick="showZoneDetail('${z}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">${card}<div style="text-align:right;font-size:11px;color:var(--blue);font-weight:700;margin:-4px 4px 8px;letter-spacing:.3px">กดเพื่อดูรายละเอียดแต่ละเครื่อง →</div></div>`;
+      return `<div style="cursor:pointer;transition:transform .12s;position:relative" onclick="showZoneDetail('${z}')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">${helpBadge}${card}<div style="text-align:right;font-size:11px;color:var(--blue);font-weight:700;margin:-4px 4px 8px;letter-spacing:.3px">กดเพื่อดูรายละเอียดแต่ละเครื่อง →</div></div>`;
     }).join('');
   }
+  renderHelpSummary(kpiInRange);
 
   try {
     if ($('hProdToday')) $('hProdToday').textContent = prodRes.records.length;
@@ -3132,26 +3222,35 @@ function updShiftDetect() {
 /* ============================================================
    FIX 9: SUBMIT SUMMARY MODAL — แสดงสรุปก่อน submit
    ============================================================ */
+const OAE_HELP_THRESHOLD = 0.75; // OAE ต่ำกว่านี้ → เปิดกล่องขอความช่วยเหลือ
 function _showSubmitSummary(records, prodDate) {
   return new Promise(resolve => {
-    const shiftDetect = $('shift-detect')?.value || '—';
-    const rows = records.map(rec => {
+    const lowCount = records.filter(r => (+r.oae||0) < OAE_HELP_THRESHOLD).length;
+    const rows = records.map((rec, i) => {
       const s = rec.shifts?.[0] || {};
-      return `<div style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;background:var(--blue-light)">
-        <div style="font-weight:800;color:var(--blue-dark);margin-bottom:4px">🏭 ${escapeHtml(rec.machine_id)} <span style="font-weight:400;color:var(--muted)">${escapeHtml(rec.zone)}</span></div>
+      const oaePct = (Math.min(+rec.oae||0, 9.99) * 100).toFixed(1);
+      const low = (+rec.oae||0) < OAE_HELP_THRESHOLD;
+      const existingHelp = (rec.shifts?.[0]?.help?.text) || '';
+      return `<div style="border:1.5px solid ${low?'#FCA5A5':'var(--border)'};border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;background:${low?'#FEF2F2':'var(--blue-light)'}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-weight:800;color:var(--blue-dark)">🏭 ${escapeHtml(rec.machine_id)}</span>
+          <span style="font-weight:400;color:var(--muted)">${escapeHtml(rec.zone)}</span>
+          <span style="margin-left:auto;font-weight:800;font-size:14px;color:${low?'#DC2626':'#059669'}">OAE ${oaePct}%</span>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">
           <span>📅 วันที่: <b>${escapeHtml(rec.shift_date||prodDate)}</b></span>
           <span>กะ: <b>${rec.shift_type==='day'?'☀️ กลางวัน':'🌙 กลางคืน'}</b></span>
           <span>OPR: <b>${rec.opr} ชิ้น</b></span>
           <span>Target: <b>${rec.target||'—'}</b></span>
-          <span>Scrap: <b>${rec.scrap||0}</b></span>
-          <span>CT: <b>${rec.ct||'—'} sec</b></span>
           <span>เวลา: <b>${s.ts||'—'} → ${s.te||'—'}</b></span>
           <span>พนักงาน: <b>${escapeHtml(rec.emp_id||'—')}</b></span>
           ${rec.valve_no ? `<span>Valve: <b>${escapeHtml(rec.valve_no)}</b></span>` : ''}
           ${rec.lot ? `<span>Lot: <b>${escapeHtml(rec.lot)}</b></span>` : ''}
-          ${rec.last_process ? `<span>Process: <b>${escapeHtml(rec.last_process)}</b></span>` : ''}
         </div>
+        ${low ? `<div style="margin-top:8px;background:#fff;border:1.5px dashed #FCA5A5;border-radius:8px;padding:8px">
+          <label style="display:block;font-size:11px;font-weight:800;color:#B91C1C;margin-bottom:4px">🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)</label>
+          <textarea id="_help_${i}" rows="2" placeholder="เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ / ต้องการกำลังคนเพิ่ม" style="width:100%;padding:8px;border:1.5px solid #FCA5A5;border-radius:7px;font-family:inherit;font-size:13px;resize:vertical">${escapeHtml(existingHelp)}</textarea>
+        </div>` : ''}
       </div>`;
     }).join('');
 
@@ -3163,7 +3262,8 @@ function _showSubmitSummary(records, prodDate) {
         <span style="font-size:15px;font-weight:800">ตรวจสอบข้อมูลก่อนบันทึก</span>
         <span style="margin-left:auto;font-size:12px;opacity:.8">${records.length} record</span>
       </div>
-      <div style="padding:14px;max-height:60vh;overflow-y:auto">
+      ${lowCount ? `<div style="background:#FEF2F2;color:#B91C1C;font-size:12px;font-weight:700;padding:8px 16px;border-bottom:1px solid #FECACA">⚠️ มี ${lowCount} เครื่อง OAE ต่ำกว่า 75% — กรอกขอความช่วยเหลือได้ด้านล่าง</div>` : ''}
+      <div style="padding:14px;max-height:58vh;overflow-y:auto">
         ${rows}
       </div>
       <div style="padding:12px 14px;border-top:1.5px solid var(--border);display:flex;gap:10px;justify-content:flex-end">
@@ -3172,7 +3272,22 @@ function _showSubmitSummary(records, prodDate) {
       </div>
     </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('#_sumOk').onclick = () => { overlay.remove(); resolve(true); };
+    const collectHelp = () => {
+      records.forEach((rec, i) => {
+        const ta = overlay.querySelector('#_help_' + i);
+        if (!ta) return;
+        const txt = ta.value.trim();
+        if (!rec.shifts || !rec.shifts[0]) rec.shifts = [{}];
+        if (txt) {
+          rec.shifts[0].help = {
+            text: txt, status: 'open',
+            by: (CURRENT_USER && CURRENT_USER.id) || OP || '',
+            at: new Date().toISOString(),
+          };
+        }
+      });
+    };
+    overlay.querySelector('#_sumOk').onclick = () => { collectHelp(); overlay.remove(); resolve(true); };
     overlay.querySelector('#_sumEdit').onclick = () => { overlay.remove(); resolve(false); };
   });
 }
