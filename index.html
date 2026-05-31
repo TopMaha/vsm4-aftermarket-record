@@ -2855,12 +2855,20 @@ function calcWT(s, e) {
   if (!s || !e) return { hr: 0, wt: 0 };
   const tm = (t) => { const [h, m] = t.split(':').map(Number); return h*60 + m; };
   let sm = tm(s), em = tm(e);
-  if (em < sm) em += 24*60;
+  if (em < sm) em += 24*60;     // ข้ามเที่ยงคืน (กะกลางคืน)
   if (em <= sm) return { hr: 0, wt: 0 };
   const hr = (em - sm) / 60;
-  let ded = 0;
-  if (sm < 780 && em > 720) ded = (Math.min(em, 780) - Math.max(sm, 720)) / 60; // lunch 12:00-13:00
-  return { hr, wt: Math.max(hr - ded, 0) };
+  // ช่วงพักเบรค (นาทีจาก 00:00): กลางวัน 12:00–13:00, กลางคืน 00:00–01:00
+  // หากช่วงเวลาทำงานทับเบรค → หักออกตามจำนวนที่ทับจริง (เผื่อกะข้ามวันด้วย offset +1440)
+  const BREAKS = [[720, 780], [0, 60]];
+  let dedMin = 0;
+  for (const [b0, b1] of BREAKS) {
+    for (const off of [0, 1440]) {
+      const ov = Math.min(em, b1 + off) - Math.max(sm, b0 + off);
+      if (ov > 0) dedMin += ov;
+    }
+  }
+  return { hr, wt: Math.max(hr - dedMin/60, 0) };
 }
 
 function renderZone() {
@@ -2986,6 +2994,36 @@ function _resolveShift(prodDate, startMins) {
   return { st, sd: prodDate };
 }
 
+/* ============================================================
+   _computeShift — หา "ประเภทกะ" + "วันที่ของกะ" จากเวลาเริ่มงานที่กรอก
+   กติกา:
+     08:00–19:59 = กะกลางวัน  → วันที่ = วันที่เริ่มงาน
+     20:00–23:59 = กะกลางคืน  → วันที่ = วันที่เริ่มงาน
+     00:00–07:59 = กะกลางคืน  → วันที่ = วันก่อนหน้า (เป็นกะดึกของเมื่อวาน)
+   โหมด auto: คำนวณวันจริงจาก "เวลาที่กดบันทึก (now)" + "เวลาเริ่มงาน"
+     - ถ้าเวลาเริ่มยังมาไม่ถึงในวันนี้ (เช่น now 09:00 แต่กรอกเริ่ม 20:00) = กะนั้นเริ่มเมื่อวาน
+   โหมด admin (ปลดล็อควันที่): ใช้วันที่ที่แอดมินเลือกเป็น "วันทำงาน" ตรง ๆ
+   ============================================================ */
+function _computeShift(tsStr) {
+  const [h, m] = (tsStr || '').split(':').map(Number);
+  const startMins = (h || 0) * 60 + (m || 0);
+  const st = (startMins >= 480 && startMins <= 1199) ? 'day' : 'night';
+  const el = $('prod-date');
+  const isAuto = el ? (el.readOnly !== false) : true;
+  if (!isAuto && el && el.value) {
+    // แอดมินกำหนดวันเอง → วันที่ของกะ = วันที่เลือก (กะดึกถือเป็นวันทำงานเดียวกัน)
+    return { st, sd: el.value };
+  }
+  // auto: หาวันที่จริงของเวลาเริ่มงานเทียบกับเวลาปัจจุบัน
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const d = new Date(now); d.setHours(0, 0, 0, 0);
+  if (startMins > nowMins) d.setDate(d.getDate() - 1); // เวลาเริ่มยังไม่ถึงวันนี้ → เริ่มเมื่อวาน
+  if (startMins < 480)     d.setDate(d.getDate() - 1); // กะดึกช่วง 00:00–07:59 → เป็นของเมื่อวาน
+  const sd = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+  return { st, sd };
+}
+
 function _autoSetProdDate() {
   const el = $('prod-date');
   if (!el) return;
@@ -3079,10 +3117,11 @@ function updShiftDetect() {
       if (!on?.checked) continue;
       const ts = $(`${z}_${mi}_s0_ts`)?.value;
       if (ts) {
-        const [h,m] = ts.split(':').map(Number);
-        const mins = h*60 + (m||0);
-        const { st, sd } = _resolveShift(prod, mins);
+        const { st, sd } = _computeShift(ts);
         $('shift-detect').value = `${st === 'day' ? '☀️ กะกลางวัน' : '🌙 กะกลางคืน'} (${sd})`;
+        // โหมด auto → ปรับ "วันที่ผลิต" ให้ตรงกับวันที่ของกะที่คำนวณได้
+        const el = $('prod-date');
+        if (el && el.readOnly !== false && el.value !== sd) el.value = sd;
         return;
       }
     }
@@ -3177,9 +3216,7 @@ async function saveKpi() {
         const { wt } = calcWT(ts, te);
         if (!opr && !scrap) return;
         if (si === 0 && ts) {
-          const [h,mm] = ts.split(':').map(Number);
-          const mins = h*60 + (mm||0);
-          const { st, sd } = _resolveShift(prodDate, mins);
+          const { st, sd } = _computeShift(ts);
           mainShiftType = st; shiftDate = sd;
         }
         shifts.push({ si, opr, scrap, target, ct, ts, te, wt, emp, valve, lot, proc });
@@ -3197,9 +3234,7 @@ async function saveKpi() {
         // คำนวณ shift_type + shift_date จากเวลาเริ่มของแต่ละ slot
         let slotShiftType = mainShiftType, slotShiftDate = shiftDate;
         if (sTs) {
-          const [sh, sm2] = sTs.split(':').map(Number);
-          const smins = sh*60 + (sm2||0);
-          const { st: _st2, sd: _sd2 } = _resolveShift(prodDate, smins);
+          const { st: _st2, sd: _sd2 } = _computeShift(sTs);
           slotShiftType = _st2; slotShiftDate = _sd2;
         }
         const manUsed = m.man_std;
@@ -3217,7 +3252,7 @@ async function saveKpi() {
         const scrapRate = (sOpr + sScrap) > 0 ? sScrap / (sOpr + sScrap) : 0;
         const pdacPass  = pdac >= 0.9 ? 'PASS' : 'FAIL';
         records.push({
-          record_date: prodDate, shift_date: slotShiftDate, shift_type: slotShiftType,
+          record_date: slotShiftDate, shift_date: slotShiftDate, shift_type: slotShiftType,
           zone: z, zone_label: ZONE_LABEL[z], machine_id: m.id,
           emp_id: shiftEntry.emp || '', emp_name: shiftEntry.emp || '',
           shift_ids: shiftEntry.emp,
