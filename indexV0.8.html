@@ -2143,6 +2143,9 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
   if (!krecs.length) return '<div class="zkpi-empty">ยังไม่มีข้อมูลในกะนี้</div>';
   const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
   const avg = (k) => krecs.length ? sum(k)/krecs.length : 0;
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record) — แม่นยำเมื่อมีหลายช่วง/หลายเครื่อง
+  const oaeAgg  = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplhAgg = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const cls = (v, t, rev=false) => {
     const r = rev ? +t/Math.max(+v,1e-9) : +v/Math.max(+t,1e-9);
     return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad';
@@ -2152,9 +2155,9 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
   const textColor = dark ? 'rgba(255,255,255,.9)' : 'var(--blue-dark)';
   const boxBg = dark ? 'rgba(255,255,255,.13)' : 'var(--blue-light)';
   return `<div class="zkpi-grid">
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${avg('oae')>1?'warn':cls(avg('oae'), t.oae)}">${pctOae(avg('oae'))}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${(()=>{const _p=calcZonePdac(krecs,zoneKey);return cls(_p.ratio,t.pdac)})()}">${(()=>{const _p=calcZonePdac(krecs,zoneKey);return pct(_p.ratio)+' <span style="font-size:9px;opacity:.8">('+_p.str+')</span>'})()}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">SCRAP</div><div class="zkpi-v ${cls(t.scrap, avg('scrap_rate'), true)}">${pct(avg('scrap_rate'))}</div><div class="zkpi-t">≤ ${pct(t.scrap)}</div></div>
   </div>
@@ -2178,9 +2181,10 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
   };
   // ใช้ per-zone targets (summary ใช้ zone1 เป็น default หรือ flat ก็ได้)
   const t = summary ? (state.targets || {}) : zoneTargetsObj(zoneKey);
-  const oae   = avg('oae');
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
+  const oae   = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplh  = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const dle   = avg('dle');
-  const pplh  = avg('pplh');
   const pdacInfo = calcZonePdac(krecs, summary ? 'ALL' : zoneKey);
   const pdac  = pdacInfo.ratio;
   const scrap = avg('scrap_rate');
@@ -2312,6 +2316,9 @@ async function showZoneDetail(zone) {
 function zoneMachineCard(mc, records) {
   const sum = (k) => records.reduce((s,r)=>s + (Number(r[k])||0), 0);
   const avg = (k) => records.length ? sum(k)/records.length : 0;
+  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
+  const oaeAgg  = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
+  const pplhAgg = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
   const t = state.targets;
   const cls = (v, tt, rev=false) => {
     const r = rev ? +tt/Math.max(+v,1e-9) : +v/Math.max(+tt,1e-9);
@@ -2330,9 +2337,9 @@ function zoneMachineCard(mc, records) {
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">${records.length} record</span>
     </div>
     <div class="zkpi-grid">
-      <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${avg('oae')>1?'warn':cls(avg('oae'), t.oae)}">${pctOae(avg('oae'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(avg('pplh'), t.pplh)}">${nn(avg('pplh'))}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${avg('pdac_val')>=t.pdac?'✓':'✗'}</div></div>
     </div>
