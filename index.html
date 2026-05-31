@@ -2265,7 +2265,14 @@ function setShiftFilter(s) {
    ขอความช่วยเหลือ (Assistance request) — เก็บใน record.shifts[0].help
    { text, status:'open'|'done', by, at, done_by, done_at }  (sync ขึ้น D1 ผ่าน shifts)
    ============================================================ */
-function _recHelp(r){ const h = r && r.shifts && r.shifts[0] && r.shifts[0].help; return (h && h.text) ? h : null; }
+// ❗ API คืน shifts เป็น "string" (JSON) ไม่ใช่ array — ต้อง parse ก่อนเสมอ
+function _shiftsArr(r){
+  let s = r && r.shifts;
+  if (typeof s === 'string') { try { s = JSON.parse(s); } catch(e) { s = null; } }
+  if (Array.isArray(s)) return s;
+  return s ? [s] : [];
+}
+function _recHelp(r){ const a = _shiftsArr(r); const h = a[0] && a[0].help; return (h && h.text) ? h : null; }
 function _recHelpOpen(r){ const h = _recHelp(r); return (h && h.status !== 'done') ? h : null; }
 function _zoneHasOpenHelp(recs){ return recs.some(r => _recHelpOpen(r)); }
 
@@ -2306,7 +2313,9 @@ async function resolveHelp(rid){
   if (!rid) return;
   const r = state.kpiRecords.find(x => x.record_id === rid);
   if (!r){ toast('ไม่พบรายการ (ลองโหลดข้อมูลใหม่)', 'orange'); return; }
-  if (!r.shifts || !r.shifts[0]) r.shifts = [r.shifts && r.shifts[0] || {}];
+  // normalize shifts (API คืนเป็น string) ให้เป็น array จริงก่อนแก้ไข
+  r.shifts = _shiftsArr(r);
+  if (!r.shifts[0]) r.shifts[0] = {};
   r.shifts[0].help = Object.assign({}, r.shifts[0].help, {
     status: 'done',
     done_by: (CURRENT_USER && CURRENT_USER.id) || OP || '',
