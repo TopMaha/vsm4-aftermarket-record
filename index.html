@@ -490,9 +490,6 @@ tbody tr:last-child td{border-bottom:none}
   <!-- Summary card (รวมทุก Zone) -->
   <div id="kpiSummary"></div>
 
-  <!-- ขอความช่วยเหลือ (สรุป + ติดตามผล) -->
-  <div id="helpSummary"></div>
-
   <!-- Per-Zone cards -->
   <div id="kpiPerZone"></div>
 
@@ -510,6 +507,9 @@ tbody tr:last-child td{border-bottom:none}
     <div id="mcViewList" style="display:none"></div>
     <div id="mcViewFloor"></div>
   </div>
+
+  <!-- ขอความช่วยเหลือ (สรุป + ติดตามผล) — ล่างสุด, ซ่อนไว้ กดเปิดเอง -->
+  <div id="helpSummary"></div>
 </section>
 
 <!-- ============== TAB: บันทึกข้อมูล (default landing) ============== -->
@@ -2300,12 +2300,18 @@ function renderHelpSummary(recs){
       ${isOpen?`<button class="btn btn-green btn-sm mt-8" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ ทำเครื่องหมายแก้ไขแล้ว</button>`:''}
     </div>`;
   };
-  box.innerHTML = `<div class="card" style="border-color:#FCA5A5">
-    <div class="card-title" style="color:#B91C1C"><span class="ci" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🆘</span>ขอความช่วยเหลือ
-      <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)">รอ ${open.length} · เสร็จ ${done.length}</span>
-    </div>
-    ${open.length ? open.map(r=>row(r,true)).join('') : '<div class="muted center" style="font-size:12px;padding:6px">ไม่มีรายการที่รอดำเนินการ 🎉</div>'}
-    ${done.length ? `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">ดูที่แก้ไขแล้ว (${done.length})</summary><div style="margin-top:6px">${done.map(r=>row(r,false)).join('')}</div></details>` : ''}
+  // ซ่อนไว้เป็น default — กดที่หัวข้อเพื่อเปิดดู (ใช้ <details> ไม่มี attribute open)
+  box.innerHTML = `<div class="card" style="border-color:${open.length?'#FCA5A5':'var(--border)'}">
+    <details>
+      <summary style="cursor:pointer;font-weight:800;color:${open.length?'#B91C1C':'var(--muted)'};display:flex;align-items:center;gap:8px;font-size:13px;list-style:revert">
+        <span class="ci" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🆘</span>ขอความช่วยเหลือ
+        <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)">รอ ${open.length} · เสร็จ ${done.length} · แตะเพื่อดู</span>
+      </summary>
+      <div style="margin-top:10px">
+        ${open.length ? open.map(r=>row(r,true)).join('') : '<div class="muted center" style="font-size:12px;padding:6px">ไม่มีรายการที่รอดำเนินการ 🎉</div>'}
+        ${done.length ? `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">ดูที่แก้ไขแล้ว (${done.length})</summary><div style="margin-top:6px">${done.map(r=>row(r,false)).join('')}</div></details>` : ''}
+      </div>
+    </details>
   </div>`;
 }
 
