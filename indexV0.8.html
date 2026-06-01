@@ -2254,8 +2254,7 @@ function setShiftFilter(s) {
     b.classList.toggle('btn-blue', active && s === 'all');
     b.classList.toggle('btn-outline', !active);
   });
-  renderHome();
-  renderMachineStatusChecker();
+  renderHome(); // renderHome เรียก renderMachineStatusChecker(kpiInRange) ให้แล้ว
 }
 
 /* ============================================================
@@ -2526,30 +2525,35 @@ function toggleMcView() {
   if (btn) btn.textContent = showFloor ? '📋 รายการ' : '🗺️ แผนผัง';
 }
 
-function renderMachineStatusChecker() {
-  const selDate  = $('dashFrom')?.value || todayISO();
+function renderMachineStatusChecker(recs) {
+  const dFrom = $('dashFrom')?.value || todayISO();
+  const dTo   = $('dashTo')?.value   || dFrom;
   const selShift = state.shiftFilter || 'all';
   const shiftLabel = selShift==='all'?'🔄 รวมทุกกะ': selShift==='day'?'☀️ กะกลางวัน':'🌙 กะกลางคืน';
-  if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${selDate}  ${shiftLabel}`;
+  if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${dFrom===dTo?dFrom:dFrom+' → '+dTo}  ${shiftLabel}`;
 
-  const filtered = state.kpiRecords.filter(r => {
+  // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
+  // ถ้าไม่ได้ส่งมา → กรองจาก state.kpiRecords ตาม "ช่วงวันที่" (ไม่ใช่วันเดียว) + กะ
+  const filtered = Array.isArray(recs) ? recs : state.kpiRecords.filter(r => {
     const d = (r.shift_date || r.record_date || '').slice(0,10);
-    if (d !== selDate) return false;
+    if (d < dFrom || d > dTo) return false;
     if (selShift !== 'all' && r.shift_type !== selShift) return false;
     return true;
   });
 
-  // Use machine_id only as key (unique across all zones)
+  // เครื่องที่มี record ในช่วง = "เปิดเครื่อง" (ไม่งั้นจะขึ้นดำ = ปิด)
   const activeMachines = new Set(filtered.map(r => r.machine_id));
 
-  // OAE map: machine_id → avg oae_val
-  const oaeMap = {};
+  // OAE ต่อเครื่องแบบรวม (ΣOPR ÷ ΣTarget) ให้ตรงกับ Dashboard
+  const agg = {};
   for (const r of filtered) {
-    const mid = r.machine_id;
-    if (!oaeMap[mid]) oaeMap[mid] = { sum: 0, n: 0 };
-    oaeMap[mid].sum += (r.oae || 0);
-    oaeMap[mid].n++;
+    const m = r.machine_id; if (!m) continue;
+    if (!agg[m]) agg[m] = { opr: 0, tgt: 0 };
+    agg[m].opr += (+r.opr || 0);
+    agg[m].tgt += (+r.target || 0);
   }
+  const oaeMap = {};
+  for (const m in agg) oaeMap[m] = { sum: agg[m].tgt > 0 ? agg[m].opr / agg[m].tgt : 0, n: 1 };
 
   renderFloorPlan(activeMachines, oaeMap);
 }
@@ -2841,8 +2845,8 @@ async function renderHome() {
   } catch (e) {
     toast('โหลด dashboard ไม่สำเร็จ', 'red');
   }
-  // FIX 3: render machine status checker
-  renderMachineStatusChecker();
+  // FIX 3: render machine status checker — ใช้ข้อมูลชุดเดียวกับการ์ด (kpiInRange)
+  renderMachineStatusChecker(kpiInRange);
 }
 
 /* ============================================================
