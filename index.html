@@ -50,7 +50,7 @@
   --r:14px; --r-sm:9px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{font-family:'Sarabun',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html,body{font-family:'Sarabun',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;width:100%;max-width:100%}
 body{min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 a{color:var(--blue);text-decoration:none}
 button{font-family:inherit}
@@ -309,8 +309,13 @@ tbody tr:last-child td{border-bottom:none}
 .lock-foot{margin-top:18px;font-size:11px;color:#94A3B8}
 
 /* ===== USER CHIP ===== */
-.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700}
-.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700;min-width:0}
+.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0}
+/* กันชื่อยาวดัน header ล้นจอ → ตัด … แทน */
+#userName{display:inline-block;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.hdr-row{min-width:0}
+.hdr-row>div{min-width:0}
+.hdr-row .row{flex-shrink:1;min-width:0}
 
 /* ===== ZONE-KPI CARDS ===== */
 .zkpi-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;overflow:hidden;position:relative}
