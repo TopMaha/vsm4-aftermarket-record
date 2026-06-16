@@ -50,7 +50,7 @@
   --r:14px; --r-sm:9px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{font-family:'Sarabun',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html,body{font-family:'Sarabun',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;overflow-x:hidden;width:100%;max-width:100%}
 body{min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 a{color:var(--blue);text-decoration:none}
 button{font-family:inherit}
@@ -309,8 +309,13 @@ tbody tr:last-child td{border-bottom:none}
 .lock-foot{margin-top:18px;font-size:11px;color:#94A3B8}
 
 /* ===== USER CHIP ===== */
-.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700}
-.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700;min-width:0}
+.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0}
+/* กันชื่อยาวดัน header ล้นจอ → ตัด … แทน */
+#userName{display:inline-block;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.hdr-row{min-width:0}
+.hdr-row>div{min-width:0}
+.hdr-row .row{flex-shrink:1;min-width:0}
 
 /* ===== ZONE-KPI CARDS ===== */
 .zkpi-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;overflow:hidden;position:relative}
@@ -430,8 +435,8 @@ tbody tr:last-child td{border-bottom:none}
 <div class="lock-overlay" id="lockOverlay">
   <div class="lock-card">
     <div class="lock-logo">🔐</div>
-    <div class="lock-title">VSM4 AFTERMARKET RECORD</div>
-    <div class="lock-sub">กรอกรหัสพนักงานเพื่อเข้าใช้งาน</div>
+    <div class="lock-title">VSM AFTERMARKET RECORD</div>
+    <div class="lock-sub">กรอกรหัสพนักงาน — ระบบจะแยก VSM ให้อัตโนมัติ</div>
     <div class="lock-input-wrap">
       <input type="text" class="lock-input" id="lockInput" placeholder="L-1827" autocomplete="off"
              oninput="lockSuggest(event)" onkeydown="lockKey(event)">
@@ -447,12 +452,13 @@ tbody tr:last-child td{border-bottom:none}
 <header class="hdr">
   <div class="hdr-row">
     <div>
-      <div class="hdr-title">⚙️ VSM4 AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI</div>
+      <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v0.9</div>
     </div>
     <div class="row" style="gap:6px;align-items:center">
       <span class="user-chip" id="userChip" style="display:none">
         <span class="av" id="userAv">?</span>
+        <span id="userVsm" style="background:rgba(255,255,255,.22);border-radius:6px;padding:1px 7px;font-size:10px;font-weight:800;letter-spacing:.3px"></span>
         <span id="userName">—</span>
         <button onclick="lockOut()" style="background:transparent;border:none;color:#fff;cursor:pointer;font-size:13px;padding:0 4px" title="Logout">⏏</button>
       </span>
@@ -537,11 +543,7 @@ tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <div class="ztabs">
-    <button class="zt active" data-z="ZONE1" onclick="setZone('ZONE1')"><span class="zt-num">1</span>AFTERMARKET</button>
-    <button class="zt" data-z="ZONE2" onclick="setZone('ZONE2')"><span class="zt-num">2</span>INDUCTION</button>
-    <button class="zt" data-z="ZONE3" onclick="setZone('ZONE3')"><span class="zt-num">3</span>FORD6 & PERKINS</button>
-  </div>
+  <div class="ztabs" id="ztabs"><!-- zone tabs สร้างตาม VSM ที่ login --></div>
 
   <div id="zone-machines"></div>
 
@@ -778,13 +780,28 @@ tbody tr:last-child td{border-bottom:none}
 
   <div class="section-title">👥 พนักงาน</div>
   <div class="card">
-    <div class="fg mb-8">
+    <div class="fg3 mb-8">
       <div class="fr" style="margin:0"><label>รหัส</label><input type="text" id="newEmpId" placeholder="เช่น L-9999"></div>
       <div class="fr" style="margin:0"><label>ชื่อ</label><input type="text" id="newEmpName" placeholder="ชื่อ-นามสกุล"></div>
+      <div class="fr" style="margin:0"><label>VSM</label>
+        <select id="newEmpVsm">
+          <option value="vsm12">VSM 1-2</option>
+          <option value="vsm3">VSM 3</option>
+          <option value="vsm4" selected>VSM 4</option>
+        </select>
+      </div>
     </div>
     <button class="btn btn-blue btn-sm mb-8" onclick="addEmployee()">➕ เพิ่ม/แก้ไข</button>
-    <div class="muted mb-8" style="font-size:12px">รวม <span id="empCount">0</span> คน</div>
-    <div class="tbl-wrap"><table id="empTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+    <div class="muted mb-8" style="font-size:12px">รวม <span id="empCount">0</span> คน · กรอง:
+      <select id="empVsmFilter" onchange="renderEmployeeList()" style="border:1px solid var(--blue-soft);border-radius:6px;padding:2px 6px;font-size:12px">
+        <option value="">ทุก VSM</option>
+        <option value="vsm12">VSM 1-2</option>
+        <option value="vsm3">VSM 3</option>
+        <option value="vsm4">VSM 4</option>
+      </select>
+    </div>
+    <div class="muted mb-8" style="font-size:11px;line-height:1.6;color:var(--muted2)">ℹ️ การตั้ง VSM ที่นี่มีผล <b>เฉพาะเครื่องนี้</b> (รอด sync กับ D1) — ถ้าจะให้ทุกเครื่องเหมือนกัน ให้ใส่รหัสใน <code>VSM_EMP_MAP</code> ใน index.html แล้ว push</div>
+    <div class="tbl-wrap"><table id="empTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>VSM</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
   </div>
 
   <div class="section-title">🏭 เครื่องจักร</div>
@@ -847,7 +864,13 @@ tbody tr:last-child td{border-bottom:none}
 
       <!-- Camera mode -->
       <div id="scan-reader"></div>
-      <div class="muted center mt-8" id="scanCamHelp" style="font-size:11px;display:none">ยกบาร์โค้ดให้อยู่ในกรอบ — สแกนอัตโนมัติ</div>
+      <div id="scanCamCtrl" style="display:none;gap:8px;justify-content:center;margin-top:8px">
+        <button class="btn btn-outline btn-sm" id="torchBtn" onclick="toggleTorch()" style="display:none">🔦 เปิดไฟฉาย</button>
+      </div>
+      <div class="muted center mt-8" id="scanCamHelp" style="font-size:11px;display:none;line-height:1.6">
+        ยกบาร์โค้ดให้เต็มกรอบ ระยะ ~10-15 ซม. · ถือนิ่ง 1-2 วินาที<br>
+        <b>บาร์โค้ดเลอะน้ำมัน/ไม่ชัด?</b> เปิด 🔦 ไฟฉาย เช็ดคราบ หรือกด <b>⌨️ พิมพ์เอง</b>
+      </div>
 
       <!-- Manual entry mode (default) -->
       <div id="scanManualWrap">
@@ -1036,7 +1059,7 @@ let state = {
   adminUnlocked: false,
 };
 
-const ZONE_LABEL = {ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS'};
+/* ZONE_LABEL ถูกย้ายไปสร้างจาก ZONE_DEFS (ด้านล่าง) */
 
 /* ===== TOMBSTONE — เก็บ record_id ที่ถูกลบ เพื่อกรองไม่ให้ sync กลับมาจาก API ===== */
 let _deletedKpiIds  = new Set(JSON.parse(localStorage.getItem('vsm4_deleted_kpi_ids')  || '[]'));
@@ -1047,6 +1070,160 @@ function _saveTombstones() {
 }
 const ZONE_KEYS  = ['zone1','zone2','zone3'];
 const TGT_LBL    = {oae:'OAE', dle:'DLE', pplh:'PPLH', pdac:'PDAC', scrap:'SCRAP'};
+
+/* ============================================================
+   VSM SEPARATION — แยกข้อมูลตามสาย (VSM1-2 / VSM3 / VSM4)
+   • พนักงานแต่ละคนผูกกับ VSM เดียว — กำหนดผ่าน VSM_EMP_MAP (แหล่งข้อมูลหลัก)
+   • ⚠️ D1 ไม่มีคอลัมน์ vsm → VSM_EMP_MAP "ทับ" ค่าจาก D1 ทุกครั้งหลังโหลด
+     จึงไม่รีเซ็ตเวลา sync. คนที่ไม่อยู่ใน map = 'vsm4' (ข้อมูลเดิมทั้งหมด)
+   • record สืบ VSM จากรหัสผู้บันทึก → VSM_EMP_MAP → ไม่ต้องพึ่งคอลัมน์ใน D1
+   • ผู้ใช้แต่ละคนเห็นเฉพาะ VSM ของตัวเอง · Admin เห็นทุก VSM
+   ============================================================ */
+const VSM_LIST = [
+  { key:'vsm1', label:'VSM 1' },
+  { key:'vsm2', label:'VSM 2' },
+  { key:'vsm3', label:'VSM 3' },
+  { key:'vsm4', label:'VSM 4' },
+];
+const VSM_LABEL  = Object.fromEntries(VSM_LIST.map(v => [v.key, v.label]));
+const DEFAULT_VSM = 'vsm4';
+
+/* ▼▼▼ แหล่งข้อมูลหลัก: รหัสพนักงาน → VSM (รหัสตัวพิมพ์ใหญ่)
+   แก้ตรงนี้แล้ว git push → ทุกเครื่องได้เหมือนกัน (deploy ผ่าน GitHub Pages)
+   คนที่ไม่ได้ใส่ = 'vsm4' โดยอัตโนมัติ (ข้อมูล/พนักงานเดิมทั้งหมด = VSM4)
+   ตัวอย่าง:  'X-001':'vsm1',  'Y-205':'vsm3', */
+const VSM_EMP_MAP = {
+  // === พนักงานทดสอบ (ลบออกได้เมื่อใส่ของจริง) ===
+  'TEST-V1': 'vsm1',   // ทดสอบ VSM1
+  'TEST-V2': 'vsm2',   // ทดสอบ VSM2
+  'TEST-V3': 'vsm3',   // ทดสอบ VSM3
+  // === เพิ่มรหัสพนักงาน VSM1 / VSM2 / VSM3 ของจริงที่นี่ ===
+};
+
+/* override ราย "เครื่อง" — เก็บใน localStorage, รอด sync กับ D1
+   ใช้ตอน admin เพิ่ม/ย้าย VSM ผ่านหน้า Settings ก่อนนำไปฝังในโค้ด
+   (มีผลเฉพาะเครื่องนั้น จนกว่าจะ push เข้า VSM_EMP_MAP) */
+const LS_EMP_VSM = 'vsm4_emp_vsm';
+function loadEmpVsmOv() { try { return JSON.parse(localStorage.getItem(LS_EMP_VSM)) || {}; } catch (e) { return {}; } }
+let _empVsmOv = loadEmpVsmOv();   // cache (อ่าน localStorage ครั้งเดียว — vsmOf เรียกถี่)
+function saveEmpVsmOv(id, vsm) {
+  _empVsmOv[String(id||'').toUpperCase()] = vsm;
+  localStorage.setItem(LS_EMP_VSM, JSON.stringify(_empVsmOv));
+}
+function delEmpVsmOv(id) {
+  delete _empVsmOv[String(id||'').toUpperCase()];
+  localStorage.setItem(LS_EMP_VSM, JSON.stringify(_empVsmOv));
+}
+// ลำดับความสำคัญ: โค้ด (VSM_EMP_MAP) = กฎกลาง > override ในเครื่อง > vsm4
+function resolveEmpVsm(id) {
+  const up = String(id||'').toUpperCase();
+  return VSM_EMP_MAP[up] || _empVsmOv[up] || DEFAULT_VSM;
+}
+// บังคับ VSM ให้พนักงานทุกคนจาก map/override (ทับค่าที่ได้จาก D1 ซึ่งไม่มี vsm)
+function normalizeEmployeeVsm() {
+  if (!Array.isArray(state.employees)) return;
+  for (const e of state.employees) e.vsm = resolveEmpVsm(e.id);
+}
+// หา record พนักงานจากรหัส (case-insensitive)
+function empById(id) {
+  if (!id) return null;
+  const up = String(id).trim().toUpperCase();
+  return (state.employees || []).find(e => (e.id||'').toUpperCase() === up) || null;
+}
+// ดึงรหัสพนักงานออกจาก record (operator มักเป็น "L-1827 — ชื่อ")
+function recEmpId(rec) {
+  if (!rec) return '';
+  const raw = rec.emp_id || rec.shift_ids || rec.created_by || rec.operator || rec.op || '';
+  return String(raw).split('—')[0].trim().split(/\s+/)[0].trim();
+}
+// VSM ของ record: สืบจากรหัสผู้บันทึกผ่าน map (กฎกลาง) ก่อน → ค่าที่ stamp ไว้ → vsm4
+// (ใช้ map ก่อน เพราะ D1 ตัดคอลัมน์ vsm ทิ้ง — สืบจากผู้บันทึกจึงแม่นกว่าตอนออนไลน์)
+function vsmOf(rec) {
+  const id = recEmpId(rec);
+  if (id) {
+    const up = id.toUpperCase();
+    if (VSM_EMP_MAP[up]) return VSM_EMP_MAP[up];
+    if (_empVsmOv[up])   return _empVsmOv[up];
+  }
+  if (rec && rec.vsm) return rec.vsm;   // fallback: ค่าที่ stamp ไว้ (ออฟไลน์/แยกรหัสไม่ออก)
+  return DEFAULT_VSM;
+}
+function myVsm() { return CURRENT_USER ? resolveEmpVsm(CURRENT_USER.id) : DEFAULT_VSM; }
+function canSeeAllVsm(){ return !!state.adminUnlocked; }   // Admin เห็นทุก VSM
+// กรอง array ของ record ให้เหลือเฉพาะ VSM ของผู้ใช้ (Admin = เห็นหมด)
+function filterVsm(arr) {
+  if (!Array.isArray(arr) || canSeeAllVsm()) return arr;
+  const v = myVsm();
+  return arr.filter(r => vsmOf(r) === v);
+}
+
+/* ============================================================
+   ZONE REGISTRY — แต่ละ Zone สังกัด VSM เดียว
+   VSM4 = 3 zone เดิม · VSM1/2/3 = zone ของตัวเอง
+   ผู้ใช้เห็นเฉพาะ zone ของ VSM ตัวเอง · Admin เห็นทุก zone
+   ============================================================ */
+const ZONE_DEFS = {
+  // VSM 4 (เดิม)
+  ZONE1: { label:'AFTERMARKET',     vsm:'vsm4' },
+  ZONE2: { label:'INDUCTION',       vsm:'vsm4' },
+  ZONE3: { label:'FORD6 & PERKINS', vsm:'vsm4' },
+  // VSM 1
+  ZA: { label:'Zone A', vsm:'vsm1' },
+  ZB: { label:'Zone B', vsm:'vsm1' },
+  ZC: { label:'Zone C', vsm:'vsm1' },
+  // VSM 2
+  ZD: { label:'Zone D', vsm:'vsm2' },
+  ZE: { label:'Zone E', vsm:'vsm2' },
+  ZF: { label:'Zone F', vsm:'vsm2' },
+  // VSM 3
+  ZH: { label:'Zone H', vsm:'vsm3' },
+  ZI: { label:'Zone I', vsm:'vsm3' },
+  ZJ: { label:'Zone J', vsm:'vsm3' },
+  ZK: { label:'Zone K', vsm:'vsm3' },
+};
+const ZONE_LABEL = Object.fromEntries(Object.entries(ZONE_DEFS).map(([k,v]) => [k, v.label]));
+function zoneVsm(z)       { return ZONE_DEFS[z] ? ZONE_DEFS[z].vsm : DEFAULT_VSM; }
+function zonesForVsm(vsm) { return Object.keys(ZONE_DEFS).filter(z => ZONE_DEFS[z].vsm === vsm); }
+// zone ที่ผู้ใช้ปัจจุบันเห็น (Admin = ทุก zone)
+function currentZones()   { return canSeeAllVsm() ? Object.keys(ZONE_DEFS) : zonesForVsm(myVsm()); }
+function currentZoneKeys(){ return currentZones().map(z => z.toLowerCase()); }   // สำหรับ target keys
+// ตั้ง state.zone ให้เป็น zone ที่ valid ของ VSM ปัจจุบัน
+function ensureValidZone() {
+  const zs = currentZones();
+  if (!zs.includes(state.zone)) state.zone = zs[0] || 'ZONE1';
+}
+
+/* เครื่องจักร "ทดสอบ" ของ VSM1/2/3 (2 เครื่อง/zone) — merge เข้า state ถ้ายังไม่มี
+   (D1 มีแค่ zone ของ VSM4 → ต้อง seed ฝั่ง client ให้ครบ) */
+const SEED_VSM_MACHINES = {};
+for (const z of Object.keys(ZONE_DEFS)) {
+  if (ZONE_DEFS[z].vsm === 'vsm4') continue;   // VSM4 ใช้ของเดิม
+  SEED_VSM_MACHINES[z] = [
+    { id:`${z}-01`, target:2000, man_std:0.5 },
+    { id:`${z}-02`, target:2000, man_std:0.5 },
+  ];
+}
+function ensureVsmZones() {
+  if (!state.machines || typeof state.machines !== 'object') state.machines = {};
+  for (const z of Object.keys(SEED_VSM_MACHINES)) {
+    if (!Array.isArray(state.machines[z]) || state.machines[z].length === 0) {
+      state.machines[z] = JSON.parse(JSON.stringify(SEED_VSM_MACHINES[z]));
+    }
+  }
+}
+
+/* พนักงาน "ทดสอบ" VSM1/2/3 — เพิ่มเข้า state.employees ถ้ายังไม่มี (D1 ไม่มี) */
+const SEED_VSM_EMPLOYEES = [
+  { id:'TEST-V1', name:'ทดสอบ VSM1' },
+  { id:'TEST-V2', name:'ทดสอบ VSM2' },
+  { id:'TEST-V3', name:'ทดสอบ VSM3' },
+];
+function ensureSeedEmployees() {
+  if (!Array.isArray(state.employees)) state.employees = [];
+  for (const se of SEED_VSM_EMPLOYEES) {
+    if (!state.employees.some(e => (e.id||'').toUpperCase() === se.id)) state.employees.push({ ...se });
+  }
+}
 
 /* cache row สำหรับ edit/delete ในหน้าประวัติ */
 let _histKpiRows  = [];
@@ -1147,12 +1324,41 @@ function openModal(title, html) {
   $('modalBd').innerHTML = html;
   $('modalBg').classList.add('open');
 }
-function closeModal() { $('modalBg').classList.remove('open'); }
+function closeModal() {
+  $('modalBg').classList.remove('open');
+  // ถ้ามี confirm ค้างอยู่ (กดปิด/X) → ถือว่า "ยกเลิก"
+  if (_confirmResolve) { const r = _confirmResolve; _confirmResolve = null; r(false); }
+}
+
+/* ===== confirmModal — ใช้แทน confirm() (confirm ไม่รองรับใน in-app browser เช่น LINE)
+   ใช้: if (!(await confirmModal('ข้อความ'))) return;   (ฟังก์ชันต้องเป็น async) ===== */
+let _confirmResolve = null;
+function confirmModal(message, opts = {}) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    const danger = opts.danger !== false;   // default = ปุ่มยืนยันสีแดง (เหมาะกับการลบ)
+    openModal(opts.title || '⚠️ ยืนยัน', `
+      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap;margin-bottom:16px;color:var(--text)">${escapeHtml(message)}</div>
+      <div class="row" style="gap:8px">
+        <button class="btn" id="cfmYes" style="flex:1;color:#fff;border:none;background:${danger?'var(--red)':'var(--green)'}">${escapeHtml(opts.yes || 'ยืนยัน')}</button>
+        <button class="btn btn-outline" id="cfmNo">${escapeHtml(opts.no || 'ยกเลิก')}</button>
+      </div>
+    `);
+    const y = $('cfmYes'), n = $('cfmNo');
+    if (y) y.onclick = () => _resolveConfirm(true);
+    if (n) n.onclick = () => _resolveConfirm(false);
+  });
+}
+function _resolveConfirm(v) {
+  const r = _confirmResolve; _confirmResolve = null;
+  closeModal();
+  if (r) r(v);
+}
 
 /* ===== ตรวจว่ามีข้อมูล KPI ค้างใน form หรือไม่ ===== */
 function hasUnsavedKpiData() {
   // หากมีเครื่องที่เปิดไว้ + มี opr/scrap ใน shift ใดๆ → ถือว่ามีข้อมูลค้าง
-  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+  for (const z of currentZones()) {
     const machines = state.machines[z] || [];
     for (let mi = 0; mi < machines.length; mi++) {
       const on = $(`${z}_${mi}_on`);
@@ -1171,41 +1377,36 @@ function hasUnsavedKpiData() {
   return false;
 }
 
-/* ===== Admin guard สำหรับ Settings =====
-   ใช้ modal ในแอพ (ไม่ใช้ prompt() เพราะถูกบล็อกเมื่อเปิดเป็น PWA แบบ standalone) */
-let _adminGateCb = null;
-function _adminGate(onOk, title, subtitle, confirmLabel, danger) {
-  _adminGateCb = onOk;
-  const sub = subtitle || 'กรอกรหัส Admin เพื่อเข้าหน้าตั้งค่า';
-  const okCls = danger ? 'btn-sm' : 'btn-blue';
-  const okStyle = danger ? 'flex:1;background:var(--red);color:#fff' : 'flex:1';
-  openModal(title || '🔐 หน้าตั้งค่าเฉพาะ Admin', `
-    <div style="text-align:center;padding:6px 0 10px">
-      <div style="font-size:12px;color:${danger?'var(--red)':'var(--muted)'};margin-bottom:10px;line-height:1.7;font-weight:${danger?'700':'400'}">${sub}</div>
-      <input type="password" id="setAdminPw" placeholder="Admin Password" autocomplete="off"
-        style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:8px;font-size:18px;text-align:center;letter-spacing:2px;font-weight:700"
-        onkeydown="if(event.key==='Enter')_doAdminUnlock()">
-      <div id="setAdminErr" style="color:#dc2626;font-size:12px;margin-top:6px;min-height:16px"></div>
+/* ===== Admin guard สำหรับ Settings ===== */
+/* ===== Admin password modal — ใช้แทน prompt() (prompt ไม่รองรับใน webview/iframe บางตัว) ===== */
+let _adminPwCb = null;
+function promptAdmin(title, onOk) {
+  _adminPwCb = onOk;
+  openModal(title || '🔐 Admin', `
+    <div class="fr" style="margin:0"><label>Admin Password</label>
+      <input type="password" id="admPwInput" placeholder="กรอกรหัสผ่าน" autocomplete="off"
+             style="width:100%;padding:12px 14px;border:2px solid var(--blue-soft);border-radius:10px;font-size:16px;outline:none"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();submitAdminPw();}">
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn ${okCls}" style="${okStyle}" onclick="_doAdminUnlock()">${confirmLabel || 'ยืนยัน'}</button>
+    <div id="admPwErr" style="color:var(--red);font-size:12px;font-weight:700;min-height:16px;margin-top:6px"></div>
+    <div class="row" style="gap:8px;margin-top:8px">
+      <button class="btn btn-green" style="flex:1" onclick="submitAdminPw()">🔓 ปลดล็อก</button>
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
     </div>
   `);
-  setTimeout(() => $('setAdminPw')?.focus(), 200);
+  setTimeout(() => { const el = $('admPwInput'); if (el) el.focus(); }, 60);
 }
-function _doAdminUnlock() {
-  const pw = $('setAdminPw')?.value || '';
+function submitAdminPw() {
+  const el = $('admPwInput');
+  const pw = el ? el.value : '';
   if (pw !== ADMIN_PASSWORD) {
-    const e = $('setAdminErr'); if (e) e.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
-    const el = $('setAdminPw'); if (el) { el.value = ''; el.focus(); }
+    const e = $('admPwErr'); if (e) e.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
+    if (el) { el.value = ''; el.focus(); }
     return;
   }
-  state.adminUnlocked = true;
   closeModal();
-  toast('🔓 ปลดล็อก Admin Mode', 'green');
-  const cb = _adminGateCb; _adminGateCb = null;
-  if (cb) cb();
+  const cb = _adminPwCb; _adminPwCb = null;
+  if (typeof cb === 'function') cb();
 }
 
 // FIX 4: dirty flag — set to true whenever any input changes in the form
@@ -1225,12 +1426,6 @@ function _doSetPane(name) {
 }
 
 function setPane(name) {
-  // Settings เปิดได้เฉพาะ admin — ใช้ modal ในแอพ (prompt() ใช้ไม่ได้ใน PWA)
-  if (name === 'settings' && !state.adminUnlocked) {
-    _adminGate(() => setPane('settings'));   // ปลดล็อกแล้วเข้าหน้าตั้งค่าต่อ
-    return;
-  }
-
   const currentPane = document.querySelector('section.pane.active')?.id;
 
   // ══ FAB Smart Save ══════════════════════════════════════════
@@ -1244,6 +1439,16 @@ function setPane(name) {
   // ออกจากหน้าบันทึกขณะมีข้อมูลค้าง → แสดง dialog
   if (name !== 'kpi' && currentPane === 'pane-kpi' && _formDirty) {
     _showUnsavedDialog(name);
+    return;
+  }
+
+  // Settings เปิดได้เฉพาะ admin — ใช้ modal (prompt ไม่รองรับใน webview บางตัว)
+  if (name === 'settings' && !state.adminUnlocked) {
+    promptAdmin('🔐 หน้าตั้งค่าเฉพาะ Admin', () => {
+      state.adminUnlocked = true;
+      toast('🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM', 'green');
+      _doSetPane('settings');
+    });
     return;
   }
 
@@ -1314,6 +1519,21 @@ function setZone(z) {
 let scanInstance = null;
 let scanTargetSid = null;   // sid ของ shift block ที่จะ fill ผลกลับ
 let scanProcessing = false; // ป้องกัน callback ซ้ำเมื่อกล้องสแกนตรวจจับหลายครั้งก่อน stop
+let _torchOn = false;       // สถานะไฟฉาย
+
+// เปิด/ปิดไฟฉาย — ช่วยมากกับบาร์โค้ดเลอะน้ำมัน/ที่มืด
+async function toggleTorch() {
+  if (!scanInstance || typeof scanInstance.applyVideoConstraints !== 'function') return;
+  _torchOn = !_torchOn;
+  try {
+    await scanInstance.applyVideoConstraints({ advanced: [{ torch: _torchOn }] });
+    const tb = $('torchBtn');
+    if (tb) tb.textContent = _torchOn ? '🔦 ปิดไฟฉาย' : '🔦 เปิดไฟฉาย';
+  } catch (e) {
+    _torchOn = false;
+    toast('กล้องนี้เปิดไฟฉายไม่ได้', 'orange');
+  }
+}
 
 function openScanner(sid) {
   scanTargetSid = sid;
@@ -1341,6 +1561,8 @@ function setScanMode(mode) {
     reader.classList.remove('show');
     camHelp.style.display = 'none';
     manual.style.display = 'block';
+    const ctrl = $('scanCamCtrl'); if (ctrl) ctrl.style.display = 'none';
+    _torchOn = false;
     // หยุดกล้องถ้ากำลังทำงาน
     if (scanInstance) {
       try {
@@ -1373,6 +1595,8 @@ function livePreview() {
 
 async function closeScanner() {
   scanProcessing = false;   // reset เมื่อปิด scanner
+  _torchOn = false;
+  const ctrl = $('scanCamCtrl'); if (ctrl) ctrl.style.display = 'none';
   $('scanModal').classList.remove('open');
   if (scanInstance) {
     try {
@@ -1403,7 +1627,18 @@ async function initScanner() {
   }
 
   try {
-    const html5QrCode = new Html5Qrcode('scan-reader', { verbose: false });
+    // จำกัดรูปแบบบาร์โค้ดที่ใช้จริง (Code128 = ตัวเลข+ตัวอักษร) → ดีโค้ดเร็ว/แม่นกว่าสแกนทุกฟอร์แมต
+    let fmts;
+    if (window.Html5QrcodeSupportedFormats) {
+      const F = Html5QrcodeSupportedFormats;
+      fmts = [F.CODE_128, F.CODE_39, F.CODE_93, F.ITF, F.EAN_13, F.QR_CODE];
+    }
+    const html5QrCode = new Html5Qrcode('scan-reader', {
+      verbose: false,
+      formatsToSupport: fmts,
+      // ใช้เครื่องอ่านบาร์โค้ดของ OS (Android Chrome) ถ้ามี — แม่นกว่า ZXing-js มากกับบาร์โค้ด 1D/เลอะ
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    });
     scanInstance = html5QrCode;
     const cams = await Html5Qrcode.getCameras().catch(() => []);
     if (!cams.length) {
@@ -1416,16 +1651,45 @@ async function initScanner() {
     const rear = cams.find(c => /back|rear|environment/i.test(c.label));
     if (rear) camId = rear.id;
 
+    // ขอความละเอียดสูง + โฟกัสต่อเนื่อง → บาร์โค้ดเล็ก/เบลอชัดขึ้น
+    const camConstraint = {
+      deviceId: { exact: camId },
+      width:  { ideal: 1920 },
+      height: { ideal: 1080 },
+      advanced: [{ focusMode: 'continuous' }],
+    };
+    // กรอบสแกนกว้าง (เหมาะกับบาร์โค้ด 1D) — ปรับตามขนาดวิดีโอ
+    const qrboxFn = (vw, vh) => {
+      const w = Math.floor(Math.min(vw * 0.92, vh * 2.4));
+      return { width: w, height: Math.max(90, Math.floor(w * 0.42)) };
+    };
+
     await html5QrCode.start(
-      camId,
+      camConstraint,
       {
-        fps: 10,
-        qrbox: { width: 280, height: 120 },
+        fps: 15,
+        qrbox: qrboxFn,
         aspectRatio: 1.7777,
+        disableFlip: true,   // บาร์โค้ด 1D ไม่ต้องลองพลิกภาพ → เร็วขึ้น
       },
       (decoded) => onScanSuccess(decoded),
       () => {}
     );
+
+    // ตรวจว่ากล้องรองรับไฟฉาย (torch) ไหม → โชว์ปุ่ม
+    _torchOn = false;
+    let torchOk = false;
+    try {
+      const caps = (typeof html5QrCode.getRunningTrackCapabilities === 'function')
+        ? html5QrCode.getRunningTrackCapabilities() : null;
+      torchOk = !!(caps && caps.torch);
+    } catch (e) { torchOk = false; }
+    const tb = $('torchBtn');
+    if (tb) {
+      tb.style.display = torchOk ? '' : 'none';
+      tb.textContent = '🔦 เปิดไฟฉาย';
+    }
+    const ctrl = $('scanCamCtrl'); if (ctrl) ctrl.style.display = 'flex';
   } catch (e) {
     $('scanResult').className = 'scan-result show err';
     let hint = '';
@@ -1549,7 +1813,7 @@ function filteredPlans() {
     valve:  ($('planValve')?.value || '').toLowerCase(),
     lot:    ($('planLot')?.value || '').toLowerCase(),
   };
-  return state.plans.filter(p => {
+  return filterVsm(state.plans).filter(p => {
     const d = p.plan_date || '';
     if (f.from && d < f.from) return false;
     if (f.to   && d > f.to)   return false;
@@ -1665,6 +1929,7 @@ async function addPlanRow() {
     status: 'planned',
     note: '',
     created_by: CURRENT_USER?.id || '',
+    vsm: myVsm(),
   };
   state.plans.unshift(newPlan);
   lsSave(LS.PLANS, state.plans);
@@ -1673,7 +1938,7 @@ async function addPlanRow() {
 }
 
 async function deletePlanRow(planId) {
-  if (!confirm('ลบแผนนี้?')) return;
+  if (!(await confirmModal('ลบแผนนี้?'))) return;
   state.plans = state.plans.filter(p => p.plan_id !== planId);
   lsSave(LS.PLANS, state.plans);
   renderPlans();
@@ -1886,7 +2151,7 @@ async function confirmPaste() {
   for (const r of rows) {
     const k = planKey(r);
     const reuseId = seen[k]?.plan_id || existingByKey[k]?.plan_id || planNewId();
-    seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '' };
+    seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '', vsm: myVsm() };
   }
   const plans = Object.values(seen);
   const batchKeys = new Set(Object.keys(seen));
@@ -1963,6 +2228,12 @@ function hideLock() {
     c.style.display = 'inline-flex';
     document.getElementById('userAv').textContent = (CURRENT_USER.id || '?').slice(0, 2).toUpperCase();
     document.getElementById('userName').textContent = CURRENT_USER.name || CURRENT_USER.id;
+    // แสดง VSM ของผู้ใช้ (auto — ไม่ต้องเลือกเอง)
+    const vsmKey = myVsm();
+    const vb = document.getElementById('userVsm');
+    if (vb) vb.textContent = VSM_LABEL[vsmKey] || vsmKey;
+    const ht = document.getElementById('hdrTitle');
+    if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} AFTERMARKET RECORD`;
     // ใส่ค่าใน op-name field
     const op = document.getElementById('op-name');
     if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
@@ -2002,12 +2273,14 @@ function lockSubmit() {
   }
   const emp = state.employees.find(e => (e.id||'').toUpperCase() === v);
   if (!emp) { lockFail('ไม่พบรหัส "' + v + '" ในระบบ'); return; }
-  CURRENT_USER = { id: emp.id, name: emp.name, login_at: new Date().toISOString() };
+  CURRENT_USER = { id: emp.id, name: emp.name, vsm: emp.vsm || DEFAULT_VSM, login_at: new Date().toISOString() };
   localStorage.setItem(LS_USER, JSON.stringify(CURRENT_USER));
   OP = `${emp.id} — ${emp.name || ''}`;
   localStorage.setItem(LS.OP, OP);
   hideLock();
-  toast(`ยินดีต้อนรับ ${emp.name || emp.id}`, 'green');
+  // re-render ให้เห็นเฉพาะ VSM ของผู้ใช้ที่เพิ่ง login ทันที
+  if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  toast(`ยินดีต้อนรับ ${emp.name || emp.id} · ${VSM_LABEL[myVsm()]||''}`, 'green');
 }
 function lockFail(msg) {
   const inp = document.getElementById('lockInput');
@@ -2015,8 +2288,8 @@ function lockFail(msg) {
   inp.classList.add('shake');
   setTimeout(() => inp.classList.remove('shake'), 500);
 }
-function lockOut() {
-  if (!confirm('ออกจากระบบ?')) return;
+async function lockOut() {
+  if (!(await confirmModal('ออกจากระบบ?', { danger:false, yes:'ออกจากระบบ' }))) return;
   CURRENT_USER = null;
   localStorage.removeItem(LS_USER);
   document.getElementById('lockInput').value = '';
@@ -2055,12 +2328,27 @@ async function init() {
     lsSave(LS.EMPLOYEES, state.employees);
   }
 
+  // เตรียมข้อมูล VSM: เพิ่มพนักงาน/เครื่องทดสอบ + ผูก VSM ให้พนักงานทุกคน
+  ensureSeedEmployees();
+  ensureVsmZones();
+  normalizeEmployeeVsm();
+
   // Lock In check
-  if (CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id)) hideLock();
-  else showLock();
+  if (CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id)) {
+    // backfill VSM ให้ user เดิมที่ login ค้างไว้ก่อนมีระบบ VSM
+    if (!CURRENT_USER.vsm) {
+      const me = empById(CURRENT_USER.id);
+      CURRENT_USER.vsm = (me && me.vsm) || DEFAULT_VSM;
+      localStorage.setItem(LS_USER, JSON.stringify(CURRENT_USER));
+    }
+    hideLock();
+  } else showLock();
 
   // render ทันทีจาก state ปัจจุบัน (LocalStorage หรือ default)
   setConnBadge('local');
+  ensureValidZone();
+  renderZoneTabs();
+  populateZoneSelects();
   renderHome();
   renderZone();
   renderSettings();
@@ -2085,6 +2373,9 @@ async function reload() {
     state.employees = res.employees || state.employees;
     state.targets   = res.targets   || state.targets;
     state.ids       = res.ids       || state.ids || [];
+    ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
+    ensureVsmZones();         // seed เครื่องทดสอบของ zone VSM1/2/3 (D1 ไม่มี)
+    normalizeEmployeeVsm();   // ผูก VSM ให้พนักงานที่ดึงจาก API (เดิม = vsm4)
     lsSave(LS.VALVES,    state.valves);
     lsSave(LS.MACHINES,  state.machines);
     lsSave(LS.EMPLOYEES, state.employees);
@@ -2109,6 +2400,7 @@ async function reload() {
 
     setConnBadge('online');
     toast('Sync ข้อมูลจาก Cloud สำเร็จ', 'green');
+    ensureValidZone(); renderZoneTabs(); populateZoneSelects();
     renderHome(); renderZone(); renderSettings();
   } catch (e) {
     setConnBadge('local');
@@ -2123,9 +2415,9 @@ function computeLocalStats() {
   const vMap = {};
   for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
 
-  // latest record per (valve, lot) — normalize valve_no/valveNo ก่อน
+  // latest record per (valve, lot) — normalize valve_no/valveNo ก่อน (กรองตาม VSM)
   const latest = {};
-  for (const r of state.prodRecords) {
+  for (const r of filterVsm(state.prodRecords)) {
     const vno = (r.valve_no || r.valveNo || '').trim();
     const k = `${vno}::${r.lot||''}`;
     if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) {
@@ -2438,10 +2730,17 @@ function _zoneHasOpenHelp(recs){ return recs.some(r => _recHelpOpen(r)); }
 
 function renderHelpSummary(recs){
   const box = $('helpSummary'); if (!box) return;
+  // จำสถานะ "เปิดอยู่" ก่อน re-render → กันพับเองตอน auto-refresh ทุก 30 วิ (ผู้ใช้กำลังอ่าน)
+  const wasOpen     = !!box.querySelector('#helpDetails')?.open;
+  const doneWasOpen = !!box.querySelector('#helpDoneDetails')?.open;
   const withHelp = (recs||[]).filter(r => _recHelp(r));
   const open = withHelp.filter(r => _recHelpOpen(r));
   const done = withHelp.filter(r => !_recHelpOpen(r));
-  if (!withHelp.length){ box.innerHTML = ''; return; }
+  if (!withHelp.length){ box.innerHTML = ''; box._helpSig = ''; return; }
+  // ถ้าเนื้อหาเหมือนเดิม + การ์ดยังแสดงอยู่ → ไม่ rebuild เลย (กัน flicker/พับ ระหว่างผู้ใช้อ่าน)
+  const sig = JSON.stringify(withHelp.map(r => { const h = _recHelp(r)||{}; return [r.record_id, _recHelpOpen(r), h.text, h.done_by]; }));
+  if (box._helpSig === sig && box.querySelector('#helpDetails')) return;
+  box._helpSig = sig;
   const row = (r, isOpen) => {
     const h = _recHelp(r);
     const oae = (Math.min(+r.oae||0,9.99)*100).toFixed(1);
@@ -2460,16 +2759,16 @@ function renderHelpSummary(recs){
       ${isOpen?`<button class="btn btn-green btn-sm mt-8" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ ทำเครื่องหมายแก้ไขแล้ว</button>`:''}
     </div>`;
   };
-  // ซ่อนไว้เป็น default — กดที่หัวข้อเพื่อเปิดดู (ใช้ <details> ไม่มี attribute open)
+  // คงสถานะเปิด/ปิดเดิมไว้ (wasOpen) → ผู้ใช้ที่กดดูค้างไว้จะไม่ถูกพับตอน refresh
   box.innerHTML = `<div class="card" style="border-color:${open.length?'#FCA5A5':'var(--border)'}">
-    <details>
+    <details id="helpDetails"${wasOpen?' open':''}>
       <summary style="cursor:pointer;font-weight:800;color:${open.length?'#B91C1C':'var(--muted)'};display:flex;align-items:center;gap:8px;font-size:13px;list-style:revert">
         <span class="ci" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🆘</span>ขอความช่วยเหลือ
         <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--muted)">รอ ${open.length} · เสร็จ ${done.length} · แตะเพื่อดู</span>
       </summary>
       <div style="margin-top:10px">
         ${open.length ? open.map(r=>row(r,true)).join('') : '<div class="muted center" style="font-size:12px;padding:6px">ไม่มีรายการที่รอดำเนินการ 🎉</div>'}
-        ${done.length ? `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">ดูที่แก้ไขแล้ว (${done.length})</summary><div style="margin-top:6px">${done.map(r=>row(r,false)).join('')}</div></details>` : ''}
+        ${done.length ? `<details id="helpDoneDetails" style="margin-top:6px"${doneWasOpen?' open':''}><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">ดูที่แก้ไขแล้ว (${done.length})</summary><div style="margin-top:6px">${done.map(r=>row(r,false)).join('')}</div></details>` : ''}
       </div>
     </details>
   </div>`;
@@ -2500,13 +2799,12 @@ async function resolveHelp(rid){
 }
 
 async function showZoneDetail(zone) {
-  const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
   const dFrom = $('dashFrom')?.value || todayISO();
   const dTo   = $('dashTo')?.value   || todayISO();
   const shiftF = state.shiftFilter || 'all';
 
-  // ดึง records ของ zone นี้ในช่วงที่เลือก
-  let records = state.kpiRecords.filter(r => {
+  // ดึง records ของ zone นี้ในช่วงที่เลือก (กรองตาม VSM ของผู้ใช้)
+  let records = filterVsm(state.kpiRecords).filter(r => {
     if (r.zone !== zone) return false;
     const d = (r.shift_date || r.record_date || '').slice(0,10);
     if (d < dFrom || d > dTo) return false;
@@ -2518,7 +2816,7 @@ async function showZoneDetail(zone) {
       const params = new URLSearchParams({ from: dFrom, to: dTo, zone });
       if (shiftF !== 'all') params.set('shift', shiftF);
       const r = await api('/api/kpi?' + params).catch(()=>null);
-      if (r?.records) records = r.records;
+      if (r?.records) records = filterVsm(r.records);
     } catch (e) {}
   }
 
@@ -2543,7 +2841,7 @@ async function showZoneDetail(zone) {
   const orphanCards = orphanMc.map(id => zoneMachineCard({id, target:0, man_std:0}, byMc[id])).join('');
 
   openModal(
-    `${zone === 'ZONE1' ? '🅰️' : zone === 'ZONE2' ? '🅱️' : '🅲'} Zone ${zone.slice(-1)} — ${zoneLabels[zone]}`,
+    `🏭 ${ZONE_LABEL[zone]||zone}`,
     `<div class="muted mb-8" style="font-size:12px">${shiftLabel} · ${dFrom === dTo ? dFrom : `${dFrom} → ${dTo}`}</div>
     <div class="muted mb-8" style="font-size:11px">${mcList.length} เครื่อง · ${records.length} record</div>
     ${zoneKpiCard(zone, `📊 สรุปรวมของ Zone นี้`, records, true)}
@@ -2687,6 +2985,13 @@ function toggleMcView() {
 }
 
 function renderMachineStatusChecker(recs) {
+  // IoT floor plan เป็นผังจริงของ VSM4 เท่านั้น — VSM1/2/3 ยังไม่มีผัง (เพิ่มภายหลัง)
+  if (!canSeeAllVsm() && myVsm() !== 'vsm4') {
+    const fw = $('mcViewFloor');
+    if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง</div>`;
+    if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
+    return;
+  }
   const dFrom = $('dashFrom')?.value || todayISO();
   const dTo   = $('dashTo')?.value   || dFrom;
   const selShift = state.shiftFilter || 'all';
@@ -2695,7 +3000,7 @@ function renderMachineStatusChecker(recs) {
 
   // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
   // ถ้าไม่ได้ส่งมา → กรองจาก state.kpiRecords ตาม "ช่วงวันที่" (ไม่ใช่วันเดียว) + กะ
-  const filtered = Array.isArray(recs) ? recs : state.kpiRecords.filter(r => {
+  const filtered = Array.isArray(recs) ? recs : filterVsm(state.kpiRecords).filter(r => {
     const d = (r.shift_date || r.record_date || '').slice(0,10);
     if (d < dFrom || d > dTo) return false;
     if (selShift !== 'all' && r.shift_type !== selShift) return false;
@@ -2891,8 +3196,8 @@ async function renderHome() {
   const dTo   = $('dashTo')?.value   || today;
   const shiftF = state.shiftFilter || 'all';
 
-  // KPI records ในช่วงที่เลือก + shift filter
-  let kpiInRange = state.kpiRecords.filter(r => {
+  // KPI records ในช่วงที่เลือก + shift filter (กรองตาม VSM ของผู้ใช้)
+  let kpiInRange = filterVsm(state.kpiRecords).filter(r => {
     const d = (r.shift_date || r.record_date || '').slice(0,10);
     if (d < dFrom || d > dTo) return false;
     if (shiftF !== 'all' && r.shift_type !== shiftF) return false;
@@ -2905,14 +3210,14 @@ async function renderHome() {
       const params = new URLSearchParams({ from: dFrom, to: dTo });
       if (shiftF !== 'all') params.set('shift', shiftF);
       const k = await api('/api/kpi?' + params).catch(()=>null);
-      if (k?.records) kpiInRange = k.records;
+      if (k?.records) kpiInRange = filterVsm(k.records);
     } catch (e) {}
   }
 
   // ภาพรวมวันนี้ (ติดตามงาน) — local
   const stats = computeLocalStats();
-  const todayProds = state.prodRecords.filter(r => (r.timestamp||'').slice(0,10) === today);
-  const todayKpis  = state.kpiRecords.filter(r => (r.shift_date||r.record_date||'').slice(0,10) === today);
+  const todayProds = filterVsm(state.prodRecords).filter(r => (r.timestamp||'').slice(0,10) === today);
+  const todayKpis  = filterVsm(state.kpiRecords).filter(r => (r.shift_date||r.record_date||'').slice(0,10) === today);
   let prodRes = { records: todayProds };
   let kpiRes  = { records: todayKpis };
   let statsRes = stats;
@@ -2923,18 +3228,19 @@ async function renderHome() {
         api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
         api(`/api/stats`).catch(()=>null),
       ]);
-      // กรอง tombstones ออกจาก API records
+      // กรอง tombstones + VSM ออกจาก API records
       if (p?.records) {
-        const _fr = p.records.filter(r => !_deletedProdIds.has(r.record_id || r.recordId));
+        const _fr = filterVsm(p.records.filter(r => !_deletedProdIds.has(r.record_id || r.recordId)));
         prodRes = { ...p, records: _fr };
       } else if (p) prodRes = p;
       if (k?.records) {
-        const _fk = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
+        const _fk = filterVsm(k.records.filter(r => !_deletedKpiIds.has(r.record_id)));
         kpiRes = { ...k, records: _fk };
       } else if (k) kpiRes = k;
       // Smart merge: ใช้ API เฉพาะ field ที่มีข้อมูล ไม่ทับ local ทั้งดุ้น
       // ถ้ามี tombstones ให้ใช้ local stats เสมอ (กัน API คืน records ที่ลบแล้ว)
-      if (s && _deletedProdIds.size === 0) statsRes = {
+      // /api/stats เป็นยอดรวมทุก VSM — ใช้ได้เฉพาะ Admin; ผู้ใช้ทั่วไปใช้ local stats ที่กรอง VSM แล้ว
+      if (s && _deletedProdIds.size === 0 && canSeeAllVsm()) statsRes = {
         total_done:  (s.total_done  != null) ? s.total_done  : stats.total_done,
         total_wip:   (s.total_wip   != null) ? s.total_wip   : stats.total_wip,
         by_customer: Object.keys(s.by_customer||{}).length ? s.by_customer : stats.by_customer,
@@ -2967,10 +3273,9 @@ async function renderHome() {
     }
   }
   if ($('kpiPerZone')) {
-    const zoneLabels = { ZONE1:'AFTERMARKET', ZONE2:'INDUCTION', ZONE3:'FORD6 & PERKINS' };
-    $('kpiPerZone').innerHTML = ['ZONE1','ZONE2','ZONE3'].map(z => {
+    $('kpiPerZone').innerHTML = currentZones().map(z => {
       const zRecs = kpiInRange.filter(r => r.zone === z);
-      const card = zoneKpiCard(z, `Zone ${z.slice(-1)} — ${zoneLabels[z]}`, zRecs);
+      const card = zoneKpiCard(z, `${ZONE_LABEL[z]||z}`, zRecs);
       const openHelp = zRecs.filter(r => _recHelpOpen(r)).length;
       const helpBadge = openHelp ? `<span style="position:absolute;top:8px;right:10px;z-index:2;background:#DC2626;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;box-shadow:0 2px 6px rgba(220,38,38,.4)">🆘 ${openHelp}</span>` : '';
       // wrap in clickable container
@@ -3069,9 +3374,9 @@ function showCompletedDetail() {
 function getCompletedRecords() {
   const vMap = {};
   for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
-  // latest per (valve, lot)
+  // latest per (valve, lot) — กรองตาม VSM ของผู้ใช้
   const latest = {};
-  for (const r of state.prodRecords) {
+  for (const r of filterVsm(state.prodRecords)) {
     const k = `${r.valve_no}::${r.lot||''}`;
     if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) latest[k] = r;
   }
@@ -3206,15 +3511,15 @@ function shiftHtml(zone, mi, si, m) {
     </div>
     <div class="fr" style="margin-top:6px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
-        <div style="font-size:10px;font-weight:800;color:var(--blue)">🧩 ข้อมูลงานที่ผลิต (link → Production Tracker)</div>
+        <div style="font-size:10px;font-weight:800;color:var(--blue)">🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) <span style="color:var(--red)">*จำเป็น</span></div>
         <button type="button" class="scan-btn" onclick="openScanner('${sid}')"><span class="ico">📷</span>สแกนบาร์โค้ด</button>
       </div>
       <div class="fg">
-        <div class="fr ac" style="margin:0"><label>Valve No</label>
+        <div class="fr ac" style="margin:0"><label>Valve No <span style="color:var(--red)">*</span></label>
           <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" autocomplete="off">
           <div class="ac-dd" id="${sid}_v_dd"></div>
         </div>
-        <div class="fr" style="margin:0"><label>Lot</label><input type="text" id="${sid}_lot" placeholder="L1"></div>
+        <div class="fr" style="margin:0"><label>Lot <span style="color:var(--red)">*</span></label><input type="text" id="${sid}_lot" placeholder="L1"></div>
       </div>
       <div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
         <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
@@ -3225,7 +3530,7 @@ function shiftHtml(zone, mi, si, m) {
   </div>`;
 }
 
-let zoneShiftCount = { ZONE1:{}, ZONE2:{}, ZONE3:{} };
+let zoneShiftCount = {};
 
 function toggleMc(pid) {
   const on   = $(pid + '_on').checked;
@@ -3234,6 +3539,7 @@ function toggleMc(pid) {
   if (on) { _formDirty = true; _updateFabState(); }
 }
 function addShift(zone, mi) {
+  if (!zoneShiftCount[zone]) zoneShiftCount[zone] = {};
   const cnt = (zoneShiftCount[zone][mi] || 0) + 1;
   if (cnt >= 4) { toast('สูงสุด 4 ช่วงต่อเครื่อง', 'orange'); return; }
   zoneShiftCount[zone][mi] = cnt;
@@ -3401,7 +3707,7 @@ function _doDateUnlock() {
 
 function updShiftDetect() {
   const prod = $('prod-date').value || todayISO();
-  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+  for (const z of currentZones()) {
     const machines = state.machines[z] || [];
     for (let mi = 0; mi < machines.length; mi++) {
       const on = $(`${z}_${mi}_on`);
@@ -3508,7 +3814,7 @@ async function saveKpi() {
   if (_diffD < -3) { toast('⚠️ ไม่สามารถย้อนหลังเกิน 3 วัน', 'orange'); return; }
 
   const records = [];
-  for (const z of ['ZONE1','ZONE2','ZONE3']) {
+  for (const z of currentZones()) {
     const machines = state.machines[z] || [];
     for (let mi = 0; mi < machines.length; mi++) {
       const on = $(`${z}_${mi}_on`);
@@ -3579,6 +3885,7 @@ async function saveKpi() {
           oae, dle, pplh, pdac_val: pdac, pdac_pass: pdacPass, scrap_rate: scrapRate, opr_pdac: oprPdac,
           operator: OP, shift_detail: `${sTs}-${sTe}:OPR=${sOpr}`,
           valve_no: shiftEntry.valve || '', lot: shiftEntry.lot || '', last_process: shiftEntry.proc || '',
+          vsm: myVsm(),
         });
       }
     }
@@ -3610,6 +3917,11 @@ async function saveKpi() {
       errs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง' });
     if (!rec.emp_id)
       errs.push({ field: 'พนักงาน (พิมพ์ค้น)', msg: 'ยังไม่ลง' });
+    // 🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) — บังคับกรอก Valve No + Lot
+    if (!rec.valve_no || !String(rec.valve_no).trim())
+      errs.push({ field: '🧩 Valve No (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
+    if (!rec.lot || !String(rec.lot).trim())
+      errs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
 
     if (errs.length) _valGroups[key] = { label: grpLabel, errors: errs };
   }
@@ -3669,6 +3981,7 @@ async function saveKpi() {
     status:          'In Progress',
     operator:        r.operator,
     note:            `auto-linked KPI ${r.zone}/${r.machine_id}`,
+    vsm:             r.vsm || myVsm(),
   }));
 
   // 1) เก็บลง LocalStorage ทันที (เร็ว, ใช้งานต่อได้แม้ offline)
@@ -3681,7 +3994,7 @@ async function saveKpi() {
   // reset dirty flag + FAB after successful save
   _formDirty = false; _updateFabState();
   // 2) reset form — clear ALL inputs by re-rendering
-  zoneShiftCount = { ZONE1:{}, ZONE2:{}, ZONE3:{} };
+  zoneShiftCount = {};
   renderZone();
 
   // 3) หลังบันทึกสำเร็จ → ไปหน้า Dashboard อัตโนมัติ
@@ -3796,7 +4109,7 @@ function addSlot(n = 1) {
   }
   updSlotCount();
 }
-function clearSlots() { if (!confirm('ล้างทั้งหมด?')) return; $('slots').innerHTML = ''; slotCounter = 0; updSlotCount(); }
+async function clearSlots() { if (!(await confirmModal('ล้างทั้งหมด?'))) return; $('slots').innerHTML = ''; slotCounter = 0; updSlotCount(); }
 function updSlotCount() { /* removed slot counter UI */ }
 function onValveSet(sid) {
   const valveNo = $(sid+'_v')?.value || '';
@@ -3831,6 +4144,7 @@ async function saveSlots() {
       valve_no: v, lot, quantity: q,
       current_process: p, status: 'In Progress',
       operator: $('op-name').value || OP, note: n,
+      vsm: myVsm(),
     });
   });
   if (invalid) toast(`ข้าม ${invalid} slot ที่กรอกไม่ครบ`, 'orange');
@@ -3860,12 +4174,12 @@ async function searchProcess() {
     const valve = state.valves.find(v => v.valveNo.toLowerCase() === q.toLowerCase());
     if (!valve) { $('searchResult').innerHTML = `<div class="muted center">ไม่พบ Valve "${escapeHtml(q)}"</div>`; return; }
     // ดึง records จาก LocalStorage หรือ API ถ้าออนไลน์
-    let records = state.prodRecords.filter(r => r.valve_no && r.valve_no.toLowerCase() === q.toLowerCase())
+    let records = filterVsm(state.prodRecords).filter(r => r.valve_no && r.valve_no.toLowerCase() === q.toLowerCase())
       .map(r => ({ ...r, valveNo: r.valve_no, currentProcess: r.current_process }));
     if (API) {
       try {
         const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
-        if (rRes.records?.length) records = rRes.records;
+        if (rRes.records?.length) records = filterVsm(rRes.records);
       } catch (e) { /* fallback to local */ }
     }
     // group by lot, find latest process
@@ -4065,6 +4379,7 @@ function _histEmptyRow(cols, kind) {
   return `<tr><td colspan="${cols}" class="center muted">${msg}</td></tr>`;
 }
 function renderKpiHist(rows) {
+  rows = filterVsm(rows);   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด)
   _histKpiRows = rows;
   const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
   $('histCount').textContent = view.length;
@@ -4089,6 +4404,7 @@ function renderKpiHist(rows) {
   </tr>`).join('') || _histEmptyRow(11, 'ข้อมูล KPI');
 }
 function renderProdHist(rows) {
+  rows = filterVsm(rows);   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด)
   _histProdRows = rows;
   const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
   $('histCount').textContent = view.length;
@@ -4128,7 +4444,7 @@ function exportHistory() {
    ============================================================ */
 async function deleteKpiRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
-  if (!confirm('⚠️ ลบ KPI record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
+  if (!(await confirmModal('⚠️ ลบ KPI record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที'))) return;
 
   // 1) ลบ local ทันที + บันทึก tombstone + render local
   state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== rid);
@@ -4151,7 +4467,7 @@ async function deleteKpiRecord(rid) {
 
 async function deleteProdRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
-  if (!confirm('⚠️ ลบ Production record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที')) return;
+  if (!(await confirmModal('⚠️ ลบ Production record นี้?\n\nข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที'))) return;
 
   // 1) ลบ local ทันที + บันทึก tombstone + render local
   state.prodRecords = state.prodRecords.filter(r => r.record_id !== rid);
@@ -4450,12 +4766,7 @@ function initSettingsCollapse() {
   });
 }
 
-/* ===== ZONE TARGETS UI ===== */
-const ZONE_TGT_TITLE = {
-  zone1: 'Zone 1 — AFTERMARKET',
-  zone2: 'Zone 2 — INDUCTION',
-  zone3: 'Zone 3 — FORD6 & PERKINS'
-};
+/* ===== ZONE TARGETS UI (ตาม VSM ปัจจุบัน) ===== */
 function renderZoneTargets() {
   const wrap = $('zoneTargetsWrap');
   if (!wrap) return;
@@ -4465,9 +4776,9 @@ function renderZoneTargets() {
     if (v !== undefined && v !== null) return v;
     return T[field] !== undefined ? T[field] : '';
   };
-  wrap.innerHTML = ZONE_KEYS.map(zk => `
+  wrap.innerHTML = currentZoneKeys().map(zk => `
     <div style="border:1.5px solid var(--blue-soft);border-radius:11px;padding:12px;margin-bottom:10px;background:var(--blue-light)">
-      <div style="font-weight:800;color:var(--blue-dark);margin-bottom:8px;font-size:13px">📍 ${ZONE_TGT_TITLE[zk]}</div>
+      <div style="font-weight:800;color:var(--blue-dark);margin-bottom:8px;font-size:13px">📍 ${escapeHtml(ZONE_LABEL[zk.toUpperCase()]||zk)}</div>
       <div class="fg-auto">
         <div class="fr" style="margin:0"><label>OAE (%)</label><input type="number" id="tgt-${zk}-oae"   step="0.01"   value="${tgt(zk,'oae')}"></div>
         <div class="fr" style="margin:0"><label>DLE (%)</label><input type="number" id="tgt-${zk}-dle"   step="0.01"   value="${tgt(zk,'dle')}"></div>
@@ -4488,7 +4799,7 @@ async function syncAllToCloud() {
     if (state.ids && state.ids.length) { await api('/api/ids/bulk', { body: { ids: state.ids } }); synced += state.ids.length; }
     for (const e of state.employees) { await api('/api/employees', { body: e }); }
     synced += state.employees.length;
-    for (const z of ['ZONE1','ZONE2','ZONE3']) {
+    for (const z of currentZones()) {
       for (const m of (state.machines[z]||[])) { await api('/api/machines', { body: { zone: z, ...m } }); synced++; }
     }
     if (state.kpiRecords.length)  { await api('/api/kpi',          { body: { records: state.kpiRecords  } }); synced += state.kpiRecords.length; }
@@ -4522,9 +4833,9 @@ function exportBackup() {
   toast('Backup สำเร็จ', 'green');
 }
 
-function restoreBackup(ev) {
+async function restoreBackup(ev) {
   const f = ev.target.files[0]; if (!f) return;
-  if (!confirm('Restore จากไฟล์จะทับข้อมูลปัจจุบันทั้งหมด — ดำเนินการ?')) return;
+  if (!(await confirmModal('Restore จากไฟล์จะทับข้อมูลปัจจุบันทั้งหมด — ดำเนินการ?'))) return;
   const r = new FileReader();
   r.onload = (e) => {
     try {
@@ -4543,8 +4854,8 @@ function restoreBackup(ev) {
   ev.target.value = '';
 }
 
-function resetToDefaults() {
-  if (!confirm('รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ')) return;
+async function resetToDefaults() {
+  if (!(await confirmModal('รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ'))) return;
   state.valves    = JSON.parse(JSON.stringify(DEFAULT_VALVES));
   state.machines  = JSON.parse(JSON.stringify(DEFAULT_MACHINES));
   state.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
@@ -4558,11 +4869,8 @@ function resetToDefaults() {
 }
 
 function clearAllRecords() {
-  // อันตรายมาก — ต้องกรอกรหัส Admin ก่อนเสมอ (ใช้ modal ในแอพ ใช้ได้บน PWA)
-  _adminGate(_doClearAllRecords,
-    '🗑️ ล้าง Records ทั้งหมด',
-    '⚠️ อันตราย! จะลบ KPI + Production ทั้งหมด กู้คืนไม่ได้\nกรอกรหัส Admin เพื่อยืนยัน',
-    'ลบทั้งหมด', true);
+  // อันตรายมาก — ต้องกรอกรหัส Admin ก่อนเสมอ (modal ในแอพ ใช้ได้บน PWA)
+  promptAdmin('🗑️ ยืนยันรหัส Admin เพื่อล้าง Records ทั้งหมด (กู้คืนไม่ได้)', _doClearAllRecords);
 }
 function _doClearAllRecords() {
   state.kpiRecords  = [];
@@ -4573,17 +4881,18 @@ function _doClearAllRecords() {
   renderHome(); renderSettings();
 }
 /* ===== ADMIN LOCK ===== */
-function _adminUrlPanelOpen() {
-  $('apiUrl').readOnly = false;
-  $('apiUrl').style.background = '#fff';
-  $('apiUrl').style.cursor = 'text';
-  $('adminPanel').style.display = 'block';
-  $('adminBtn').textContent = '🔓 Admin (กดเพื่อล็อก)';
-}
 function adminToggle() {
   if (state.adminUnlocked) { adminLock(); return; }
-  // ใช้ modal ในแอพแทน prompt() (prompt ใช้ไม่ได้ใน PWA standalone)
-  _adminGate(_adminUrlPanelOpen, '🔑 Admin Password');
+  promptAdmin('🔑 Admin Mode', () => {
+    state.adminUnlocked = true;
+    $('apiUrl').readOnly = false;
+    $('apiUrl').style.background = '#fff';
+    $('apiUrl').style.cursor = 'text';
+    $('adminPanel').style.display = 'block';
+    $('adminBtn').textContent = '🔓 Admin (กดเพื่อล็อก)';
+    toast('🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM', 'green');
+    refreshVsmViews();
+  });
 }
 function adminLock() {
   state.adminUnlocked = false;
@@ -4593,7 +4902,35 @@ function adminLock() {
   $('apiUrl').value = API;
   $('adminPanel').style.display = 'none';
   $('adminBtn').textContent = '🔑 Admin Mode';
-  toast('🔒 ล็อกแล้ว', 'orange');
+  toast('🔒 ล็อกแล้ว — กลับมาเห็นเฉพาะ VSM ของคุณ', 'orange');
+  refreshVsmViews();
+}
+// re-render ทุกมุมมองที่กรองตาม VSM (เรียกเมื่อสลับ Admin mode)
+function refreshVsmViews() {
+  try { ensureValidZone(); renderZoneTabs(); renderZone(); } catch (e) {}
+  try { populateZoneSelects(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
+  try { renderPlans(); } catch (e) {}
+  try { if (state.histType) _renderHistLocal(); } catch (e) {}
+  try { renderSettings(); } catch (e) {}
+}
+// สร้างปุ่ม Zone tab ตาม VSM ปัจจุบัน (ฟอร์มบันทึก)
+function renderZoneTabs() {
+  const wrap = document.getElementById('ztabs');
+  if (!wrap) return;
+  const zs = currentZones();
+  if (!zs.includes(state.zone)) state.zone = zs[0] || '';
+  wrap.innerHTML = zs.map((z, i) =>
+    `<button class="zt${z===state.zone?' active':''}" data-z="${z}" onclick="setZone('${z}')"><span class="zt-num">${i+1}</span>${escapeHtml(ZONE_LABEL[z]||z)}</button>`
+  ).join('');
+}
+// เติม option Zone ใน dropdown (ประวัติ + จัดการเครื่องจักร) ตาม VSM ปัจจุบัน
+function populateZoneSelects() {
+  const zs = currentZones();
+  const hz = document.getElementById('histZone');
+  if (hz) { const cur = hz.value; hz.innerHTML = '<option value="">ทั้งหมด</option>' + zs.map(z=>`<option value="${z}">${escapeHtml(ZONE_LABEL[z]||z)}</option>`).join(''); if (zs.includes(cur)) hz.value = cur; }
+  const mz = document.getElementById('mcZone');
+  if (mz) { const cur = mz.value; mz.innerHTML = zs.map(z=>`<option value="${z}">${escapeHtml((ZONE_DEFS[z]?'':'')+ (ZONE_LABEL[z]||z))}</option>`).join(''); mz.value = zs.includes(cur) ? cur : (zs[0]||''); }
 }
 async function adminSaveUrl() {
   if (!state.adminUnlocked) { toast('ต้องปลดล็อก Admin ก่อน', 'orange'); return; }
@@ -4620,7 +4957,7 @@ async function testApi() {
 /* ===== SAVE TARGETS — per-zone ===== */
 async function saveTargets() {
   const payload = {};
-  for (const zk of ZONE_KEYS) {
+  for (const zk of currentZoneKeys()) {
     for (const f of ['oae','dle','pplh','pdac','scrap']) {
       const el = $(`tgt-${zk}-${f}`);
       if (!el) continue;
@@ -4630,7 +4967,7 @@ async function saveTargets() {
   }
   state.targets = {...state.targets, ...payload};
   lsSave(LS.TARGETS, state.targets);
-  toast('💾 บันทึก Targets ทั้ง 3 Zones', 'green');
+  toast('💾 บันทึก Targets แล้ว', 'green');
   if (API) { try { await api('/api/targets', { body: payload }); } catch (e) {} }
 }
 function renderValveList() {
@@ -4738,7 +5075,7 @@ async function saveIdModal() {
 }
 
 async function delIdEntry(idCode) {
-  if (!confirm(`ลบ ID ${idCode}?`)) return;
+  if (!(await confirmModal(`ลบ ID ${idCode}?`))) return;
   state.ids = (state.ids||[]).filter(x => x.id_code !== idCode);
   lsSave(LS.IDS, state.ids);
   renderIdList(); renderValveList();
@@ -4981,7 +5318,7 @@ async function saveValve(orig) {
   if (API) { try { await api('/api/valves', { body: entry }); } catch (e) {} }
 }
 async function delValve(valveNo) {
-  if (!confirm(`ลบ ${valveNo}?`)) return;
+  if (!(await confirmModal(`ลบ ${valveNo}?`))) return;
   state.valves = state.valves.filter(v => v.valveNo !== valveNo);
   lsSave(LS.VALVES, state.valves);
   renderValveList();
@@ -5107,24 +5444,56 @@ async function commitPasteValves() {
   }
 }
 function renderEmployeeList() {
-  $('empCount').textContent = state.employees.length;
-  const rows = state.employees.map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
-  $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="3" class="center muted">ไม่มีข้อมูล</td></tr>';
+  normalizeEmployeeVsm();
+  const flt = $('empVsmFilter')?.value || '';
+  const list = flt ? state.employees.filter(e => (e.vsm||DEFAULT_VSM) === flt) : state.employees;
+  $('empCount').textContent = list.length;
+  const vsmSelect = (e) => `<select onchange="setEmployeeVsm('${escapeHtml(e.id)}',this.value)" style="border:1px solid var(--blue-soft);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;background:#fff">${
+    VSM_LIST.map(v => `<option value="${v.key}"${(e.vsm||DEFAULT_VSM)===v.key?' selected':''}>${v.label}</option>`).join('')
+  }</select>`;
+  const rows = list.map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td>${vsmSelect(e)}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
+  $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
+}
+async function setEmployeeVsm(id, vsm) {
+  const e = state.employees.find(x => x.id === id);
+  if (!e) return;
+  // ถ้ารหัสนี้ถูกกำหนดไว้ในโค้ด (VSM_EMP_MAP) แล้ว → โค้ดเป็นกฎกลาง แก้ในเครื่องไม่มีผล
+  if (VSM_EMP_MAP[String(id).toUpperCase()]) {
+    renderEmployeeList();
+    toast(`⚠️ ${id} ถูกกำหนดเป็น ${VSM_LABEL[VSM_EMP_MAP[String(id).toUpperCase()]]} ในโค้ดแล้ว — แก้ที่ VSM_EMP_MAP ใน index.html`, 'orange');
+    return;
+  }
+  saveEmpVsmOv(id, vsm);   // เก็บใน localStorage — รอด sync กับ D1
+  e.vsm = vsm;
+  lsSave(LS.EMPLOYEES, state.employees);
+  // ถ้าแก้ VSM ของ user ที่ login อยู่ → อัพเดตทันที
+  if (CURRENT_USER && CURRENT_USER.id === id) {
+    CURRENT_USER.vsm = vsm;
+    localStorage.setItem(LS_USER, JSON.stringify(CURRENT_USER));
+    hideLock();
+  }
+  toast(`ตั้ง ${id} เป็น ${VSM_LABEL[vsm]||vsm} (เครื่องนี้)`, 'green');
+  if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  if (API) { try { await api('/api/employees', { body: { id, name: e.name||'', vsm } }); } catch (e) {} }
 }
 async function addEmployee() {
   const id = $('newEmpId').value.trim();
   const name = $('newEmpName').value.trim();
+  const vsm = $('newEmpVsm')?.value || DEFAULT_VSM;
   if (!id) { toast('กรอกรหัสพนักงาน', 'orange'); return; }
+  saveEmpVsmOv(id, vsm);   // ผูก VSM แบบรอด sync (localStorage)
   const existing = state.employees.findIndex(e => e.id === id);
-  if (existing >= 0) state.employees[existing] = { id, name }; else state.employees.push({ id, name });
+  if (existing >= 0) state.employees[existing] = { id, name, vsm }; else state.employees.push({ id, name, vsm });
   lsSave(LS.EMPLOYEES, state.employees);
-  toast('บันทึกพนักงาน', 'green');
+  const inCode = VSM_EMP_MAP[String(id).toUpperCase()];
+  toast(inCode ? `บันทึกพนักงาน — VSM ใช้ค่าจากโค้ด (${VSM_LABEL[inCode]})` : `บันทึกพนักงาน (${VSM_LABEL[vsm]||vsm})`, 'green');
   $('newEmpId').value=''; $('newEmpName').value='';
   renderEmployeeList();
-  if (API) { try { await api('/api/employees', { body: { id, name } }); } catch (e) {} }
+  if (API) { try { await api('/api/employees', { body: { id, name, vsm } }); } catch (e) {} }
 }
 async function delEmployee(id) {
-  if (!confirm(`ลบ ${id}?`)) return;
+  if (!(await confirmModal(`ลบ ${id}?`))) return;
+  delEmpVsmOv(id);   // ล้าง override VSM ของคนนี้ด้วย
   state.employees = state.employees.filter(e => e.id !== id);
   lsSave(LS.EMPLOYEES, state.employees);
   renderEmployeeList();
@@ -5164,7 +5533,7 @@ async function addMachine() {
   if (API) { try { await api('/api/machines', { body: { zone, id, target, man_std: std, process } }); } catch (e) {} }
 }
 async function delMachine(zone, id) {
-  if (!confirm(`ลบ ${id}?`)) return;
+  if (!(await confirmModal(`ลบ ${id}?`))) return;
   if (state.machines[zone]) state.machines[zone] = state.machines[zone].filter(m => m.id !== id);
   lsSave(LS.MACHINES, state.machines);
   renderMachineList(); renderZone();
