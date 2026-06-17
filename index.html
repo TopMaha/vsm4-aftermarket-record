@@ -2474,12 +2474,8 @@ function computeProcessOutput(kpiRecords) {
   // ลำดับเวลา: วันที่ผลิต → กะ (กลางวันก่อนกลางคืน) → เวลาบันทึก
   const dKey = r => (r.shift_date || r.record_date || '') + (r.shift_type === 'night' ? '1' : '0') + (r.saved_at || '');
   const byProc = {};
-  // seed process ที่ตั้งค่าไว้ที่เครื่องจักร → แสดงแม้ยังไม่มี OPR
-  // เฉพาะเครื่องใน VSM ของผู้ใช้ (currentZones: Admin = ทุก zone) — กัน process ของ VSM อื่นโผล่
-  const seedProcs = new Set();
-  for (const z of currentZones())
-    for (const m of (state.machines[z] || [])) seedProcs.add(mcProcess(m));
-  for (const p of seedProcs) byProc[p] = { opr: 0, machines: new Set(), valves: [] };
+  // seed process ที่ตั้งค่าไว้ที่เครื่องจักร "ทุกเครื่อง/ทุก VSM" → ทุกคนเห็นเหมือนกัน แม้ยังไม่มี OPR
+  for (const p of new Set(Object.values(mcProc))) byProc[p] = { opr: 0, machines: new Set(), valves: [] };
   for (const key of Object.keys(groups)) {
     const recs = groups[key];
     // record ล่าสุด → process ปัจจุบันของงานชุดนี้
@@ -3229,13 +3225,17 @@ async function renderHome() {
   const dTo   = $('dashTo')?.value   || today;
   const shiftF = state.shiftFilter || 'all';
 
-  // KPI records ในช่วงที่เลือก + shift filter (กรองตาม VSM ของผู้ใช้)
-  let kpiInRange = filterVsm(state.kpiRecords).filter(r => {
+  // filter วันที่ + กะ (ใช้ร่วมกัน)
+  const _inRange = r => {
     const d = (r.shift_date || r.record_date || '').slice(0,10);
     if (d < dFrom || d > dTo) return false;
     if (shiftF !== 'all' && r.shift_type !== shiftF) return false;
     return true;
-  });
+  };
+  // KPI records ในช่วงที่เลือก + shift filter (กรองตาม VSM ของผู้ใช้ — สำหรับการ์ด KPI ราย Zone)
+  let kpiInRange = filterVsm(state.kpiRecords).filter(_inRange);
+  // ทุก VSM ในช่วงเดียวกัน — สำหรับ "Output ของ Process" ที่ทุกคนเห็นเหมือนกัน
+  let kpiInRangeAll = state.kpiRecords.filter(_inRange);
 
   // ถ้ามี API ลอง refresh ทับ
   if (API) {
@@ -3243,7 +3243,7 @@ async function renderHome() {
       const params = new URLSearchParams({ from: dFrom, to: dTo });
       if (shiftF !== 'all') params.set('shift', shiftF);
       const k = await api('/api/kpi?' + params).catch(()=>null);
-      if (k?.records) kpiInRange = filterVsm(k.records);
+      if (k?.records) { kpiInRange = filterVsm(k.records); kpiInRangeAll = k.records; }
     } catch (e) {}
   }
 
@@ -3341,8 +3341,8 @@ async function renderHome() {
         ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v.wip)}</span></td></tr>`).join('')
         : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
     }
-    // Process table — วิเคราะห์ตามเครื่องที่ผลิต (OPR จาก KPI ในช่วงที่เลือก)
-    renderProcOutput(kpiInRange);
+    // Process table — มุมมองรวมทั้งโรงงาน (ทุก VSM) ทุกคนเห็นเหมือนกัน
+    renderProcOutput(kpiInRangeAll);
   } catch (e) {
     toast('โหลด dashboard ไม่สำเร็จ', 'red');
   }
