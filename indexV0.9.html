@@ -5576,30 +5576,57 @@ function mcProcess(m) {
 
 // process ของเครื่องจักรเก็บแชร์ข้ามทุกเครื่อง โดยฝากไว้ใน targets store ใต้คีย์ 'mcproc.<id>'
 // (targets เป็น key-value ที่ /api/init คืนกลับให้ทุกเครื่อง — ต่างจาก machines ที่ไม่คืน field process)
+// ** ข้อจำกัด: targets store เก็บได้เฉพาะ "ตัวเลข" (ค่าที่เป็น string จะถูกทิ้ง) **
+// จึงเข้ารหัสชื่อ process → เลข (FNV-1a) แล้วถอดกลับด้วย vocabulary ที่ทุกเครื่องมีเหมือนกัน
 const MCPROC_PREFIX = 'mcproc.';
+// รายชื่อ process ทั้งหมดที่รู้จัก (ฝังในโค้ด = ทุกเครื่องเหมือนกัน) ใช้ถอดรหัสเลขกลับเป็นชื่อ
+const PROC_VOCAB_FALLBACK = ["AW","BLEND","BUFF","CAR","CB","CBN","CCOT","COPY","COPY CUP","COT","COT+TIP","COT1","COT2","CUP","D/B","DOUBLE","F. IND","F.IND","FACE IND","FACE IND.","FFT","FG","FH","HOD","HOD&FRG","HOD'C","HOD+FG","IND","IND P\"","IND P'","IND T\"","P/T","POL","PQ","QC","RADIUS","RE/R","RED","RED.","RED/F","RED/R","REDUC","ROLL","ROLL M.","SEMI","SFG","SFG1","SFG2","SRG","SRG*2","SRG*3","SRG*5","SRG*6","SRG1-3","SRG2","SRG5","SSG","SSG*2","SSG*3","SSG*4","SSG*6","SSG+RED","SSG3","SSS","SWIRL","T. IND","T.IND","T/T","TG","TG-R","TH","TIP C\"","TIP IND","TIP IND.","TIPC\"","TL","TOP","TOP&HOD","TRG","TRG.","TW","UN/H","UND","UNDER","UNDER H.","VET","XRAY","TOP&HOD","CB"];
+// FNV-1a 32-bit → เลขบวก ≤ 2^30 (กัน column ชนิด INTEGER ล้น) บวก 1 กันชนค่า 0
+function procCode(name) {
+  let h = 0x811c9dc5;
+  const s = String(name || '').trim().toUpperCase();
+  if (!s) return 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return (h & 0x3FFFFFFF) + 1;
+}
+// vocabulary รวม = fallback + process จากวาล์ว (แชร์ผ่าน init) + ค่าที่ตั้งไว้ในเครื่องนี้
+function buildProcVocab() {
+  const set = new Set(PROC_VOCAB_FALLBACK);
+  for (const v of (state.valves || [])) for (const p of (v.processes || [])) if (p) set.add(p);
+  for (const p of Object.values(_machineProc || {})) if (p) set.add(p);
+  return set;
+}
+// ถอดเลขกลับเป็นชื่อ process โดยไล่ hash ทุกชื่อใน vocabulary
+function procFromCode(code) {
+  const c = Number(code);
+  if (!c) return null;
+  for (const name of buildProcVocab()) if (procCode(name) === c) return name;
+  return null;
+}
 function pushMcProcCloud(id, process) {
   if (!id) return;
-  const body = {}; body[MCPROC_PREFIX + id] = String(process || '');
+  const body = {}; body[MCPROC_PREFIX + id] = procCode(process);   // เก็บเป็น "เลข" (string ถูกทิ้ง)
   state.targets = { ...state.targets, ...body };
   lsSave(LS.TARGETS, state.targets);
   if (API) { api('/api/targets', { body }).catch(()=>{}); }
 }
-// รับ targets จาก cloud → ทำให้ _machineProc ของเครื่องนี้ตรงกับส่วนกลาง (cloud = แหล่งความจริง)
+// รับ targets จาก cloud → ถอดเลขเป็นชื่อ process แล้วทำให้ _machineProc ตรงกับส่วนกลาง (cloud = แหล่งความจริง)
 // แล้วดัน entry ที่ยังมีแต่ในเครื่องนี้ขึ้น cloud (migrate ครั้งแรกหลังอัปเดต) เพื่อให้เครื่องอื่นเห็นด้วย
 function syncMcProcFromCloud(targets) {
   if (!targets || typeof targets !== 'object') return;
-  const shared = {};
-  for (const [k, v] of Object.entries(targets)) {
-    if (k.startsWith(MCPROC_PREFIX) && v) shared[k.slice(MCPROC_PREFIX.length)] = String(v);
-  }
+  const sharedIds = new Set();
   let changed = false;
-  for (const [id, p] of Object.entries(shared)) {
-    if (_machineProc[id] !== p) { _machineProc[id] = p; changed = true; }
+  for (const [k, v] of Object.entries(targets)) {
+    if (!k.startsWith(MCPROC_PREFIX)) continue;
+    const id = k.slice(MCPROC_PREFIX.length);
+    sharedIds.add(id);
+    const name = procFromCode(v);
+    if (name && _machineProc[id] !== name) { _machineProc[id] = name; changed = true; }
   }
   // migrate: process ที่ตั้งไว้ในเครื่องนี้แต่ cloud ยังไม่มี → ดันขึ้นให้เครื่องอื่นเห็น
   const migrate = {};
   for (const [id, p] of Object.entries(_machineProc)) {
-    if (p && !(id in shared)) migrate[MCPROC_PREFIX + id] = String(p);
+    if (p && !sharedIds.has(id)) migrate[MCPROC_PREFIX + id] = procCode(p);
   }
   if (changed) localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
   if (Object.keys(migrate).length) {
