@@ -943,7 +943,10 @@ const LS = {
   KPI:       'vsm4_kpi_records',
   PROD_REC:  'vsm4_prod_records',
   PLANS:     'vsm4_plans',
+  MC_PROC:   'vsm4_machine_proc',   // map: machine_id → process (รอด cloud reload เพราะ D1 ไม่เก็บ field นี้)
 };
+// process ของเครื่องจักร เก็บแยกจาก state.machines (กัน reload จาก Cloud ทับหาย)
+let _machineProc = JSON.parse(localStorage.getItem(LS.MC_PROC) || '{}');
 // ❗ Hard-coded URL — locked by default; admin จะปลด lock ผ่านปุ่มใน Settings
 const DEFAULT_API = 'https://vsm4-api.wiphawas-sketchup.workers.dev';
 let API = localStorage.getItem(LS.API) || DEFAULT_API;
@@ -2537,15 +2540,33 @@ function renderProcTableUI() {
 function showProcessValves(proc) {
   const o = _lastProcOut.find(x => x.proc === proc);
   if (!o) return;
-  const rows = (o.valves || []).map(v => `<tr>
-    <td><b>${escapeHtml(v.valve)}</b></td>
-    <td>${escapeHtml(v.lot || '-')}</td>
-    <td class="center"><b>${nn(v.opr)}</b></td>
-    <td style="font-size:11px;color:var(--muted)">${v.machines.map(escapeHtml).join(', ')||'-'}</td>
-  </tr>`).join('') || '<tr><td colspan="4" class="center muted">ไม่มีวาล์ว</td></tr>';
+  // map วาล์ว → ลูกค้า
+  const custOf = {};
+  for (const v of state.valves) custOf[vKey(v.valveNo)] = v.customer || 'Other';
+  // จัดกลุ่มตามลูกค้า
+  const byCust = {};
+  for (const v of (o.valves || [])) {
+    const c = custOf[vKey(v.valve)] || 'ไม่ระบุลูกค้า';
+    if (!byCust[c]) byCust[c] = { opr: 0, items: [] };
+    byCust[c].opr += v.opr;
+    byCust[c].items.push(v);
+  }
+  const groups = Object.entries(byCust).sort((a, b) => b[1].opr - a[1].opr);
+  const html = groups.length ? groups.map(([c, g]) => `
+    <details style="border:1.5px solid var(--blue-soft);border-radius:9px;margin-bottom:6px;overflow:hidden">
+      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:var(--blue-dark);background:var(--blue-light);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>👥 ${escapeHtml(c)}</span>
+        <span style="font-size:12px;color:var(--blue);white-space:nowrap">OPR <b>${nn(g.opr)}</b> · ${g.items.length} รายการ ▾</span>
+      </summary>
+      <div class="tbl-wrap" style="padding:4px 8px 8px">
+        <table><thead><tr><th>วาล์วเบอร์</th><th>Lot</th><th class="center">OPR</th><th>เครื่อง</th></tr></thead><tbody>
+        ${g.items.map(v => `<tr><td><b>${escapeHtml(v.valve)}</b></td><td>${escapeHtml(v.lot||'-')}</td><td class="center"><b>${nn(v.opr)}</b></td><td style="font-size:11px;color:var(--muted)">${v.machines.map(escapeHtml).join(', ')||'-'}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    </details>`).join('') : '<div class="center muted">ไม่มีวาล์ว</div>';
   openModal(`🛠️ Process ${proc} — งานที่อยู่ขั้นนี้`, `
-    <div class="muted" style="font-size:12px;margin-bottom:8px">รวม OPR <b>${nn(o.opr)}</b> ชิ้น · ${o.valveCount} วาล์ว · ${o.valves.length} lot · ${o.machines.length} เครื่อง</div>
-    <div class="tbl-wrap"><table><thead><tr><th>วาล์วเบอร์</th><th>Lot</th><th class="center">OPR (ชิ้น)</th><th>เครื่องที่ผลิต</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">รวม OPR <b>${nn(o.opr)}</b> ชิ้น · ${groups.length} ลูกค้า · ${o.valveCount} วาล์ว · ${o.valves.length} lot · กดที่ลูกค้าเพื่อดูรายละเอียด</div>
+    ${html}
   `);
 }
 
@@ -3722,11 +3743,10 @@ function updShiftDetect() {
       if (!on?.checked) continue;
       const ts = $(`${z}_${mi}_s0_ts`)?.value;
       if (ts) {
-        const { st, sd } = _computeShift(ts);
+        const [h, m] = ts.split(':').map(Number);
+        // วันที่ของกะ = วันที่ผลิต (prod-date) เสมอ — ไม่เลื่อนวันตามเวลาเริ่ม
+        const { st, sd } = _resolveShift(prod, (h || 0) * 60 + (m || 0));
         $('shift-detect').value = `${st === 'day' ? '☀️ กะกลางวัน' : '🌙 กะกลางคืน'} (${sd})`;
-        // โหมด auto → ปรับ "วันที่ผลิต" ให้ตรงกับวันที่ของกะที่คำนวณได้
-        const el = $('prod-date');
-        if (el && el.readOnly !== false && el.value !== sd) el.value = sd;
         return;
       }
     }
@@ -3846,7 +3866,8 @@ async function saveKpi() {
         const { wt } = calcWT(ts, te);
         if (!opr && !scrap) return;
         if (si === 0 && ts) {
-          const { st, sd } = _computeShift(ts);
+          const [h0, m0] = ts.split(':').map(Number);
+          const { st, sd } = _resolveShift(prodDate, (h0 || 0) * 60 + (m0 || 0));
           mainShiftType = st; shiftDate = sd;
         }
         shifts.push({ si, opr, scrap, target, ct, ts, te, wt, emp, valve, lot, proc });
@@ -3864,7 +3885,8 @@ async function saveKpi() {
         // คำนวณ shift_type + shift_date จากเวลาเริ่มของแต่ละ slot
         let slotShiftType = mainShiftType, slotShiftDate = shiftDate;
         if (sTs) {
-          const { st: _st2, sd: _sd2 } = _computeShift(sTs);
+          const [h2, m2] = sTs.split(':').map(Number);
+          const { st: _st2, sd: _sd2 } = _resolveShift(prodDate, (h2 || 0) * 60 + (m2 || 0));
           slotShiftType = _st2; slotShiftDate = _sd2;
         }
         const manUsed = m.man_std;
@@ -4574,6 +4596,7 @@ function editKpiRecord(rid) {
         <input type="time" id="editKpiTE" value="${escapeHtml(shiftE)}">
       </div>
     </div>
+    <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
     <div class="fr"><label>👤 พนักงาน</label>
       <input type="text" id="editKpiOp" value="${escapeHtml(r.operator||r.emp_id||'')}">
     </div>
@@ -5510,7 +5533,11 @@ async function delEmployee(id) {
 }
 
 // process ของเครื่อง (ค่าที่ผลิตออก ถือเป็น process นั้น) — เครื่องที่ไม่กำหนด = SSG
-function mcProcess(m) { return (m && m.process) ? m.process : 'SSG'; }
+// อ่านจาก _machineProc (เก็บแยก รอด cloud reload) ก่อน แล้วค่อย fallback ไป m.process
+function mcProcess(m) {
+  if (!m) return 'SSG';
+  return _machineProc[m.id] || m.process || 'SSG';
+}
 function renderMachineList() {
   const z = $('mcZone').value;
   const rows = (state.machines[z]||[]).map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
@@ -5520,7 +5547,7 @@ function editMachine(zone, id) {
   const m = (state.machines[zone]||[]).find(x => x.id === id);
   if (!m) return;
   $('newMcId').value = m.id; $('newMcTgt').value = m.target||0;
-  $('newMcStd').value = m.man_std||0; $('newMcProc').value = m.process||'';
+  $('newMcStd').value = m.man_std||0; $('newMcProc').value = mcProcess(m);
   $('newMcId').scrollIntoView({ behavior:'smooth', block:'center' });
 }
 async function addMachine() {
@@ -5535,6 +5562,9 @@ async function addMachine() {
   const entry = { id, target, man_std: std, process };
   if (existing >= 0) state.machines[zone][existing] = entry; else state.machines[zone].push(entry);
   lsSave(LS.MACHINES, state.machines);
+  // เก็บ process แยก (รอด cloud reload เพราะ /api/init ไม่คืน field นี้)
+  _machineProc[id] = process;
+  localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
   toast('บันทึกเครื่องจักร', 'green');
   $('newMcId').value=''; $('newMcTgt').value=''; $('newMcStd').value=''; $('newMcProc').value='';
   renderMachineList(); renderZone();
@@ -5544,6 +5574,8 @@ async function delMachine(zone, id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
   if (state.machines[zone]) state.machines[zone] = state.machines[zone].filter(m => m.id !== id);
   lsSave(LS.MACHINES, state.machines);
+  delete _machineProc[id];
+  localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
   renderMachineList(); renderZone();
   toast('ลบแล้ว', 'green');
   if (API) { try { await api('/api/machines/delete', { body: { zone, id } }); } catch (e) {} }
