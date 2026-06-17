@@ -2474,8 +2474,12 @@ function computeProcessOutput(kpiRecords) {
   // ลำดับเวลา: วันที่ผลิต → กะ (กลางวันก่อนกลางคืน) → เวลาบันทึก
   const dKey = r => (r.shift_date || r.record_date || '') + (r.shift_type === 'night' ? '1' : '0') + (r.saved_at || '');
   const byProc = {};
-  // seed ทุก process ที่ตั้งค่าไว้ที่เครื่องจักร → แสดง process ตามที่ตั้งค่า แม้ยังไม่มี OPR
-  for (const p of new Set(Object.values(mcProc))) byProc[p] = { opr: 0, machines: new Set(), valves: [] };
+  // seed process ที่ตั้งค่าไว้ที่เครื่องจักร → แสดงแม้ยังไม่มี OPR
+  // เฉพาะเครื่องใน VSM ของผู้ใช้ (currentZones: Admin = ทุก zone) — กัน process ของ VSM อื่นโผล่
+  const seedProcs = new Set();
+  for (const z of currentZones())
+    for (const m of (state.machines[z] || [])) seedProcs.add(mcProcess(m));
+  for (const p of seedProcs) byProc[p] = { opr: 0, machines: new Set(), valves: [] };
   for (const key of Object.keys(groups)) {
     const recs = groups[key];
     // record ล่าสุด → process ปัจจุบันของงานชุดนี้
