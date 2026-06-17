@@ -2385,6 +2385,7 @@ async function reload() {
     lsSave(LS.EMPLOYEES, state.employees);
     lsSave(LS.TARGETS,   state.targets);
     lsSave(LS.IDS,       state.ids);
+    syncMcProcFromCloud(res.targets);   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store)
     // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — ไม่บล็อก reload
     pullIds().then(() => { renderIdList(true); }).catch(()=>{});
 
@@ -5572,6 +5573,41 @@ function mcProcess(m) {
   if (!m) return 'SSG';
   return _machineProc[m.id] || m.process || 'SSG';
 }
+
+// process ของเครื่องจักรเก็บแชร์ข้ามทุกเครื่อง โดยฝากไว้ใน targets store ใต้คีย์ 'mcproc.<id>'
+// (targets เป็น key-value ที่ /api/init คืนกลับให้ทุกเครื่อง — ต่างจาก machines ที่ไม่คืน field process)
+const MCPROC_PREFIX = 'mcproc.';
+function pushMcProcCloud(id, process) {
+  if (!id) return;
+  const body = {}; body[MCPROC_PREFIX + id] = String(process || '');
+  state.targets = { ...state.targets, ...body };
+  lsSave(LS.TARGETS, state.targets);
+  if (API) { api('/api/targets', { body }).catch(()=>{}); }
+}
+// รับ targets จาก cloud → ทำให้ _machineProc ของเครื่องนี้ตรงกับส่วนกลาง (cloud = แหล่งความจริง)
+// แล้วดัน entry ที่ยังมีแต่ในเครื่องนี้ขึ้น cloud (migrate ครั้งแรกหลังอัปเดต) เพื่อให้เครื่องอื่นเห็นด้วย
+function syncMcProcFromCloud(targets) {
+  if (!targets || typeof targets !== 'object') return;
+  const shared = {};
+  for (const [k, v] of Object.entries(targets)) {
+    if (k.startsWith(MCPROC_PREFIX) && v) shared[k.slice(MCPROC_PREFIX.length)] = String(v);
+  }
+  let changed = false;
+  for (const [id, p] of Object.entries(shared)) {
+    if (_machineProc[id] !== p) { _machineProc[id] = p; changed = true; }
+  }
+  // migrate: process ที่ตั้งไว้ในเครื่องนี้แต่ cloud ยังไม่มี → ดันขึ้นให้เครื่องอื่นเห็น
+  const migrate = {};
+  for (const [id, p] of Object.entries(_machineProc)) {
+    if (p && !(id in shared)) migrate[MCPROC_PREFIX + id] = String(p);
+  }
+  if (changed) localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
+  if (Object.keys(migrate).length) {
+    state.targets = { ...state.targets, ...migrate };
+    lsSave(LS.TARGETS, state.targets);
+    if (API) { api('/api/targets', { body: migrate }).catch(()=>{}); }
+  }
+}
 function renderMachineList() {
   const z = $('mcZone').value;
   const rows = (state.machines[z]||[]).map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
@@ -5599,6 +5635,7 @@ async function addMachine() {
   // เก็บ process แยก (รอด cloud reload เพราะ /api/init ไม่คืน field นี้)
   _machineProc[id] = process;
   localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
+  pushMcProcCloud(id, process);   // แชร์ไปทุกเครื่องผ่าน targets store
   toast('บันทึกเครื่องจักร', 'green');
   $('newMcId').value=''; $('newMcTgt').value=''; $('newMcStd').value=''; $('newMcProc').value='';
   renderMachineList(); renderZone();
@@ -5610,6 +5647,7 @@ async function delMachine(zone, id) {
   lsSave(LS.MACHINES, state.machines);
   delete _machineProc[id];
   localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
+  pushMcProcCloud(id, '');   // เคลียร์ค่าใน targets store ให้ทุกเครื่อง
   renderMachineList(); renderZone();
   toast('ลบแล้ว', 'green');
   if (API) { try { await api('/api/machines/delete', { body: { zone, id } }); } catch (e) {} }
