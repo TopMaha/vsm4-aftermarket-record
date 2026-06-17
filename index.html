@@ -584,7 +584,8 @@ tbody tr:last-child td{border-bottom:none}
   <!-- งานในแต่ละ Process (วิเคราะห์ตามเครื่องที่ผลิต — OPR) -->
   <div class="card">
     <div class="card-title"><span class="ci">🛠️</span>Output ของ Process</div>
-    <div class="muted" style="font-size:11px;margin:-4px 0 8px">ยอด OPR ตามขั้นปัจจุบันของแต่ละวาล์ว+Lot — ผลิตต่อที่เครื่องขั้นถัดไป งานจะย้าย process ตามเครื่อง (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
+    <div class="muted" style="font-size:11px;margin:-4px 0 6px">ยอด OPR ตามขั้นปัจจุบันของแต่ละวาล์ว+Lot — ผลิตต่อที่เครื่องขั้นถัดไป งานจะย้าย process ตามเครื่อง (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
+    <div id="procRangeNote" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px"></div>
     <div id="procFilterBar" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
     <div class="tbl-wrap" style="max-height:none">
       <table id="procTable">
@@ -2508,6 +2509,13 @@ function toggleProcFilter(p) {
   renderProcTableUI();
 }
 function renderProcTableUI() {
+  // บอกช่วงวันที่ของข้อมูล (ตามตัวกรองวันที่ของ Dashboard)
+  const note = $('procRangeNote');
+  if (note) {
+    const f = $('dashFrom')?.value || '', t = $('dashTo')?.value || '';
+    const fmt = d => d ? d.split('-').reverse().join('/') : '—';
+    note.textContent = (f || t) ? `📅 ช่วงข้อมูล: ${fmt(f)} ถึง ${fmt(t)}` : '';
+  }
   const bar = $('procFilterBar');
   if (bar) bar.innerHTML = _lastProcOut.map(o => {
     const on = !_procHidden.has(o.proc);
