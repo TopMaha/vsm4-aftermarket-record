@@ -4455,10 +4455,39 @@ function renderProdHist(rows) {
     </td>
   </tr>`).join('') || _histEmptyRow(8, 'งาน Production');
 }
-function exportHistory() {
-  // export ชุดข้อมูลที่กรองไว้ "ทั้งหมด" ไม่ใช่แค่ 100 แถวที่แสดงบนจอ
+async function exportHistory() {
+  // export ชุดข้อมูลที่กรองไว้ "ทั้งหมด" — ไม่ใช่แค่หน้าที่โหลดมาแสดง (default 100)
   const isKpi = state.histType === 'kpi';
-  const rows = isKpi ? (_histKpiRows || []) : (_histProdRows || []);
+  const from = $('histFrom')?.value || '', to = $('histTo')?.value || '';
+  const zone = $('histZone')?.value || '', q = ($('histSearch')?.value || '').trim();
+  let rows;
+  if (API) {
+    toast('กำลังดึงข้อมูลทั้งหมดเพื่อ Export…', 'green');
+    try {
+      const params = new URLSearchParams();
+      if (isKpi) {
+        if (from) params.set('from', from);
+        if (to)   params.set('to', to);
+        if (zone) params.set('zone', zone);
+        if (q)    params.set('machine', q);
+      } else {
+        if (from) params.set('from', from + 'T00:00:00');
+        if (to)   params.set('to', to);
+        if (q)    params.set('valve', q);
+      }
+      params.set('limit', '100000');   // ดึงทั้งหมด ไม่ติด paging
+      const res = await api('/api/' + (isKpi ? 'kpi' : 'records') + '?' + params);
+      rows = (res?.records || []).map(r => ({ ...r, valveNo: r.valveNo||r.valve_no, currentProcess: r.currentProcess||r.current_process }));
+    } catch (e) {
+      rows = isKpi ? (_histKpiRows || []) : (_histProdRows || []);   // fallback: ที่โหลดมาแล้ว
+    }
+  } else {
+    // offline → ใช้ local ที่กรองครบทั้งหมด
+    const filt = { from, to, zone, q };
+    rows = isKpi
+      ? filterLocal(state.kpiRecords, filt, 'kpi')
+      : filterLocal(state.prodRecords, filt, 'prod').map(r => ({ ...r, valveNo: r.valve_no||r.valveNo, currentProcess: r.current_process||r.currentProcess }));
+  }
   if (!rows.length) { toast('ไม่มีข้อมูลให้ export', 'orange'); return; }
   const data = isKpi
     ? rows.map(r => ({ 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process }))
@@ -4467,6 +4496,7 @@ function exportHistory() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'History');
   XLSX.writeFile(wb, `vsm4-history-${state.histType}-${todayISO()}.xlsx`);
+  toast(`Export ${rows.length} รายการ`, 'green');
 }
 
 /* ============================================================
