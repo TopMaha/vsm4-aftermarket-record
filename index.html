@@ -584,7 +584,22 @@ tbody tr:last-child td{border-bottom:none}
   <!-- งานในแต่ละ Process (วิเคราะห์ตามเครื่องที่ผลิต — OPR) -->
   <div class="card">
     <div class="card-title"><span class="ci">🛠️</span>Output ของ Process</div>
-    <div class="muted" style="font-size:11px;margin:-4px 0 6px">ยอด OPR ตามขั้นปัจจุบันของแต่ละวาล์ว+Lot — ผลิตต่อที่เครื่องขั้นถัดไป งานจะย้าย process ตามเครื่อง (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
+    <div class="muted" style="font-size:11px;margin:-4px 0 8px">ยอด OPR ตามขั้นปัจจุบันของแต่ละวาล์ว+Lot — ผลิตต่อที่เครื่องขั้นถัดไป งานจะย้าย process ตามเครื่อง (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
+
+    <!-- เลือกช่วงเวลาเองได้ที่หน้านี้ (ไม่ต้องไปหน้า Dashboard) -->
+    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--blue-dark);margin-bottom:7px"><span>🗓️</span><span>ช่วงเวลาที่แสดง</span></div>
+      <div class="row" id="procPresets" style="gap:6px;flex-wrap:wrap;margin-bottom:7px">
+        <button type="button" class="btn btn-sm btn-blue prchip"   data-prk="today" onclick="setProcPreset('today')">วันนี้</button>
+        <button type="button" class="btn btn-sm btn-outline prchip" data-prk="week"  onclick="setProcPreset('week')">7 วันล่าสุด</button>
+        <button type="button" class="btn btn-sm btn-outline prchip" data-prk="month" onclick="setProcPreset('month')">เดือนนี้</button>
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div class="fr" style="margin:0;flex:1;min-width:130px"><label style="font-size:11px">จากวันที่</label><input type="date" id="procFrom" onchange="onProcDateInput()"></div>
+        <div class="fr" style="margin:0;flex:1;min-width:130px"><label style="font-size:11px">ถึงวันที่</label><input type="date" id="procTo" onchange="onProcDateInput()"></div>
+      </div>
+    </div>
+
     <div id="procRangeNote" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px"></div>
     <div id="procFilterBar" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
     <div class="tbl-wrap" style="max-height:none">
@@ -2317,6 +2332,8 @@ async function init() {
   $('histFrom').value = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
   // Dashboard KPI default = วันนี้
   if ($('dashFrom')) { $('dashFrom').value = todayISO(); $('dashTo').value = todayISO(); }
+  // Output ของ Process (หน้าติดตามงาน) default = วันนี้ — เลือกช่วงเองได้ในหน้านั้น
+  if ($('procFrom')) { $('procFrom').value = todayISO(); $('procTo').value = todayISO(); }
 
   if ($('mcStatusDate')) $('mcStatusDate').value = todayISO();
   // Plan filter default = วันนี้ → +60 วัน
@@ -2508,17 +2525,68 @@ function renderProcOutput(kpiRecords) {
   _lastProcOut = computeProcessOutput(kpiRecords);
   renderProcTableUI();
 }
+
+/* ── ช่วงเวลาของ "Output ของ Process" — เลือกเองได้ที่หน้าติดตามงาน ──
+   แยกอิสระจากตัวกรองวันที่ของ Dashboard เพื่อให้สะดวก ไม่ต้องสลับหน้า
+   มุมมองรวมทุก VSM (ทุกคนเห็นเหมือนกัน) ครอบคลุมทุกกะในช่วงที่เลือก   */
+const _procIso = d => `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+function _markProcPreset(kind) {
+  document.querySelectorAll('#procPresets .prchip').forEach(b => {
+    const on = b.dataset.prk === kind;
+    b.classList.toggle('btn-blue', on);
+    b.classList.toggle('btn-outline', !on);
+  });
+}
+function setProcPreset(kind) {
+  const today = todayISO();
+  let from = today;
+  if (kind === 'week')  { const d = new Date(); d.setDate(d.getDate() - 6); from = _procIso(d); }
+  else if (kind === 'month') { from = today.slice(0, 7) + '-01'; }
+  if ($('procFrom')) $('procFrom').value = from;
+  if ($('procTo'))   $('procTo').value   = today;
+  _markProcPreset(kind);
+  refreshProcOutput();
+}
+function onProcDateInput() {
+  // กรอกเอง: ถ้า "จาก" > "ถึง" ให้สลับให้ถูกต้องอัตโนมัติ
+  const f = $('procFrom'), t = $('procTo');
+  if (f && t && f.value && t.value && f.value > t.value) { const tmp = f.value; f.value = t.value; t.value = tmp; }
+  _markProcPreset(null); // ช่วงกำหนดเอง — ไม่ตรงกับปุ่มลัดใด
+  refreshProcOutput();
+}
+async function refreshProcOutput() {
+  const f = $('procFrom')?.value || todayISO();
+  const t = $('procTo')?.value   || f;
+  const inRange = r => {
+    const d = (r.shift_date || r.record_date || '').slice(0, 10);
+    return d >= f && d <= t;
+  };
+  // local ก่อน (รองรับ offline) — ทุก VSM เพื่อให้ทุกคนเห็นเหมือนกัน
+  let recs = (state.kpiRecords || []).filter(inRange);
+  if (API) {
+    try {
+      const k = await api('/api/kpi?' + new URLSearchParams({ from: f, to: t })).catch(() => null);
+      if (k?.records) recs = k.records;
+    } catch (e) {}
+  }
+  renderProcOutput(recs);
+}
 function toggleProcFilter(p) {
   if (_procHidden.has(p)) _procHidden.delete(p); else _procHidden.add(p);
   renderProcTableUI();
 }
 function renderProcTableUI() {
-  // บอกช่วงวันที่ของข้อมูล (ตามตัวกรองวันที่ของ Dashboard)
+  // บอกช่วงวันที่ + สรุปยอดของข้อมูล (ตามตัวกรองที่เลือกในหน้านี้)
   const note = $('procRangeNote');
   if (note) {
-    const f = $('dashFrom')?.value || '', t = $('dashTo')?.value || '';
+    const f = $('procFrom')?.value || '', t = $('procTo')?.value || '';
     const fmt = d => d ? d.split('-').reverse().join('/') : '—';
-    note.textContent = (f || t) ? `📅 ช่วงข้อมูล: ${fmt(f)} ถึง ${fmt(t)}` : '';
+    const shownNow = _lastProcOut.filter(o => !_procHidden.has(o.proc));
+    const totOpr = shownNow.reduce((s, o) => s + (+o.opr || 0), 0);
+    const rangeTxt = (f && f === t) ? fmt(f) : `${fmt(f)} – ${fmt(t)}`;
+    note.innerHTML = (f || t)
+      ? `📅 ${rangeTxt} · รวม OPR <b>${nn(totOpr)}</b> ชิ้น · ${shownNow.length} process`
+      : '';
   }
   const bar = $('procFilterBar');
   if (bar) bar.innerHTML = _lastProcOut.map(o => {
@@ -3235,8 +3303,8 @@ async function renderHome() {
   };
   // KPI records ในช่วงที่เลือก + shift filter (กรองตาม VSM ของผู้ใช้ — สำหรับการ์ด KPI ราย Zone)
   let kpiInRange = filterVsm(state.kpiRecords).filter(_inRange);
-  // ทุก VSM ในช่วงเดียวกัน — สำหรับ "Output ของ Process" ที่ทุกคนเห็นเหมือนกัน
-  let kpiInRangeAll = state.kpiRecords.filter(_inRange);
+  // หมายเหตุ: "Output ของ Process" มีตัวเลือกช่วงเวลาแยกของตัวเอง (procFrom/procTo)
+  // จัดการผ่าน refreshProcOutput() ไม่ผูกกับตัวกรองวันที่ของ Dashboard อีกต่อไป
 
   // ถ้ามี API ลอง refresh ทับ
   if (API) {
@@ -3244,7 +3312,7 @@ async function renderHome() {
       const params = new URLSearchParams({ from: dFrom, to: dTo });
       if (shiftF !== 'all') params.set('shift', shiftF);
       const k = await api('/api/kpi?' + params).catch(()=>null);
-      if (k?.records) { kpiInRange = filterVsm(k.records); kpiInRangeAll = k.records; }
+      if (k?.records) { kpiInRange = filterVsm(k.records); }
     } catch (e) {}
   }
 
@@ -3342,8 +3410,8 @@ async function renderHome() {
         ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v.wip)}</span></td></tr>`).join('')
         : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
     }
-    // Process table — มุมมองรวมทั้งโรงงาน (ทุก VSM) ทุกคนเห็นเหมือนกัน
-    renderProcOutput(kpiInRangeAll);
+    // Process table — มุมมองรวมทั้งโรงงาน (ทุก VSM) ใช้ช่วงเวลาของตัวเอง (procFrom/procTo)
+    refreshProcOutput();
   } catch (e) {
     toast('โหลด dashboard ไม่สำเร็จ', 'red');
   }
