@@ -5092,10 +5092,11 @@ async function applyFixUnknownValve() {
   if (API) {
     showBusy(`กำลังแก้ไข ${kpi.length + prod.length} record…`);
     try {
-      for (const r of kpi)  await api('/api/kpi/delete',     { body: { record_id: r.record_id } });
-      if (kpi.length)       await api('/api/kpi',            { body: { records: kpi } });
-      for (const r of prod) await api('/api/records/delete', { body: { record_id: r.record_id } });
-      if (prod.length)      await api('/api/records/bulk',   { body: { records: prod } });
+      for (const r of kpi)  { if (r.record_id) await api('/api/kpi/delete', { body: { record_id: r.record_id } }); }
+      if (kpi.length)       await api('/api/kpi', { body: { records: kpi } });
+      // ⚠️ prod record ใช้คีย์ recordId (camelCase) ไม่ใช่ record_id
+      for (const r of prod) { const pid = r.recordId || r.record_id; if (pid) await api('/api/records/delete', { body: { record_id: pid } }); }
+      if (prod.length)      await api('/api/records/bulk', { body: { records: prod } });
       hideBusy();
       toast(`✅ แก้ ${kpi.length + prod.length} record เป็น ${correct} สำเร็จ`, 'green');
     } catch (e) {
