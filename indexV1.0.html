@@ -1334,14 +1334,16 @@ function _tbDone() {
 /* ===== Busy overlay — บล็อกหน้าจอระหว่างบันทึก/แก้ไข จนกว่าจะเสร็จจริง =====
    ป้องกันการกดซ้ำ + บอกผู้ใช้ชัดเจนว่า "กำลังบันทึก" และ "เสร็จแล้ว" ===== */
 let _busyFailsafe = null;
-function showBusy(msg) {
+function showBusy(msg, persistent) {
   const o = $('busyOverlay'); if (!o) return;
   const m = $('busyMsg'); if (m) m.textContent = msg || 'กำลังบันทึก…';
   o.style.display = 'flex';
   // failsafe: ถ้า network ค้างนานผิดปกติ → ปลดล็อกหน้าจอเอง ไม่ให้ผู้ใช้ติดค้าง
+  // (งาน batch ยาว ใช้ persistent=true เพื่อไม่ให้ตัดกลางคัน — มี try/finally คุม hideBusy เอง)
   clearTimeout(_busyFailsafe);
-  _busyFailsafe = setTimeout(() => { hideBusy(); toast('เครือข่ายช้า — ข้อมูลถูกเก็บใน Local แล้ว', 'orange'); }, 45000);
+  if (!persistent) _busyFailsafe = setTimeout(() => { hideBusy(); toast('เครือข่ายช้า — ข้อมูลถูกเก็บใน Local แล้ว', 'orange'); }, 45000);
 }
+function busyMsg(t) { const m = $('busyMsg'); if (m) m.textContent = t; }
 function hideBusy() { clearTimeout(_busyFailsafe); const o = $('busyOverlay'); if (o) o.style.display = 'none'; }
 
 /* ===== fnum — แปลงค่าในช่อง OPR/Target ที่อาจเป็น "สูตร" ให้เป็นตัวเลข
@@ -5016,11 +5018,12 @@ function renderUnknownValves() {
     <div class="card" style="border:1.5px solid var(--orange-bd);background:var(--orange-bg);margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span style="font-size:22px;line-height:1">⚠️</span>
-        <div>
+        <div style="flex:1;min-width:0">
           <div style="font-weight:800;font-size:14px;color:var(--orange)">Valve No ที่ไม่มีในระบบ (${all.length})</div>
           <div style="font-size:11px;color:var(--muted)">พนักงานบันทึกแล้ว — กรุณาตรวจสอบและเพิ่มเข้าฐานข้อมูลวาล์ว${more>0?` · แสดง ${CAP} รายการล่าสุด`:''}</div>
         </div>
       </div>
+      <button class="btn btn-blue btn-block btn-sm" style="margin-bottom:10px" onclick="autoMatchUnknownValves()">🪄 จับคู่อัตโนมัติ (แก้ทีเดียวหลายตัว)</button>
       ${list.map(u => `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FED7AA">
           <div style="min-width:0">
@@ -5105,6 +5108,115 @@ async function applyFixUnknownValve() {
     }
   } else {
     toast(`แก้ ${kpi.length + prod.length} record แล้ว (local)`, 'green');
+  }
+  renderUnknownValves();
+  renderHome();
+}
+
+/* ============================================================
+   AUTO-MATCH — จับคู่ Valve No ที่พิมพ์ผิดกับวาล์วจริงอัตโนมัติ
+   เช่น 1349 → VF1349M1, VV2249AO → VV2249A0 (O→0)
+   แก้ทีเดียวหลายตัว (มีหน้าตรวจทานก่อนยืนยัน)
+   ============================================================ */
+function _valveNorm(s) { return (s || '').toUpperCase().replace(/O/g, '0').replace(/\s+/g, ' ').trim(); }
+// คืนค่า valveNo จริงที่ "มั่นใจ" ว่าตรง (ตรงเป๊ะหลัง normalize O→0 หรือเป็น substring ที่มีตัวเดียว) — ไม่งั้นคืน null
+function _valveAutoMatch(unknown) {
+  const nu = _valveNorm(unknown);
+  if (!nu || nu.includes(' ')) return null;             // ว่าง/พิมพ์หลายวาล์วในช่องเดียว → ให้แก้เอง
+  for (const v of state.valves) if (_valveNorm(v.valveNo) === nu) return v.valveNo;  // ตรงเป๊ะ (รวม O→0)
+  if (nu.length >= 3) {                                  // substring ที่มีตัวเดียวเท่านั้น
+    const m = state.valves.filter(v => _valveNorm(v.valveNo).includes(nu));
+    if (m.length === 1) return m[0].valveNo;
+  }
+  return null;
+}
+let _autoMatchList = [];
+function autoMatchUnknownValves() {
+  const known = new Set(state.valves.map(v => (v.valveNo || '').toUpperCase()));
+  const unk = new Set();
+  const scan = arr => { for (const r of (arr || [])) { const v = (r.valve_no || r.valveNo || '').trim(); if (v && !known.has(v.toUpperCase())) unk.add(v); } };
+  scan(state.kpiRecords); scan(state.prodRecords);
+  const matched = [];
+  let unmatched = 0;
+  for (const u of unk) {
+    const c = _valveAutoMatch(u);
+    if (c && c.toUpperCase() !== u.toUpperCase()) {
+      const { kpi, prod } = _recsWithValve(u);
+      matched.push({ wrong: u, correct: c, count: kpi.length + prod.length });
+    } else unmatched++;
+  }
+  matched.sort((a, b) => a.correct.localeCompare(b.correct));
+  _autoMatchList = matched;
+  if (!matched.length) {
+    openModal('🪄 จับคู่อัตโนมัติ', `
+      <div style="font-size:13px;line-height:1.7;margin-bottom:14px">ไม่พบรายการที่จับคู่อัตโนมัติได้แบบมั่นใจ${unmatched ? ` — เหลือ ${unmatched} ตัวที่ต้องแก้เอง (กำกวม / พิมพ์หลายวาล์ว / ไม่มีในระบบ)` : ''}</div>
+      <button class="btn btn-outline btn-block" onclick="closeModal()">ปิด</button>`);
+    return;
+  }
+  const totalRec = matched.reduce((s, m) => s + m.count, 0);
+  openModal('🪄 จับคู่อัตโนมัติ', `
+    <div style="background:var(--blue-light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.6">
+      จับคู่ได้ <b style="color:var(--blue)">${matched.length}</b> วาล์ว (${totalRec} record)${unmatched ? ` · อีก <b>${unmatched}</b> ตัวต้องแก้เอง` : ''}<br>
+      <span style="color:var(--muted);font-size:11px">ตรวจสอบความถูกต้อง — ติ๊กออกถ้าไม่ใช่ แล้วกดยืนยัน</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.am-chk').forEach(c=>c.checked=true)">เลือกทั้งหมด</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.am-chk').forEach(c=>c.checked=false)">ล้างเลือก</button>
+    </div>
+    <div style="max-height:48vh;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:4px 10px">
+      ${matched.map((m, i) => `
+        <label style="display:flex;gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;cursor:pointer">
+          <input type="checkbox" class="am-chk" data-i="${i}" checked style="width:17px;height:17px;flex-shrink:0">
+          <span style="font-size:13px"><b style="color:var(--red)">${escapeHtml(m.wrong)}</b> <span style="color:var(--muted)">→</span> <b style="color:var(--green)">${escapeHtml(m.correct)}</b> <span style="color:var(--muted);font-size:11px">(${m.count})</span></span>
+        </label>`).join('')}
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="applyAutoMatch()">✅ ยืนยันแก้ที่เลือก</button>
+    </div>`);
+}
+// รันงานเป็นชุด (parallel ทีละ chunk) เพื่อความเร็ว + อัปเดต progress
+async function _chunkRun(items, fn, chunk, onProgress) {
+  let done = 0;
+  for (let i = 0; i < items.length; i += chunk) {
+    await Promise.all(items.slice(i, i + chunk).map(fn));
+    done += Math.min(chunk, items.length - i);
+    if (onProgress) onProgress(done);
+  }
+}
+async function applyAutoMatch() {
+  const sel = [...document.querySelectorAll('.am-chk')].filter(c => c.checked).map(c => _autoMatchList[+c.dataset.i]).filter(Boolean);
+  closeModal();
+  if (!sel.length) { toast('ไม่ได้เลือกรายการ', 'orange'); return; }
+
+  const now = new Date().toISOString();
+  const allKpi = [], allProd = [];
+  for (const { wrong, correct } of sel) {
+    const { kpi, prod } = _recsWithValve(wrong);
+    for (const r of kpi)  { r.valve_no = correct; r.valve_unknown = !isKnownValve(correct); r.updated_at = now; allKpi.push(r); }
+    for (const r of prod) { r.valve_no = correct; r.valveNo = correct; r.updated_at = now; allProd.push(r); }
+  }
+  lsSave(LS.KPI, state.kpiRecords);
+  lsSave(LS.PROD_REC, state.prodRecords);
+
+  const total = allKpi.length + allProd.length;
+  if (API) {
+    showBusy(`กำลังแก้ 0/${total} record…`, true);   // persistent: ไม่ตัดจอเองระหว่าง batch
+    try {
+      let done = 0;
+      const tick = () => busyMsg(`กำลังแก้ ${done}/${total} record…`);
+      await _chunkRun(allKpi.filter(r => r.record_id), r => api('/api/kpi/delete', { body: { record_id: r.record_id } }).catch(() => {}), 8, n => { done = n; tick(); });
+      if (allKpi.length) await api('/api/kpi', { body: { records: allKpi } });
+      await _chunkRun(allProd, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = allKpi.length + n; tick(); });
+      if (allProd.length) await api('/api/records/bulk', { body: { records: allProd } });
+      hideBusy();
+      toast(`✅ แก้ ${sel.length} วาล์ว (${total} record) สำเร็จ`, 'green');
+    } catch (e) {
+      hideBusy();
+      toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange');
+    }
+  } else {
+    toast(`แก้ ${sel.length} วาล์ว (${total} record) แล้ว (local)`, 'green');
   }
   renderUnknownValves();
   renderHome();
