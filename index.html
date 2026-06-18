@@ -3424,7 +3424,12 @@ async function renderHome() {
     }
   }
   if ($('kpiPerZone')) {
-    $('kpiPerZone').innerHTML = currentZones().map(z => {
+    // โชว์เฉพาะ zone ของ VSM ตัวเอง (เสมอ) + zone อื่นที่ "มีข้อมูลจริง" วันนี้
+    // กัน zone ว่าง (เช่น A–K ของ VSM1/2/3) โผล่มากระพริบตอน admin restore
+    const _ownZones = zonesForVsm(myVsm());
+    const _zonesToShow = currentZones().filter(z =>
+      _ownZones.includes(z) || kpiInRange.some(r => r.zone === z));
+    $('kpiPerZone').innerHTML = _zonesToShow.map(z => {
       const zRecs = kpiInRange.filter(r => r.zone === z);
       const card = zoneKpiCard(z, `${ZONE_LABEL[z]||z}`, zRecs);
       const openHelp = zRecs.filter(r => _recHelpOpen(r)).length;
