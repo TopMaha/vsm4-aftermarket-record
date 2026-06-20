@@ -453,7 +453,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div>
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.0</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.2</div>
     </div>
     <div class="row" style="gap:6px;align-items:center">
       <span class="user-chip" id="userChip" style="display:none">
@@ -584,7 +584,7 @@ tbody tr:last-child td{border-bottom:none}
   <!-- งานในแต่ละ Process (วิเคราะห์ตามเครื่องที่ผลิต — OPR) -->
   <div class="card">
     <div class="card-title"><span class="ci">🛠️</span>Output ของ Process</div>
-    <div class="muted" style="font-size:11px;margin:-4px 0 8px">ยอด OPR ตามขั้นปัจจุบันของแต่ละวาล์ว+Lot — ผลิตต่อที่เครื่องขั้นถัดไป งานจะย้าย process ตามเครื่อง (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
+    <div class="muted" style="font-size:11px;margin:-4px 0 8px">ยอด OPR รวมตาม <b>process ที่ตั้งให้เครื่อง</b> (เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)</div>
 
     <!-- เลือกช่วงเวลาเองได้ที่หน้านี้ (ไม่ต้องไปหน้า Dashboard) -->
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 10px;margin-bottom:8px">
@@ -2530,9 +2530,12 @@ function computeLocalStats() {
 }
 
 /* ============================================================
-   PROCESS OUTPUT — วิเคราะห์ตามเครื่องที่ผลิต (Item 1/3)
-   ยอด OPR จาก KPI records จัดกลุ่มตาม process ที่กำหนดให้แต่ละเครื่อง
-   (เครื่องที่ไม่ได้กำหนด process → SSG). มี multi-select เลือกแสดง.
+   PROCESS OUTPUT — อ้างอิงตาม "เครื่องจักรที่ตั้งค่าไว้" (Item 1/3)
+   ยอด OPR ของแต่ละ process = ผลรวม OPR ของทุก record ที่เครื่องนั้นถูกตั้ง
+   process นั้น (ไม่สนใจว่าพนักงานพิมพ์ process อะไรลงไป).
+   เช่น N-202 ตั้งเป็น ROLL → record N-202 OPR 1000 → ROLL +1000.
+   เครื่องที่ไม่ได้กำหนด process → SSG. งานที่ admin ขยับหลัง FG (P/T/POL/QC/
+   DONE) ใช้สถานะที่ขยับแทน FG. มี multi-select เลือกแสดง.
    ============================================================ */
 let _procHidden = new Set();   // process ที่ถูกปิดไม่ให้แสดง (default = แสดงทั้งหมด)
 let _lastProcOut = [];
@@ -2541,53 +2544,45 @@ function computeProcessOutput(kpiRecords) {
   for (const z of Object.keys(state.machines || {}))
     for (const m of (state.machines[z] || [])) mcProc[m.id] = mcProcess(m);
 
-  // จัดกลุ่มตาม (วาล์ว + lot) — แต่ละชุดคือ "งานหนึ่งหน่วย" ที่เคลื่อนผ่าน process
-  // ตามเครื่องที่ผลิต. ถ้าไม่มีทั้งวาล์วและ lot → นับเป็นรายการเดี่ยว (ไม่รวมกับใคร)
-  const groups = {};
-  let anon = 0;
-  for (const r of (kpiRecords || [])) {
-    const vno = (r.valve_no || r.valveNo || '').trim();
-    const lot = (r.lot || '').trim();
-    // คีย์จัดกลุ่มแบบ normalize (กัน typo $→S, ตัวพิมพ์, ช่องว่าง) → lot เดียวกันไม่แตกเป็นหลายชุด
-    const key = (vno || lot) ? (vKey(vno) + '::' + lotKey(lot)) : ('__anon__' + (anon++));
-    (groups[key] = groups[key] || []).push(r);
-  }
-
-  // ลำดับเวลา: วันที่ผลิต → กะ (กลางวันก่อนกลางคืน) → เวลาบันทึก
-  const dKey = r => (r.shift_date || r.record_date || '') + (r.shift_type === 'night' ? '1' : '0') + (r.saved_at || '');
   const byProc = {};
   // seed process ที่ตั้งค่าไว้ที่เครื่องจักร "ทุกเครื่อง/ทุก VSM" → ทุกคนเห็นเหมือนกัน แม้ยังไม่มี OPR
-  for (const p of new Set(Object.values(mcProc))) byProc[p] = { opr: 0, machines: new Set(), valves: [] };
-  for (const key of Object.keys(groups)) {
-    const recs = groups[key];
-    // record ล่าสุด → process ปัจจุบันของงานชุดนี้
-    let latest = recs[0];
-    for (const r of recs) if (dKey(r) > dKey(latest)) latest = r;
-    const realProc = mcProc[latest.machine_id] || 'SSG';
-    // ยอด = รวม OPR เฉพาะ record ที่อยู่ "process จริงล่าสุด" เท่านั้น
-    // (งานที่ผ่าน process ก่อนหน้าไปแล้ว ถือว่าย้ายออกไป ไม่นับซ้ำ)
-    const atCur = recs.filter(r => (mcProc[r.machine_id] || 'SSG') === realProc);
-    const qty = atCur.reduce((s, r) => s + (Number(r.opr) || 0), 0);
-    const machines = [...new Set(atCur.map(r => r.machine_id).filter(Boolean))];
-    const vnoRaw = (latest.valve_no || latest.valveNo || '').trim();
-    const vno = vnoRaw || '(ไม่ระบุวาล์ว)';
-    const lot = (latest.lot || '').trim();
-    // งานหลัง FG ที่ admin ขยับเอง (P/T/POL/QC) หรือทำจบ (DONE) → ใช้สถานะที่ขยับแทน
-    const ov = getJobProc(vnoRaw, lot);
-    const curProc = ov || realProc;
-    if (curProc === 'DONE') continue;   // จบงานแล้ว — ไม่ค้างใน Output ของ Process
+  for (const p of new Set(Object.values(mcProc))) byProc[p] = { opr: 0, machines: new Set(), valveAgg: {} };
 
-    if (!byProc[curProc]) byProc[curProc] = { opr: 0, machines: new Set(), valves: [] };
-    byProc[curProc].opr += qty;
-    machines.forEach(m => byProc[curProc].machines.add(m));
-    byProc[curProc].valves.push({ valve: vno, lot, opr: qty, machines });
+  // บวกยอดทีละ record ตาม process ของ"เครื่อง" ที่ลงบันทึก (ไม่จับกลุ่ม/ไม่ตัดทิ้ง
+  // เหมือนเดิม — เดิมตัดยอด N-202 ทิ้งเมื่อ valve+lot เดียวกันไปโผล่เครื่องอื่นทีหลัง)
+  for (const r of (kpiRecords || [])) {
+    let proc = mcProc[r.machine_id] || 'SSG';
+    const vnoRaw = (r.valve_no || r.valveNo || '').trim();
+    const lot = (r.lot || '').trim();
+    // เฉพาะงานที่เครื่องจบที่ FG แล้ว admin ขยับต่อ/ทำจบเอง → ยกยอด FG ไปขั้นที่ขยับ
+    if (proc === 'FG') {
+      const ov = getJobProc(vnoRaw, lot);
+      if (ov) proc = ov;
+    }
+    if (proc === 'DONE') continue;   // จบงานแล้ว — ไม่ค้างใน Output ของ Process
+
+    if (!byProc[proc]) byProc[proc] = { opr: 0, machines: new Set(), valveAgg: {} };
+    const qty = Number(r.opr) || 0;
+    byProc[proc].opr += qty;
+    if (r.machine_id) byProc[proc].machines.add(r.machine_id);
+    // รวมยอดต่อ (วาล์ว+lot) สำหรับ drill-down "ดูวาล์ว"
+    const vno = vnoRaw || '(ไม่ระบุวาล์ว)';
+    const vk = vKey(vno) + '::' + lotKey(lot);
+    const agg = byProc[proc].valveAgg;
+    if (!agg[vk]) agg[vk] = { valve: vno, lot, opr: 0, machines: new Set() };
+    agg[vk].opr += qty;
+    if (r.machine_id) agg[vk].machines.add(r.machine_id);
   }
   return Object.entries(byProc)
-    .map(([proc, v]) => ({
-      proc, opr: v.opr, machines: [...v.machines],
-      valves: v.valves.sort((a, b) => b.opr - a.opr),
-      valveCount: new Set(v.valves.map(x => x.valve)).size,
-    }))
+    .map(([proc, v]) => {
+      const valves = Object.values(v.valveAgg)
+        .map(x => ({ valve: x.valve, lot: x.lot, opr: x.opr, machines: [...x.machines] }))
+        .sort((a, b) => b.opr - a.opr);
+      return {
+        proc, opr: v.opr, machines: [...v.machines], valves,
+        valveCount: new Set(valves.map(x => x.valve)).size,
+      };
+    })
     .sort((a, b) => b.opr - a.opr);
 }
 function renderProcOutput(kpiRecords) {
@@ -6150,8 +6145,19 @@ function syncMcProcFromCloud(targets) {
    ทำให้ซิงก์ข้ามเครื่องอัตโนมัติผ่าน /api/init ที่คืน targets
    DONE = งานจบ → ถูกตัดออกจาก "Output ของ Process" จะได้ไม่ค้าง
    ============================================================ */
-const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];
+const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];   // fallback เมื่อหา process ของวาล์วไม่เจอ
 const PROC_DEPT    = { 'FG':'VSM4', 'P/T':'PC', 'POL':'VSM4', 'QC':'QC', 'DONE':'จบงาน' };
+// ลำดับ process หลัง FG "ของวาล์วเบอร์นี้" — ตาม Master valve (processes ของวาล์ว) ไม่ใช่สูตรตายตัว
+// เช่น VV7242M1 = FG → QC เลย (ข้าม P/T, POL) · ตัดเอาตั้งแต่ FG เป็นต้นไป + DONE ปิดท้าย
+function postFgFlowFor(valve) {
+  const v = (state.valves || []).find(x => vKey(x.valveNo) === vKey(valve));
+  const procs = (v && Array.isArray(v.processes)) ? v.processes.filter(Boolean) : null;
+  if (procs && procs.length) {
+    const i = procs.indexOf('FG');
+    if (i >= 0) return [...procs.slice(i), 'DONE'];
+  }
+  return POST_FG_FLOW;
+}
 const JOBPROC_PREFIX  = 'jobproc.';    // process code ที่ขยับไป
 const JOBPROCD_PREFIX = 'jobprocd.';   // วันที่ขยับ/จบ (เลข YYYYMMDD)
 const JOBPROCQ_PREFIX = 'jobprocq.';   // ยอดชิ้น (OPR ที่ FG) สแน็ปช็อตตอนขยับ — ใช้รวมยอด "ผลิตเสร็จ" ได้โดยไม่ต้องพึ่ง KPI ย้อนหลัง
@@ -6261,15 +6267,17 @@ function renderPostFgJobs() {
   const head = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:0;font-size:11px;color:var(--muted);line-height:1.6">
-        VSM4 จบที่ <b>FG</b> · ส่งต่อ: <b>P/T</b> (PC) → <b>POL</b> (VSM4) → <b>QC</b> (QC) → จบงาน<br>
-        ขยับงานให้ตรงสถานะจริง เพื่อไม่ให้ค้างที่ FG ใน "Output ของ Process" · งานที่จบจะไปนับใน "ผลิตเสร็จ" ตามวันที่จบ
+        VSM4 จบที่ <b>FG</b> · ส่งต่อ <b>ตามลำดับ process ของวาล์วเบอร์นั้น</b> (Master valve) จนจบงาน<br>
+        แต่ละเบอร์ไม่เหมือนกัน — บางเบอร์ <b>FG → QC</b> เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม "→" จะไปขั้นถัดไปของเบอร์นั้นเอง
       </div>
       <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
     </div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
-    const idx  = POST_FG_FLOW.indexOf(j.cur);
-    const next = POST_FG_FLOW[idx + 1];
-    const nextLabel = next === 'DONE' ? '✅ จบงาน' : `→ ${next} (${PROC_DEPT[next]})`;
+    const flow = postFgFlowFor(j.valve);              // ลำดับเฉพาะของวาล์วเบอร์นี้
+    let idx    = flow.indexOf(j.cur);
+    if (idx < 0) idx = 0;                             // สถานะเดิม (legacy) ไม่อยู่ในลำดับ → เริ่มที่ FG
+    const next = flow[idx + 1] || 'DONE';
+    const nextLabel = next === 'DONE' ? '✅ จบงาน' : `→ ${next}${PROC_DEPT[next] ? ' (' + PROC_DEPT[next] + ')' : ''}`;
     const canBack = idx > 0;
     return `<div style="border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 11px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px">
@@ -6312,9 +6320,11 @@ async function undoneJobAt(i) {
   _advancingJob = true;
   showBusy('กำลังเอางานกลับ…');
   try {
-    await setJobProc(d.valve, d.lot, 'QC', d.qty);   // กลับไปขั้น QC (ยังไม่จบ)
+    const flow = postFgFlowFor(d.valve);
+    const back = flow[flow.length - 2] || 'QC';      // ขั้นสุดท้ายก่อน DONE ของวาล์วเบอร์นี้
+    await setJobProc(d.valve, d.lot, back, d.qty);   // กลับไปขั้นก่อนจบ (ยังไม่จบ)
     hideBusy();
-    toast(`↩︎ ${d.valve} Lot ${d.lot} — เอากลับมาที่ QC แล้ว`, 'green');
+    toast(`↩︎ ${d.valve} Lot ${d.lot} — เอากลับมาที่ ${back} แล้ว`, 'green');
     renderPostFgJobs();
   } catch (e) {
     hideBusy();
@@ -6328,10 +6338,12 @@ async function advanceJobAt(i, dir) {
   if (_advancingJob) return;                 // กันกดซ้ำระหว่างกำลังบันทึก
   const j = _postFgList[i];
   if (!j) return;
-  const idx = POST_FG_FLOW.indexOf(j.cur);
+  const flow = postFgFlowFor(j.valve);       // ลำดับเฉพาะของวาล์วเบอร์นี้ (ตาม Master valve)
+  let idx = flow.indexOf(j.cur);
+  if (idx < 0) idx = 0;                       // สถานะเดิมไม่อยู่ในลำดับ → เริ่มที่ FG
   const ni  = idx + dir;
-  if (ni < 0 || ni >= POST_FG_FLOW.length) return;
-  const to = POST_FG_FLOW[ni];
+  if (ni < 0 || ni >= flow.length) return;
+  const to = flow[ni];
   if (!API) {
     // ไม่มีการเชื่อมต่อ Cloud → ห้ามขยับ เพราะจะทำให้เครื่องอื่นเห็นไม่ตรงกัน
     toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงขยับสถานะงานได้ เพื่อให้ทุกเครื่องเห็นตรงกัน', 'orange');
