@@ -724,6 +724,12 @@ tbody tr:last-child td{border-bottom:none}
 <section id="pane-settings" class="pane">
   <!-- แจ้งเตือน Valve No ที่ไม่มีในฐานข้อมูล (Admin ตรวจสอบ/เพิ่มเข้าระบบ) -->
   <div id="unknownValveAlert"></div>
+
+  <div class="section-title">📦 รับงานเข้า Process ถัดไป (หลัง FG)</div>
+  <div class="card">
+    <div id="postFgJobs"><div class="muted center" style="padding:10px">กำลังโหลด…</div></div>
+  </div>
+
   <div class="section-title">🌐 การเชื่อมต่อ Cloud</div>
   <div class="card">
     <div class="fr">
@@ -2499,6 +2505,8 @@ function computeLocalStats() {
   const byCust = {}, byProc = {};
   for (const r of Object.values(latest)) {
     const vno  = r.valve_no || '';
+    // งานที่ admin กดจบผ่านระบบหลัง FG → นับแยกด้วยยอด OPR (ด้านล่าง) เพื่อไม่ให้นับซ้ำ/ค้างใน WIP
+    if (getJobProc(vno, r.lot) === 'DONE') continue;
     const cust = vMap[vno]?.customer || 'Other';
     const procs = vMap[vno]?.procs || [];
     const last = procs[procs.length-1] || '';
@@ -2511,6 +2519,12 @@ function computeLocalStats() {
       totalWip += q; byCust[cust].wip += q;
       if (proc) byProc[proc] = (byProc[proc]||0) + q;
     }
+  }
+  // งานที่จบผ่าน "ระบบรับงานหลัง FG" → นับเป็นผลิตเสร็จด้วยยอด OPR ที่ FG (วันที่จบเก็บไว้แล้ว)
+  for (const dj of computeDoneFromStore()) {
+    totalDone += dj.qty;
+    byCust[dj.customer] = byCust[dj.customer] || {done:0, wip:0};
+    byCust[dj.customer].done += dj.qty;
   }
   return { total_done: totalDone, total_wip: totalWip, by_customer: byCust, by_process: byProc };
 }
@@ -2534,7 +2548,8 @@ function computeProcessOutput(kpiRecords) {
   for (const r of (kpiRecords || [])) {
     const vno = (r.valve_no || r.valveNo || '').trim();
     const lot = (r.lot || '').trim();
-    const key = (vno || lot) ? (vno + '::' + lot) : ('__anon__' + (anon++));
+    // คีย์จัดกลุ่มแบบ normalize (กัน typo $→S, ตัวพิมพ์, ช่องว่าง) → lot เดียวกันไม่แตกเป็นหลายชุด
+    const key = (vno || lot) ? (vKey(vno) + '::' + lotKey(lot)) : ('__anon__' + (anon++));
     (groups[key] = groups[key] || []).push(r);
   }
 
@@ -2548,14 +2563,19 @@ function computeProcessOutput(kpiRecords) {
     // record ล่าสุด → process ปัจจุบันของงานชุดนี้
     let latest = recs[0];
     for (const r of recs) if (dKey(r) > dKey(latest)) latest = r;
-    const curProc = mcProc[latest.machine_id] || 'SSG';
-    // ยอด = รวม OPR เฉพาะ record ที่อยู่ "process ปัจจุบัน" เท่านั้น
+    const realProc = mcProc[latest.machine_id] || 'SSG';
+    // ยอด = รวม OPR เฉพาะ record ที่อยู่ "process จริงล่าสุด" เท่านั้น
     // (งานที่ผ่าน process ก่อนหน้าไปแล้ว ถือว่าย้ายออกไป ไม่นับซ้ำ)
-    const atCur = recs.filter(r => (mcProc[r.machine_id] || 'SSG') === curProc);
+    const atCur = recs.filter(r => (mcProc[r.machine_id] || 'SSG') === realProc);
     const qty = atCur.reduce((s, r) => s + (Number(r.opr) || 0), 0);
     const machines = [...new Set(atCur.map(r => r.machine_id).filter(Boolean))];
-    const vno = (latest.valve_no || latest.valveNo || '').trim() || '(ไม่ระบุวาล์ว)';
+    const vnoRaw = (latest.valve_no || latest.valveNo || '').trim();
+    const vno = vnoRaw || '(ไม่ระบุวาล์ว)';
     const lot = (latest.lot || '').trim();
+    // งานหลัง FG ที่ admin ขยับเอง (P/T/POL/QC) หรือทำจบ (DONE) → ใช้สถานะที่ขยับแทน
+    const ov = getJobProc(vnoRaw, lot);
+    const curProc = ov || realProc;
+    if (curProc === 'DONE') continue;   // จบงานแล้ว — ไม่ค้างใน Output ของ Process
 
     if (!byProc[curProc]) byProc[curProc] = { opr: 0, machines: new Set(), valves: [] };
     byProc[curProc].opr += qty;
@@ -2614,11 +2634,24 @@ async function refreshProcOutput() {
   let recs = (state.kpiRecords || []).filter(inRange);
   if (API) {
     try {
-      const k = await api('/api/kpi?' + new URLSearchParams({ from: f, to: t })).catch(() => null);
+      // ดึง records + targets (สถานะงานที่ admin ขยับ) พร้อมกัน → ทุกเครื่องเห็น process ล่าสุดตรงกัน
+      const [k, init] = await Promise.all([
+        api('/api/kpi?' + new URLSearchParams({ from: f, to: t })).catch(() => null),
+        api('/api/init').catch(() => null),
+      ]);
       if (k?.records) recs = k.records;
+      if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
     } catch (e) {}
   }
   renderProcOutput(recs);
+}
+// ดึง targets (รวมสถานะงานหลัง FG) ล่าสุดจาก Cloud → ใช้ก่อนแสดงผลที่ต้องเห็นตรงกันทุกเครื่อง
+async function pullJobProcTargets() {
+  if (!API) return;
+  try {
+    const init = await api('/api/init').catch(() => null);
+    if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
+  } catch (e) {}
 }
 function toggleProcFilter(p) {
   if (_procHidden.has(p)) _procHidden.delete(p); else _procHidden.add(p);
@@ -3391,7 +3424,8 @@ async function renderHome() {
       // Smart merge: ใช้ API เฉพาะ field ที่มีข้อมูล ไม่ทับ local ทั้งดุ้น
       // ถ้ามี tombstones ให้ใช้ local stats เสมอ (กัน API คืน records ที่ลบแล้ว)
       // /api/stats เป็นยอดรวมทุก VSM — ใช้ได้เฉพาะ Admin; ผู้ใช้ทั่วไปใช้ local stats ที่กรอง VSM แล้ว
-      if (s && _deletedProdIds.size === 0 && canSeeAllVsm()) statsRes = {
+      // มี override งานหลัง FG → ใช้ local stats (override-aware) เพราะ server ยังไม่รู้จักสถานะ "จบงาน"
+      if (s && _deletedProdIds.size === 0 && canSeeAllVsm() && !_hasPostFgOverrides()) statsRes = {
         total_done:  (s.total_done  != null) ? s.total_done  : stats.total_done,
         total_wip:   (s.total_wip   != null) ? s.total_wip   : stats.total_wip,
         by_customer: Object.keys(s.by_customer||{}).length ? s.by_customer : stats.by_customer,
@@ -3537,7 +3571,9 @@ function getCompletedRecords() {
     if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) latest[k] = r;
   }
   // เฉพาะที่ done = process สุดท้าย หรือ status=Completed
-  return Object.values(latest).filter(r => {
+  // ข้ามงานที่จบผ่าน "ระบบหลัง FG" (นับจาก store แทน เพื่อไม่ให้ซ้ำ)
+  const prodDone = Object.values(latest).filter(r => {
+    if (getJobProc(r.valve_no, r.lot) === 'DONE') return false;
     const procs = vMap[r.valve_no]?.procs || [];
     const last = procs[procs.length-1] || '';
     return r.status === 'Completed' || (last && r.current_process === last);
@@ -3546,6 +3582,14 @@ function getCompletedRecords() {
     _customer: vMap[r.valve_no]?.customer || 'Other',
     _date: (r.timestamp || '').slice(0,10),
   }));
+  // งานที่จบผ่านระบบหลัง FG → เพิ่มเป็นรายการผลิตเสร็จ พร้อมวันที่จบ + ยอด OPR
+  const storeDone = computeDoneFromStore().map(dj => ({
+    valve_no: dj.valve, lot: dj.lot, quantity: dj.qty,
+    status: 'Completed', current_process: 'จบงาน (หลัง FG)',
+    operator: '', timestamp: dj.date ? dj.date + 'T00:00:00' : '',
+    _customer: dj.customer, _date: dj.date,
+  }));
+  return [...prodDone, ...storeDone];
 }
 
 function renderCompletedList() {
@@ -3952,12 +3996,22 @@ function _showSubmitSummary(records, prodDate) {
         }
       });
     };
-    overlay.querySelector('#_sumOk').onclick = () => { collectHelp(); overlay.remove(); resolve(true); };
-    overlay.querySelector('#_sumEdit').onclick = () => { overlay.remove(); resolve(false); };
+    let _done = false;   // กัน double-tap/ghost-click บนปุ่มยืนยัน → resolve ครั้งเดียว
+    const _ok = overlay.querySelector('#_sumOk');
+    _ok.onclick = () => { if (_done) return; _done = true; _ok.disabled = true; collectHelp(); overlay.remove(); resolve(true); };
+    overlay.querySelector('#_sumEdit').onclick = () => { if (_done) return; _done = true; overlay.remove(); resolve(false); };
   });
 }
 
+// กันบันทึกซ้ำ: ghost-tap บนมือถือ/กดปุ่มสองครั้ง/dialog ซ้อน → ห้ามรัน saveKpi ซ้อนกัน
+let _savingKpi = false;
 async function saveKpi() {
+  if (_savingKpi) return;        // มีการบันทึกค้างอยู่แล้ว — ไม่เริ่มรอบใหม่
+  _savingKpi = true;
+  try { return await _saveKpiImpl(); }
+  finally { _savingKpi = false; }
+}
+async function _saveKpiImpl() {
   OP = $('op-name').value.trim();
   if (!OP) { toast('กรุณากรอกชื่อผู้บันทึก', 'orange'); return; }
   localStorage.setItem(LS.OP, OP);
@@ -4332,7 +4386,14 @@ function onValveSet(sid) {
   }).join('');
 }
 
+let _savingSlots = false;
 async function saveSlots() {
+  if (_savingSlots) return;
+  _savingSlots = true;
+  try { return await _saveSlotsImpl(); }
+  finally { _savingSlots = false; }
+}
+async function _saveSlotsImpl() {
   const slots = document.querySelectorAll('#slots .slot');
   if (!slots.length) { toast('ยังไม่มี slot', 'orange'); return; }
   const records = [];
@@ -4389,17 +4450,25 @@ async function searchProcess() {
         const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
         if (rRes.records?.length) records = filterVsm(rRes.records);
       } catch (e) { /* fallback to local */ }
+      await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
     }
     // group by lot, find latest process
     const byLot = {};
     for (const r of records) {
-      const key = r.lot || '(no lot)';
+      const key = lotKey(r.lot) || '(no lot)';   // รวม lot ที่ typo ($→S) เข้าด้วยกัน
       if (!byLot[key] || new Date(r.timestamp) > new Date(byLot[key].timestamp)) byLot[key] = r;
     }
     const pills = valve.processes.map(p => `<span class="proc-pill">${escapeHtml(p)}</span>`).join('');
-    const lotsHtml = Object.keys(byLot).length ? `<table class="mt-8"><thead><tr><th>Lot</th><th>Qty</th><th>Process ปัจจุบัน</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${
-      Object.values(byLot).map(r => `<tr><td><b>${escapeHtml(r.lot||'-')}</b></td><td>${nn(r.quantity)}</td><td><span class="tag tag-orange">${escapeHtml(r.currentProcess)}</span></td><td>${escapeHtml(r.status)}</td><td>${new Date(r.timestamp).toLocaleString('th-TH')}</td></tr>`).join('')
-    }</tbody></table>` : '<div class="muted mt-8">ยังไม่มี Production records</div>';
+    const lotsHtml = Object.keys(byLot).length ? `<div class="tbl-wrap mt-8"><table style="min-width:520px"><thead><tr><th>Lot</th><th>Qty</th><th>Process ปัจจุบัน</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${
+      Object.values(byLot).map(r => {
+        // งานหลัง FG ที่ admin ขยับไปแล้ว → แสดงสถานะที่ขยับ (เห็นตรงกันทุกคน)
+        const ovp = getJobProc(r.valveNo || r.valve_no || valve.valveNo, r.lot);
+        const done = ovp === 'DONE';
+        const procShown = ovp || r.currentProcess;
+        const statusShown = done ? '✅ จบงาน' : escapeHtml(r.status);
+        return `<tr><td><b>${escapeHtml(r.lot||'-')}</b></td><td>${nn(r.quantity)}</td><td><span class="tag ${done?'tag-green':'tag-orange'}">${escapeHtml(procShown)}${PROC_DEPT[procShown]?' · '+PROC_DEPT[procShown]:''}</span></td><td>${statusShown}</td><td style="white-space:nowrap">${new Date(r.timestamp).toLocaleString('th-TH')}</td></tr>`;
+      }).join('')
+    }</tbody></table></div>` : '<div class="muted mt-8">ยังไม่มี Production records</div>';
     $('searchResult').innerHTML = `
       <div class="card" style="margin-bottom:0">
         <div class="card-title"><span class="ci">📋</span>${escapeHtml(valve.valveNo)} — ${escapeHtml(valve.customer)}</div>
@@ -4992,6 +5061,7 @@ function renderSettings() {
   if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
   renderValveList(); renderIdList(); renderEmployeeList(); renderMachineList();
   renderUnknownValves();
+  renderPostFgJobs();
   initSettingsCollapse();
 }
 
@@ -5339,8 +5409,12 @@ async function restoreBackup(ev) {
   ev.target.value = '';
 }
 
-async function resetToDefaults() {
-  if (!(await confirmModal('รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ'))) return;
+function resetToDefaults() {
+  // อันตราย — ทับ Master Data ทั้งหมด → ต้องกรอกรหัส Admin ก่อนเสมอ
+  promptAdmin('🔄 ยืนยันรหัส Admin เพื่อรีเซ็ต Master Data', _doResetToDefaults);
+}
+async function _doResetToDefaults() {
+  if (!(await confirmModal('⚠️ รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ — แต่ค่าที่แก้ไว้จะหายทั้งหมด', { danger: true, yes: 'รีเซ็ต' }))) return;
   state.valves    = JSON.parse(JSON.stringify(DEFAULT_VALVES));
   state.machines  = JSON.parse(JSON.stringify(DEFAULT_MACHINES));
   state.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
@@ -5354,8 +5428,12 @@ async function resetToDefaults() {
 }
 
 function clearAllRecords() {
-  // อันตรายมาก — ต้องกรอกรหัส Admin ก่อนเสมอ (modal ในแอพ ใช้ได้บน PWA)
-  promptAdmin('🗑️ ยืนยันรหัส Admin เพื่อล้าง Records ทั้งหมด (กู้คืนไม่ได้)', _doClearAllRecords);
+  // อันตรายมาก — ต้องกรอกรหัส Admin ก่อนเสมอ (modal ในแอพ ใช้ได้บน PWA) แล้วยืนยันซ้ำอีกชั้น
+  promptAdmin('🗑️ ยืนยันรหัส Admin เพื่อล้าง Records ทั้งหมด (กู้คืนไม่ได้)', _confirmClearAllRecords);
+}
+async function _confirmClearAllRecords() {
+  if (!(await confirmModal('⚠️ ล้าง Records ทั้งหมด (KPI + Production)?\nลบแล้ว กู้คืนไม่ได้', { danger: true, yes: 'ล้างทั้งหมด' }))) return;
+  _doClearAllRecords();
 }
 function _doClearAllRecords() {
   state.kpiRecords  = [];
@@ -5778,6 +5856,14 @@ function openValveModal(valveNo) {
 }
 // คีย์เทียบวาล์วแบบไม่สนตัวพิมพ์ใหญ่เล็ก/ช่องว่าง (canonical = ตัวพิมพ์ใหญ่)
 function vKey(s) { return (s == null ? '' : String(s)).trim().toUpperCase(); }
+// คีย์เทียบ Lot แบบไม่สนตัวพิมพ์/ช่องว่าง + แก้ typo $→S ที่พบบ่อย
+// เช่น "2605S050155" กับ "2605$050155" ถือเป็น lot เดียวกัน — กันข้อมูลแตกเป็นหลายชุด
+// (เจตนาทำแบบ conservative: ไม่แปลง O→0 เพื่อกันรวม lot จริงผิดพลาด)
+// ใช้เฉพาะตอน "จัดกลุ่มเพื่อแสดงผล" เท่านั้น — ไม่แก้/ไม่เขียนทับข้อมูลที่บันทึกไว้
+function lotKey(s) {
+  return (s == null ? '' : String(s)).trim().toUpperCase()
+    .replace(/\s+/g, '').replace(/\$/g, 'S');
+}
 // upsert วาล์ว: ถ้า valveNo ซ้ำ (ไม่สนตัวพิมพ์) → ใช้ข้อมูลใหม่แทนที่ + ลบรายการซ้ำที่ค้างอยู่ทั้งหมด
 // คืนค่า true ถ้าเป็นการแทนที่ของเดิม, false ถ้าเป็นการเพิ่มใหม่
 function upsertValve(entry) {
@@ -5999,7 +6085,7 @@ function mcProcess(m) {
 // จึงเข้ารหัสชื่อ process → เลข (FNV-1a) แล้วถอดกลับด้วย vocabulary ที่ทุกเครื่องมีเหมือนกัน
 const MCPROC_PREFIX = 'mcproc.';
 // รายชื่อ process ทั้งหมดที่รู้จัก (ฝังในโค้ด = ทุกเครื่องเหมือนกัน) ใช้ถอดรหัสเลขกลับเป็นชื่อ
-const PROC_VOCAB_FALLBACK = ["AW","BLEND","BUFF","CAR","CB","CBN","CCOT","COPY","COPY CUP","COT","COT+TIP","COT1","COT2","CUP","D/B","DOUBLE","F. IND","F.IND","FACE IND","FACE IND.","FFT","FG","FH","HOD","HOD&FRG","HOD'C","HOD+FG","IND","IND P\"","IND P'","IND T\"","P/T","POL","PQ","QC","RADIUS","RE/R","RED","RED.","RED/F","RED/R","REDUC","ROLL","ROLL M.","SEMI","SFG","SFG1","SFG2","SRG","SRG*2","SRG*3","SRG*5","SRG*6","SRG1-3","SRG2","SRG5","SSG","SSG*2","SSG*3","SSG*4","SSG*6","SSG+RED","SSG3","SSS","SWIRL","T. IND","T.IND","T/T","TG","TG-R","TH","TIP C\"","TIP IND","TIP IND.","TIPC\"","TL","TOP","TOP&HOD","TRG","TRG.","TW","UN/H","UND","UNDER","UNDER H.","VET","XRAY","TOP&HOD","CB"];
+const PROC_VOCAB_FALLBACK = ["AW","BLEND","BUFF","CAR","CB","CBN","CCOT","COPY","COPY CUP","COT","COT+TIP","COT1","COT2","CUP","D/B","DOUBLE","F. IND","F.IND","FACE IND","FACE IND.","FFT","FG","FH","HOD","HOD&FRG","HOD'C","HOD+FG","IND","IND P\"","IND P'","IND T\"","P/T","POL","PQ","QC","RADIUS","RE/R","RED","RED.","RED/F","RED/R","REDUC","ROLL","ROLL M.","SEMI","SFG","SFG1","SFG2","SRG","SRG*2","SRG*3","SRG*5","SRG*6","SRG1-3","SRG2","SRG5","SSG","SSG*2","SSG*3","SSG*4","SSG*6","SSG+RED","SSG3","SSS","SWIRL","T. IND","T.IND","T/T","TG","TG-R","TH","TIP C\"","TIP IND","TIP IND.","TIPC\"","TL","TOP","TOP&HOD","TRG","TRG.","TW","UN/H","UND","UNDER","UNDER H.","VET","XRAY","TOP&HOD","CB","DONE"];
 // FNV-1a 32-bit → เลขบวก ≤ 2^30 (กัน column ชนิด INTEGER ล้น) บวก 1 กันชนค่า 0
 function procCode(name) {
   let h = 0x811c9dc5;
@@ -6054,6 +6140,233 @@ function syncMcProcFromCloud(targets) {
     if (API) { api('/api/targets', { body: migrate }).catch(()=>{}); }
   }
 }
+
+/* ============================================================
+   ระบบรับงานเข้า Process ถัดไป (หลัง FG) — Admin เท่านั้น
+   VSM4 จบกระบวนการที่ FG; งานหลัง FG ส่งต่อแผนกอื่น:
+     FG (VSM4) → P/T (PC) → POL (VSM4) → QC (QC) → จบงาน
+   เก็บสถานะที่ขยับเองของแต่ละงาน (valve+lot) ใน targets store
+   แบบเดียวกับ mcproc (numeric only → เข้ารหัสด้วย procCode/procFromCode)
+   ทำให้ซิงก์ข้ามเครื่องอัตโนมัติผ่าน /api/init ที่คืน targets
+   DONE = งานจบ → ถูกตัดออกจาก "Output ของ Process" จะได้ไม่ค้าง
+   ============================================================ */
+const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];
+const PROC_DEPT    = { 'FG':'VSM4', 'P/T':'PC', 'POL':'VSM4', 'QC':'QC', 'DONE':'จบงาน' };
+const JOBPROC_PREFIX  = 'jobproc.';    // process code ที่ขยับไป
+const JOBPROCD_PREFIX = 'jobprocd.';   // วันที่ขยับ/จบ (เลข YYYYMMDD)
+const JOBPROCQ_PREFIX = 'jobprocq.';   // ยอดชิ้น (OPR ที่ FG) สแน็ปช็อตตอนขยับ — ใช้รวมยอด "ผลิตเสร็จ" ได้โดยไม่ต้องพึ่ง KPI ย้อนหลัง
+function jobKey(valve, lot) { return vKey(valve) + '::' + lotKey(lot); }
+// อ่าน process ที่ admin ขยับไว้สำหรับงานนี้ (null = ยังไม่เคยขยับ → ใช้ตามเครื่อง)
+function getJobProc(valve, lot) {
+  const code = (state.targets || {})[JOBPROC_PREFIX + jobKey(valve, lot)];
+  return code ? procFromCode(code) : null;
+}
+// แปลงเลข YYYYMMDD → 'YYYY-MM-DD'
+function _ymdToIso(n) {
+  const s = n ? String(n) : '';
+  return s.length === 8 ? `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}` : '';
+}
+function getJobProcDate(valve, lot) { return _ymdToIso((state.targets || {})[JOBPROCD_PREFIX + jobKey(valve, lot)]); }
+function getJobProcQty(valve, lot)  { return Number((state.targets || {})[JOBPROCQ_PREFIX + jobKey(valve, lot)]) || 0; }
+// มี override สถานะงานหลัง FG อยู่ในระบบไหม (ใช้ตัดสินว่า Dashboard ต้องคิดแบบ override-aware)
+function _hasPostFgOverrides() {
+  for (const k in (state.targets || {})) if (k.startsWith(JOBPROC_PREFIX)) return true;
+  return false;
+}
+// บันทึก process ที่ขยับ + วันที่ + ยอดชิ้น → ให้ DB (Cloud) เป็นแหล่งความจริง: ต้องเขียนสำเร็จก่อน
+// แล้วจึงอัปเดต local — ถ้า Cloud ล้มเหลว จะ throw เพื่อไม่ให้เครื่องนี้เห็นไม่ตรงกับเครื่องอื่น
+// (targets store เป็น upsert: ส่งเฉพาะคีย์เหล่านี้ ไม่ทับคีย์อื่น — แบบเดียวกับ mcproc)
+async function setJobProc(valve, lot, process, qty) {
+  const jk = jobKey(valve, lot);
+  const body = {
+    [JOBPROC_PREFIX  + jk]: procCode(process),
+    [JOBPROCD_PREFIX + jk]: Number(todayISO().replace(/-/g, '')),   // YYYYMMDD
+  };
+  if (qty != null) body[JOBPROCQ_PREFIX + jk] = Number(qty) || 0;
+  if (API) await api('/api/targets', { body });                     // ล้มเหลว → throw → ผู้เรียกจัดการ
+  state.targets = { ...state.targets, ...body };
+  lsSave(LS.TARGETS, state.targets);
+}
+
+let _postFgRecs = null;   // ชุด record ที่ดึงแบบเต็ม (ปุ่ม "ดึงทั้งหมด") — null = ใช้ state.kpiRecords
+let _postFgList = [];
+// รวมทุกงานที่ "ถึง FG แล้ว" (รวมที่ขยับต่อ/จบแล้ว) — แหล่งความจริงของระบบหลัง FG · มองเห็นทุก VSM
+function computePostFgAll(recs) {
+  const mcProc = {};
+  for (const z of Object.keys(state.machines || {}))
+    for (const m of (state.machines[z] || [])) mcProc[m.id] = mcProcess(m);
+  const vCust = {};
+  for (const v of (state.valves || [])) vCust[vKey(v.valveNo)] = v.customer || 'Other';
+  const groups = {};
+  for (const r of (recs || [])) {
+    const vno = (r.valve_no || r.valveNo || '').trim();
+    const lot = (r.lot || '').trim();
+    if (!vno && !lot) continue;
+    (groups[vKey(vno) + '::' + lotKey(lot)] = groups[vKey(vno) + '::' + lotKey(lot)] || []).push(r);
+  }
+  const dKey = r => (r.shift_date || r.record_date || '') + (r.shift_type === 'night' ? '1' : '0') + (r.saved_at || '');
+  const out = [];
+  for (const key of Object.keys(groups)) {
+    const g = groups[key];
+    let latest = g[0];
+    for (const r of g) if (dKey(r) > dKey(latest)) latest = r;
+    const realProc = mcProc[latest.machine_id] || 'SSG';
+    const vno = (latest.valve_no || latest.valveNo || '').trim();
+    const lot = (latest.lot || '').trim();
+    if (!vno || !isKnownValve(vno)) continue;       // เฉพาะวาล์วที่มีในระบบจริง (วาล์วผิด → ไปจัดการที่กล่อง Unknown)
+    const ov  = getJobProc(vno, lot);
+    const cur = ov || realProc;
+    if (realProc !== 'FG' && !ov) continue;         // ยังไม่ถึง FG — ยังไม่อยู่ในระบบหลัง FG
+    // ยอดงาน = OPR ที่ FG (process จริงล่าสุดของ VSM4) ยกยอดตามไปขั้นถัดไป
+    const atReal = g.filter(r => (mcProc[r.machine_id] || 'SSG') === realProc);
+    const qty = atReal.reduce((s, r) => s + (Number(r.opr) || 0), 0);
+    out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot) });
+  }
+  return out;
+}
+// งานที่ยังไม่จบ (อยู่ใน FG/P/T/POL/QC) — สำหรับกล่องจัดการ
+function computePostFgJobs(recs) {
+  return computePostFgAll(recs).filter(j => j.cur !== 'DONE').sort((a, b) => b.qty - a.qty);
+}
+// งานที่ "จบแล้ว" — อ่านจาก targets store ล้วน (qty+วันที่เก็บไว้แล้ว) ไม่ต้องพึ่ง KPI ย้อนหลัง
+// → นับเข้า "ผลิตเสร็จ" ได้แม้ KPI ของงานนั้นอยู่นอกช่วง 30 วันที่โหลดมา
+function computeDoneFromStore() {
+  const vCust = {};
+  for (const v of (state.valves || [])) vCust[vKey(v.valveNo)] = v.customer || 'Other';
+  const T = state.targets || {};
+  const doneCode = procCode('DONE');
+  const out = [];
+  for (const k in T) {
+    if (!k.startsWith(JOBPROC_PREFIX)) continue;
+    if (Number(T[k]) !== doneCode) continue;
+    const jk = k.slice(JOBPROC_PREFIX.length);              // VALVE::LOT (normalize แล้ว)
+    const sep = jk.indexOf('::');
+    const valve = sep >= 0 ? jk.slice(0, sep) : jk;
+    const lot   = sep >= 0 ? jk.slice(sep + 2) : '';
+    out.push({
+      valve, lot,
+      qty:  Number(T[JOBPROCQ_PREFIX + jk]) || 0,
+      date: _ymdToIso(T[JOBPROCD_PREFIX + jk]),
+      customer: vCust[valve] || 'Other',
+    });
+  }
+  return out;
+}
+let _postFgDoneList = [];
+function renderPostFgJobs() {
+  const box = $('postFgJobs');
+  if (!box) return;
+  _postFgList = computePostFgJobs(_postFgRecs || state.kpiRecords || []);
+  _postFgDoneList = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const head = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:0;font-size:11px;color:var(--muted);line-height:1.6">
+        VSM4 จบที่ <b>FG</b> · ส่งต่อ: <b>P/T</b> (PC) → <b>POL</b> (VSM4) → <b>QC</b> (QC) → จบงาน<br>
+        ขยับงานให้ตรงสถานะจริง เพื่อไม่ให้ค้างที่ FG ใน "Output ของ Process" · งานที่จบจะไปนับใน "ผลิตเสร็จ" ตามวันที่จบ
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
+    </div>`;
+  const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
+    const idx  = POST_FG_FLOW.indexOf(j.cur);
+    const next = POST_FG_FLOW[idx + 1];
+    const nextLabel = next === 'DONE' ? '✅ จบงาน' : `→ ${next} (${PROC_DEPT[next]})`;
+    const canBack = idx > 0;
+    return `<div style="border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 11px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="min-width:0">
+          <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(j.valve || '(ไม่ระบุวาล์ว)')}</div>
+          <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(j.lot || '-')} · ${nn(j.qty)} ชิ้น</div>
+        </div>
+        <span class="tag tag-orange" style="white-space:nowrap">${escapeHtml(j.cur)}${PROC_DEPT[j.cur] ? ' · ' + PROC_DEPT[j.cur] : ''}</span>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        ${canBack ? `<button class="btn btn-outline btn-sm" onclick="advanceJobAt(${i},-1)" title="ถอยกลับ 1 ขั้น">↩︎ ถอย</button>` : ''}
+        <button class="btn ${next === 'DONE' ? 'btn-green' : 'btn-blue'} btn-sm" onclick="advanceJobAt(${i},1)">${nextLabel}</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="muted center" style="padding:14px">ไม่มีงานค้างหลัง FG 🎉</div>';
+  // รายการ "จบแล้ว" — กดเอากลับได้ถ้ากดผิด
+  const doneHtml = _postFgDoneList.length ? `
+    <details style="margin-top:6px;border:1.5px solid var(--green-bd);border-radius:10px;overflow:hidden">
+      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:var(--green);background:var(--green-bg);list-style:none">
+        ✅ งานที่จบแล้ว (${_postFgDoneList.length}) — กดเพื่อดู/เอากลับ
+      </summary>
+      <div style="padding:8px 10px">
+        ${_postFgDoneList.map((d, i) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--green-bd)">
+            <div style="min-width:0">
+              <div style="font-weight:800;font-size:12.5px">${escapeHtml(d.valve)}</div>
+              <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${nn(d.qty)} ชิ้น · จบ ${escapeHtml(d.date || '-')}</div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="undoneJobAt(${i})">↩︎ เอากลับ (QC)</button>
+          </div>`).join('')}
+      </div>
+    </details>` : '';
+  box.innerHTML = head + activeHtml + doneHtml;
+}
+async function undoneJobAt(i) {
+  const d = _postFgDoneList[i];
+  if (!d) return;
+  if (_advancingJob) return;
+  if (!API) { toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ก่อนจึงแก้สถานะได้', 'orange'); return; }
+  _advancingJob = true;
+  showBusy('กำลังเอางานกลับ…');
+  try {
+    await setJobProc(d.valve, d.lot, 'QC', d.qty);   // กลับไปขั้น QC (ยังไม่จบ)
+    hideBusy();
+    toast(`↩︎ ${d.valve} Lot ${d.lot} — เอากลับมาที่ QC แล้ว`, 'green');
+    renderPostFgJobs();
+  } catch (e) {
+    hideBusy();
+    toast('❌ ไม่สำเร็จ กรุณาลองใหม่', 'red');
+  } finally {
+    _advancingJob = false;
+  }
+}
+let _advancingJob = false;
+async function advanceJobAt(i, dir) {
+  if (_advancingJob) return;                 // กันกดซ้ำระหว่างกำลังบันทึก
+  const j = _postFgList[i];
+  if (!j) return;
+  const idx = POST_FG_FLOW.indexOf(j.cur);
+  const ni  = idx + dir;
+  if (ni < 0 || ni >= POST_FG_FLOW.length) return;
+  const to = POST_FG_FLOW[ni];
+  if (!API) {
+    // ไม่มีการเชื่อมต่อ Cloud → ห้ามขยับ เพราะจะทำให้เครื่องอื่นเห็นไม่ตรงกัน
+    toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงขยับสถานะงานได้ เพื่อให้ทุกเครื่องเห็นตรงกัน', 'orange');
+    return;
+  }
+  _advancingJob = true;
+  showBusy('กำลังอัปเดตสถานะงานขึ้น Cloud…');
+  try {
+    await setJobProc(j.valve, j.lot, to, j.qty);    // เก็บ process + วันที่ + ยอดชิ้น · ต้องเขียน DB สำเร็จก่อน
+    hideBusy();
+    toast(to === 'DONE'
+      ? `✅ ${j.valve} Lot ${j.lot} — จบงานแล้ว · บันทึกขึ้น Cloud (ทุกเครื่องเห็นตรงกัน)`
+      : `${j.valve} → ${to} (${PROC_DEPT[to] || ''}) · บันทึกขึ้น Cloud แล้ว`, 'green');
+    renderPostFgJobs();
+  } catch (e) {
+    hideBusy();
+    // ไม่อัปเดต local — สถานะคงเดิม ป้องกันเครื่องนี้เห็นไม่ตรงกับ DB/เครื่องอื่น
+    toast('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — สถานะยังไม่เปลี่ยน กรุณาลองใหม่', 'red');
+  } finally {
+    _advancingJob = false;
+  }
+}
+async function refreshPostFgFromCloud() {
+  if (!API) { _postFgRecs = null; renderPostFgJobs(); return; }
+  showBusy('กำลังดึงงานทั้งหมด…');
+  try {
+    const init = await api('/api/init').catch(() => null);
+    if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
+    const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=20000').catch(() => null);
+    _postFgRecs = k?.records || state.kpiRecords || [];
+  } catch (e) { _postFgRecs = state.kpiRecords || []; }
+  hideBusy();
+  renderPostFgJobs();
+}
+
 function renderMachineList() {
   const z = $('mcZone').value;
   const rows = (state.machines[z]||[]).map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
