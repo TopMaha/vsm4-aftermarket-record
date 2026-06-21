@@ -149,6 +149,39 @@ section.pane.active{display:block}
 .btn-block{display:flex;width:100%}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
+/* ===== PROCESS FILTER (Output ของ Process) — พับเก็บได้ + ชิปกริดเรียงตรง ===== */
+.pfilter{border:1.5px solid var(--blue-soft);border-radius:12px;background:#F8FAFF;overflow:hidden}
+.pfilter-sum{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;list-style:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.pfilter-sum::-webkit-details-marker{display:none}
+.pfilter-lbl{flex:1;font-size:12px;font-weight:800;color:var(--blue-dark);display:flex;align-items:center;gap:6px}
+.pfilter-badge{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-soft);border-radius:999px;padding:2px 10px;font-size:10.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
+.pfilter-badge.partial{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+.pfilter-chev{color:var(--blue);font-size:11px;transition:transform .2s}
+.pfilter[open] .pfilter-chev{transform:rotate(180deg)}
+.pfilter-body{padding:2px 11px 11px}
+.pfilter-acts{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;justify-content:flex-end}
+.pfilter-acts .lk{background:none;border:none;color:var(--blue);font-weight:800;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:7px;transition:background .15s}
+.pfilter-acts .lk:hover{background:var(--blue-light)}
+.pfilter-acts .sep{color:var(--muted2)}
+/* equal-width cells → ชิปเรียงเป็นกริดตรงสวย ไม่ขอบขรุขระ; ✓ อยู่ในเซลล์คงที่ ไม่ดันความกว้าง */
+.pchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.pchip{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 6px;border-radius:9px;font-size:11.5px;font-weight:800;line-height:1;cursor:pointer;border:1.5px solid var(--blue-soft);background:var(--blue-light);color:var(--blue-dark);white-space:nowrap;transition:transform .1s,background .12s,border-color .12s,color .12s;-webkit-tap-highlight-color:transparent}
+.pchip .ck{font-size:9px;color:var(--blue);font-weight:900}
+.pchip.off{background:#fff;border-color:#E8EDF3;color:var(--muted2)}
+.pchip.off .ck{display:none}
+.pchip:active{transform:scale(.96)}
+
+/* ===== PROCESS OUTPUT — รายการแน่น 2 ช่อง + data bar จางๆ (แบบ C+B) ===== */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.pcell{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:9px;background:#fff;border:1.5px solid var(--blue-soft);cursor:pointer;transition:transform .1s,border-color .12s}
+.pcell:active{transform:scale(.98)}
+.pcell-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--blue-soft);border-radius:0 8px 8px 0;z-index:0}
+.pcell-name{position:relative;z-index:1;font-size:12px;font-weight:800;color:var(--blue-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcell-val{position:relative;z-index:1;font-size:15px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.pcell.zero{opacity:.5}
+.pcell.zero .pcell-fill{display:none}
+.pgrid-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:14px;font-size:12px}
+
 /* ===== ZONE TABS ===== */
 .ztabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
 .zt{border:2px solid var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:11px;padding:8px 4px;text-align:center;cursor:pointer;font-weight:800;font-size:11px;transition:all .15s}
@@ -601,13 +634,8 @@ tbody tr:last-child td{border-bottom:none}
     </div>
 
     <div id="procRangeNote" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px"></div>
-    <div id="procFilterBar" class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
-    <div class="tbl-wrap" style="max-height:none">
-      <table id="procTable">
-        <thead><tr><th>Process</th><th class="center">OPR (ชิ้น)</th><th>เครื่องที่ผลิต</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div id="procFilterBar" style="margin-bottom:10px"></div>
+    <div id="procGrid" class="pgrid"></div>
   </div>
 
   <!-- ค้นหา -->
@@ -2538,15 +2566,23 @@ function computeLocalStats() {
    DONE) ใช้สถานะที่ขยับแทน FG. มี multi-select เลือกแสดง.
    ============================================================ */
 let _procHidden = new Set();   // process ที่ถูกปิดไม่ให้แสดง (default = แสดงทั้งหมด)
+let _procFilterOpen = false;   // เปิด/ปิดแผงตัวกรอง process (default = พับไว้ให้หน้าโล่ง)
 let _lastProcOut = [];
+// 17 process หลักของสายการผลิต (ลำดับ + รายการ canonical) — แสดงครบเสมอแม้บางตัวยังไม่มี OPR
+const PROC_ORDER = ['SSG','TOP&HOD','HOD&FFT','HOD/REM.','CB','ROLL','COPY','COT','COT/VET','VET','TG','SFG','FG','BUFF','IND','FH','TW'];
+const PROC_ALIAS = { 'HOD&REM.':'HOD/REM.' };   // กันสะกดต่าง (& vs /) → รวมเป็นตัวเดียว
+const _procCanon = p => PROC_ALIAS[p] || p;
+const _procRank  = p => { const i = PROC_ORDER.indexOf(_procCanon(p)); return i === -1 ? 9999 : i; };
 function computeProcessOutput(kpiRecords) {
   const mcProc = {};
   for (const z of Object.keys(state.machines || {}))
     for (const m of (state.machines[z] || [])) mcProc[m.id] = mcProcess(m);
 
   const byProc = {};
-  // seed process ที่ตั้งค่าไว้ที่เครื่องจักร "ทุกเครื่อง/ทุก VSM" → ทุกคนเห็นเหมือนกัน แม้ยังไม่มี OPR
-  for (const p of new Set(Object.values(mcProc))) byProc[p] = { opr: 0, machines: new Set(), valveAgg: {} };
+  // seed รายการ process หลักทั้ง 17 ตัว (PROC_ORDER) → แสดงครบเสมอแม้ช่วงนี้ยังไม่มี OPR
+  for (const p of PROC_ORDER) byProc[p] = { opr: 0, machines: new Set(), valveAgg: {} };
+  // + seed process ที่ตั้งค่าไว้ที่เครื่องจักร (เผื่อมี process นอกลิสต์ 17 ตัว)
+  for (const p of new Set(Object.values(mcProc))) if (!byProc[p]) byProc[p] = { opr: 0, machines: new Set(), valveAgg: {} };
 
   // บวกยอดทีละ record ตาม process ของ"เครื่อง" ที่ลงบันทึก (ไม่จับกลุ่ม/ไม่ตัดทิ้ง
   // เหมือนเดิม — เดิมตัดยอด N-202 ทิ้งเมื่อ valve+lot เดียวกันไปโผล่เครื่องอื่นทีหลัง)
@@ -2560,6 +2596,7 @@ function computeProcessOutput(kpiRecords) {
       if (ov) proc = ov;
     }
     if (proc === 'DONE') continue;   // จบงานแล้ว — ไม่ค้างใน Output ของ Process
+    proc = _procCanon(proc);         // รวมสะกดต่าง (HOD&REM. → HOD/REM.) ไม่ให้แตกเป็น 2 แถว
 
     if (!byProc[proc]) byProc[proc] = { opr: 0, machines: new Set(), valveAgg: {} };
     const qty = Number(r.opr) || 0;
@@ -2583,7 +2620,11 @@ function computeProcessOutput(kpiRecords) {
         valveCount: new Set(valves.map(x => x.valve)).size,
       };
     })
-    .sort((a, b) => b.opr - a.opr);
+    .sort((a, b) => {
+      const ra = _procRank(a.proc), rb = _procRank(b.proc);
+      if (ra !== rb) return ra - rb;   // ตามลำดับสายการผลิตที่กำหนด
+      return b.opr - a.opr;            // process นอกลิสต์ → เรียงตามยอด OPR มาก→น้อย
+    });
 }
 function renderProcOutput(kpiRecords) {
   _lastProcOut = computeProcessOutput(kpiRecords);
@@ -2652,6 +2693,11 @@ function toggleProcFilter(p) {
   if (_procHidden.has(p)) _procHidden.delete(p); else _procHidden.add(p);
   renderProcTableUI();
 }
+function procSelectAll(on) {
+  if (on) _procHidden.clear();
+  else _lastProcOut.forEach(o => _procHidden.add(o.proc));
+  renderProcTableUI();
+}
 function renderProcTableUI() {
   // บอกช่วงวันที่ + สรุปยอดของข้อมูล (ตามตัวกรองที่เลือกในหน้านี้)
   const note = $('procRangeNote');
@@ -2666,21 +2712,49 @@ function renderProcTableUI() {
       : '';
   }
   const bar = $('procFilterBar');
-  if (bar) bar.innerHTML = _lastProcOut.map(o => {
-    const on = !_procHidden.has(o.proc);
-    return `<button type="button" class="btn btn-sm ${on?'btn-blue':'btn-outline'}" onclick="toggleProcFilter('${escapeHtml(o.proc)}')">${on?'✓ ':''}${escapeHtml(o.proc)}</button>`;
-  }).join('');
-  const procTable = $('procTable');
-  if (!procTable) return;
-  const tb = procTable.querySelector('tbody');
+  if (bar) {
+    const total = _lastProcOut.length;
+    const shownCnt = _lastProcOut.filter(o => !_procHidden.has(o.proc)).length;
+    const allOn = shownCnt === total;
+    const chips = _lastProcOut.map(o => {
+      const on = !_procHidden.has(o.proc);
+      return `<button type="button" class="pchip ${on?'on':'off'}" onclick="toggleProcFilter('${escapeHtml(o.proc)}')">${on?'<span class="ck">✓</span>':''}${escapeHtml(o.proc)}</button>`;
+    }).join('');
+    const badge = allOn ? `แสดงครบ ${total}` : `แสดง ${shownCnt}/${total}`;
+    bar.innerHTML = total ? `
+      <details class="pfilter" ${_procFilterOpen ? 'open' : ''} ontoggle="_procFilterOpen=this.open">
+        <summary class="pfilter-sum">
+          <span class="pfilter-lbl">🔎 เลือก process ที่จะแสดง</span>
+          <span class="pfilter-badge ${allOn ? '' : 'partial'}">${badge}</span>
+          <span class="pfilter-chev">▾</span>
+        </summary>
+        <div class="pfilter-body">
+          <div class="pchips">${chips}</div>
+          <div class="pfilter-acts">
+            <button type="button" class="lk" onclick="procSelectAll(true)">เลือกทั้งหมด</button>
+            <span class="sep">·</span>
+            <button type="button" class="lk" onclick="procSelectAll(false)">ล้าง</button>
+          </div>
+        </div>
+      </details>` : '';
+  }
+  // รายการแน่น 2 ช่อง + data bar จางๆ หลังตัวเลข (ยาวบาร์ = ยอด OPR เทียบตัวที่มากสุด)
+  const grid = $('procGrid');
+  if (!grid) return;
   const shown = _lastProcOut.filter(o => !_procHidden.has(o.proc));
-  tb.innerHTML = shown.length
-    ? shown.map(o => `<tr style="cursor:pointer" onclick="showProcessValves('${escapeHtml(o.proc)}')" title="กดดูวาล์ว/Lot">
-        <td><span class="tag tag-blue">${escapeHtml(o.proc)}</span></td>
-        <td class="center"><b>${nn(o.opr)}</b></td>
-        <td style="font-size:11px;color:var(--muted)">${o.valveCount} วาล์ว · ${o.valves.length} lot · ${o.machines.length} เครื่อง <span style="color:var(--blue);font-weight:700">→ ดูวาล์ว</span></td>
-      </tr>`).join('')
-    : '<tr><td colspan="3" class="center muted">ไม่มีข้อมูล OPR</td></tr>';
+  const maxOpr = Math.max(1, ...shown.map(o => +o.opr || 0));
+  grid.innerHTML = shown.length
+    ? shown.map(o => {
+        const opr = +o.opr || 0;
+        const pct = opr > 0 ? Math.max(4, Math.round(opr / maxOpr * 100)) : 0;
+        const tip = `${o.valveCount} วาล์ว · ${o.valves.length} lot · ${o.machines.length} เครื่อง — กดดูวาล์ว`;
+        return `<div class="pcell ${opr ? '' : 'zero'}" onclick="showProcessValves('${escapeHtml(o.proc)}')" title="${escapeHtml(tip)}">
+          <div class="pcell-fill" style="width:${pct}%"></div>
+          <span class="pcell-name">${escapeHtml(o.proc)}</span>
+          <span class="pcell-val">${nn(opr)}</span>
+        </div>`;
+      }).join('')
+    : '<div class="pgrid-empty">ไม่มีข้อมูล OPR</div>';
 }
 // กดดูว่า process นี้มีวาล์ว/Lot ใดบ้าง (process ปัจจุบันของแต่ละงาน พร้อมยอด OPR)
 function showProcessValves(proc) {
