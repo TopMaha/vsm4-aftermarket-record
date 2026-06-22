@@ -486,7 +486,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div>
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.2</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.3</div>
     </div>
     <div class="row" style="gap:6px;align-items:center">
       <span class="user-chip" id="userChip" style="display:none">
@@ -2562,8 +2562,9 @@ function computeLocalStats() {
    ยอด OPR ของแต่ละ process = ผลรวม OPR ของทุก record ที่เครื่องนั้นถูกตั้ง
    process นั้น (ไม่สนใจว่าพนักงานพิมพ์ process อะไรลงไป).
    เช่น N-202 ตั้งเป็น ROLL → record N-202 OPR 1000 → ROLL +1000.
-   เครื่องที่ไม่ได้กำหนด process → SSG. งานที่ admin ขยับหลัง FG (P/T/POL/QC/
-   DONE) ใช้สถานะที่ขยับแทน FG. มี multi-select เลือกแสดง.
+   เครื่องที่ไม่ได้กำหนด process → SSG. ยอดผลิตยึดตาม process ของเครื่องเสมอ —
+   การขยับงานหลัง FG (P/T/POL/QC/จบ) = "ตำแหน่งงานในสายส่งต่อ" ไม่ย้ายยอดผลิตออกจาก FG.
+   มี multi-select เลือกแสดง.
    ============================================================ */
 let _procHidden = new Set();   // process ที่ถูกปิดไม่ให้แสดง (default = แสดงทั้งหมด)
 let _procFilterOpen = false;   // เปิด/ปิดแผงตัวกรอง process (default = พับไว้ให้หน้าโล่ง)
@@ -2584,18 +2585,16 @@ function computeProcessOutput(kpiRecords) {
   // + seed process ที่ตั้งค่าไว้ที่เครื่องจักร (เผื่อมี process นอกลิสต์ 17 ตัว)
   for (const p of new Set(Object.values(mcProc))) if (!byProc[p]) byProc[p] = { opr: 0, machines: new Set(), valveAgg: {} };
 
-  // บวกยอดทีละ record ตาม process ของ"เครื่อง" ที่ลงบันทึก (ไม่จับกลุ่ม/ไม่ตัดทิ้ง
-  // เหมือนเดิม — เดิมตัดยอด N-202 ทิ้งเมื่อ valve+lot เดียวกันไปโผล่เครื่องอื่นทีหลัง)
+  // บวกยอดทีละ record (ไม่จับกลุ่ม/ไม่ตัดทิ้ง — กัน N-202 หายเหมือนเดิม)
   for (const r of (kpiRecords || [])) {
+    // ★ ยึด process ที่ "ตั้งค่าไว้ที่เครื่อง" เสมอ ไม่ว่าพนักงานจะพิมพ์ last_process เป็นอะไรก็ตาม
+    //   เช่น L-238 ตั้ง TOP&HOD แต่พนักงานลง HOD → ลง TOP&HOD · G-2030 ตั้ง HOD พนักงานลง U/F → ลง HOD
+    //   เครื่องที่ยังไม่ได้ตั้งค่า → SSG (ให้ไปตั้งค่าในหน้า Settings → เครื่องจักร)
+    //   การขยับงานหลัง FG (P/T/POL/QC/จบ) = ตำแหน่งงานในสายส่งต่อ ไม่ย้าย/ไม่ลบยอดผลิตออกจาก process ของเครื่อง
     let proc = mcProc[r.machine_id] || 'SSG';
     const vnoRaw = (r.valve_no || r.valveNo || '').trim();
     const lot = (r.lot || '').trim();
-    // เฉพาะงานที่เครื่องจบที่ FG แล้ว admin ขยับต่อ/ทำจบเอง → ยกยอด FG ไปขั้นที่ขยับ
-    if (proc === 'FG') {
-      const ov = getJobProc(vnoRaw, lot);
-      if (ov) proc = ov;
-    }
-    if (proc === 'DONE') continue;   // จบงานแล้ว — ไม่ค้างใน Output ของ Process
+    if (proc === 'DONE') continue;   // เครื่องที่ตั้ง process เป็น DONE (ถ้ามี) — ไม่นับ
     proc = _procCanon(proc);         // รวมสะกดต่าง (HOD&REM. → HOD/REM.) ไม่ให้แตกเป็น 2 แถว
 
     if (!byProc[proc]) byProc[proc] = { opr: 0, machines: new Set(), valveAgg: {} };
@@ -2676,7 +2675,10 @@ async function refreshProcOutput() {
         api('/api/init').catch(() => null),
       ]);
       if (k?.records) recs = k.records;
-      if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
+      if (init?.targets) {
+        state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets);
+        syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → กัน machine ที่ตั้งค่าจากเครื่องอื่นตกไป SSG
+      }
     } catch (e) {}
   }
   renderProcOutput(recs);
@@ -4376,7 +4378,8 @@ function lotsForValve(valveNo) {
     if (rv === vn) { const l = (r.lot || '').trim(); if (l) set.add(l); }
   }};
   scan(state.prodRecords); scan(state.kpiRecords);
-  return [...set].sort();
+  // Lot ที่จบงานแล้ว (ขยับเป็น DONE ในระบบหลัง FG) → ไม่ต้องเสนอใน dropdown ตอนบันทึกใหม่
+  return [...set].filter(l => getJobProc(valveNo, l) !== 'DONE').sort();
 }
 function acLotSearch(ev, id, valveInputId) {
   const q = (ev.target.value || '').trim().toLowerCase();
@@ -6217,7 +6220,8 @@ function syncMcProcFromCloud(targets) {
    เก็บสถานะที่ขยับเองของแต่ละงาน (valve+lot) ใน targets store
    แบบเดียวกับ mcproc (numeric only → เข้ารหัสด้วย procCode/procFromCode)
    ทำให้ซิงก์ข้ามเครื่องอัตโนมัติผ่าน /api/init ที่คืน targets
-   DONE = งานจบ → ถูกตัดออกจาก "Output ของ Process" จะได้ไม่ค้าง
+   DONE = งานจบ → ถูกตัดออกจาก "งานค้างหลัง FG" + WIP บน Dashboard
+   (แต่ "Output ของ Process" ยังนับยอดผลิตที่ process ของเครื่องตามจริง — ไม่หาย)
    ============================================================ */
 const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];   // fallback เมื่อหา process ของวาล์วไม่เจอ
 const PROC_DEPT    = { 'FG':'VSM4', 'P/T':'PC', 'POL':'VSM4', 'QC':'QC', 'DONE':'จบงาน' };
@@ -6333,19 +6337,31 @@ function computeDoneFromStore() {
   return out;
 }
 let _postFgDoneList = [];
+let _postFgQuery = '';          // คำค้น valve/lot ในกล่องรับงานหลัง FG
+let _postFgAutoLoaded = false;  // โหลดงานค้าง "ทั้งหมด" อัตโนมัติแล้วหรือยัง (ครั้งเดียวต่อ session)
+function onPostFgSearch(v) { _postFgQuery = v || ''; renderPostFgJobs(); }
 function renderPostFgJobs() {
   const box = $('postFgJobs');
   if (!box) return;
-  _postFgList = computePostFgJobs(_postFgRecs || state.kpiRecords || []);
-  _postFgDoneList = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  // ครั้งแรกที่เปิดหน้าตั้งค่า + ออนไลน์ → ดึงงานค้าง "ทั้งหมด" (ไม่จำกัด 30 วัน) อัตโนมัติแบบเงียบ
+  // เพื่อให้เห็น "ทั้งหมดที่ค้างอยู่" โดยไม่ต้องกดปุ่มเอง
+  if (API && !_postFgAutoLoaded && !_postFgRecs) { _postFgAutoLoaded = true; refreshPostFgFromCloud(true); return; }
+  const allActive = computePostFgJobs(_postFgRecs || state.kpiRecords || []);
+  const allDone   = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  // ค้นหา valve หรือ lot (ค้นทั้งงานค้างและงานที่จบแล้ว) — สะดวกหาวาล์วที่จะกด process ถัดไป
+  const q = _postFgQuery.trim().toLowerCase();
+  const match = j => !q || (j.valve || '').toLowerCase().includes(q) || (j.lot || '').toLowerCase().includes(q);
+  _postFgList     = allActive.filter(match);
+  _postFgDoneList = allDone.filter(match);
   const head = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <div style="flex:1;min-width:0;font-size:11px;color:var(--muted);line-height:1.6">
-        VSM4 จบที่ <b>FG</b> · ส่งต่อ <b>ตามลำดับ process ของวาล์วเบอร์นั้น</b> (Master valve) จนจบงาน<br>
-        แต่ละเบอร์ไม่เหมือนกัน — บางเบอร์ <b>FG → QC</b> เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม "→" จะไปขั้นถัดไปของเบอร์นั้นเอง
-      </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px">
+      VSM4 จบที่ <b>FG</b> · ส่งต่อ <b>ตามลำดับ process ของวาล์วเบอร์นั้น</b> (Master valve) จนจบงาน — บางเบอร์ <b>FG → QC</b> เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม "→" ไปขั้นถัดไปของเบอร์นั้นเอง
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <input type="search" id="postFgSearch" value="${escapeHtml(_postFgQuery)}" placeholder="🔎 ค้นหา Valve หรือ Lot" oninput="onPostFgSearch(this.value)" style="flex:1;min-width:160px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
       <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
-    </div>`;
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}</div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
     const flow = postFgFlowFor(j.valve);              // ลำดับเฉพาะของวาล์วเบอร์นี้
     let idx    = flow.indexOf(j.cur);
@@ -6366,7 +6382,7 @@ function renderPostFgJobs() {
         <button class="btn ${next === 'DONE' ? 'btn-green' : 'btn-blue'} btn-sm" onclick="advanceJobAt(${i},1)">${nextLabel}</button>
       </div>
     </div>`;
-  }).join('') : '<div class="muted center" style="padding:14px">ไม่มีงานค้างหลัง FG 🎉</div>';
+  }).join('') : `<div class="muted center" style="padding:14px">${q ? 'ไม่พบงานค้างที่ตรงกับคำค้น' : 'ไม่มีงานค้างหลัง FG 🎉'}</div>`;
   // รายการ "จบแล้ว" — กดเอากลับได้ถ้ากดผิด
   const doneHtml = _postFgDoneList.length ? `
     <details style="margin-top:6px;border:1.5px solid var(--green-bd);border-radius:10px;overflow:hidden">
@@ -6384,7 +6400,11 @@ function renderPostFgJobs() {
           </div>`).join('')}
       </div>
     </details>` : '';
+  // คงโฟกัส + ตำแหน่งเคอร์เซอร์ของช่องค้นหาไว้หลัง re-render (ไม่งั้นพิมพ์แล้วหลุดโฟกัสทุกตัวอักษร)
+  const wasFocused = document.activeElement && document.activeElement.id === 'postFgSearch';
+  const caret = wasFocused ? document.activeElement.selectionStart : null;
   box.innerHTML = head + activeHtml + doneHtml;
+  if (wasFocused) { const si = $('postFgSearch'); if (si) { si.focus(); if (caret != null) si.setSelectionRange(caret, caret); } }
 }
 async function undoneJobAt(i) {
   const d = _postFgDoneList[i];
@@ -6440,16 +6460,19 @@ async function advanceJobAt(i, dir) {
     _advancingJob = false;
   }
 }
-async function refreshPostFgFromCloud() {
+async function refreshPostFgFromCloud(silent) {
   if (!API) { _postFgRecs = null; renderPostFgJobs(); return; }
-  showBusy('กำลังดึงงานทั้งหมด…');
+  if (!silent) showBusy('กำลังดึงงานทั้งหมด…');
   try {
     const init = await api('/api/init').catch(() => null);
-    if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
+    if (init?.targets) {
+      state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets);
+      syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → คิดงานหลัง FG ให้ตรง
+    }
     const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=20000').catch(() => null);
     _postFgRecs = k?.records || state.kpiRecords || [];
   } catch (e) { _postFgRecs = state.kpiRecords || []; }
-  hideBusy();
+  if (!silent) hideBusy();
   renderPostFgJobs();
 }
 
