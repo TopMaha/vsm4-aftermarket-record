@@ -328,17 +328,12 @@ tbody tr:last-child td{border-bottom:none}
 .lock-input:focus{border-color:#1A56DB;box-shadow:0 0 0 4px rgba(26,86,219,.15)}
 .lock-input.shake{animation:shake .4s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-.lock-suggest{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:2px solid #1A56DB;border-radius:12px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);display:none;z-index:10;text-align:left}
-.lock-suggest.show{display:block}
-.lock-suggest-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;gap:10px;align-items:center}
-.lock-suggest-item:last-child{border-bottom:none}
-.lock-suggest-item:hover,.lock-suggest-item.active{background:#EBF4FF}
-.lock-suggest-id{font-size:13px;font-weight:800;color:#1A56DB;min-width:70px}
-.lock-suggest-name{font-size:13px;color:#64748B}
 .lock-btn{display:block;width:100%;padding:14px;border-radius:12px;border:none;font-size:16px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#047857,#10B981);color:#fff;box-shadow:0 6px 16px rgba(16,185,129,.3);font-family:inherit;letter-spacing:.5px}
 .lock-btn:hover{transform:translateY(-1px)}
 .lock-btn:disabled{opacity:.5;cursor:not-allowed}
 .lock-err{color:#DC2626;font-size:12px;font-weight:700;margin-top:8px;min-height:18px}
+.lock-hint{margin-top:10px;font-size:11px;font-weight:700;color:#94A3B8;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+.lock-eg{font-family:'Courier New',monospace;font-size:12px;font-weight:800;color:#1A56DB;background:#EBF4FF;border:1px solid #DBEAFE;border-radius:7px;padding:3px 9px;letter-spacing:.5px}
 .lock-foot{margin-top:18px;font-size:11px;color:#94A3B8}
 
 /* ===== USER CHIP ===== */
@@ -458,6 +453,44 @@ tbody tr:last-child td{border-bottom:none}
 .sk{position:relative;overflow:hidden;background:#E8EEFB;border-radius:8px}
 .sk::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:shimmer 1.3s infinite}
 @keyframes shimmer{100%{transform:translateX(100%)}}
+
+/* ===== IoT FLOOR PLAN — FULLSCREEN ===== */
+/* เต็มจอจริง: ผังเครื่องจักรขยายเต็มหน้าจอแบบ fit-to-screen และค้างไว้ (ไม่ย่อกลับเอง) */
+.iot-fs{position:fixed!important;inset:0!important;z-index:1500!important;margin:0!important;border-radius:0!important;
+        width:auto!important;height:auto!important;max-width:none!important;
+        background:#fff!important;padding:14px 16px max(14px,env(safe-area-inset-bottom))!important;
+        display:flex!important;flex-direction:column!important;overflow:hidden!important;box-shadow:none!important}
+.iot-fs .iot-zoom-ctrls{display:none!important}
+.iot-fs #iotDateInfo{flex:0 0 auto}
+.iot-fs #mcViewFloor{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.iot-fs #iotViewport{flex:1 1 auto;min-height:0;height:auto!important;display:flex;overflow:auto}
+.iot-fs #iotScaleWrap{transform:none!important;flex:1 1 auto;min-height:0;width:100%;
+        display:flex;align-items:center;justify-content:center}
+.iot-fs #iotSvg{width:100%!important;height:100%!important;max-height:100%}
+
+/* ── แตะที่เครื่องเพื่อดูงาน: เปิดเฉพาะตอนเต็มจอ ── */
+.iot-mc{cursor:default}
+.iot-fs .iot-mc{cursor:pointer}
+.iot-fs .iot-mc:focus{outline:none}
+.iot-fs .iot-mc:hover,.iot-fs .iot-mc:focus-visible{filter:brightness(1.06) drop-shadow(0 0 3px rgba(15,23,42,.5))}
+.iot-hint{display:none}
+.iot-fs .iot-hint{display:inline-flex}
+
+/* ── ป๊อปอัปรายละเอียดเครื่อง (เป็นลูกของ #iotCard เพื่อให้แสดงได้ใน native fullscreen) ── */
+.iotpop-bg{position:absolute;inset:0;z-index:1600;background:rgba(13,17,23,.55);
+  display:flex;align-items:center;justify-content:center;padding:16px;animation:iotpopFade .16s ease}
+.iotpop{background:#fff;border-radius:16px;width:100%;max-width:440px;max-height:90%;
+  display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(13,17,23,.5);
+  animation:iotpopIn .22s cubic-bezier(.2,.8,.2,1)}
+.iotpop-hd{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:13px 14px;color:#fff}
+.iotpop-cl{margin-left:auto;width:40px;height:40px;min-width:40px;border:none;border-radius:10px;
+  background:rgba(255,255,255,.22);color:#fff;font-size:17px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.iotpop-cl:hover{background:rgba(255,255,255,.34)}
+.iotpop-bd{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px}
+@keyframes iotpopFade{from{opacity:0}to{opacity:1}}
+@keyframes iotpopIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.iotpop,.iotpop-bg{animation:none}}
 </style>
 </head>
 <body>
@@ -469,15 +502,20 @@ tbody tr:last-child td{border-bottom:none}
   <div class="lock-card">
     <div class="lock-logo">🔐</div>
     <div class="lock-title">VSM AFTERMARKET RECORD</div>
-    <div class="lock-sub">กรอกรหัสพนักงาน — ระบบจะแยก VSM ให้อัตโนมัติ</div>
+    <div class="lock-sub">กรอกรหัสพนักงานของคุณเอง — ระบบจะแยก VSM ให้อัตโนมัติ</div>
     <div class="lock-input-wrap">
-      <input type="text" class="lock-input" id="lockInput" placeholder="L-XXXX" autocomplete="off"
-             oninput="lockSuggest(event)" onkeydown="lockKey(event)">
-      <div class="lock-suggest" id="lockSuggest"></div>
+      <input type="text" class="lock-input" id="lockInput" placeholder="เช่น L-XXXX" autocomplete="off"
+             autocapitalize="characters" spellcheck="false"
+             oninput="lockClearErr()" onkeydown="lockKey(event)">
+    </div>
+    <div class="lock-hint">ตัวอย่างรูปแบบรหัส:
+      <span class="lock-eg">S-XXX</span>
+      <span class="lock-eg">L-XXXX</span>
+      <span class="lock-eg">PSTXXX</span>
     </div>
     <div class="lock-err" id="lockErr"></div>
     <button class="lock-btn" id="lockBtn" onclick="lockSubmit()">เข้าใช้งาน →</button>
-    <div class="lock-foot">พิมพ์รหัสพนักงานของคุณ (รูปแบบ: L-XXXX, G-XXX, PSTXXX, S-XXX)</div>
+    <div class="lock-foot">พิมพ์รหัสพนักงานของคุณเพื่อเข้าใช้งาน</div>
   </div>
 </div>
 
@@ -533,13 +571,16 @@ tbody tr:last-child td{border-bottom:none}
   <div id="kpiPerZone"></div>
 
   <!-- Machine Status Checker + Floor Plan -->
-  <div class="card" style="margin-top:10px;padding-bottom:6px">
+  <div class="card" id="iotCard" style="margin-top:10px;padding-bottom:6px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
       <div class="card-title" style="margin:0"><span class="ci">🏭</span>ตรวจสอบสถานะเครื่องจักร</div>
       <div style="display:flex;gap:4px;align-items:center">
-        <button onclick="iotZoomBtn(-1)" title="ย่อ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
-        <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
-        <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
+        <span class="iot-zoom-ctrls" style="display:flex;gap:4px">
+          <button onclick="iotZoomBtn(-1)" title="ย่อ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
+          <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
+          <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
+        </span>
+        <button id="iotFsBtn" onclick="iotFullscreen()" title="เต็มจอ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #1A56DB;background:#EBF4FF;color:#1A56DB;font-size:15px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">⛶</button>
       </div>
     </div>
     <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
@@ -2340,30 +2381,12 @@ function hideLock() {
     if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
   }
 }
-function lockSuggest(ev) {
-  const q = ev.target.value.trim().toLowerCase();
-  const dd = document.getElementById('lockSuggest');
-  document.getElementById('lockErr').textContent = '';
-  if (!q || q.length < 1) { dd.classList.remove('show'); return; }
-  const matches = state.employees
-    .filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q))
-    .slice(0, 8);
-  if (!matches.length) { dd.classList.remove('show'); return; }
-  dd.innerHTML = matches.map((e, i) => `
-    <div class="lock-suggest-item" onmousedown="lockPick('${escapeHtml(e.id)}')">
-      <span class="lock-suggest-id">${escapeHtml(e.id)}</span>
-      <span class="lock-suggest-name">${escapeHtml(e.name||'')}</span>
-    </div>`).join('');
-  dd.classList.add('show');
-}
-function lockPick(id) {
-  document.getElementById('lockInput').value = id;
-  document.getElementById('lockSuggest').classList.remove('show');
-  lockSubmit();
+// ไม่มี dropdown รายชื่อแล้ว — ต้องพิมพ์รหัสพนักงานของตัวเอง (กันคนอื่นเดา/เลือกจากลิสต์)
+function lockClearErr() {
+  const e = document.getElementById('lockErr'); if (e) e.textContent = '';
 }
 function lockKey(ev) {
   if (ev.key === 'Enter') { ev.preventDefault(); lockSubmit(); }
-  if (ev.key === 'Escape') document.getElementById('lockSuggest').classList.remove('show');
 }
 function lockSubmit() {
   const v = document.getElementById('lockInput').value.trim().toUpperCase();
@@ -3272,6 +3295,11 @@ function renderMachineStatusChecker(recs) {
   const oaeMap = {};
   for (const m in agg) oaeMap[m] = { sum: agg[m].tgt > 0 ? agg[m].opr / agg[m].tgt : 0, n: 1 };
 
+  // เก็บข้อมูลรายเครื่องไว้ให้ป๊อปอัป "แตะดูที่เครื่อง" (เฉพาะตอนเต็มจอ) แสดง Valve/Lot/OPR แยกกะ + ความช่วยเหลือ
+  const byMc = {};
+  for (const r of filtered) { const id = r.machine_id; if (!id) continue; (byMc[id] || (byMc[id] = [])).push(r); }
+  _iotData = { active: activeMachines, oae: oaeMap, byMc, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
+
   renderFloorPlan(activeMachines, oaeMap);
 }
 
@@ -3386,14 +3414,16 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       border='#ea580c'; fill='#ffedd5'; textColor='#7c2d12'; strokeW=2.5;
     }
 
-    if(active){
-      g.push(`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${border}" stroke-width="3" rx="5" filter="url(#gGlow)" class="mcOn" opacity="0.7"/>`);
-    }
-    g.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
-
     const id=mc.id;
+    const parts=[];
+    if(active){
+      parts.push(`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${border}" stroke-width="3" rx="5" filter="url(#gGlow)" class="mcOn" opacity="0.7"/>`);
+    }
+    parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
     const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
-    g.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
+    parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
+    const aria = active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ปิดเครื่อง`;
+    g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
   }
 
   const svgHtml=`<svg id="iotSvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
@@ -3409,6 +3439,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       <span style="display:inline-flex;align-items:center;gap:4px;color:#111827">
         <span style="width:11px;height:11px;background:#000;border-radius:2px;display:inline-block"></span>ปิดเครื่อง
       </span>
+      <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 แตะที่เครื่องเพื่อดูงาน · Valve / Lot / OPR</span>
       <span style="font-size:10px;color:#6b7280;margin-left:auto">เปิด <b>${nOn}</b> / รวม <b>${tot}</b> เครื่อง</span>
     </div>
     <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
@@ -3420,6 +3451,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
 }
 
 let _iotScale=1.0;
+let _iotData=null;
 function _applyIotZoom(){
   const w=document.getElementById('iotScaleWrap');
   if(w) w.style.transform=`scale(${_iotScale})`;
@@ -3435,6 +3467,201 @@ function iotZoomBtn(dir){
   else _iotScale=Math.min(2.5,Math.max(0.3,_iotScale+dir*0.2));
   _applyIotZoom();
 }
+
+/* ===== IoT FLOOR PLAN — แตะที่เครื่องเพื่อดูงาน (เฉพาะตอนเต็มจอ) =====
+   ป๊อปอัปแสดง Valve No / Lot / OPR แยกกะ + (ถ้าเครื่องสีส้ม = OAE<75%) แสดงคำขอความช่วยเหลือ
+   ป๊อปอัปเป็นลูกของ #iotCard เพื่อให้แสดงได้แม้อยู่ใน native fullscreen */
+function iotMcTap(id){
+  const card=document.getElementById('iotCard');
+  if(!card||!card.classList.contains('iot-fs')) return; // ดูรายละเอียดได้เฉพาะตอนเต็มจอ
+  iotShowMcPop(id);
+}
+function iotCloseMcPop(){ const p=document.getElementById('iotMcPop'); if(p) p.remove(); }
+function _iotMcKey(e){
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  const g=e.target&&e.target.closest&&e.target.closest('.iot-mc');
+  if(g&&g.dataset&&g.dataset.mc){ e.preventDefault(); iotMcTap(g.dataset.mc); }
+}
+function _iotMcDetail(id){
+  const d=_iotData||{};
+  const recs=(d.byMc&&d.byMc[id])||[];
+  const active=!!(d.active&&d.active.has(id));
+  const oe=d.oae&&d.oae[id];
+  const oae=oe?(oe.sum||0):0;
+  const status= active ? (oae>=0.75?'good':'warn') : 'off';
+  const shifts={day:[],night:[]};
+  let tot=0;
+  for(const r of recs){
+    const st=r.shift_type==='night'?'night':'day';
+    const opr=Number(r.opr)||0; tot+=opr;
+    shifts[st].push({
+      valve:(r.valve_no||r.valveNo||'').trim()||'(ไม่ระบุวาล์ว)',
+      lot:(r.lot||'').trim(),
+      opr,
+      date:(r.shift_date||r.record_date||'').slice(0,10),
+    });
+  }
+  shifts.day.sort((a,b)=>b.opr-a.opr);
+  shifts.night.sort((a,b)=>b.opr-a.opr);
+  const valves=new Set(recs.map(r=>(r.valve_no||r.valveNo||'').trim()).filter(Boolean)).size;
+  const helps=recs.map(r=>({h:_recHelp(r),r})).filter(x=>x.h);
+  return {active,oae,status,shifts,tot,valves,helps};
+}
+function _iotStat(label,val,color){
+  return `<div style="flex:1;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:8px 6px;text-align:center">
+    <div style="font-size:16px;font-weight:800;color:${color};font-variant-numeric:tabular-nums;line-height:1.1">${val}</div>
+    <div style="font-size:10px;color:#64748b;font-weight:700;margin-top:2px">${label}</div>
+  </div>`;
+}
+function _iotShiftSec(label,emoji,rows){
+  if(!rows.length) return '';
+  const sub=rows.reduce((s,r)=>s+r.opr,0);
+  const body=rows.map(r=>`<tr>
+    <td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;font-family:'Courier New',monospace;font-weight:700;color:#0f172a">${escapeHtml(r.valve)}</td>
+    <td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;color:#475569">${r.lot?escapeHtml(r.lot):'—'}</td>
+    <td style="padding:5px 7px;border-bottom:1px solid #f1f5f9;text-align:right;font-variant-numeric:tabular-nums;font-weight:800;color:#0f172a">${r.opr.toLocaleString()}</td>
+  </tr>`).join('');
+  return `<div style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#334155;margin-bottom:5px">
+      <span>${emoji}</span>${label}
+      <span style="margin-left:auto;font-size:11px;color:#64748b;font-weight:700">รวม <b style="color:#0f172a">${sub.toLocaleString()}</b></span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed">
+      <thead><tr>
+        <th style="text-align:left;padding:5px 7px;background:#f1f5f9;color:#475569;font-size:10.5px;font-weight:800">Valve No</th>
+        <th style="text-align:left;padding:5px 7px;background:#f1f5f9;color:#475569;font-size:10.5px;font-weight:800">Lot</th>
+        <th style="text-align:right;padding:5px 7px;background:#f1f5f9;color:#475569;font-size:10.5px;font-weight:800;width:64px">OPR</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>`;
+}
+function _iotHelpBlock(det){
+  if(!(det.status==='warn' || det.helps.length)) return '';
+  let inner;
+  if(!det.helps.length){
+    inner=`<div style="font-size:12px;color:#92400e;background:#fffbeb;border:1px dashed #fcd34d;border-radius:9px;padding:8px 10px">ยังไม่มีการบันทึก “ขอความช่วยเหลือ” สำหรับเครื่องนี้</div>`;
+  } else {
+    inner=det.helps.map(({h,r})=>{
+      const open=h.status!=='done';
+      const sh=r.shift_type==='night'?'🌙':'☀️';
+      const dt=(r.shift_date||r.record_date||'').slice(0,10);
+      return `<div style="border:1.5px solid ${open?'#FCA5A5':'#A7F3D0'};background:${open?'#FEF2F2':'#F0FDF4'};border-radius:10px;padding:8px 10px;margin-top:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:800">
+          <span style="color:${open?'#B91C1C':'#047857'}">${open?'⏳ รอดำเนินการ':'✅ แก้ไขแล้ว'}</span>
+          <span style="color:#64748b;font-weight:700">${sh} ${dt}</span>
+        </div>
+        <div style="font-size:13px;color:#0f172a;margin-top:4px;white-space:pre-wrap">${escapeHtml(h.text)}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:3px">โดย ${escapeHtml(h.by||'-')}${h.done_by?` · ปิดโดย ${escapeHtml(h.done_by)}`:''}</div>
+      </div>`;
+    }).join('');
+  }
+  return `<div style="margin-top:6px;border-top:1px dashed #e2e8f0;padding-top:11px">
+    <div style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#B91C1C;margin-bottom:6px">
+      <span style="background:linear-gradient(135deg,#B91C1C,#EF4444);width:22px;height:22px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px">🆘</span>
+      ขอความช่วยเหลือ
+    </div>
+    ${inner}
+  </div>`;
+}
+function iotShowMcPop(id){
+  const card=document.getElementById('iotCard'); if(!card) return;
+  iotCloseMcPop();
+  const det=_iotMcDetail(id);
+  const theme = det.status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:'ทำงาน'}
+              : det.status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:'ต้องช่วยเหลือ'}
+              : {bg:'linear-gradient(135deg,#475569,#334155)',pill:'#e2e8f0',pt:'#1e293b',label:'ปิดเครื่อง'};
+  let body;
+  if(!det.active){
+    body=`<div style="text-align:center;padding:24px 8px;color:#64748b">
+      <div style="font-size:34px;margin-bottom:6px">🌙</div>
+      <div style="font-size:13px;font-weight:700">ปิดเครื่อง — ไม่มีงานในช่วงที่เลือก</div>
+      <div style="font-size:11px;margin-top:5px">${escapeHtml((_iotData&&_iotData.rangeLabel)||'')}</div>
+    </div>`;
+  } else {
+    const noRows=!det.shifts.day.length&&!det.shifts.night.length;
+    body=`<div style="display:flex;gap:8px;margin-bottom:13px">
+        ${_iotStat('OAE',(det.oae*100).toFixed(0)+'%',det.status==='warn'?'#ea580c':'#16a34a')}
+        ${_iotStat('OPR รวม',det.tot.toLocaleString(),'#1A56DB')}
+        ${_iotStat('วาล์ว',det.valves+' ชนิด','#7c3aed')}
+      </div>
+      ${_iotShiftSec('กะกลางวัน','☀️',det.shifts.day)}
+      ${_iotShiftSec('กะกลางคืน','🌙',det.shifts.night)}
+      ${noRows?'<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">ไม่มีรายละเอียดงาน</div>':''}
+      ${_iotHelpBlock(det)}`;
+  }
+  const pop=document.createElement('div');
+  pop.id='iotMcPop'; pop.className='iotpop-bg';
+  pop.addEventListener('click',e=>{ if(e.target===pop) iotCloseMcPop(); });
+  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true" aria-label="รายละเอียดเครื่อง ${escapeHtml(id)}">
+    <div class="iotpop-hd" style="background:${theme.bg}">
+      <span style="font-family:'Courier New',monospace;font-size:17px;font-weight:800;letter-spacing:.5px">${escapeHtml(id)}</span>
+      <span style="background:${theme.pill};color:${theme.pt};font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">${theme.label}</span>
+      <button class="iotpop-cl" onclick="iotCloseMcPop()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="iotpop-bd">${body}</div>
+  </div>`;
+  card.appendChild(pop);
+}
+
+/* ===== IoT FLOOR PLAN — FULLSCREEN =====
+   เต็มจอ = เปิดโหมด fit-to-screen ด้วย CSS class (.iot-fs) ที่ "ค้างไว้" ไม่ย่อกลับเอง
+   + พยายามขอ native fullscreen ของเบราว์เซอร์เพิ่ม (ซ่อนแถบ address) แบบ best-effort
+   ถ้าอุปกรณ์ไม่รองรับ (เช่น iOS Safari) ก็ยังเต็มหน้าจอด้วย CSS ได้ */
+let _iotFsAnchor=null;
+function iotFullscreen(){
+  const card=document.getElementById('iotCard'); if(!card) return;
+  if(card.classList.contains('iot-fs')) iotExitFs(card); else iotEnterFs(card);
+}
+function iotEnterFs(card){
+  // ย้าย card ขึ้นเป็นลูกตรงของ <body> กัน ancestor ที่มี transform/contain/backdrop-filter
+  // ทำให้ position:fixed เพี้ยน (เป็นเหตุให้ "ไม่เต็มจอทั้งหมด")
+  if(!_iotFsAnchor && card.parentNode){
+    _iotFsAnchor=document.createComment('iot-fs-anchor');
+    card.parentNode.insertBefore(_iotFsAnchor,card);
+    document.body.appendChild(card);
+  }
+  card.classList.add('iot-fs');
+  document.documentElement.style.overflow='hidden';
+  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='✕';b.title='ออกจากเต็มจอ';}
+  const rq=card.requestFullscreen||card.webkitRequestFullscreen;
+  if(rq){ try{ const p=rq.call(card); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  document.addEventListener('keydown',_iotFsKey,true);
+  card.addEventListener('keydown',_iotMcKey);   // เปิดใช้ Enter/Space ที่เครื่อง (a11y) เฉพาะตอนเต็มจอ
+}
+function iotExitFs(card){
+  card=card||document.getElementById('iotCard'); if(!card) return;
+  iotCloseMcPop();                              // ปิดป๊อปอัปรายละเอียดเครื่องถ้าเปิดค้างอยู่
+  card.removeEventListener('keydown',_iotMcKey);
+  card.classList.remove('iot-fs');
+  document.documentElement.style.overflow='';
+  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='⛶';b.title='เต็มจอ';}
+  if(document.fullscreenElement&&document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
+  else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
+  // คืน card กลับตำแหน่งเดิมในแท็บ Dashboard
+  if(_iotFsAnchor&&_iotFsAnchor.parentNode){
+    _iotFsAnchor.parentNode.insertBefore(card,_iotFsAnchor);
+    _iotFsAnchor.remove();
+  }
+  _iotFsAnchor=null;
+  document.removeEventListener('keydown',_iotFsKey,true);
+}
+function _iotFsKey(e){
+  if(e.key==='Escape'){
+    if(document.getElementById('iotMcPop')){ e.preventDefault(); iotCloseMcPop(); return; } // ปิดป๊อปอัปก่อน แล้วค่อยออกเต็มจอ
+    const card=document.getElementById('iotCard');
+    if(card&&card.classList.contains('iot-fs')){ e.preventDefault(); iotExitFs(card); }
+  }
+}
+/* ถ้าผู้ใช้กด Esc แล้วเบราว์เซอร์ออกจาก native fullscreen เอง → ปิดโหมดเต็มจอให้ตรงกัน */
+document.addEventListener('fullscreenchange',()=>{
+  const card=document.getElementById('iotCard');
+  if(card&&card.classList.contains('iot-fs')&&!document.fullscreenElement) iotExitFs(card);
+});
+document.addEventListener('webkitfullscreenchange',()=>{
+  const card=document.getElementById('iotCard');
+  if(card&&card.classList.contains('iot-fs')&&!document.webkitFullscreenElement) iotExitFs(card);
+});
 
 
 
