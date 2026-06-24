@@ -2543,14 +2543,14 @@ function computeLocalStats() {
   const vMap = {};
   for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
 
-  // latest record per (valve, lot) — normalize valve_no/valveNo ก่อน (กรองตาม VSM)
+  // record ตัวแทนต่อ (valve, lot) = ตัวที่ก้าวหน้าในสายการผลิตมากที่สุด — normalize valve_no ก่อน (กรองตาม VSM)
+  // (เดิมเลือกตาม timestamp ล่าสุด → ถ้าลง SFG หลัง FG จะนับงานค้างที่ SFG ทั้งที่ถึง FG แล้ว)
   const latest = {};
   for (const r of filterVsm(state.prodRecords)) {
     const vno = (r.valve_no || r.valveNo || '').trim();
     const k = `${vno}::${r.lot||''}`;
-    if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) {
-      latest[k] = { ...r, valve_no: vno }; // normalize ให้ใช้ valve_no เสมอ
-    }
+    const cand = { ...r, valve_no: vno }; // normalize ให้ใช้ valve_no เสมอ
+    if (!latest[k] || _moreAdvanced(cand, latest[k])) latest[k] = cand;
   }
   let totalDone = 0, totalWip = 0;
   const byCust = {}, byProc = {};
@@ -2597,6 +2597,16 @@ const PROC_ORDER = ['SSG','TOP&HOD','HOD&FFT','HOD/REM.','CB','ROLL','COPY','COT
 const PROC_ALIAS = { 'HOD&REM.':'HOD/REM.' };   // กันสะกดต่าง (& vs /) → รวมเป็นตัวเดียว
 const _procCanon = p => PROC_ALIAS[p] || p;
 const _procRank  = p => { const i = PROC_ORDER.indexOf(_procCanon(p)); return i === -1 ? 9999 : i; };
+// เลือก "record ตัวแทน" ของแต่ละ (valve, lot): ตัวที่ก้าวหน้าในสายการผลิตมากที่สุด
+// เดิมหลายจุดเลือกตาม timestamp ล่าสุด → ผิดเมื่อพนักงานลง process ก่อนหน้าทีหลัง
+//   (เช่น ลง FG ไปแล้ว ค่อยมาลง SFG ของล็อตย่อย → ระบบเข้าใจผิดว่างานยังอยู่ SFG)
+// เกณฑ์: process ที่อยู่ท้ายสาย (ตาม PROC_ORDER) ชนะ; ถ้า process ไม่รู้จักทั้งคู่/เสมอกัน → ใช้ timestamp ล่าสุด
+function _moreAdvanced(a, b) {   // true = a ก้าวหน้ากว่า b
+  const pa = PROC_ORDER.indexOf(_procCanon(((a.current_process || a.currentProcess || '') + '').trim()));
+  const pb = PROC_ORDER.indexOf(_procCanon(((b.current_process || b.currentProcess || '') + '').trim()));
+  if (pa >= 0 && pb >= 0 && pa !== pb) return pa > pb;
+  return new Date(a.timestamp || 0) > new Date(b.timestamp || 0);
+}
 function computeProcessOutput(kpiRecords) {
   const mcProc = {};
   for (const z of Object.keys(state.machines || {}))
@@ -3862,11 +3872,12 @@ function showCompletedDetail() {
 function getCompletedRecords() {
   const vMap = {};
   for (const v of state.valves) vMap[v.valveNo] = { customer: v.customer||'Other', procs: v.processes||[] };
-  // latest per (valve, lot) — กรองตาม VSM ของผู้ใช้
+  // record ตัวแทนต่อ (valve, lot) = ตัวที่ก้าวหน้าในสายการผลิตมากที่สุด — กรองตาม VSM ของผู้ใช้
+  // (เดิมเลือกตาม timestamp ล่าสุด → งานที่ถึง process สุดท้ายแล้วอาจไม่ขึ้น "ผลิตเสร็จ" ถ้ามี record ขั้นก่อนหน้าลงทีหลัง)
   const latest = {};
   for (const r of filterVsm(state.prodRecords)) {
     const k = `${r.valve_no}::${r.lot||''}`;
-    if (!latest[k] || new Date(r.timestamp||0) > new Date(latest[k].timestamp||0)) latest[k] = r;
+    if (!latest[k] || _moreAdvanced(r, latest[k])) latest[k] = r;
   }
   // เฉพาะที่ done = process สุดท้าย หรือ status=Completed
   // ข้ามงานที่จบผ่าน "ระบบหลัง FG" (นับจาก store แทน เพื่อไม่ให้ซ้ำ)
@@ -4023,7 +4034,7 @@ function shiftHtml(zone, mi, si, m) {
         </div>
       </div>
       <div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
-        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
+        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" onfocus="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
         <div class="ac-dd" id="${sid}_p_dd"></div>
       </div>
     </div>
@@ -4585,8 +4596,23 @@ function acValveSearch(ev, id) {
 function acProcSearch(ev, id, valveInputId) {
   const q = ev.target.value.trim().toLowerCase();
   const valveNo = document.getElementById(valveInputId)?.value || '';
-  const v = state.valves.find(x => x.valveNo === valveNo);
-  const procs = v ? v.processes : ['SSG','TOP&HOD','VET','COT','COPY','CB','IND','TG','SFG','FG','P/T','QC'];
+  // Process ต้องมาจาก "วาล์วเบอร์นั้น" ตาม Master valve (หน้าตั้งค่า) เท่านั้น — แต่ละเบอร์ process ไม่เหมือนกัน
+  // เทียบเบอร์วาล์วแบบไม่สนตัวพิมพ์ใหญ่เล็ก/ช่องว่าง (วาล์วถูกเก็บเป็นตัวพิมพ์ใหญ่ผ่าน vKey)
+  const v = state.valves.find(x => vKey(x.valveNo) === vKey(valveNo));
+  const dd = document.getElementById(id + '_dd');
+  if (!v) {
+    // ยังไม่เลือกวาล์ว/ไม่พบเบอร์นี้ → ไม่โชว์ลิสต์รวม (กันโชว์ process เหมือนกันทุกเบอร์)
+    if (dd) {
+      if (valveNo.trim()) {
+        dd.innerHTML = '<div class="ac-item" style="cursor:default;color:var(--muted)"><span class="ac-nm">ไม่พบเบอร์วาล์วนี้ใน Master valve — ตั้งค่า Process ที่หน้าตั้งค่าก่อน</span></div>';
+        dd.classList.add('open');
+      } else {
+        dd.classList.remove('open');
+      }
+    }
+    return;
+  }
+  const procs = (v.processes || []).filter(Boolean);
   const list = procs.filter(p => !q || p.toLowerCase().includes(q)).map(p => ({ id: p, proc: p, label: '' }));
   acDropdown(id, list, function pickProc(it, inputId) {
     document.getElementById(inputId).value = it.proc;
@@ -4751,23 +4777,60 @@ async function searchProcess() {
       } catch (e) { /* fallback to local */ }
       await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
     }
-    // group by lot, find latest process
-    const byLot = {};
+    // จับกลุ่มตาม "lot + process" แล้วรวมยอด → แสดงทุก process ที่ลงไว้
+    // เดิมยุบตาม lot อย่างเดียวแล้วเก็บแถวล่าสุด → ยอดที่ process ก่อนหน้าหาย
+    //   (เช่น เห็นแค่ SFG 1400 ทั้งที่มี FG 1800 ด้วย) · ตอนนี้แตกเป็น 1 แถว/process ตามยอดที่ลงจริง
+    //   สอดคล้องกับ "Output ของ Process" ที่รวมยอดตาม valve+lot+process
+    const byLotProc = {};
+    const lotMeta = {};   // ต่อ lot: เวลาล่าสุด (ไว้เรียง lot) + valve จริง
     for (const r of records) {
-      const key = lotKey(r.lot) || '(no lot)';   // รวม lot ที่ typo ($→S) เข้าด้วยกัน
-      if (!byLot[key] || new Date(r.timestamp) > new Date(byLot[key].timestamp)) byLot[key] = r;
+      const lk   = lotKey(r.lot) || '(no lot)';   // รวม lot ที่ typo ($→S) เข้าด้วยกัน
+      const proc = _procCanon(((r.currentProcess || r.current_process || '') + '').trim() || '-');
+      const key  = lk + '::' + proc;
+      const g = byLotProc[key] || (byLotProc[key] = { lot: r.lot, lk, proc, qty: 0, ts: r.timestamp, status: r.status, valveNo: r.valveNo || r.valve_no || valve.valveNo });
+      g.qty += Number(r.quantity) || 0;
+      if (new Date(r.timestamp) > new Date(g.ts)) { g.ts = r.timestamp; g.status = r.status; g.lot = r.lot || g.lot; }
+      const lm = lotMeta[lk] || (lotMeta[lk] = { ts: r.timestamp, lot: r.lot, valveNo: r.valveNo || r.valve_no || valve.valveNo });
+      if (new Date(r.timestamp) > new Date(lm.ts)) { lm.ts = r.timestamp; lm.lot = r.lot || lm.lot; }
     }
+    // เรียง lot ตามความเคลื่อนไหวล่าสุด, ภายใน lot เรียงตามลำดับสายการผลิต (PROC_ORDER)
+    const lotOrder = Object.keys(lotMeta).sort((a, b) => new Date(lotMeta[b].ts) - new Date(lotMeta[a].ts));
+    const rowsByLot = {};
+    for (const g of Object.values(byLotProc)) (rowsByLot[g.lk] = rowsByLot[g.lk] || []).push(g);
+    for (const lk in rowsByLot) rowsByLot[lk].sort((a, b) => _procRank(a.proc) - _procRank(b.proc));
+
     const pills = valve.processes.map(p => `<span class="proc-pill">${escapeHtml(p)}</span>`).join('');
-    const lotsHtml = Object.keys(byLot).length ? `<div class="tbl-wrap mt-8"><table style="min-width:520px"><thead><tr><th>Lot</th><th>Qty</th><th>Process ปัจจุบัน</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${
-      Object.values(byLot).map(r => {
-        // งานหลัง FG ที่ admin ขยับไปแล้ว → แสดงสถานะที่ขยับ (เห็นตรงกันทุกคน)
-        const ovp = getJobProc(r.valveNo || r.valve_no || valve.valveNo, r.lot);
+    const bodyRows = [];
+    for (const lk of lotOrder) {
+      const groups = rowsByLot[lk] || [];
+      const lm = lotMeta[lk];
+      groups.forEach((g, i) => {
+        bodyRows.push(
+          `<tr><td><b>${escapeHtml(i === 0 ? (g.lot || '-') : '')}</b></td>`
+          + `<td>${nn(g.qty)}</td>`
+          + `<td><span class="tag tag-orange">${escapeHtml(g.proc)}${PROC_DEPT[g.proc] ? ' · ' + PROC_DEPT[g.proc] : ''}</span></td>`
+          + `<td>${escapeHtml(g.status || '')}</td>`
+          + `<td style="white-space:nowrap">${new Date(g.ts).toLocaleString('th-TH')}</td></tr>`
+        );
+      });
+      // สถานะส่งต่อหลัง FG (admin ขยับงานนี้ไปขั้นถัดไป/จบแล้ว) — คงฟีเจอร์เดิมไว้ ไม่ให้หาย
+      const ovp = getJobProc(lm.valveNo, lm.lot);
+      if (ovp && ovp !== 'FG') {
         const done = ovp === 'DONE';
-        const procShown = ovp || r.currentProcess;
-        const statusShown = done ? '✅ จบงาน' : escapeHtml(r.status);
-        return `<tr><td><b>${escapeHtml(r.lot||'-')}</b></td><td>${nn(r.quantity)}</td><td><span class="tag ${done?'tag-green':'tag-orange'}">${escapeHtml(procShown)}${PROC_DEPT[procShown]?' · '+PROC_DEPT[procShown]:''}</span></td><td>${statusShown}</td><td style="white-space:nowrap">${new Date(r.timestamp).toLocaleString('th-TH')}</td></tr>`;
-      }).join('')
-    }</tbody></table></div>` : '<div class="muted mt-8">ยังไม่มี Production records</div>';
+        const oq = getJobProcQty(lm.valveNo, lm.lot);
+        const od = getJobProcDate(lm.valveNo, lm.lot);
+        bodyRows.push(
+          `<tr style="background:rgba(37,99,235,.06)"><td></td>`
+          + `<td>${oq ? nn(oq) : ''}</td>`
+          + `<td>➡️ <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${PROC_DEPT[ovp] ? ' · ' + PROC_DEPT[ovp] : ''}</span></td>`
+          + `<td>${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}</td>`
+          + `<td style="white-space:nowrap">${od ? new Date(od).toLocaleDateString('th-TH') : ''}</td></tr>`
+        );
+      }
+    }
+    const lotsHtml = bodyRows.length
+      ? `<div class="tbl-wrap mt-8"><table style="min-width:520px"><thead><tr><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${bodyRows.join('')}</tbody></table></div>`
+      : '<div class="muted mt-8">ยังไม่มี Production records</div>';
     $('searchResult').innerHTML = `
       <div class="card" style="margin-bottom:0">
         <div class="card-title"><span class="ci">📋</span>${escapeHtml(valve.valveNo)} — ${escapeHtml(valve.customer)}</div>
@@ -6520,17 +6583,18 @@ function computePostFgAll(recs) {
   for (const key of Object.keys(groups)) {
     const g = groups[key];
     let latest = g[0];
-    for (const r of g) if (dKey(r) > dKey(latest)) latest = r;
-    const realProc = mcProc[latest.machine_id] || 'SSG';
+    for (const r of g) if (dKey(r) > dKey(latest)) latest = r;   // ใช้แค่หา valve/lot ตัวแทน
     const vno = (latest.valve_no || latest.valveNo || '').trim();
     const lot = (latest.lot || '').trim();
     if (!vno || !isKnownValve(vno)) continue;       // เฉพาะวาล์วที่มีในระบบจริง (วาล์วผิด → ไปจัดการที่กล่อง Unknown)
     const ov  = getJobProc(vno, lot);
-    const cur = ov || realProc;
-    if (realProc !== 'FG' && !ov) continue;         // ยังไม่ถึง FG — ยังไม่อยู่ในระบบหลัง FG
-    // ยอดงาน = OPR ที่ FG (process จริงล่าสุดของ VSM4) ยกยอดตามไปขั้นถัดไป
-    const atReal = g.filter(r => (mcProc[r.machine_id] || 'SSG') === realProc);
-    const qty = atReal.reduce((s, r) => s + (Number(r.opr) || 0), 0);
+    // "ถึง FG แล้ว" = มี record ที่เครื่องตั้ง process=FG อย่างน้อย 1 รายการ (ไม่ใช่ดูแค่ record ล่าสุดตามวันที่)
+    //   เดิมดู process ของ record ล่าสุดเท่านั้น → ถ้าพนักงานลง process อื่นทีหลัง งานที่ถึง FG แล้วจะหลุดออกจากระบบหลัง FG
+    const fgRecs = g.filter(r => (mcProc[r.machine_id] || 'SSG') === 'FG');
+    if (!fgRecs.length && !ov) continue;            // ยังไม่ถึง FG และ admin ยังไม่ขยับ → ยังไม่อยู่ในระบบหลัง FG
+    const cur = ov || 'FG';                          // ตำแหน่งเริ่มต้นในสายหลัง FG = FG
+    // ยอดงาน = OPR รวมที่ FG (ยกยอดตามไปขั้นถัดไป)
+    const qty = fgRecs.reduce((s, r) => s + (Number(r.opr) || 0), 0);
     out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot) });
   }
   return out;
