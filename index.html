@@ -294,6 +294,24 @@ tbody tr:last-child td{border-bottom:none}
 .proc-pill.done{background:var(--green-bg);color:var(--green);border-color:var(--green-bd)}
 .proc-pill.cur{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-bd);box-shadow:0 0 0 2px var(--orange-bd)}
 .proc-pill.future{opacity:.6}
+/* ===== ผลค้นหา Process จาก Valve — ตาราง: คอลัมน์=Process แถว=Lot ช่อง=ยอด OPR ===== */
+.pf-legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
+.pf-lg{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
+.pf-lg::before{content:"";width:11px;height:11px;border-radius:3px;display:inline-block}
+.pf-lg-done{background:var(--green-bg);color:#065F46;border:1px solid var(--green-bd)}
+.pf-lg-done::before{background:#22C55E}
+.pf-lg-next{background:#FEF9C3;color:#854D0E;border:1px solid #FDE047}
+.pf-lg-next::before{background:#FACC15}
+.pf-tblwrap{margin-top:6px;border:1px solid var(--border);border-radius:var(--r-sm);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pf-table{border-collapse:collapse;width:100%;min-width:max-content;font-variant-numeric:tabular-nums}
+.pf-table th,.pf-table td{border:1px solid var(--border);text-align:center;white-space:nowrap}
+.pf-th{padding:7px 10px;font-size:11px;font-weight:800;color:var(--blue-dark);background:var(--blue-light)}
+.pf-th-lot{padding:7px 12px;font-size:11px;font-weight:800;color:var(--blue-dark);background:var(--blue-light);text-align:left;position:sticky;left:0;z-index:2}
+.pf-td-lot{padding:7px 12px;font-size:12px;font-weight:800;color:var(--blue-dark);background:var(--card);text-align:left;position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--border)}
+.pf-cell{padding:7px 10px;font-size:13px;font-weight:700;color:var(--muted2);min-width:48px}
+.pf-cell.pf-done{background:#BBF7D0;color:#065F46;font-weight:800}
+.pf-cell.pf-next{background:#FDE047}
+.pf-postfg{margin-top:8px;font-size:12px;font-weight:600;color:var(--muted)}
 
 /* ===== UTIL ===== */
 .row{display:flex;align-items:center;gap:8px}
@@ -531,7 +549,7 @@ tbody tr:last-child td{border-bottom:none}
         <span class="av" id="userAv">?</span>
         <span id="userVsm" style="background:rgba(255,255,255,.22);border-radius:6px;padding:1px 7px;font-size:10px;font-weight:800;letter-spacing:.3px"></span>
         <span id="userName">—</span>
-        <button onclick="lockOut()" style="background:transparent;border:none;color:#fff;cursor:pointer;font-size:13px;padding:0 4px" title="Logout">⏏</button>
+        <button onclick="lockOut()" style="background:rgba(255,255,255,.18);border:none;color:#fff;cursor:pointer;font-size:12px;font-weight:800;padding:3px 9px;border-radius:8px;margin-left:2px;white-space:nowrap" title="ออกจากระบบ">⏏ ออก</button>
       </span>
       <span class="badge" id="connBadge"><span class="dot"></span><span id="connText">เชื่อมต่อ…</span></span>
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่">🔄</button>
@@ -791,8 +809,20 @@ tbody tr:last-child td{border-bottom:none}
 
 <!-- ============== TAB: SETTINGS ============== -->
 <section id="pane-settings" class="pane">
+  <!-- ผู้ใช้งานปัจจุบัน + ปุ่มออกจากระบบ (เห็นชัด หาง่าย) -->
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div style="min-width:0">
+      <div class="muted" style="font-size:11px;font-weight:700">👤 ผู้ใช้งานปัจจุบัน</div>
+      <div id="settingsUser" style="font-size:15px;font-weight:800;color:var(--blue-dark);overflow:hidden;text-overflow:ellipsis">—</div>
+    </div>
+    <button class="btn" style="background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-bd);font-weight:800;white-space:nowrap" onclick="lockOut()">⏏ ออกจากระบบ</button>
+  </div>
+
   <!-- แจ้งเตือน Valve No ที่ไม่มีในฐานข้อมูล (Admin ตรวจสอบ/เพิ่มเข้าระบบ) -->
   <div id="unknownValveAlert"></div>
+
+  <!-- แจ้งเตือน Process ที่พนักงานพิมพ์เอง (ไม่ตรงตัวเลือกของวาล์ว) — งานเก่าก่อนอัปเดต กดแก้รายตัว -->
+  <div id="unknownProcAlert"></div>
 
   <div class="section-title">📦 รับงานเข้า Process ถัดไป (หลัง FG)</div>
   <div class="card">
@@ -1013,11 +1043,51 @@ let localStorage;
     removeItem: (k) => { delete mem[k]; },
     clear:      () => { mem = {}; },
   };
+  // คีย์ cache ก้อนใหญ่ที่ "โหลดใหม่จากเซิร์ฟเวอร์ได้" → ทิ้งได้ถ้าพื้นที่เต็ม
+  const EVICTABLE = ['vsm4_kpi_records','vsm4_prod_records','vsm4_valve_ids','vsm4_plans'];
+  function isQuotaErr(e){
+    return !!e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+      || e.code === 22 || e.code === 1014 || /quota/i.test(e.message || ''));
+  }
+  let warned = false;
+  function warnFull(){
+    if (warned) return; warned = true;
+    const msg = 'พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม — งานยังบันทึกขึ้นเซิร์ฟเวอร์ได้ตามปกติ '
+              + '(ถ้าเปิดในแอป LINE แนะนำให้กดมุมขวาบนแล้วเลือก "เปิดด้วย Safari/Chrome")';
+    const show = () => { try { if (typeof toast === 'function') { toast(msg, 'orange'); return true; } } catch (_) {} return false; };
+    if (!show()) window.addEventListener('DOMContentLoaded', show);
+  }
+  /* ห่อ localStorage จริง: setItem ที่เจอ "พื้นที่เต็ม" จะไม่ throw (ไม่เด้ง banner แดง)
+     → ทิ้ง cache ก้อนใหญ่ที่โหลดใหม่ได้ก่อน แล้วลองใหม่ ถ้ายังไม่พอก็ยอมเงียบ ๆ
+     (เคสที่เจอ: เปิดในแอป LINE บน iOS ที่ quota เล็ก → ข้อความ "The quota has been exceeded.") */
+  function makeSafe(ls){
+    return {
+      getItem:    (k) => ls.getItem(k),
+      removeItem: (k) => { try { ls.removeItem(k); } catch (_) {} },
+      clear:      ()  => { try { ls.clear(); } catch (_) {} },
+      key:        (i) => ls.key(i),
+      get length(){ return ls.length; },
+      setItem:    (k, v) => {
+        const s = String(v);
+        try { ls.setItem(k, s); return; }
+        catch (e) {
+          if (!isQuotaErr(e)) throw e;          // error อื่น (เช่น SecurityError) ปล่อยตามเดิม
+          try {
+            for (const ek of EVICTABLE) { if (ek !== k) { try { ls.removeItem(ek); } catch (_) {} } }
+            ls.setItem(k, s); return;
+          } catch (e2) {
+            try { ls.removeItem(k); } catch (_) {}  // กันค่าครึ่ง ๆ ค้าง
+            warnFull();                              // กลืน error — ข้อมูลบนเซิร์ฟเวอร์ยังครบ
+          }
+        }
+      },
+    };
+  }
   try {
     const ls = window.localStorage;
     const t = '__vsm4_probe__';
     ls.setItem(t, '1'); ls.removeItem(t);   // ทดสอบว่าอ่าน/เขียนได้จริง
-    localStorage = ls;
+    localStorage = makeSafe(ls);
   } catch (e) {
     localStorage = memStore;
     // แจ้งเตือนแบบไม่รบกวน (หลัง DOM พร้อม)
@@ -2379,6 +2449,9 @@ function hideLock() {
     // ใส่ค่าใน op-name field
     const op = document.getElementById('op-name');
     if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
+    // ชื่อผู้ใช้ในหน้าตั้งค่า (คู่กับปุ่มออกจากระบบ)
+    const su = document.getElementById('settingsUser');
+    if (su) su.textContent = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[vsmKey] || vsmKey}`;
   }
 }
 // ไม่มี dropdown รายชื่อแล้ว — ต้องพิมพ์รหัสพนักงานของตัวเอง (กันคนอื่นเดา/เลือกจากลิสต์)
@@ -4799,45 +4872,55 @@ async function searchProcess() {
     for (const g of Object.values(byLotProc)) (rowsByLot[g.lk] = rowsByLot[g.lk] || []).push(g);
     for (const lk in rowsByLot) rowsByLot[lk].sort((a, b) => _procRank(a.proc) - _procRank(b.proc));
 
-    const pills = valve.processes.map(p => `<span class="proc-pill">${escapeHtml(p)}</span>`).join('');
-    const bodyRows = [];
+    // ===== แสดงผลแบบตาราง: คอลัมน์ = Process ของ valve · แถว = Lot · ช่อง = ยอด OPR =====
+    //   • ช่องที่มียอด = เขียว · "ช่องแรกที่ยังไม่มียอด" ของแต่ละ lot = เหลือง (ขั้นถัดไป/ค้าง)
+    //   • เลื่อนแนวนอนในการ์ดได้ถ้าคอลัมน์เยอะ · คอลัมน์ Lot ปักหมุดซ้ายให้เห็นตลอด
+    const procSeq = (valve.processes || []).map(p => _procCanon(String(p).trim())).filter(Boolean);
+    const extraSet = new Set();   // process ที่มีในงานจริงแต่ไม่อยู่ใน flow ของ valve → ต่อท้ายเป็นคอลัมน์เสริม
+    const lotData = [];
     for (const lk of lotOrder) {
       const groups = rowsByLot[lk] || [];
       const lm = lotMeta[lk];
-      groups.forEach((g, i) => {
-        bodyRows.push(
-          `<tr><td><b>${escapeHtml(i === 0 ? (g.lot || '-') : '')}</b></td>`
-          + `<td>${nn(g.qty)}</td>`
-          + `<td><span class="tag tag-orange">${escapeHtml(g.proc)}${PROC_DEPT[g.proc] ? ' · ' + PROC_DEPT[g.proc] : ''}</span></td>`
-          + `<td>${escapeHtml(g.status || '')}</td>`
-          + `<td style="white-space:nowrap">${new Date(g.ts).toLocaleString('th-TH')}</td></tr>`
-        );
-      });
-      // สถานะส่งต่อหลัง FG (admin ขยับงานนี้ไปขั้นถัดไป/จบแล้ว) — คงฟีเจอร์เดิมไว้ ไม่ให้หาย
-      const ovp = getJobProc(lm.valveNo, lm.lot);
+      const lotLabel = (groups[0] && groups[0].lot) || lm.lot || '-';
+      const qtyByProc = {};
+      for (const g of groups) { const c = _procCanon(g.proc); qtyByProc[c] = (qtyByProc[c] || 0) + (Number(g.qty) || 0); }
+      Object.keys(qtyByProc).forEach(c => { if (qtyByProc[c] > 0 && !procSeq.includes(c)) extraSet.add(c); });
+      lotData.push({ lot: lotLabel, qtyByProc, valveNo: lm.valveNo });
+    }
+    const cols = procSeq.concat([...extraSet].sort((a, b) => _procRank(a) - _procRank(b)));
+    const head = `<tr><th class="pf-th-lot">Lot</th>${cols.map(c => `<th class="pf-th">${escapeHtml(c)}</th>`).join('')}</tr>`;
+    const postFgNotes = [];
+    const rowsHtml = lotData.map(ld => {
+      // ช่องแรก (ซ้ายสุด) ที่ยังไม่มียอด = เหลือง (ขั้นถัดไป/ค้าง) · ถ้ามียอดครบทุกช่อง = ไม่มีเหลือง
+      let nextIdx = -1;
+      for (let i = 0; i < cols.length; i++) { if (!(ld.qtyByProc[cols[i]] > 0)) { nextIdx = i; break; } }
+      const tds = cols.map((c, i) => {
+        const q = ld.qtyByProc[c] || 0;
+        if (q > 0)         return `<td class="pf-cell pf-done">${nn(q)}</td>`;
+        if (i === nextIdx) return `<td class="pf-cell pf-next"></td>`;
+        return `<td class="pf-cell"></td>`;
+      }).join('');
+      // ส่งต่อหลัง FG (admin ขยับงาน) — คงฟีเจอร์เดิมไว้เป็นโน้ตใต้ตาราง
+      const ovp = getJobProc(ld.valveNo, ld.lot);
       if (ovp && ovp !== 'FG') {
         const done = ovp === 'DONE';
-        const oq = getJobProcQty(lm.valveNo, lm.lot);
-        const od = getJobProcDate(lm.valveNo, lm.lot);
-        bodyRows.push(
-          `<tr style="background:rgba(37,99,235,.06)"><td></td>`
-          + `<td>${oq ? nn(oq) : ''}</td>`
-          + `<td>➡️ <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${PROC_DEPT[ovp] ? ' · ' + PROC_DEPT[ovp] : ''}</span></td>`
-          + `<td>${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}</td>`
-          + `<td style="white-space:nowrap">${od ? new Date(od).toLocaleDateString('th-TH') : ''}</td></tr>`
-        );
+        const oq = getJobProcQty(ld.valveNo, ld.lot);
+        const od = getJobProcDate(ld.valveNo, ld.lot);
+        postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${PROC_DEPT[ovp] ? ' · ' + PROC_DEPT[ovp] : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
       }
-    }
-    const lotsHtml = bodyRows.length
-      ? `<div class="tbl-wrap mt-8"><table style="min-width:520px"><thead><tr><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>วันที่</th></tr></thead><tbody>${bodyRows.join('')}</tbody></table></div>`
+      return `<tr><td class="pf-td-lot">${escapeHtml(ld.lot)}</td>${tds}</tr>`;
+    }).join('');
+    const tableHtml = lotData.length
+      ? `<div class="tbl-wrap pf-tblwrap"><table class="pf-table">${head}${rowsHtml}</table></div>${postFgNotes.join('')}`
       : '<div class="muted mt-8">ยังไม่มี Production records</div>';
+    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span></div>` : '';
     $('searchResult').innerHTML = `
       <div class="card" style="margin-bottom:0">
         <div class="card-title"><span class="ci">📋</span>${escapeHtml(valve.valveNo)} — ${escapeHtml(valve.customer)}</div>
         <div class="muted" style="font-size:12px;margin-bottom:6px">${escapeHtml(valve.description||'')}</div>
-        <div class="proc-pills">${pills}</div>
-        <div style="margin-top:10px;font-size:12px;font-weight:800;color:var(--blue)">📦 Records แยกตาม Lot:</div>
-        ${lotsHtml}
+        <div style="margin-top:4px;font-size:12px;font-weight:800;color:var(--blue)">📦 Lot · Process · ยอด OPR</div>
+        ${legend}
+        ${tableHtml}
       </div>`;
   } catch (e) {
     toast('ค้นหาไม่สำเร็จ: ' + e.message, 'red');
@@ -5330,8 +5413,26 @@ function editProdRecord(rid) {
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
   const statusOpts = ['In Progress','Completed','Cancelled'].map(s =>
     `<option value="${s}" ${(r.status||'')=== s?'selected':''}>${s}</option>`).join('');
+  // Process = dropdown จาก process ของวาล์วเบอร์นั้น (Master valve)
+  //   ถ้าพนักงานพิมพ์ค่าที่ "ไม่มีในตัวเลือก" → เก็บค่าเดิมไว้ใน หมายเหตุ แล้วให้กดเลือก process ที่ถูกต้อง
+  const _ev      = state.valves.find(x => vKey(x.valveNo) === vKey(r.valveNo || r.valve_no || ''));
+  const _curProc = (r.currentProcess || r.current_process || '').trim();
+  const _procs   = (_ev && Array.isArray(_ev.processes) ? _ev.processes : []).filter(Boolean);
+  const _ck      = s => _procCanon(String(s).trim()).toLowerCase();   // รวม alias (& vs /) + ไม่สนตัวพิมพ์
+  const _inOpts  = _procs.some(p => _ck(p) === _ck(_curProc));
+  const _unknown = !!_curProc && !_inOpts;     // พนักงานพิมพ์เอง ไม่ตรง process ของวาล์ว
+  const _procOpts = '<option value="">— เลือก process —</option>'
+    + _procs.map(p => `<option value="${escapeHtml(p)}" ${(_inOpts && _ck(p) === _ck(_curProc)) ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('')
+    + (_unknown ? `<option value="${escapeHtml(_curProc)}" selected>⚠️ ${escapeHtml(_curProc)} (นอกตัวเลือก)</option>` : '')
+    + '<option value="__custom__">อื่นๆ — พิมพ์เอง…</option>';
+  // ค่าเดิมที่นอกตัวเลือก → เติมลง หมายเหตุ กันค่าหาย (ถ้ายังไม่เคยเติม)
+  const _origNote = r.note || '';
+  const _noteDefault = (_unknown && !/พนักงานพิมพ์/.test(_origNote))
+    ? (_origNote ? _origNote + ' · ' : '') + `process ที่พนักงานพิมพ์: ${_curProc}`
+    : _origNote;
   openModal('✏️ แก้ไข Production Record', `
     <input type="hidden" id="editProdRid" value="${escapeHtml(rid)}">
+    ${_unknown ? `<div style="background:#FEF9C3;border:1px solid #FDE047;color:#854D0E;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:10px">พนักงานพิมพ์ Process “<b>${escapeHtml(_curProc)}</b>” ซึ่งไม่มีใน process ของวาล์วนี้ — กดเลือก process ที่ถูกต้องด้านล่าง (ค่าเดิมถูกเก็บไว้ในช่องหมายเหตุแล้ว)</div>` : ''}
     <div class="fg">
       <div class="fr"><label>Valve No</label>
         <input type="text" id="editProdValve" value="${escapeHtml(r.valveNo||r.valve_no||'')}">
@@ -5344,8 +5445,9 @@ function editProdRecord(rid) {
       <div class="fr"><label>Quantity (ชิ้น)</label>
         <input type="number" id="editProdQty" value="${r.quantity||0}" min="0">
       </div>
-      <div class="fr"><label>Process</label>
-        <input type="text" id="editProdProc" value="${escapeHtml(r.currentProcess||r.current_process||'')}">
+      <div class="fr"><label>Process ${_unknown ? '<span style="color:var(--orange);font-weight:800">⚠️ พนักงานพิมพ์เอง</span>' : ''}</label>
+        <select id="editProdProc" onchange="_editProcToggleCustom()">${_procOpts}</select>
+        <input type="text" id="editProdProcCustom" placeholder="พิมพ์ process เอง" style="display:none;margin-top:6px" value="">
       </div>
     </div>
     <div class="fg">
@@ -5356,14 +5458,23 @@ function editProdRecord(rid) {
         <input type="text" id="editProdOp" value="${escapeHtml(r.operator||'')}">
       </div>
     </div>
-    <div class="fr"><label>หมายเหตุ</label>
-      <input type="text" id="editProdNote" value="${escapeHtml(r.note||'')}">
+    <div class="fr"><label>หมายเหตุ${_unknown ? ' <span style="color:var(--muted);font-weight:600">(เก็บค่าที่พนักงานพิมพ์ไว้แล้ว)</span>' : ''}</label>
+      <input type="text" id="editProdNote" value="${escapeHtml(_noteDefault)}">
     </div>
     <div class="row mt-12" style="gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
       <button class="btn btn-green" onclick="saveProdEdit()">💾 บันทึกการแก้ไข</button>
     </div>
   `);
+}
+// สลับช่อง "พิมพ์เอง" ในหน้าแก้ไข Process เมื่อเลือก "อื่นๆ"
+function _editProcToggleCustom() {
+  const sel = document.getElementById('editProdProc');
+  const cin = document.getElementById('editProdProcCustom');
+  if (!sel || !cin) return;
+  const custom = sel.value === '__custom__';
+  cin.style.display = custom ? 'block' : 'none';
+  if (custom) { cin.focus(); }
 }
 
 async function saveProdEdit() {
@@ -5373,7 +5484,9 @@ async function saveProdEdit() {
   const idx = state.prodRecords.findIndex(x => x.record_id === rid);
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
   const valve = $('editProdValve').value.trim();
-  const proc  = $('editProdProc').value.trim();
+  let proc = $('editProdProc').value;
+  if (proc === '__custom__') proc = ($('editProdProcCustom')?.value || '').trim();
+  proc = proc.trim();
   Object.assign(state.prodRecords[idx], {
     valve_no:        valve,
     valveNo:         valve,
@@ -5387,6 +5500,7 @@ async function saveProdEdit() {
     updated_at:      new Date().toISOString(),
   });
   lsSave(LS.PROD_REC, state.prodRecords);
+  if (typeof renderUnknownProcs === 'function') renderUnknownProcs();   // refresh รายการ process พิมพ์เอง ถ้าหน้าตั้งค่าเปิดอยู่
   if (API) {
     showBusy('กำลังบันทึกการแก้ไข…');
     try {
@@ -5415,6 +5529,9 @@ function renderSettings() {
   // เฉพาะตอนที่หน้าตั้งค่าเปิดอยู่จริงเท่านั้น — setPane จะเปิดหน้าก่อนเรียก จึงทำงานปกติ
   if (document.querySelector('section.pane.active')?.id !== 'pane-settings') return;
   if ($('apiUrl')) $('apiUrl').value = API;
+  if ($('settingsUser')) $('settingsUser').textContent = CURRENT_USER
+    ? `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[myVsm()] || myVsm()}`
+    : 'ยังไม่ได้เข้าใช้งาน';
   renderZoneTargets();
   // Local data counts
   if ($('lsKpiCount'))   $('lsKpiCount').textContent   = state.kpiRecords.length;
@@ -5423,6 +5540,7 @@ function renderSettings() {
   if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
   renderValveList(); renderIdList(); renderEmployeeList(); renderMachineList();
   renderUnknownValves();
+  renderUnknownProcs();
   renderPostFgJobs();
   initSettingsCollapse();
 }
@@ -5480,6 +5598,54 @@ function addValveFromUnknown(vn) {
   openValveModal();                              // โหมดเพิ่มวาล์วใหม่
   const f = $('m_v');
   if (f) { f.value = vn; f.removeAttribute('readonly'); f.style.background = ''; }
+}
+
+/* ===== แจ้งเตือน: Process ที่พนักงานพิมพ์เอง ไม่ตรงตัวเลือกของวาล์ว (งานเก่าก่อนอัปเดต) =====
+   วาล์วต้องมีในระบบ (รู้ชุด process) — กด "แก้ไข" → เปิดหน้าแก้ไข Record ให้เลือก process ที่ถูก
+   พอแก้ครบ รายการจะหายไปเอง (สแกนใหม่ทุกครั้ง) ===== */
+function renderUnknownProcs() {
+  const box = $('unknownProcAlert');
+  if (!box) return;
+  const procKey = p => _procCanon(String(p).trim()).toLowerCase();   // รวม alias (& vs /) + ไม่สนตัวพิมพ์
+  const procMap = {};   // valveNo(UPPER) → Set(process ที่ถูกต้อง)
+  for (const v of state.valves) {
+    const k = (v.valveNo || '').toUpperCase();
+    if (k) procMap[k] = new Set((v.processes || []).filter(Boolean).map(procKey));
+  }
+  const rows = [];
+  for (const r of state.prodRecords) {
+    const vn   = (r.valve_no || r.valveNo || '').trim();
+    const proc = (r.current_process || r.currentProcess || '').trim();
+    if (!vn || !proc) continue;
+    const opts = procMap[vn.toUpperCase()];
+    // ข้าม: วาล์วไม่รู้จัก (ไปกล่อง Valve) · วาล์วยังไม่ตั้งค่า process (ตัดสินไม่ได้) · process ตรงตัวเลือกแล้ว
+    if (!opts || opts.size === 0 || opts.has(procKey(proc))) continue;
+    rows.push({ rid: r.record_id, valve: vn, lot: r.lot || '', proc, qty: r.quantity || 0,
+                when: r.timestamp || r.saved_at || '', by: r.operator || r.emp_id || '' });
+  }
+  if (!rows.length) { box.innerHTML = ''; return; }
+  rows.sort((a, b) => (b.when || '').localeCompare(a.when || ''));
+  const CAP = 50, list = rows.slice(0, CAP), more = rows.length - list.length;
+  box.innerHTML = `
+    <div class="card" style="border:1.5px solid #FDE047;background:#FEFCE8;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:22px;line-height:1">📝</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:#854D0E">Process ที่พนักงานพิมพ์เอง (${rows.length})</div>
+          <div style="font-size:11px;color:var(--muted)">งานเก่าที่ process ไม่ตรงตัวเลือกของวาล์ว — กด "แก้ไข" เพื่อเข้าไปเลือก process ที่ถูกต้อง${more>0?` · แสดง ${CAP} รายการล่าสุด`:''}</div>
+        </div>
+      </div>
+      ${list.map(u => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FEF08A">
+          <div style="min-width:0">
+            <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(u.valve)} · <span style="color:#A16207">"${escapeHtml(u.proc)}"</span></div>
+            <div style="font-size:10.5px;color:var(--muted)">Lot: ${escapeHtml(u.lot||'-')} · ${nn(u.qty)} ชิ้น${u.by?` · โดย ${escapeHtml(u.by)}`:''}${u.when?` · ${new Date(u.when).toLocaleDateString('th-TH')}`:''}</div>
+          </div>
+          <button class="btn btn-blue btn-sm" style="flex-shrink:0" onclick="editProdRecord('${escapeHtml(String(u.rid)).replace(/'/g,"\\'")}')">✏️ แก้ไข</button>
+        </div>
+      `).join('')}
+      ${more > 0 ? `<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FEF08A">…และอีก ${more} รายการ</div>` : ''}
+    </div>`;
 }
 
 /* ===== แก้ไข Valve No ที่พิมพ์ผิด → แก้ทุก record ให้เป็นเลขที่ถูกต้อง =====
