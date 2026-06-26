@@ -302,6 +302,8 @@ tbody tr:last-child td{border-bottom:none}
 .pf-lg-done::before{background:#22C55E}
 .pf-lg-next{background:#FEF9C3;color:#854D0E;border:1px solid #FDE047}
 .pf-lg-next::before{background:#FACC15}
+.pf-lg-auto{background:var(--green-bg);color:#065F46;border:1px dashed #16A34A}
+.pf-lg-auto::before{background:#22C55E}
 .pf-tblwrap{margin-top:6px;border:1px solid var(--border);border-radius:var(--r-sm);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .pf-table{border-collapse:collapse;width:100%;min-width:max-content;font-variant-numeric:tabular-nums}
 .pf-table th,.pf-table td{border:1px solid var(--border);text-align:center;white-space:nowrap}
@@ -310,6 +312,8 @@ tbody tr:last-child td{border-bottom:none}
 .pf-td-lot{padding:7px 12px;font-size:12px;font-weight:800;color:var(--blue-dark);background:var(--card);text-align:left;position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--border)}
 .pf-cell{padding:7px 10px;font-size:13px;font-weight:700;color:var(--muted2);min-width:48px}
 .pf-cell.pf-done{background:#BBF7D0;color:#065F46;font-weight:800}
+/* จบงานแล้ว → ช่อง QC เขียวอัตโนมัติ (ยอดตาม Process สุดท้าย) — วงในจางๆ บอกว่าเป็นยอดอนุมานจากการจบงาน */
+.pf-cell.pf-auto{background:#BBF7D0;color:#065F46;font-weight:800;box-shadow:inset 0 0 0 2px #4ADE80}
 .pf-cell.pf-next{background:#FDE047}
 .pf-postfg{margin-top:8px;font-size:12px;font-weight:600;color:var(--muted)}
 /* แตะได้: Lot (แก้เลข) · ตัวเลข (ดูเครื่อง/วันที่/ยอด) · หมายเหตุ (process พิมพ์เอง) */
@@ -549,7 +553,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div>
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.5</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.6</div>
     </div>
     <div class="row" style="gap:6px;align-items:center">
       <span class="user-chip" id="userChip" style="display:none">
@@ -689,8 +693,9 @@ tbody tr:last-child td{border-bottom:none}
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 10px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--blue-dark);margin-bottom:7px"><span>🗓️</span><span>ช่วงเวลาที่แสดง</span></div>
       <div class="row" id="procPresets" style="gap:6px;flex-wrap:wrap;margin-bottom:7px">
-        <button type="button" class="btn btn-sm btn-blue prchip"   data-prk="today" onclick="setProcPreset('today')">วันนี้</button>
-        <button type="button" class="btn btn-sm btn-outline prchip" data-prk="week"  onclick="setProcPreset('week')">7 วันล่าสุด</button>
+        <button type="button" class="btn btn-sm btn-blue prchip"   data-prk="today"     onclick="setProcPreset('today')">วันนี้</button>
+        <button type="button" class="btn btn-sm btn-outline prchip" data-prk="yesterday" onclick="setProcPreset('yesterday')">เมื่อวาน</button>
+        <button type="button" class="btn btn-sm btn-outline prchip" data-prk="week"      onclick="setProcPreset('week')">7 วันล่าสุด</button>
         <button type="button" class="btn btn-sm btn-outline prchip" data-prk="month" onclick="setProcPreset('month')">เดือนนี้</button>
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -2761,11 +2766,12 @@ function _markProcPreset(kind) {
 }
 function setProcPreset(kind) {
   const today = todayISO();
-  let from = today;
-  if (kind === 'week')  { const d = new Date(); d.setDate(d.getDate() - 6); from = _procIso(d); }
+  let from = today, to = today;
+  if (kind === 'yesterday') { const d = new Date(); d.setDate(d.getDate() - 1); from = to = _procIso(d); }
+  else if (kind === 'week')  { const d = new Date(); d.setDate(d.getDate() - 6); from = _procIso(d); }
   else if (kind === 'month') { from = today.slice(0, 7) + '-01'; }
   if ($('procFrom')) $('procFrom').value = from;
-  if ($('procTo'))   $('procTo').value   = today;
+  if ($('procTo'))   $('procTo').value   = to;
   _markProcPreset(kind);
   refreshProcOutput();
 }
@@ -4969,13 +4975,28 @@ async function searchProcess() {
     _spCols = cols; _spLotData = lotData;   // ให้ปุ่มกด (showSpDetail/showSpRemark/editLotName) อ้างถึงด้วย index
     const head = `<tr><th class="pf-th-lot">Lot</th>${cols.map(c => `<th class="pf-th">${escapeHtml(c)}</th>`).join('')}${hasRemark ? '<th class="pf-th">หมายเหตุ</th>' : ''}</tr>`;
     const postFgNotes = [];
+    let hasAutoQc = false;   // มีช่อง QC ที่เติมเขียวอัตโนมัติเพราะจบงานหรือไม่ (ใช้โชว์คำอธิบาย)
     const rowsHtml = lotData.map((ld, ri) => {
       // ช่องแรก (ซ้ายสุด) ที่ยังไม่มียอด = เหลือง (ขั้นถัดไป/ค้าง) · ถ้ามียอดครบทุกช่อง = ไม่มีเหลือง
       let nextIdx = -1;
       for (let i = 0; i < cols.length; i++) { if (!(ld.qtyByProc[cols[i]] > 0)) { nextIdx = i; break; } }
+      // จบงานแล้ว (ระบบหลัง FG = DONE) → ช่อง QC เขียวอัตโนมัติ ยอด = Process สุดท้ายในตาราง
+      //   (ช่องขวาสุดที่มียอด ไม่นับ QC เอง) เพื่อให้ช่อง QC ไม่ค้างเหลืองทั้งที่งานจบแล้ว
+      const isDone = getJobProc(ld.valveNo, ld.lot) === 'DONE';
+      let lastProcQty = 0;
+      if (isDone) {
+        for (let i = cols.length - 1; i >= 0; i--) {
+          if (cols[i] === 'QC') continue;
+          if (ld.qtyByProc[cols[i]] > 0) { lastProcQty = ld.qtyByProc[cols[i]]; break; }
+        }
+      }
       const tds = cols.map((c, i) => {
         const q = ld.qtyByProc[c] || 0;
         if (q > 0)         return `<td class="pf-cell pf-done pf-click" onclick="showSpDetail(${ri},${i})">${nn(q)}</td>`;
+        if (c === 'QC' && isDone && lastProcQty > 0) {
+          hasAutoQc = true;
+          return `<td class="pf-cell pf-auto" title="จบงานแล้ว — ยอดตาม Process สุดท้าย">✓ ${nn(lastProcQty)}</td>`;
+        }
         if (i === nextIdx) return `<td class="pf-cell pf-next"></td>`;
         return `<td class="pf-cell"></td>`;
       }).join('');
@@ -5003,7 +5024,7 @@ async function searchProcess() {
     const tableHtml = lotData.length
       ? `<div class="tbl-wrap pf-tblwrap"><table class="pf-table">${head}${rowsHtml}</table></div>${postFgNotes.join('')}`
       : '<div class="muted mt-8">ยังไม่มี Production records</div>';
-    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}</div>` : '';
+    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}</div>` : '';
     const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}</div>` : '';
     $('searchResult').innerHTML = `
       <div class="card" style="margin-bottom:0">
