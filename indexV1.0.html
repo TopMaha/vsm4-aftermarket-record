@@ -366,13 +366,22 @@ tbody tr:last-child td{border-bottom:none}
 .lock-foot{margin-top:18px;font-size:11px;color:#94A3B8}
 
 /* ===== USER CHIP ===== */
-.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700;min-width:0}
-.user-chip .av{width:22px;height:22px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0}
+.user-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 4px;border-radius:999px;background:rgba(255,255,255,.18);font-size:12px;font-weight:700;min-width:0;flex:0 1 auto}
+.user-chip .av{width:24px;height:24px;border-radius:50%;background:#fff;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0}
+.user-vsm{flex-shrink:0;background:rgba(255,255,255,.22);border-radius:6px;padding:1px 7px;font-size:10px;font-weight:800;letter-spacing:.3px}
 /* กันชื่อยาวดัน header ล้นจอ → ตัด … แทน */
-#userName{display:inline-block;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+#userName{display:inline-block;flex:0 1 auto;min-width:0;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+/* ----- HEADER แถวที่ 1: ชื่อ (ซ้าย) + ปุ่มไอคอน (ขวา) ----- */
 .hdr-row{min-width:0}
 .hdr-row>div{min-width:0}
-.hdr-row .row{flex-shrink:1;min-width:0}
+.hdr-titlewrap{min-width:0;flex:1 1 auto}
+.hdr-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+/* ----- HEADER แถวที่ 2: ตัวตนผู้ใช้ (ซ้าย) + สถานะ/ออกจากระบบ (ขวา) — แยกชัด ไม่ทับกัน ----- */
+.hdr-row2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;min-width:0}
+.hdr-row2-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-logout{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.55);background:rgba(255,255,255,.16);color:#fff;cursor:pointer;font-size:13px;font-weight:800;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.hdr-logout:hover{background:rgba(255,255,255,.3)}
+.hdr-logout:active{transform:scale(.96)}
 
 /* ===== ZONE-KPI CARDS ===== */
 .zkpi-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;overflow:hidden;position:relative}
@@ -551,21 +560,26 @@ tbody tr:last-child td{border-bottom:none}
 <!-- ============== HEADER ============== -->
 <header class="hdr">
   <div class="hdr-row">
-    <div>
+    <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
       <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.6</div>
     </div>
-    <div class="row" style="gap:6px;align-items:center">
-      <span class="user-chip" id="userChip" style="display:none">
-        <span class="av" id="userAv">?</span>
-        <span id="userVsm" style="background:rgba(255,255,255,.22);border-radius:6px;padding:1px 7px;font-size:10px;font-weight:800;letter-spacing:.3px"></span>
-        <span id="userName">—</span>
-        <button onclick="lockOut()" style="background:rgba(255,255,255,.18);border:none;color:#fff;cursor:pointer;font-size:12px;font-weight:800;padding:3px 9px;border-radius:8px;margin-left:2px;white-space:nowrap" title="ออกจากระบบ">⏏ ออก</button>
-      </span>
-      <span class="badge" id="connBadge"><span class="dot"></span><span id="connText">เชื่อมต่อ…</span></span>
-      <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่">🔄</button>
-      <button class="hdr-icon-btn" onclick="setPane('settings')" title="ตั้งค่า">⚙️</button>
+    <div class="hdr-actions">
+      <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
+      <button class="hdr-icon-btn" onclick="setPane('settings')" title="ตั้งค่า" aria-label="ตั้งค่า">⚙️</button>
     </div>
+  </div>
+  <!-- แถวที่ 2: ตัวตนผู้ใช้ (ซ้าย) + สถานะการเชื่อมต่อ + ปุ่มออกจากระบบ (ขวา) — แยกออกมาให้กดง่าย ไม่ทับกัน -->
+  <div class="hdr-row2" id="userChip" style="display:none">
+    <span class="user-chip">
+      <span class="av" id="userAv">?</span>
+      <span id="userVsm" class="user-vsm"></span>
+      <span id="userName">—</span>
+    </span>
+    <span class="hdr-row2-right">
+      <span class="badge" id="connBadge"><span class="dot"></span><span id="connText">เชื่อมต่อ…</span></span>
+      <button class="hdr-logout" onclick="lockOut()" title="ออกจากระบบ" aria-label="ออกจากระบบ">⏏ ออก</button>
+    </span>
   </div>
 </header>
 
@@ -2454,7 +2468,7 @@ function hideLock() {
   document.getElementById('lockOverlay').classList.add('hide');
   if (CURRENT_USER) {
     const c = document.getElementById('userChip');
-    c.style.display = 'inline-flex';
+    c.style.display = 'flex';
     document.getElementById('userAv').textContent = (CURRENT_USER.id || '?').slice(0, 2).toUpperCase();
     document.getElementById('userName').textContent = CURRENT_USER.name || CURRENT_USER.id;
     // แสดง VSM ของผู้ใช้ (auto — ไม่ต้องเลือกเอง)
