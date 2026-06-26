@@ -312,6 +312,13 @@ tbody tr:last-child td{border-bottom:none}
 .pf-cell.pf-done{background:#BBF7D0;color:#065F46;font-weight:800}
 .pf-cell.pf-next{background:#FDE047}
 .pf-postfg{margin-top:8px;font-size:12px;font-weight:600;color:var(--muted)}
+/* แตะได้: Lot (แก้เลข) · ตัวเลข (ดูเครื่อง/วันที่/ยอด) · หมายเหตุ (process พิมพ์เอง) */
+.pf-click{cursor:pointer;-webkit-tap-highlight-color:rgba(37,99,235,.25)}
+.pf-click:hover{outline:2px solid var(--blue);outline-offset:-2px}
+.pf-td-lot.pf-click{text-decoration:underline;text-decoration-style:dotted;text-decoration-color:var(--blue);text-underline-offset:2px}
+.pf-cell.pf-remark{background:#FEF3C7;color:#92400E;font-weight:700;font-size:11px;text-align:left;max-width:230px;white-space:normal;line-height:1.4}
+.pf-lg-remark{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.pf-lg-remark::before{background:#F59E0B}
 
 /* ===== UTIL ===== */
 .row{display:flex;align-items:center;gap:8px}
@@ -542,7 +549,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div>
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.3</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.4</div>
     </div>
     <div class="row" style="gap:6px;align-items:center">
       <span class="user-chip" id="userChip" style="display:none">
@@ -703,7 +710,7 @@ tbody tr:last-child td{border-bottom:none}
     <div class="fg">
       <div class="fr ac">
         <label>Valve No</label>
-        <input type="search" id="searchValve" placeholder="เช่น VF1349M0" oninput="acValveSearch(event,'searchValve')" autocomplete="off">
+        <input type="search" id="searchValve" placeholder="เช่น VF1349M0 (พิมพ์บางส่วนได้)" oninput="acProcValveSearch(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();searchProcess();}" onblur="acClose('searchValve')" autocomplete="off">
         <div class="ac-dd" id="searchValve_dd"></div>
       </div>
       <div class="fr" style="display:flex;align-items:flex-end">
@@ -1403,6 +1410,11 @@ function ensureSeedEmployees() {
 /* cache row สำหรับ edit/delete ในหน้าประวัติ */
 let _histKpiRows  = [];
 let _histProdRows = [];
+// ===== หน้า "ค้นหา Process จาก Valve No" — เก็บ state ให้ปุ่มกด (แก้ Lot / ดูรายละเอียด / แก้ process พิมพ์เอง) =====
+let _spRecords = [];   // records ของวาล์วล่าสุด (normalize record_id แล้ว — ใช้ทั้งดูรายละเอียดและแก้ไข)
+let _spValve   = null; // วาล์วที่กำลังแสดง
+let _spCols    = [];   // คอลัมน์ process ที่อยู่ใน flow ของวาล์ว
+let _spLotData = [];   // ข้อมูลต่อ lot (qtyByProc / offByProc) สำหรับ index จาก onclick
 
 /* ===== HARDCODED API URL + ADMIN LOCK ===== */
 const DEFAULT_API_URL  = 'https://vsm4-api.wiphawas-sketchup.workers.dev';
@@ -2595,7 +2607,7 @@ async function reload() {
         api(`/api/plans?limit=5000`).catch(()=>null),
       ]);
       if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
-      if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+      if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
       if (pl?.plans)  { state.plans = pl.plans; lsSave(LS.PLANS, state.plans); }
     } catch (e) {}
 
@@ -3314,10 +3326,13 @@ function mergeRecords(local, remote, idKey) {
   const ids = new Set(remote.map(r => r[idKey] || r.record_id));
   const remaining = local.filter(r => !ids.has(r[idKey] || r.record_id));
   // กรอง tombstones ออก (records ที่ถูกลบแล้ว ไม่ควร sync กลับ)
-  return [...remote, ...remaining].filter(r => {
-    const rid = r.record_id || r[idKey];
-    return !_deletedKpiIds.has(rid) && !_deletedProdIds.has(rid);
-  });
+  // + การันตี record_id ทุกแถว (prod API คืน recordId อย่างเดียว) เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ
+  return [...remote, ...remaining]
+    .map(r => r.record_id ? r : { ...r, record_id: r[idKey] })
+    .filter(r => {
+      const rid = r.record_id || r[idKey];
+      return !_deletedKpiIds.has(rid) && !_deletedProdIds.has(rid);
+    });
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && API) {
@@ -4834,15 +4849,56 @@ async function _saveSlotsImpl() {
   }
 }
 
+// Autocomplete ของช่อง "ค้นหา Process จาก Valve No"
+//   • รวมวาล์วจาก Master + วาล์วที่ "มีข้อมูลผลิตจริง" → ขึ้น dropdown ได้แม้รายการวาล์วยังไม่โหลด
+//   • เลือกแล้วค้นหาให้ทันที · ถ้าไม่พบ/ยังไม่โหลด จะมีข้อความบอกแทนที่จะเงียบ
+function acProcValveSearch(ev) {
+  const q  = (ev.target.value || '').trim().toLowerCase();
+  const dd = $('searchValve_dd');
+  if (!dd) return;
+  if (!q) { dd.classList.remove('open'); return; }
+  const seen = new Set();
+  const list = [];
+  for (const v of state.valves) {                         // 1) จาก Master valve
+    const no = (v.valveNo || '').trim(); if (!no) continue;
+    const k = no.toLowerCase();
+    if (!seen.has(k) && (k.includes(q) || (v.description || '').toLowerCase().includes(q))) {
+      seen.add(k);
+      list.push({ id: no, valveNo: no, description: `${v.customer || ''}${v.description ? ' · ' + v.description : ''}` });
+      if (list.length >= 12) break;
+    }
+  }
+  if (list.length < 12) {                                 // 2) จากข้อมูลผลิตจริง (เผื่อ Master ยังไม่โหลด)
+    for (const r of filterVsm(state.prodRecords)) {
+      const no = (r.valve_no || r.valveNo || '').trim(); if (!no) continue;
+      const k = no.toLowerCase();
+      if (!seen.has(k) && k.includes(q)) {
+        seen.add(k);
+        list.push({ id: no, valveNo: no, description: 'มีข้อมูลผลิต' });
+        if (list.length >= 12) break;
+      }
+    }
+  }
+  if (!list.length) {
+    dd.innerHTML = `<div class="ac-item" style="cursor:default;color:var(--muted)"><span class="ac-nm">${state.valves.length ? 'ไม่พบวาล์วที่ตรงกับคำค้น' : 'ยังไม่ได้โหลดรายการวาล์ว — กด “☁️ ดึงจาก Cloud” หรือเข้าสู่ระบบใหม่'}</span></div>`;
+    dd.classList.add('open');
+    return;
+  }
+  acDropdown('searchValve', list, function pickSearchValve(it, inputId) {
+    document.getElementById(inputId).value = it.valveNo;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+    searchProcess();   // เลือกแล้วค้นหาให้เลย
+  });
+}
 async function searchProcess() {
   const q = $('searchValve').value.trim();
   if (!q) return;
+  $('searchValve_dd')?.classList.remove('open');   // ปิด dropdown ที่อาจค้างอยู่
   try {
-    const valve = state.valves.find(v => v.valveNo.toLowerCase() === q.toLowerCase());
-    if (!valve) { $('searchResult').innerHTML = `<div class="muted center">ไม่พบ Valve "${escapeHtml(q)}"</div>`; return; }
+    let valve = state.valves.find(v => (v.valveNo || '').toLowerCase() === q.toLowerCase());
     // ดึง records จาก LocalStorage หรือ API ถ้าออนไลน์
-    let records = filterVsm(state.prodRecords).filter(r => r.valve_no && r.valve_no.toLowerCase() === q.toLowerCase())
-      .map(r => ({ ...r, valveNo: r.valve_no, currentProcess: r.current_process }));
+    let records = filterVsm(state.prodRecords).filter(r => (r.valve_no || r.valveNo) && (r.valve_no || r.valveNo).toLowerCase() === q.toLowerCase())
+      .map(r => ({ ...r, valveNo: r.valve_no || r.valveNo, currentProcess: r.current_process || r.currentProcess }));
     if (API) {
       try {
         const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
@@ -4850,6 +4906,21 @@ async function searchProcess() {
       } catch (e) { /* fallback to local */ }
       await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
     }
+    // ถ้าเบอร์นี้ไม่มีใน Master valve (เช่นรายการวาล์วยังไม่โหลด) แต่มีข้อมูลผลิตจริง
+    //   → สร้างวาล์วชั่วคราวจาก process ที่พบในงาน เพื่อให้ยังค้นหา/แสดงผลได้
+    if (!valve) {
+      if (!records.length) {
+        $('searchResult').innerHTML = `<div class="muted center">ไม่พบ Valve "${escapeHtml(q)}"${state.valves.length ? '' : ' — ยังไม่ได้โหลดรายการวาล์ว ลองกด “☁️ ดึงจาก Cloud” หรือเข้าสู่ระบบใหม่'}</div>`;
+        return;
+      }
+      const procs = [...new Set(records.map(r => _procCanon(((r.currentProcess || r.current_process || '') + '').trim())).filter(Boolean))]
+        .sort((a, b) => _procRank(a) - _procRank(b));
+      valve = { valveNo: q.toUpperCase(), customer: 'ไม่มีใน Master', description: '', processes: procs };
+    }
+    // normalize record_id (API คืน recordId) + เก็บไว้ให้ปุ่มกด (ดูรายละเอียด/แก้ Lot/แก้ process พิมพ์เอง)
+    records = records.map(r => ({ ...r, record_id: r.record_id || r.recordId, valveNo: r.valveNo || r.valve_no, currentProcess: r.currentProcess || r.current_process }));
+    _spRecords = records;
+    _spValve   = valve;
     // จับกลุ่มตาม "lot + process" แล้วรวมยอด → แสดงทุก process ที่ลงไว้
     // เดิมยุบตาม lot อย่างเดียวแล้วเก็บแถวล่าสุด → ยอดที่ process ก่อนหน้าหาย
     //   (เช่น เห็นแค่ SFG 1400 ทั้งที่มี FG 1800 ด้วย) · ตอนนี้แตกเป็น 1 แถว/process ตามยอดที่ลงจริง
@@ -4874,32 +4945,51 @@ async function searchProcess() {
 
     // ===== แสดงผลแบบตาราง: คอลัมน์ = Process ของ valve · แถว = Lot · ช่อง = ยอด OPR =====
     //   • ช่องที่มียอด = เขียว · "ช่องแรกที่ยังไม่มียอด" ของแต่ละ lot = เหลือง (ขั้นถัดไป/ค้าง)
-    //   • เลื่อนแนวนอนในการ์ดได้ถ้าคอลัมน์เยอะ · คอลัมน์ Lot ปักหมุดซ้ายให้เห็นตลอด
+    //   • process ที่พนักงานพิมพ์เอง (ไม่อยู่ใน flow ของวาล์ว เช่น Remove/RES) → ยุบรวมเป็นช่อง "หมายเหตุ" ท้ายตาราง
+    //   • แตะ Lot = แก้เลข lot · แตะตัวเลข = ดูเครื่อง/วันที่/ยอด · แตะหมายเหตุ = ดู+แก้ process ที่พิมพ์เอง
     const procSeq = (valve.processes || []).map(p => _procCanon(String(p).trim())).filter(Boolean);
-    const extraSet = new Set();   // process ที่มีในงานจริงแต่ไม่อยู่ใน flow ของ valve → ต่อท้ายเป็นคอลัมน์เสริม
     const lotData = [];
+    let hasRemark = false;
     for (const lk of lotOrder) {
       const groups = rowsByLot[lk] || [];
       const lm = lotMeta[lk];
       const lotLabel = (groups[0] && groups[0].lot) || lm.lot || '-';
-      const qtyByProc = {};
-      for (const g of groups) { const c = _procCanon(g.proc); qtyByProc[c] = (qtyByProc[c] || 0) + (Number(g.qty) || 0); }
-      Object.keys(qtyByProc).forEach(c => { if (qtyByProc[c] > 0 && !procSeq.includes(c)) extraSet.add(c); });
-      lotData.push({ lot: lotLabel, qtyByProc, valveNo: lm.valveNo });
+      const qtyByProc = {};   // เฉพาะ process ที่อยู่ใน flow ของวาล์ว
+      const offByProc = {};   // process ที่พนักงานพิมพ์เอง (นอก flow) → ยุบเป็นหมายเหตุ
+      for (const g of groups) {
+        const c = _procCanon(g.proc);
+        const q = Number(g.qty) || 0;
+        if (procSeq.includes(c))      qtyByProc[c] = (qtyByProc[c] || 0) + q;
+        else if (q > 0)               offByProc[c] = (offByProc[c] || 0) + q;   // เก็บ '-' (ไม่ระบุ) ด้วย กันยอดหาย
+      }
+      if (Object.keys(offByProc).length) hasRemark = true;
+      lotData.push({ lk, lot: lotLabel, qtyByProc, offByProc, valveNo: lm.valveNo });
     }
-    const cols = procSeq.concat([...extraSet].sort((a, b) => _procRank(a) - _procRank(b)));
-    const head = `<tr><th class="pf-th-lot">Lot</th>${cols.map(c => `<th class="pf-th">${escapeHtml(c)}</th>`).join('')}</tr>`;
+    const cols = procSeq.slice();
+    _spCols = cols; _spLotData = lotData;   // ให้ปุ่มกด (showSpDetail/showSpRemark/editLotName) อ้างถึงด้วย index
+    const head = `<tr><th class="pf-th-lot">Lot</th>${cols.map(c => `<th class="pf-th">${escapeHtml(c)}</th>`).join('')}${hasRemark ? '<th class="pf-th">หมายเหตุ</th>' : ''}</tr>`;
     const postFgNotes = [];
-    const rowsHtml = lotData.map(ld => {
+    const rowsHtml = lotData.map((ld, ri) => {
       // ช่องแรก (ซ้ายสุด) ที่ยังไม่มียอด = เหลือง (ขั้นถัดไป/ค้าง) · ถ้ามียอดครบทุกช่อง = ไม่มีเหลือง
       let nextIdx = -1;
       for (let i = 0; i < cols.length; i++) { if (!(ld.qtyByProc[cols[i]] > 0)) { nextIdx = i; break; } }
       const tds = cols.map((c, i) => {
         const q = ld.qtyByProc[c] || 0;
-        if (q > 0)         return `<td class="pf-cell pf-done">${nn(q)}</td>`;
+        if (q > 0)         return `<td class="pf-cell pf-done pf-click" onclick="showSpDetail(${ri},${i})">${nn(q)}</td>`;
         if (i === nextIdx) return `<td class="pf-cell pf-next"></td>`;
         return `<td class="pf-cell"></td>`;
       }).join('');
+      // ช่องหมายเหตุ: รวม process ที่พนักงานพิมพ์เอง — แตะเพื่อดู/แก้
+      let remarkTd = '';
+      if (hasRemark) {
+        const offKeys = Object.keys(ld.offByProc);
+        if (offKeys.length) {
+          const chips = offKeys.map(c => `${escapeHtml(c === '-' ? '(ไม่ระบุ)' : c)}${ld.offByProc[c] > 0 ? ' ' + nn(ld.offByProc[c]) : ''}`).join(' · ');
+          remarkTd = `<td class="pf-cell pf-remark pf-click" onclick="showSpRemark(${ri})" title="แตะเพื่อดู/แก้ไข">📝 ${chips}</td>`;
+        } else {
+          remarkTd = `<td class="pf-cell"></td>`;
+        }
+      }
       // ส่งต่อหลัง FG (admin ขยับงาน) — คงฟีเจอร์เดิมไว้เป็นโน้ตใต้ตาราง
       const ovp = getJobProc(ld.valveNo, ld.lot);
       if (ovp && ovp !== 'FG') {
@@ -4908,23 +4998,181 @@ async function searchProcess() {
         const od = getJobProcDate(ld.valveNo, ld.lot);
         postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${PROC_DEPT[ovp] ? ' · ' + PROC_DEPT[ovp] : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
       }
-      return `<tr><td class="pf-td-lot">${escapeHtml(ld.lot)}</td>${tds}</tr>`;
+      return `<tr><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}</td>${tds}${remarkTd}</tr>`;
     }).join('');
     const tableHtml = lotData.length
       ? `<div class="tbl-wrap pf-tblwrap"><table class="pf-table">${head}${rowsHtml}</table></div>${postFgNotes.join('')}`
       : '<div class="muted mt-8">ยังไม่มี Production records</div>';
-    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span></div>` : '';
+    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}</div>` : '';
+    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}</div>` : '';
     $('searchResult').innerHTML = `
       <div class="card" style="margin-bottom:0">
         <div class="card-title"><span class="ci">📋</span>${escapeHtml(valve.valveNo)} — ${escapeHtml(valve.customer)}</div>
         <div class="muted" style="font-size:12px;margin-bottom:6px">${escapeHtml(valve.description||'')}</div>
         <div style="margin-top:4px;font-size:12px;font-weight:800;color:var(--blue)">📦 Lot · Process · ยอด OPR</div>
         ${legend}
+        ${hint}
         ${tableHtml}
       </div>`;
   } catch (e) {
     toast('ค้นหาไม่สำเร็จ: ' + e.message, 'red');
   }
+}
+
+/* ============================================================
+   ค้นหา Process — ปุ่มกดในตาราง (ดูรายละเอียด / แก้ Lot / แก้ process พิมพ์เอง)
+   ============================================================ */
+// เครื่องที่ผลิตเก็บอยู่ใน note ของ prod record เช่น "auto-linked KPI ZONE3/G-2030" → "G-2030"
+function _spMachineFromNote(note) {
+  const m = String(note || '').match(/ZONE\s*\d+\s*[\/|]\s*([A-Za-z0-9\-]+)/i);
+  return m ? m[1] : '';
+}
+// คืน record ของ lot (lk) ที่ process อยู่ในชุด procKeys (canon)
+function _spRecsFor(lk, procKeys) {
+  const keys = new Set(procKeys.map(p => _procCanon(p)));
+  return _spRecords
+    .filter(r => lotKey(r.lot) === lk && keys.has(_procCanon(((r.currentProcess || r.current_process || '') + '').trim() || '-')))
+    .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+}
+// modal รายละเอียด: แต่ละ record = เครื่อง / วันที่ / ยอด / พนักงาน + ปุ่ม ✏️ แก้ไข (เขียนฐานข้อมูล)
+function _spShowRecords(lk, procKeys, title, isOff) {
+  const recs = _spRecsFor(lk, procKeys);
+  if (!recs.length) { toast('ไม่พบรายการ', 'orange'); return; }
+  let total = 0;
+  const rowsH = recs.map(r => {
+    const q = Number(r.quantity) || 0; total += q;
+    const mc = _spMachineFromNote(r.note) || '—';
+    const proc = _procCanon(((r.currentProcess || r.current_process || '') + '').trim() || '-');
+    const dt = r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    const rid = (r.record_id || r.recordId || '').replace(/'/g, "\\'");
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span></div>
+        <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(r.operator || '—')}</div>
+      </div>
+      <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
+      <button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>
+    </div>`;
+  }).join('');
+  openModal('🔎 ' + title, `
+    <div style="max-height:52vh;overflow-y:auto">${rowsH}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:2px solid var(--border)">
+      <span style="font-size:12px;color:var(--muted)">${recs.length} รายการ</span>
+      <span style="font-size:15px;font-weight:800;color:var(--blue)">รวม ${nn(total)} ชิ้น</span>
+    </div>
+    <div class="muted" style="font-size:11px;margin-top:8px">${isOff
+      ? '💡 process เหล่านี้พนักงานพิมพ์เอง (นอก flow ของวาล์ว) — กด ✏️ เพื่อแก้เป็น process ที่ถูกต้อง บันทึกแล้วอัปเดตฐานข้อมูลทันที'
+      : '💡 กด ✏️ เพื่อแก้ไขรายการ — บันทึกแล้วอัปเดตฐานข้อมูลทันที'}</div>
+    <button class="btn btn-outline btn-block mt-12" onclick="closeModal()">ปิด</button>
+  `);
+}
+// แตะตัวเลขในช่อง process → ดูเครื่อง/วันที่/ยอด
+function showSpDetail(ri, ci) {
+  const ld = _spLotData[ri]; if (!ld) return;
+  const proc = _spCols[ci]; if (!proc) return;
+  _spShowRecords(ld.lk, [proc], `${ld.lot} · ${proc}`, false);
+}
+// แตะช่องหมายเหตุ → ดู/แก้ process ที่พนักงานพิมพ์เอง (Remove/RES ฯลฯ)
+function showSpRemark(ri) {
+  const ld = _spLotData[ri]; if (!ld) return;
+  const offKeys = Object.keys(ld.offByProc || {}); if (!offKeys.length) return;
+  _spShowRecords(ld.lk, offKeys, `${ld.lot} · หมายเหตุ`, true);
+}
+// แตะ Lot → แก้เลข lot (เขียนทุก record ของ lot นี้ ทั้ง Local + ฐานข้อมูล)
+function editLotName(ri) {
+  const ld = _spLotData[ri]; if (!ld) return;
+  const pc = _spRecords.filter(r => lotKey(r.lot) === ld.lk).length;
+  openModal('✏️ แก้เลข Lot', `
+    <input type="hidden" id="editLotRi" value="${ri}">
+    <div style="font-size:13px;line-height:1.7;margin-bottom:10px">
+      แก้เลข Lot ของ <b style="color:var(--blue)">${escapeHtml(_spValve?.valveNo || '')}</b>
+      <span class="tag tag-blue">prod ${pc} record</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">ระบบจะแก้ทุก record ของ lot นี้ — ทั้ง <b>Production</b> และ <b>KPI</b> · ทั้ง Local และฐานข้อมูล (D1)</div>
+    </div>
+    <div class="fr"><label>Lot เดิม</label>
+      <input type="text" value="${escapeHtml(ld.lot)}" readonly style="background:#F0F4FF;color:var(--muted)">
+    </div>
+    <div class="fr"><label>Lot ใหม่ *</label>
+      <input type="text" id="editLotNew" value="${escapeHtml(ld.lot)}" autocomplete="off">
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="saveLotRename()">💾 บันทึก</button>
+    </div>
+  `);
+}
+async function saveLotRename() {
+  const ri = +($('editLotRi')?.value ?? -1);
+  const ld = _spLotData[ri]; if (!ld) { toast('ไม่พบ lot', 'red'); return; }
+  const newLot = ($('editLotNew')?.value || '').trim();
+  if (!newLot) { toast('กรอกเลข Lot ใหม่', 'orange'); return; }
+  if (newLot === ld.lot) { toast('เลข Lot เหมือนเดิม', 'orange'); return; }
+  if (!await _confirmEditDialog()) return;
+  const vno = _spValve?.valveNo || '';
+  const vk  = vKey(vno);
+  const now = new Date().toISOString();
+
+  // 1) อัปเดต local ทันที (prod + kpi เท่าที่โหลดมา) เพื่อให้เห็นผลเร็ว
+  for (const r of state.prodRecords) {
+    if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk) { r.lot = newLot; r.updated_at = now; }
+  }
+  for (const r of _spRecords) { if (lotKey(r.lot) === ld.lk) { r.lot = newLot; r.updated_at = now; } }
+  const kpiLocalHit = state.kpiRecords.filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk);
+  for (const r of kpiLocalHit) { r.lot = newLot; r.updated_at = now; }
+  lsSave(LS.PROD_REC, state.prodRecords);
+  lsSave(LS.KPI, state.kpiRecords);
+  closeModal();
+
+  if (!API) { toast(`แก้ Lot เป็น ${newLot} แล้ว (local)`, 'green'); searchProcess(); return; }
+
+  // 2) แก้ใน D1 ให้ครบทั้ง prod + KPI — ดึง "ชุดเต็มของวาล์วนี้" จากฐานข้อมูล
+  //    (กัน record ที่ยังไม่ได้โหลดเข้า local เช่น KPI ที่ไม่ได้อยู่ในหน้าค้นหา)
+  showBusy('กำลังแก้เลข Lot ทั้ง Local และฐานข้อมูล…');
+  let nProd = 0, nKpi = 0;
+  try {
+    // ---- prod: ดึงชุดเต็มจาก D1 → กรองตาม lot → delete แล้ว insert ใหม่ ----
+    let prodAll = [];
+    try {
+      const pr = await api(`/api/records?valve=${encodeURIComponent(vno)}&limit=100000`);
+      prodAll = (pr?.records || []).filter(r => lotKey(r.lot) === ld.lk);
+    } catch (e) { prodAll = _spRecords.filter(r => lotKey(r.lot) === ld.lk); }   // ดึงไม่ได้ → ใช้เท่าที่มี
+    const pMap = new Map();
+    for (const r of prodAll) { const pid = r.recordId || r.record_id; if (pid) pMap.set(pid, r); }
+    for (const r of state.prodRecords) {   // รวม local-only (เพิ่งลงตอน offline) เข้าไปด้วย
+      if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk) { const pid = r.recordId || r.record_id; if (pid && !pMap.has(pid)) pMap.set(pid, r); }
+    }
+    const prodList = [...pMap.values()];
+    for (const r of prodList) { r.lot = newLot; r.updated_at = now; r.valveNo = r.valveNo || r.valve_no || vno; }
+    await _chunkRun(prodList, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(()=>{}) : Promise.resolve(); }, 8);
+    if (prodList.length) await api('/api/records/bulk', { body: { records: prodList } });
+    nProd = prodList.length;
+
+    // ---- kpi: ดึงชุดเต็มจาก D1 (รองรับ ?valve=) → กรองตาม lot → delete แล้ว insert ใหม่ ----
+    let kpiAll = [];
+    try {
+      const kr = await api(`/api/kpi?valve=${encodeURIComponent(vno)}&limit=100000`);
+      kpiAll = (kr?.records || []).filter(r => lotKey(r.lot) === ld.lk);
+    } catch (e) { kpiAll = kpiLocalHit; }
+    const kMap = new Map();
+    for (const r of kpiAll)      { if (r.record_id) kMap.set(r.record_id, r); }
+    for (const r of kpiLocalHit) { if (r.record_id && !kMap.has(r.record_id)) kMap.set(r.record_id, r); }
+    const kpiList = [...kMap.values()];
+    for (const r of kpiList) { r.lot = newLot; r.updated_at = now; r.valve_no = r.valve_no || vno; }
+    await _chunkRun(kpiList, r => r.record_id ? api('/api/kpi/delete', { body: { record_id: r.record_id } }).catch(()=>{}) : Promise.resolve(), 8);
+    if (kpiList.length) await api('/api/kpi', { body: { records: kpiList } });
+    nKpi = kpiList.length;
+
+    hideBusy();
+    toast(`✅ แก้ Lot เป็น ${newLot} — prod ${nProd} · KPI ${nKpi} record`, 'green');
+  } catch (e) {
+    hideBusy();
+    toast('แก้ Local แล้ว — Cloud ไม่สำเร็จ: ' + e.message, 'orange');
+  }
+  searchProcess();   // refresh ตาราง (ดึงของสดกลับ)
+}
+// refresh หน้าค้นหา Process ถ้ากำลังแสดงผลอยู่ (เรียกหลังแก้ไข prod record)
+function _refreshSpIfOpen() {
+  if ($('searchResult') && $('searchResult').innerHTML.trim() && $('searchValve') && $('searchValve').value.trim()) searchProcess();
 }
 function filterByProcess(p) {
   setPane('history');
@@ -4981,7 +5229,7 @@ async function histPullCloud() {
       api('/api/records?from=2020-01-01T00:00:00&to=' + todayISO() + '&limit=5000').catch(()=>null),
     ]);
     if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
-    if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+    if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
     loadHistory();
     toast(`ดึง ${(k?.records?.length||0) + (p?.records?.length||0)} รายการจาก Cloud`, 'green');
   } catch (e) { toast('ดึงไม่สำเร็จ: ' + e.message, 'red'); }
@@ -5022,6 +5270,7 @@ function _syncKpiFromApi(apiRecords, from, to) {
 function _syncProdFromApi(apiRecords, from, to) {
   const norm = apiRecords.map(r => ({
     ...r,
+    record_id: r.record_id||r.recordId||'',   // API คืน recordId (camelCase) — เติม record_id ให้แก้ไข/ลบได้
     valve_no: r.valveNo||r.valve_no||'',
     current_process: r.currentProcess||r.current_process||'',
   }));
@@ -5126,7 +5375,9 @@ function renderKpiHist(rows) {
   </tr>`).join('') || _histEmptyRow(11, 'ข้อมูล KPI');
 }
 function renderProdHist(rows) {
-  rows = filterVsm(rows);   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด)
+  // prod record จาก API ใช้คีย์ recordId (camelCase) ไม่มี record_id → ปุ่ม ✏️/🗑️ จะได้ id ว่าง
+  // ทำให้กดแก้ไขแล้วขึ้น "ไม่พบข้อมูล" — เติม record_id ให้ครบก่อน render
+  rows = filterVsm(rows).map(r => r.record_id ? r : { ...r, record_id: r.recordId });
   _histProdRows = rows;
   const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
   $('histCount').textContent = view.length;
@@ -5409,7 +5660,8 @@ async function saveKpiEdit() {
    ============================================================ */
 function editProdRecord(rid) {
   const r = _histProdRows.find(x => x.record_id === rid)
-         || state.prodRecords.find(x => x.record_id === rid);
+         || state.prodRecords.find(x => x.record_id === rid)
+         || _spRecords.find(x => (x.record_id || x.recordId) === rid);   // มาจากหน้าค้นหา Process
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
   const statusOpts = ['In Progress','Completed','Cancelled'].map(s =>
     `<option value="${s}" ${(r.status||'')=== s?'selected':''}>${s}</option>`).join('');
@@ -5481,7 +5733,12 @@ async function saveProdEdit() {
   // FIX 5: confirmation before saving edit
   if (!await _confirmEditDialog()) return;
   const rid = $('editProdRid').value;
-  const idx = state.prodRecords.findIndex(x => x.record_id === rid);
+  let idx = state.prodRecords.findIndex(x => x.record_id === rid);
+  if (idx < 0) {
+    // record มาจากหน้าค้นหา Process (ยังไม่อยู่ใน state) → ดึงเข้ามาก่อนแก้ เพื่อให้ delete+reinsert ทำงาน
+    const sp = _spRecords.find(x => (x.record_id || x.recordId) === rid);
+    if (sp) { state.prodRecords.push({ ...sp, record_id: rid }); idx = state.prodRecords.length - 1; }
+  }
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
   const valve = $('editProdValve').value.trim();
   let proc = $('editProdProc').value;
@@ -5508,15 +5765,15 @@ async function saveProdEdit() {
       await api('/api/records/delete', { body: { record_id: rid } });
       await api('/api/records/bulk', { body: { records: [state.prodRecords[idx]] } });
       hideBusy();
-      closeModal(); loadHistory();
+      closeModal(); loadHistory(); _refreshSpIfOpen();
       toast('✅ แก้ไข + อัพเดต Cloud สำเร็จ', 'green');
     } catch (e) {
       hideBusy();
-      closeModal(); loadHistory();
+      closeModal(); loadHistory(); _refreshSpIfOpen();
       toast('แก้ไข Local แล้ว — Cloud ไม่สำเร็จ: ' + e.message, 'orange');
     }
   } else {
-    closeModal(); loadHistory();
+    closeModal(); loadHistory(); _refreshSpIfOpen();
     toast('แก้ไขแล้ว (local)', 'green');
   }
 }
