@@ -562,7 +562,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.7</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.8</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1481,6 +1481,23 @@ function setConnBadge(mode) {
   if (mode === 'online') { b.className = 'badge online'; t.textContent = 'Online (D1)'; }
   else if (mode === 'local') { b.className = 'badge local'; t.textContent = 'Local (LocalStorage)'; }
   else { b.className = 'badge'; t.textContent = mode || 'รอ…'; }
+}
+
+/* heartbeat: เช็กการเชื่อมต่อ Worker เป็นระยะ แล้วอัปเดต badge ให้ตรง "ความจริง" (self-heal)
+   เดิม badge เช็กแค่ครั้งเดียวตอนเปิดแอป — ถ้าเน็ตสะดุดตอนเปิด จะค้าง "Local" ตลอด
+   แม้เน็ตกลับมาแล้ว ทั้งที่จริงๆ ยังบันทึกขึ้น Cloud ได้ */
+let _hbBusy = false;
+async function _heartbeatConn() {
+  if (!API || _hbBusy) return;
+  _hbBusy = true;
+  try {
+    await api('/api/ping', { silent: true });   // เงียบ ไม่โชว์แถบโหลด
+    if (!state.online) setConnBadge('online');   // เชื่อมต่อได้ → online
+  } catch (e) {
+    if (state.online) setConnBadge('local');     // หลุด → local (ข้อมูลยังเซฟ local ได้ปกติ)
+  } finally {
+    _hbBusy = false;
+  }
 }
 
 /* ===== Top loading bar — แสดงความคืบหน้าระหว่างเรียก API ===== */
@@ -3318,6 +3335,7 @@ function startAutoSync() {
   if (!API) return;
   autoSyncTimer = setInterval(async () => {
     if (document.hidden) return;
+    _heartbeatConn();   // เช็ก/อัปเดตสถานะการเชื่อมต่อให้ตรงจริง — กัน badge ค้าง "Local"
     if (_isModalOpen()) return;   // กำลังแก้ไข/ยืนยัน/บันทึก → อย่ารีเฟรชทับ (กันกระตุก + ข้อมูลเด้ง)
     const activePane = document.querySelector('section.pane.active')?.id;
     try {
@@ -3358,11 +3376,15 @@ function mergeRecords(local, remote, idKey) {
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && API && !_isModalOpen()) {
+    _heartbeatConn();   // กลับมาที่แท็บ → เช็กการเชื่อมต่อใหม่ (อัปเดต badge)
     const activePane = document.querySelector('section.pane.active')?.id;
     if (activePane === 'pane-home' || activePane === 'pane-prod') renderHome();
     if (activePane === 'pane-history') _autoRefreshHistory();   // กลับมาที่แท็บ → รีเฟรชเงียบ ไม่กระพริบ
   }
 });
+// เน็ตกลับมา/หลุด ที่ระดับเบราว์เซอร์ → อัปเดต badge ทันที (ไม่ต้องรอรอบ 30 วิ)
+window.addEventListener('online',  () => _heartbeatConn());
+window.addEventListener('offline', () => setConnBadge('local'));
 
 /* ============================================================
    FIX 3: MACHINE STATUS CHECKER — แสดง active/idle เครื่องจักรวันนี้
@@ -4644,9 +4666,11 @@ async function _saveKpiImpl() {
       await api('/api/kpi', { body: { records } });
       if (prodRecs.length) await api('/api/records/bulk', { body: { records: prodRecs } });
       hideBusy();
+      setConnBadge('online');   // ขึ้น Cloud ได้จริง → badge = online
       toast('✅ บันทึกขึ้น Cloud สำเร็จ', 'green');
     } catch (e) {
       hideBusy();
+      setConnBadge('local');    // ขึ้น Cloud ไม่ได้ → badge = local (ข้อมูลเก็บใน Local แล้ว ไม่หาย)
       toast('Sync ไม่สำเร็จ — ข้อมูลเก็บใน Local แล้ว', 'orange');
     }
   }
