@@ -562,7 +562,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.6</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.7</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -752,7 +752,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="fr"><label>จาก</label><input type="date" id="histFrom" onchange="loadHistory()"></div>
       <div class="fr"><label>ถึง</label><input type="date" id="histTo" onchange="loadHistory()"></div>
       <div class="fr"><label>Zone</label><select id="histZone" onchange="loadHistory()"><option value="">ทั้งหมด</option><option>ZONE1</option><option>ZONE2</option><option>ZONE3</option></select></div>
-      <div class="fr"><label>ค้นหา Valve/Machine/Lot</label><input type="search" id="histSearch" oninput="loadHistory()"></div>
+      <div class="fr"><label>ค้นหา Valve/Machine/Lot</label><input type="search" id="histSearch" oninput="histSearchInput()"></div>
     </div>
     <div class="row mt-8" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
       <span class="muted" style="font-size:12px"><span id="histCount">0</span> รายการ</span>
@@ -1547,7 +1547,8 @@ function evalFormula(el) {
 async function api(path, opts = {}) {
   if (!API) throw new Error('ยังไม่ตั้งค่า API URL');
   const url = API.replace(/\/+$/, '') + path;
-  _tbStart();
+  // silent: ไม่โชว์แถบโหลดด้านบน — ใช้กับการรีเฟรชเบื้องหลัง (auto-sync) เพื่อไม่ให้หน้าจอกระพริบ
+  if (!opts.silent) _tbStart();
   try {
     const res = await fetch(url, {
       method: opts.method || (opts.body ? 'POST' : 'GET'),
@@ -1558,7 +1559,7 @@ async function api(path, opts = {}) {
     if (!res.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + res.status));
     return data;
   } finally {
-    _tbDone();
+    if (!opts.silent) _tbDone();
   }
 }
 
@@ -3317,6 +3318,7 @@ function startAutoSync() {
   if (!API) return;
   autoSyncTimer = setInterval(async () => {
     if (document.hidden) return;
+    if (_isModalOpen()) return;   // กำลังแก้ไข/ยืนยัน/บันทึก → อย่ารีเฟรชทับ (กันกระตุก + ข้อมูลเด้ง)
     const activePane = document.querySelector('section.pane.active')?.id;
     try {
       if (activePane === 'pane-home' || activePane === 'pane-prod') {
@@ -3335,7 +3337,7 @@ function startAutoSync() {
         if (activePane === 'pane-home') renderHome();
         if (activePane === 'pane-prod') renderHome();
       } else if (activePane === 'pane-history') {
-        loadHistory();
+        _autoRefreshHistory();   // รีเฟรชเงียบ — ไม่กระตุก, re-render เฉพาะเมื่อข้อมูลเปลี่ยน
       } else if (activePane === 'pane-plan') {
         pullPlans();
       }
@@ -3355,10 +3357,10 @@ function mergeRecords(local, remote, idKey) {
     });
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && API) {
+  if (!document.hidden && API && !_isModalOpen()) {
     const activePane = document.querySelector('section.pane.active')?.id;
     if (activePane === 'pane-home' || activePane === 'pane-prod') renderHome();
-    if (activePane === 'pane-history') loadHistory();
+    if (activePane === 'pane-history') _autoRefreshHistory();   // กลับมาที่แท็บ → รีเฟรชเงียบ ไม่กระพริบ
   }
 });
 
@@ -5332,8 +5334,17 @@ function _setHistMore(shown, hasMore) {
   if ($('histShown')) $('histShown').textContent = nn(shown);
 }
 
+// พิมพ์ค้นหา → หน่วงสั้น ๆ ก่อนค่อยโหลด (กันยิง API ทุกตัวอักษร + กันตารางกระพริบขณะพิมพ์)
+let _histSearchTimer = null;
+function histSearchInput() {
+  clearTimeout(_histSearchTimer);
+  _histSearchTimer = setTimeout(() => loadHistory(), 300);
+}
+
+let _histReq = 0;   // ลำดับคำขอ — กัน response เก่ามา render ทับของใหม่ (อาการ "ขึ้น ๆ หาย ๆ")
 async function loadHistory(keepPage = false) {
   if (!keepPage) _histLimit = HIST_PAGE;   // เปลี่ยนฟิลเตอร์ → เริ่มนับหน้าใหม่
+  const myReq = ++_histReq;
   const from = $('histFrom').value, to = $('histTo').value;
   const zone = $('histZone').value, q = $('histSearch').value.trim();
   const filt = { from, to, zone, q };
@@ -5354,6 +5365,7 @@ async function loadHistory(keepPage = false) {
       if (q)    params.set('machine', q);
       params.set('limit', fetchLimit);
       const res = await api('/api/kpi?' + params);
+      if (myReq !== _histReq) return;   // มีคำขอใหม่กว่าแล้ว → ทิ้งผลเก่า ไม่ render ทับ
       if (res?.records !== undefined) {
         // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
         if (!q && !zone) _syncKpiFromApi(res.records, from, to);
@@ -5366,6 +5378,7 @@ async function loadHistory(keepPage = false) {
       if (q)    params.set('valve', q);
       params.set('limit', fetchLimit);
       const res = await api('/api/records?' + params);
+      if (myReq !== _histReq) return;   // มีคำขอใหม่กว่าแล้ว → ทิ้งผลเก่า ไม่ render ทับ
       if (res?.records !== undefined) {
         // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
         if (!q) _syncProdFromApi(res.records, from, to);
@@ -5376,6 +5389,44 @@ async function loadHistory(keepPage = false) {
     // API ล้มเหลว — local ที่แสดงอยู่ถูกต้องแล้ว
   }
 }
+
+/* รีเฟรชหน้าประวัติแบบเงียบ (auto-sync ทุก 30 วิ) — ไม่โชว์แถบโหลด ไม่ render local ซ้ำ
+   ดึง API เงียบ ๆ แล้ว "re-render เฉพาะเมื่อข้อมูลเปลี่ยนจริง" (ผ่าน signature guard ใน render)
+   → หน้าจอนิ่ง ไม่กระตุก ระหว่างที่ผู้ใช้กำลังดู/ทำงาน */
+async function _autoRefreshHistory() {
+  if (!API || _isModalOpen()) return;
+  const from = $('histFrom')?.value || '', to = $('histTo')?.value || '';
+  const zone = $('histZone')?.value || '', q = ($('histSearch')?.value || '').trim();
+  const myReq = ++_histReq;
+  try {
+    if (state.histType === 'kpi') {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to)   params.set('to', to);
+      if (zone) params.set('zone', zone);
+      if (q)    params.set('machine', q);
+      params.set('limit', _histLimit + 1);
+      const res = await api('/api/kpi?' + params, { silent: true });
+      if (myReq !== _histReq) return;   // มีคำขอใหม่กว่า → ทิ้งผลเก่า
+      if (res?.records !== undefined) {
+        if (!q && !zone) _syncKpiFromApi(res.records, from, to);
+        renderKpiHist(res.records);     // signature guard: เขียน DOM เฉพาะเมื่อเปลี่ยนจริง
+      }
+    } else {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from + 'T00:00:00');
+      if (to)   params.set('to', to);
+      if (q)    params.set('valve', q);
+      params.set('limit', _histLimit + 1);
+      const res = await api('/api/records?' + params, { silent: true });
+      if (myReq !== _histReq) return;
+      if (res?.records !== undefined) {
+        if (!q) _syncProdFromApi(res.records, from, to);
+        renderProdHist(res.records);
+      }
+    }
+  } catch (e) { /* เงียบ — รอบหน้าค่อยลองใหม่ */ }
+}
 // ข้อความตอนไม่มีข้อมูล — แยก "ไม่ตรงคำค้น" ออกจาก "ไม่มีข้อมูลจริง"
 function _histEmptyRow(cols, kind) {
   const q = ($('histSearch')?.value || '').trim();
@@ -5384,15 +5435,78 @@ function _histEmptyRow(cols, kind) {
     : `ยังไม่มีข้อมูล${kind}ในช่วงนี้${API ? ' — ลองกด "☁️ ดึงจาก Cloud"' : ''}`;
   return `<tr><td colspan="${cols}" class="center muted">${msg}</td></tr>`;
 }
+
+/* มี modal/หน้าจอบันทึกเปิดอยู่ไหม — ใช้กันไม่ให้ auto-refresh มา re-render ทับตอนกำลังแก้ไข */
+function _isModalOpen() {
+  if ($('modalBg')?.classList.contains('open')) return true;
+  const busy = $('busyOverlay');
+  if (busy && busy.style.display && busy.style.display !== 'none') return true;
+  return false;
+}
+
+/* ลายเซ็นของชุดข้อมูลที่กำลังแสดง — ใช้เทียบว่า "เปลี่ยนจริงไหม"
+   ถ้าไม่เปลี่ยน จะข้ามการเขียน DOM ทิ้ง เพื่อไม่ให้ตารางกระตุก/กระพริบทุกครั้งที่ auto-refresh */
+let _histSig = '';
+function _histViewSig(view) {
+  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + _histLimit + '|' +
+    view.map(r =>
+      (r.record_id || r.recordId || '') + ':' +
+      (r.updated_at || r.saved_at || r.timestamp || '') + ':' +
+      (r.opr ?? r.quantity ?? '') + ':' +
+      (r.status || '') + ':' +
+      (r.last_process || r.current_process || r.currentProcess || '')
+    ).join('|');
+}
+
+/* เรียงลำดับแถวแบบ "คงที่" — ไม่ว่าจะมาจาก local หรือ API ก็ได้ลำดับเดียวกันเสมอ
+   (มี record_id เป็นตัวตัดสินสุดท้าย) → กันตารางสลับลำดับ/re-render ทุก 30 วิ = ไม่กระตุก */
+function _histSortKpi(rows) {
+  return rows.sort((a, b) => {
+    const ka = a.saved_at || a.updated_at || a.shift_date || a.record_date || '';
+    const kb = b.saved_at || b.updated_at || b.shift_date || b.record_date || '';
+    if (kb !== ka) return String(kb).localeCompare(String(ka));   // ใหม่สุดก่อน
+    return String(a.record_id || '').localeCompare(String(b.record_id || ''));
+  });
+}
+function _histSortProd(rows) {
+  return rows.sort((a, b) => {
+    const ka = a.timestamp || '', kb = b.timestamp || '';
+    if (kb !== ka) return String(kb).localeCompare(String(ka));   // ใหม่สุดก่อน
+    return String(a.record_id || a.recordId || '').localeCompare(String(b.record_id || b.recordId || ''));
+  });
+}
+
+/* ช่อง "จัดการ" ของตารางประวัติ — ถ้าไม่มี record_id (ข้อมูลยังไม่พร้อม) ปุ่มแก้ไข/ลบจะกดไม่ได้
+   กันอาการกดแล้วเด้ง "ไม่พบข้อมูล" — ข้อมูลที่แสดงต้องพร้อมใช้งานจริงเท่านั้นจึงแก้ได้ */
+function _histActionsCell(rid, editFn, delFn) {
+  rid = String(rid || '').trim();
+  if (!rid) {
+    return `<td class="center" style="white-space:nowrap">
+      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px;opacity:.4;cursor:not-allowed" disabled title="ข้อมูลยังไม่พร้อมแก้ไข — กด ☁️ ดึงจาก Cloud อีกครั้ง">✏️</button>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px;opacity:.4;cursor:not-allowed" disabled title="ข้อมูลยังไม่พร้อมลบ">🗑️</button>
+    </td>`;
+  }
+  const e = escapeHtml(rid);
+  return `<td class="center" style="white-space:nowrap">
+      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="${editFn}('${e}')">✏️</button>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px" onclick="${delFn}('${e}')">🗑️</button>
+    </td>`;
+}
+
 function renderKpiHist(rows) {
-  rows = filterVsm(rows);   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด)
-  _histKpiRows = rows;
+  rows = _histSortKpi(filterVsm(rows));   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด) + เรียงคงที่
+  _histKpiRows = rows;      // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
   const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
   $('histCount').textContent = view.length;
   _setHistMore(view.length, rows.length > _histLimit);
   const t = $('histTable');
+  const tb = t.querySelector('tbody');
+  // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
+  const sig = _histViewSig(view);
+  if (sig === _histSig && tb && tb.children.length) return;
+  _histSig = sig;
   t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>กะ</th><th>Zone</th><th>เครื่อง</th><th>OPR</th><th>OAE</th><th>DLE</th><th>Valve</th><th>Lot</th><th>Process</th><th class="center" style="width:90px">จัดการ</th></tr>';
-  t.querySelector('tbody').innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
+  tb.innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
     <td>${escapeHtml(r.shift_date || r.record_date)}</td>
     <td>${r.shift_type === 'day' ? '☀️ Day' : '🌙 Night'}</td>
     <td><span class="tag tag-blue">${escapeHtml(r.zone)}</span></td>
@@ -5403,23 +5517,25 @@ function renderKpiHist(rows) {
     <td>${escapeHtml(r.valve_no||'-')}</td>
     <td>${escapeHtml(r.lot||'-')}</td>
     <td>${escapeHtml(r.last_process||'-')}</td>
-    <td class="center" style="white-space:nowrap">
-      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="editKpiRecord('${escapeHtml(r.record_id||'')}')">✏️</button>
-      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px" onclick="deleteKpiRecord('${escapeHtml(r.record_id||'')}')">🗑️</button>
-    </td>
+    ${_histActionsCell(r.record_id, 'editKpiRecord', 'deleteKpiRecord')}
   </tr>`).join('') || _histEmptyRow(11, 'ข้อมูล KPI');
 }
 function renderProdHist(rows) {
   // prod record จาก API ใช้คีย์ recordId (camelCase) ไม่มี record_id → ปุ่ม ✏️/🗑️ จะได้ id ว่าง
   // ทำให้กดแก้ไขแล้วขึ้น "ไม่พบข้อมูล" — เติม record_id ให้ครบก่อน render
-  rows = filterVsm(rows).map(r => r.record_id ? r : { ...r, record_id: r.recordId });
-  _histProdRows = rows;
+  rows = _histSortProd(filterVsm(rows).map(r => r.record_id ? r : { ...r, record_id: r.recordId }));
+  _histProdRows = rows;     // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
   const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
   $('histCount').textContent = view.length;
   _setHistMore(view.length, rows.length > _histLimit);
   const t = $('histTable');
+  const tb = t.querySelector('tbody');
+  // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
+  const sig = _histViewSig(view);
+  if (sig === _histSig && tb && tb.children.length) return;
+  _histSig = sig;
   t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>Valve</th><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>Operator</th><th class="center" style="width:90px">จัดการ</th></tr>';
-  t.querySelector('tbody').innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
+  tb.innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
     <td>${new Date(r.timestamp).toLocaleString('th-TH')}</td>
     <td><b>${escapeHtml(r.valveNo||r.valve_no||'-')}</b></td>
     <td>${escapeHtml(r.lot||'-')}</td>
@@ -5427,10 +5543,7 @@ function renderProdHist(rows) {
     <td><span class="tag tag-orange">${escapeHtml(r.currentProcess||r.current_process||'-')}</span></td>
     <td>${escapeHtml(r.status||'-')}</td>
     <td>${escapeHtml(r.operator||'-')}</td>
-    <td class="center" style="white-space:nowrap">
-      <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="editProdRecord('${escapeHtml(r.record_id||'')}')">✏️</button>
-      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px" onclick="deleteProdRecord('${escapeHtml(r.record_id||'')}')">🗑️</button>
-    </td>
+    ${_histActionsCell(r.record_id, 'editProdRecord', 'deleteProdRecord')}
   </tr>`).join('') || _histEmptyRow(8, 'งาน Production');
 }
 async function exportHistory() {
@@ -5468,7 +5581,11 @@ async function exportHistory() {
   }
   if (!rows.length) { toast('ไม่มีข้อมูลให้ export', 'orange'); return; }
   const data = isKpi
-    ? rows.map(r => ({ 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process }))
+    ? rows.map(r => {
+        // ⚠️ API คืน shifts เป็น string — ต้อง parse ด้วย _shiftsArr ก่อน ไม่งั้น ts/te/ct จะหลุดเป็นค่าว่าง
+        const _sh = _shiftsArr(r)[0] || {};
+        return { 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'Scrap (ชิ้นเสีย)': r.scrap||0, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process, 'พนักงาน': r.operator||r.emp_name||r.emp_id||'', 'CT (sec)': r.ct||_sh.ct||'', 'เวลาเริ่ม': r.time_start||_sh.ts||'', 'เวลาสิ้นสุด': r.time_end||_sh.te||'' };
+      })
     : rows.map(r => ({ 'วันที่': r.timestamp, 'Valve': r.valveNo||r.valve_no, 'Lot': r.lot, 'Qty': r.quantity, 'Process': r.currentProcess||r.current_process, 'Status': r.status, 'Operator': r.operator }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
@@ -5557,8 +5674,11 @@ function editKpiRecord(rid) {
          || state.kpiRecords.find(x => x.record_id === rid);
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
   // FIX 8: แสดงทุก field ในหน้าแก้ไข KPI
-  const shiftS = r.shifts?.[0]?.ts || r.time_start || '';
-  const shiftE = r.shifts?.[0]?.te || r.time_end || '';
+  // ⚠️ API คืน shifts เป็น string — parse ด้วย _shiftsArr ก่อน ไม่งั้นเวลาเริ่ม/สิ้นสุด/CT จะว่าง
+  const _sh0 = _shiftsArr(r)[0] || {};
+  const shiftS = r.time_start || _sh0.ts || '';
+  const shiftE = r.time_end   || _sh0.te || '';
+  const ctVal  = r.ct || _sh0.ct || 0;
   openModal('✏️ แก้ไข KPI Record', `
     <input type="hidden" id="editKpiRid" value="${escapeHtml(rid)}">
     <div class="fg">
@@ -5593,7 +5713,7 @@ function editKpiRecord(rid) {
         <input type="text" inputmode="text" id="editKpiTarget" value="${r.target||0}" onblur="evalFormula(this)">
       </div>
       <div class="fr"><label>CT (sec)</label>
-        <input type="number" id="editKpiCT" value="${r.ct||0}" min="0" step="0.1">
+        <input type="number" id="editKpiCT" value="${ctVal}" min="0" step="0.1">
       </div>
     </div>
     <div class="fg">
@@ -5630,7 +5750,13 @@ async function saveKpiEdit() {
   // FIX 5: confirmation before saving edit
   if (!await _confirmEditDialog()) return;
   const rid = $('editKpiRid').value;
-  const idx = state.kpiRecords.findIndex(x => x.record_id === rid);
+  let idx = state.kpiRecords.findIndex(x => x.record_id === rid);
+  if (idx < 0) {
+    // record มาจาก Cloud history (กรณีค้นหา/กรอง — ยังไม่ถูก sync เข้า local) → ดึงเข้ามาก่อนแก้
+    // เพื่อให้ขั้นตอน delete+reinsert ทำงาน ไม่เด้ง "ไม่พบ record ใน local"
+    const hr = _histKpiRows.find(x => x.record_id === rid);
+    if (hr) { state.kpiRecords.push({ ...hr }); idx = state.kpiRecords.length - 1; }
+  }
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
   const r = state.kpiRecords[idx];
   const newOpr    = fnum($('editKpiOpr').value);
@@ -5770,8 +5896,9 @@ async function saveProdEdit() {
   const rid = $('editProdRid').value;
   let idx = state.prodRecords.findIndex(x => x.record_id === rid);
   if (idx < 0) {
-    // record มาจากหน้าค้นหา Process (ยังไม่อยู่ใน state) → ดึงเข้ามาก่อนแก้ เพื่อให้ delete+reinsert ทำงาน
-    const sp = _spRecords.find(x => (x.record_id || x.recordId) === rid);
+    // record มาจากหน้าค้นหา Process หรือ Cloud history (ยังไม่อยู่ใน state) → ดึงเข้ามาก่อนแก้ เพื่อให้ delete+reinsert ทำงาน
+    const sp = _spRecords.find(x => (x.record_id || x.recordId) === rid)
+            || _histProdRows.find(x => (x.record_id || x.recordId) === rid);
     if (sp) { state.prodRecords.push({ ...sp, record_id: rid }); idx = state.prodRecords.length - 1; }
   }
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
