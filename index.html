@@ -1493,11 +1493,60 @@ async function _heartbeatConn() {
   try {
     await api('/api/ping', { silent: true });   // เงียบ ไม่โชว์แถบโหลด
     if (!state.online) setConnBadge('online');   // เชื่อมต่อได้ → online
+    flushUnsynced();                             // เชื่อมต่อได้แล้ว → ส่งข้อมูลที่ค้างขึ้น Cloud อัตโนมัติ
   } catch (e) {
     if (state.online) setConnBadge('local');     // หลุด → local (ข้อมูลยังเซฟ local ได้ปกติ)
   } finally {
     _hbBusy = false;
   }
+}
+
+/* ============================================================
+   AUTO RE-SYNC — record ที่ตอนเซฟส่งขึ้น Cloud ไม่สำเร็จ จะถูกหมาย _unsynced=true
+   แล้วฟังก์ชันนี้จะส่งขึ้น D1 ให้เองทันทีที่เน็ตกลับมา (เรียกจาก heartbeat)
+   ============================================================ */
+const _stripUnsynced = r => { const { _unsynced, ...rest } = r; return rest; };
+let _flushBusy = false;
+async function flushUnsynced() {
+  if (!API || _flushBusy) return;
+  const kpiPending  = state.kpiRecords.filter(r => r._unsynced);
+  const prodPending = state.prodRecords.filter(r => r._unsynced);
+  if (!kpiPending.length && !prodPending.length) return;
+  _flushBusy = true;
+  let done = 0;
+  // ส่งทีละชนิด + เคลียร์ธงหลัง await สำเร็จ → ถ้าชนิดใดล้มเหลว อีกชนิดยังขึ้นได้ ไม่ส่งซ้ำ
+  try {
+    if (kpiPending.length) {
+      await api('/api/kpi', { body: { records: kpiPending.map(_stripUnsynced) }, silent: true });
+      kpiPending.forEach(r => delete r._unsynced);
+      lsSave(LS.KPI, state.kpiRecords);
+      done += kpiPending.length;
+    }
+  } catch (e) { /* ยังส่งไม่ได้ — คงธงไว้ รอบหน้าค่อยลองใหม่ */ }
+  try {
+    if (prodPending.length) {
+      await api('/api/records/bulk', { body: { records: prodPending.map(_stripUnsynced) }, silent: true });
+      prodPending.forEach(r => delete r._unsynced);
+      lsSave(LS.PROD_REC, state.prodRecords);
+      done += prodPending.length;
+    }
+  } catch (e) { /* คงธงไว้ */ }
+  _flushBusy = false;
+  if (done) { setConnBadge('online'); toast(`☁️ ส่งข้อมูลที่ค้างขึ้น Cloud สำเร็จ ${done} รายการ`, 'green'); }
+}
+function _countUnsynced() {
+  return state.kpiRecords.filter(r => r._unsynced).length + state.prodRecords.filter(r => r._unsynced).length;
+}
+/* รวม API records กับ record ที่ยังค้าง (_unsynced) ไว้ — กันถูกลบตอนดึง/replace จาก Cloud */
+function _keepPendingKpi(apiRecords) {
+  const ids = new Set(apiRecords.map(r => r.record_id || r.recordId));
+  const pending = state.kpiRecords.filter(r => r._unsynced && !ids.has(r.record_id));
+  return [...apiRecords, ...pending];
+}
+function _keepPendingProd(apiNorm) {
+  const ids = new Set(apiNorm.map(r => r.record_id || r.recordId));
+  const pending = state.prodRecords.filter(r => r._unsynced && !ids.has(r.record_id || r.recordId));
+  return [...apiNorm, ...pending];
 }
 
 /* ===== Top loading bar — แสดงความคืบหน้าระหว่างเรียก API ===== */
@@ -2643,12 +2692,14 @@ async function reload() {
         api(`/api/records?from=${fromDate}T00:00:00&to=${todayISO()}&limit=10000`).catch(()=>null),
         api(`/api/plans?limit=5000`).catch(()=>null),
       ]);
-      if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
-      if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+      // เก็บ record ที่ยังค้าง (_unsynced) ไว้ ไม่ให้ถูกลบตอน replace จาก Cloud
+      if (k?.records) { state.kpiRecords  = _keepPendingKpi(k.records); lsSave(LS.KPI, state.kpiRecords); }
+      if (p?.records) { state.prodRecords = _keepPendingProd(p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process }))); lsSave(LS.PROD_REC, state.prodRecords); }
       if (pl?.plans)  { state.plans = pl.plans; lsSave(LS.PLANS, state.plans); }
     } catch (e) {}
 
     setConnBadge('online');
+    flushUnsynced();   // sync สำเร็จ → ส่งข้อมูลค้าง (ถ้ามี) ขึ้น Cloud ทันที
     toast('Sync ข้อมูลจาก Cloud สำเร็จ', 'green');
     ensureValidZone(); renderZoneTabs(); populateZoneSelects();
     renderHome(); renderZone(); renderSettings();
@@ -4662,16 +4713,22 @@ async function _saveKpiImpl() {
   // 3) ถ้ามี API ลอง sync ไป D1
   if (API) {
     showBusy('กำลังบันทึกขึ้น Cloud…');
+    let kpiOk = false;
     try {
       await api('/api/kpi', { body: { records } });
+      kpiOk = true;
       if (prodRecs.length) await api('/api/records/bulk', { body: { records: prodRecs } });
       hideBusy();
       setConnBadge('online');   // ขึ้น Cloud ได้จริง → badge = online
       toast('✅ บันทึกขึ้น Cloud สำเร็จ', 'green');
     } catch (e) {
       hideBusy();
+      // หมายเฉพาะชนิดที่ยังไม่ขึ้น Cloud → auto re-sync จะส่งให้เองเมื่อเน็ตกลับมา (กันส่งซ้ำ/ซ้อน)
+      if (!kpiOk) records.forEach(r => r._unsynced = true);
+      prodRecs.forEach(r => r._unsynced = true);
+      lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
       setConnBadge('local');    // ขึ้น Cloud ไม่ได้ → badge = local (ข้อมูลเก็บใน Local แล้ว ไม่หาย)
-      toast('Sync ไม่สำเร็จ — ข้อมูลเก็บใน Local แล้ว', 'orange');
+      toast('บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา', 'orange');
     }
   }
 }
@@ -4888,9 +4945,14 @@ async function _saveSlotsImpl() {
   if (API) {
     try {
       await api('/api/records/bulk', { body: { records } });
+      setConnBadge('online');
       toast('Sync ไป Cloud สำเร็จ', 'green');
     } catch (e) {
-      toast('Sync ไม่สำเร็จ — ข้อมูลเก็บ Local แล้ว', 'orange');
+      // หมาย _unsynced → auto re-sync จะส่งให้เองเมื่อเน็ตกลับมา
+      records.forEach(r => r._unsynced = true);
+      lsSave(LS.PROD_REC, state.prodRecords);
+      setConnBadge('local');
+      toast('บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา', 'orange');
     }
   }
 }
@@ -5289,8 +5351,10 @@ async function histPullCloud() {
       api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=5000').catch(()=>null),
       api('/api/records?from=2020-01-01T00:00:00&to=' + todayISO() + '&limit=5000').catch(()=>null),
     ]);
-    if (k?.records) { state.kpiRecords  = k.records; lsSave(LS.KPI, k.records); }
-    if (p?.records) { state.prodRecords = p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process })); lsSave(LS.PROD_REC, state.prodRecords); }
+    // เก็บ record ที่ยังค้าง (_unsynced) ไว้ ไม่ให้ถูกลบตอน replace จาก Cloud
+    if (k?.records) { state.kpiRecords  = _keepPendingKpi(k.records); lsSave(LS.KPI, state.kpiRecords); }
+    if (p?.records) { state.prodRecords = _keepPendingProd(p.records.map(r => ({ ...r, record_id: r.record_id||r.recordId, valve_no: r.valveNo||r.valve_no, current_process: r.currentProcess||r.current_process }))); lsSave(LS.PROD_REC, state.prodRecords); }
+    flushUnsynced();   // ดึงสำเร็จ → ส่งข้อมูลค้างขึ้น Cloud ทันที
     loadHistory();
     toast(`ดึง ${(k?.records?.length||0) + (p?.records?.length||0)} รายการจาก Cloud`, 'green');
   } catch (e) { toast('ดึงไม่สำเร็จ: ' + e.message, 'red'); }
@@ -5320,7 +5384,8 @@ function _syncKpiFromApi(apiRecords, from, to) {
   const outside = state.kpiRecords.filter(r => {
     const d = (r.shift_date||r.record_date||'').slice(0,10);
     const inRange = (!from || d >= from) && (!to || d <= to);
-    return !inRange; // เก็บเฉพาะที่อยู่นอก range
+    if (!inRange) return true;                          // นอก range → เก็บ
+    return r._unsynced && !apiIds.has(r.record_id);     // ใน range แต่ยังค้าง (ยังไม่ขึ้น Cloud) → เก็บไว้
   });
   // กรอง tombstones ออกก่อน save
   const _filtKpi = apiRecords.filter(r => !_deletedKpiIds.has(r.record_id));
@@ -5335,10 +5400,12 @@ function _syncProdFromApi(apiRecords, from, to) {
     valve_no: r.valveNo||r.valve_no||'',
     current_process: r.currentProcess||r.current_process||'',
   }));
+  const normIds = new Set(norm.map(r => r.record_id));
   const outside = state.prodRecords.filter(r => {
     const d = (r.timestamp||'').slice(0,10);
     const inRange = (!from || d >= from) && (!to || d <= to);
-    return !inRange;
+    if (!inRange) return true;                              // นอก range → เก็บ
+    return r._unsynced && !normIds.has(r.record_id||r.recordId);  // ใน range แต่ยังค้าง → เก็บไว้
   });
   // กรอง tombstones ออกก่อน save
   const _filtProd = norm.filter(r => !_deletedProdIds.has(r.record_id));
