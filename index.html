@@ -529,6 +529,102 @@ tbody tr:last-child td{border-bottom:none}
 @keyframes iotpopFade{from{opacity:0}to{opacity:1}}
 @keyframes iotpopIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.iotpop,.iotpop-bg{animation:none}}
+
+/* ===== ต่อกะ (SHIFT HANDOVER) — แผง side ใน IOT เต็มจอ + toggle IOT/ต่อกะ ===== */
+/* toggle IOT/ต่อกะ: โชว์เฉพาะตอนเต็มจอ */
+#iotFsToggle{display:none}
+.iot-fs #iotFsToggle{display:inline-flex;gap:3px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:3px}
+#iotFsToggle button{border:none;background:transparent;color:#64748b;font-weight:800;font-size:12.5px;
+  padding:8px 14px;min-height:34px;border-radius:8px;cursor:pointer;line-height:1;display:inline-flex;align-items:center;gap:5px;
+  transition:background .15s,color .15s,box-shadow .15s}
+#iotFsToggle button.on{background:#1A56DB;color:#fff;box-shadow:0 1px 4px rgba(26,86,219,.35)}
+#iotFsToggle button:focus-visible{outline:2px solid #1A56DB;outline-offset:2px}
+
+/* side panel: ซ่อนปกติ → แสดงเฉพาะเต็มจอ */
+#iotFsSide{display:none}
+/* เต็มจอ = grid 2 คอลัมน์ (side | floor) — เดิม flex-column. กฎนี้อยู่หลัง .iot-fs เดิม จึงทับด้วย source order */
+.iot-fs{display:grid!important;grid-template-columns:minmax(300px,32%) 1fr;grid-template-rows:auto auto 1fr;
+  grid-template-areas:"head head" "info info" "side floor";column-gap:14px;row-gap:8px}
+.iot-fs > #iotHeadRow{grid-area:head;margin-bottom:0}
+.iot-fs > #iotDateInfo{grid-area:info}
+.iot-fs > #iotFsSide{grid-area:side;display:flex;flex-direction:column;min-height:0;gap:10px;
+  overflow:auto;-webkit-overflow-scrolling:touch;padding-right:2px}
+.iot-fs > #mcViewFloor{grid-area:floor;min-height:0}
+/* โหมด "ต่อกะ เป็นหลัก" → ขยายฝั่ง side, ย่อ floor */
+.iot-fs.iotmode-duty{grid-template-columns:1fr minmax(240px,30%)}
+
+/* ── การ์ดต่อกะ ── */
+.ho-panel{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;display:flex;flex-direction:column;
+  overflow:hidden;flex:0 0 auto;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.iot-fs.iotmode-duty .ho-panel{flex:1 1 0;min-height:140px}
+.ho-hd{display:flex;align-items:center;gap:8px;padding:9px 12px;color:#fff;flex:0 0 auto}
+.ho-hd .ho-ic{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.22);
+  display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.ho-hd .ho-ttl{font-size:13.5px;font-weight:800;letter-spacing:.2px}
+.ho-hd .ho-cnt{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:999px}
+.ho-hd .ho-add{margin-left:auto;border:none;background:rgba(255,255,255,.25);color:#fff;font-size:12px;font-weight:800;
+  padding:5px 11px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;line-height:1}
+.ho-hd .ho-add:hover{background:rgba(255,255,255,.38)}
+.ho-bd{padding:11px 12px;display:flex;flex-direction:column;gap:9px;min-height:0;overflow:auto}
+.ho-latest{background:#f8fafc;border:1px solid #eef2f7;border-left:3px solid #1A56DB;border-radius:11px;padding:10px 12px}
+.ho-latest.ind{border-left-color:#C2410C}
+.ho-text{font-size:14px;line-height:1.55;color:#0f172a;white-space:pre-wrap;word-break:break-word}
+.ho-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:#94a3b8;font-weight:700}
+.ho-meta .ho-by{color:#475569;display:inline-flex;align-items:center;gap:4px}
+.ho-meta .ho-dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1}
+.ho-edited{color:#0E9F6E;font-weight:800}
+.ho-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:7px;flex-wrap:wrap}
+.ho-foot .ho-meta{margin-top:0;flex:1 1 auto;min-width:0}
+.ho-acts{display:inline-flex;gap:5px;flex:0 0 auto}
+.ho-act{width:34px;height:34px;min-width:34px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;cursor:pointer;
+  font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;color:#64748b;padding:0;
+  transition:background .15s,border-color .15s}
+.ho-act:hover{background:#f1f5f9}
+.ho-act:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
+.ho-act.ho-del:hover{background:#FEF2F2;border-color:#FCA5A5}
+.ho-hitem .ho-act{width:30px;height:30px;min-width:30px;font-size:13px}
+.ho-empty{font-size:12.5px;color:#94a3b8;text-align:center;padding:18px 8px;background:#f8fafc;
+  border:1px dashed #cbd5e1;border-radius:11px;line-height:1.5}
+.ho-histbtn{align-self:flex-start;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:11.5px;font-weight:800;
+  padding:5px 11px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.ho-histbtn:hover{background:#f1f5f9}
+.ho-histbtn .chev{transition:transform .2s}
+.ho-panel.open .ho-histbtn .chev{transform:rotate(180deg)}
+.ho-hist{display:none;flex-direction:column;gap:6px;max-height:42vh;overflow:auto;-webkit-overflow-scrolling:touch;
+  border-top:1px dashed #e2e8f0;padding-top:8px;margin-top:1px}
+.ho-panel.open .ho-hist{display:flex}
+.ho-hitem{background:#fff;border:1px solid #f1f5f9;border-left:3px solid #cbd5e1;border-radius:8px;padding:7px 10px}
+.ho-hitem .ho-text{font-size:12.5px;line-height:1.5;color:#334155}
+.ho-hitem .ho-meta{margin-top:5px;font-size:10.5px}
+
+/* modal เพิ่มต่อกะ (append เข้า #iotCard เพื่อให้โชว์ได้ใน native fullscreen) */
+.ho-modal-bg{inset:0;z-index:2200;background:rgba(13,17,23,.6);display:flex;align-items:center;justify-content:center;
+  padding:18px;animation:iotpopFade .16s ease}
+.ho-modal{background:#fff;border-radius:16px;width:100%;max-width:460px;display:flex;flex-direction:column;
+  overflow:hidden;box-shadow:0 24px 70px rgba(13,17,23,.5);animation:iotpopIn .22s cubic-bezier(.2,.8,.2,1)}
+.ho-modal-hd{display:flex;align-items:center;gap:9px;padding:13px 15px;color:#fff;font-size:15px;font-weight:800}
+.ho-modal-bd{padding:14px 15px;display:flex;flex-direction:column;gap:12px}
+.ho-lbl{font-size:11.5px;font-weight:800;color:#475569;margin-bottom:6px;display:block}
+.ho-seg{display:flex;gap:8px}
+.ho-seg button{flex:1;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;font-weight:800;font-size:13px;
+  padding:11px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.ho-seg button.on{border-color:#1A56DB;background:#EBF4FF;color:#1A56DB}
+.ho-ta{width:100%;padding:11px 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:16px;
+  line-height:1.55;resize:vertical;outline:none;color:#0f172a}
+.ho-ta:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+@media (max-width:820px){
+  /* มือถือ: คอลัมน์เดียว เลื่อนทั้งหน้า + สลับ "ลำดับบน-ล่าง" ตามโหมด */
+  .iot-fs{grid-template-columns:1fr!important;overflow:auto!important;
+    grid-template-rows:auto auto auto auto!important;
+    grid-template-areas:"head" "info" "floor" "side"!important}        /* IOT เป็นหลัก → ผังอยู่บน */
+  .iot-fs.iotmode-duty{grid-template-columns:1fr!important;
+    grid-template-areas:"head" "info" "side" "floor"!important}        /* ต่อกะ เป็นหลัก → บันทึกอยู่บน */
+  .iot-fs > #iotFsSide{overflow:visible}                               /* กัน scroll ซ้อน — ให้ทั้งหน้าเลื่อนแทน */
+  .iot-fs > #mcViewFloor{min-height:52vh}
+  .iot-fs.iotmode-duty > #mcViewFloor{min-height:36vh}                 /* โหมดต่อกะ → ผังเล็กลง */
+  .ho-hist{max-height:50vh}
+}
+@media (prefers-reduced-motion:reduce){.ho-modal,.ho-modal-bg{animation:none}}
 </style>
 </head>
 <body>
@@ -562,7 +658,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.8</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.9</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -615,20 +711,27 @@ tbody tr:last-child td{border-bottom:none}
 
   <!-- Machine Status Checker + Floor Plan -->
   <div class="card" id="iotCard" style="margin-top:10px;padding-bottom:6px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+    <div id="iotHeadRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
       <div class="card-title" style="margin:0"><span class="ci">🏭</span>ตรวจสอบสถานะเครื่องจักร</div>
+      <span id="iotFsToggle" role="tablist" aria-label="สลับมุมมอง ผังเครื่องจักร / ต่อกะ">
+        <button type="button" class="on" data-mode="iot"  role="tab" aria-selected="true"  onclick="iotSetMode('iot')"  title="แสดงผังเครื่องจักรเป็นหลัก">🏭 IOT</button>
+        <button type="button"           data-mode="duty" role="tab" aria-selected="false" onclick="iotSetMode('duty')" title="แสดงข้อมูลต่อกะเป็นหลัก">📝 ต่อกะ</button>
+      </span>
       <div style="display:flex;gap:4px;align-items:center">
         <span class="iot-zoom-ctrls" style="display:flex;gap:4px">
           <button onclick="iotZoomBtn(-1)" title="ย่อ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
           <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
           <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         </span>
+        <button onclick="openHandoverAdd()" title="เพิ่มบันทึกต่อกะ" aria-label="เพิ่มบันทึกต่อกะ" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #0E9F6E;background:#F3FAF7;color:#057A55;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">📝 ต่อกะ</button>
         <button id="iotFsBtn" onclick="iotFullscreen()" title="เต็มจอ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #1A56DB;background:#EBF4FF;color:#1A56DB;font-size:15px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">⛶</button>
       </div>
     </div>
     <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
     <div id="mcViewList" style="display:none"></div>
     <div id="mcViewFloor"></div>
+    <!-- แผงข้อมูลต่อกะ (แสดงเฉพาะตอน IOT เต็มจอ) -->
+    <div id="iotFsSide" aria-label="ข้อมูลต่อกะ"></div>
   </div>
 
   <!-- ขอความช่วยเหลือ (สรุป + ติดตามผล) — ล่างสุด, ซ่อนไว้ กดเปิดเอง -->
@@ -3821,10 +3924,14 @@ function iotEnterFs(card){
   if(rq){ try{ const p=rq.call(card); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
   document.addEventListener('keydown',_iotFsKey,true);
   card.addEventListener('keydown',_iotMcKey);   // เปิดใช้ Enter/Space ที่เครื่อง (a11y) เฉพาะตอนเต็มจอ
+  iotSetMode('iot');                            // เริ่มที่ "IOT เป็นหลัก" เสมอ
+  renderHandoverPanels();                       // เติมข้อมูลต่อกะลงแผง side
 }
 function iotExitFs(card){
   card=card||document.getElementById('iotCard'); if(!card) return;
   iotCloseMcPop();                              // ปิดป๊อปอัปรายละเอียดเครื่องถ้าเปิดค้างอยู่
+  closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
+  card.classList.remove('iotmode-duty');
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
   document.documentElement.style.overflow='';
@@ -3841,6 +3948,7 @@ function iotExitFs(card){
 }
 function _iotFsKey(e){
   if(e.key==='Escape'){
+    if(document.getElementById('hoAddOv')){ e.preventDefault(); closeHandoverAdd(); return; }   // ปิด modal เพิ่มต่อกะก่อน
     if(document.getElementById('iotMcPop')){ e.preventDefault(); iotCloseMcPop(); return; } // ปิดป๊อปอัปก่อน แล้วค่อยออกเต็มจอ
     const card=document.getElementById('iotCard');
     if(card&&card.classList.contains('iot-fs')){ e.preventDefault(); iotExitFs(card); }
@@ -3856,8 +3964,247 @@ document.addEventListener('webkitfullscreenchange',()=>{
   if(card&&card.classList.contains('iot-fs')&&!document.webkitFullscreenElement) iotExitFs(card);
 });
 
+/* ============================================================
+   ต่อกะ (SHIFT HANDOVER) — บันทึกข้อความส่งต่อระหว่างกะ
+   • 2 ประเภท: Machine / Induction (req #7)
+   • พิมพ์อะไรก็ได้ (free text) · เก็บล่าสุดเด่น + ประวัติย้อนหลังกดดูได้ (req #3)
+   • แสดงในผัง IOT ตอน "เต็มจอ" เท่านั้น (req #1,#4) · สลับ IOT/ต่อกะ ได้ (req #5)
+   • เก็บใน localStorage (vsm4_handover) — ต่ออุปกรณ์ (KV ส่วนกลางรับเฉพาะตัวเลข
+     จึงซิงก์ข้ามเครื่องไม่ได้โดยไม่แก้ Worker · ดู PATTERN-cross-device-kv-sync.md)
+   ============================================================ */
+const LS_HANDOVER = 'vsm4_handover';
+const HO_TYPES = {
+  machine:   { label:'Machine',   icon:'🛠️', grad:'linear-gradient(135deg,#1A56DB,#1E3A8A)' },
+  induction: { label:'Induction', icon:'🔥', grad:'linear-gradient(135deg,#C2410C,#9A3412)' },
+};
+const HO_ORDER = ['machine','induction'];
+function _hoType(t){ return t==='induction' ? 'induction' : 'machine'; }
+let _handover = _loadHandover();
+function _loadHandover(){
+  try{
+    const v = JSON.parse(localStorage.getItem(LS_HANDOVER) || 'null');
+    if(v && typeof v==='object') return { machine:Array.isArray(v.machine)?v.machine:[], induction:Array.isArray(v.induction)?v.induction:[] };
+  }catch(e){}
+  return { machine:[], induction:[] };
+}
+function _saveHandover(){ try{ localStorage.setItem(LS_HANDOVER, JSON.stringify(_handover)); }catch(e){} }
+function addHandover(type, text){
+  type=_hoType(type); text=String(text||'').trim(); if(!text) return null;
+  const u=CURRENT_USER||null;
+  const entry={
+    id:'ho_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    text,
+    byId:(u&&u.id)||OP||'',
+    byName:(u&&u.name)||'',
+    ts:new Date().toISOString(),
+  };
+  _handover[type].unshift(entry);                 // ล่าสุดอยู่บนสุด
+  if(_handover[type].length>200) _handover[type].length=200;   // กันบวมเกินจอ
+  _saveHandover();
+  return entry;
+}
+function _hoWhen(iso){
+  const d=new Date(iso); if(isNaN(d)) return {abs:'',ago:''};
+  const m=Math.floor((Date.now()-d.getTime())/60000);
+  let ago;
+  if(m<1) ago='เมื่อสักครู่';
+  else if(m<60) ago=m+' นาทีที่แล้ว';
+  else if(m<1440) ago=Math.floor(m/60)+' ชม.ที่แล้ว';
+  else ago=Math.floor(m/1440)+' วันที่แล้ว';
+  const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const P2=n=>String(n).padStart(2,'0');
+  return { abs:`${d.getDate()} ${TH[d.getMonth()]} ${P2(d.getHours())}:${P2(d.getMinutes())}`, ago };
+}
+function _hoBy(e){
+  const id=(e.byId||'').trim(), nm=(e.byName||'').trim();
+  return nm ? (id ? `${id} — ${nm}` : nm) : (id || '—');
+}
+function _hoMetaHtml(e){
+  const w=_hoWhen(e.ts);
+  const edited=e.editedAt?`<span class="ho-dot"></span><span class="ho-edited">✎ แก้ไขแล้ว</span>`:'';
+  return `<div class="ho-meta">
+    <span class="ho-by">👤 ${escapeHtml(_hoBy(e))}</span>
+    <span class="ho-dot"></span><span>${escapeHtml(w.abs)}</span>
+    <span class="ho-dot"></span><span>${escapeHtml(w.ago)}</span>
+    ${edited}
+  </div>`;
+}
+function _hoActionsHtml(type,id){
+  return `<div class="ho-acts">
+    <button type="button" class="ho-act" title="แก้ไข" aria-label="แก้ไขบันทึก" onclick="editHandover('${type}','${id}')">✏️</button>
+    <button type="button" class="ho-act ho-del" title="ลบ" aria-label="ลบบันทึก" onclick="askDeleteHandover('${type}','${id}')">🗑️</button>
+  </div>`;
+}
+function _hoFootHtml(e,type){
+  return `<div class="ho-foot">${_hoMetaHtml(e)}${_hoActionsHtml(type,e.id)}</div>`;
+}
+function _hoPanelHtml(type){
+  const cfg=HO_TYPES[type], list=_handover[type]||[];
+  const latest=list[0], hist=list.slice(1);
+  const ind = type==='induction' ? ' ind' : '';
+  const latestHtml = latest
+    ? `<div class="ho-latest${ind}"><div class="ho-text">${escapeHtml(latest.text)}</div>${_hoFootHtml(latest,type)}</div>`
+    : `<div class="ho-empty">ยังไม่มีบันทึกต่อกะ ${escapeHtml(cfg.label)}<br>กด <b>＋ เพิ่ม</b> เพื่อบันทึก</div>`;
+  const histHtml = hist.length
+    ? `<button type="button" class="ho-histbtn" onclick="toggleHandoverHist(this)" aria-expanded="false">
+         <span class="chev">▾</span> ดูย้อนหลัง (${hist.length})
+       </button>
+       <div class="ho-hist">${hist.map(e=>`<div class="ho-hitem"><div class="ho-text">${escapeHtml(e.text)}</div>${_hoFootHtml(e,type)}</div>`).join('')}</div>`
+    : '';
+  return `<div class="ho-panel" data-type="${type}">
+    <div class="ho-hd" style="background:${cfg.grad}">
+      <span class="ho-ic">${cfg.icon}</span>
+      <span class="ho-ttl">ข้อมูลต่อกะ ${escapeHtml(cfg.label)}</span>
+      ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
+      <button type="button" class="ho-add" onclick="openHandoverAdd('${type}')" aria-label="เพิ่มต่อกะ ${escapeHtml(cfg.label)}">＋ เพิ่ม</button>
+    </div>
+    <div class="ho-bd">${latestHtml}${histHtml}</div>
+  </div>`;
+}
+function renderHandoverPanels(){
+  const host=document.getElementById('iotFsSide'); if(!host) return;
+  // จำว่าแผงไหน "กางประวัติ" อยู่ → re-render แล้วเปิดคืน (กันประวัติหุบเองตอนแก้/ลบ)
+  const open=new Set([...host.querySelectorAll('.ho-panel.open')].map(p=>p.dataset.type));
+  host.innerHTML = HO_ORDER.map(_hoPanelHtml).join('');
+  open.forEach(t=>{
+    const p=host.querySelector(`.ho-panel[data-type="${t}"]`);
+    if(p){ p.classList.add('open'); const b=p.querySelector('.ho-histbtn'); if(b) b.setAttribute('aria-expanded','true'); }
+  });
+}
+function toggleHandoverHist(btn){
+  const p=btn.closest('.ho-panel'); if(!p) return;
+  const open=p.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open?'true':'false');
+}
+/* สลับมุมมอง: IOT เป็นหลัก / ต่อกะ เป็นหลัก (req #5) */
+function iotSetMode(mode){
+  const card=document.getElementById('iotCard'); if(!card) return;
+  const duty = mode==='duty';
+  card.classList.toggle('iotmode-duty', duty);
+  const tg=document.getElementById('iotFsToggle');
+  if(tg) tg.querySelectorAll('button').forEach(b=>{
+    const on = b.dataset.mode===(duty?'duty':'iot');
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on?'true':'false');
+  });
+}
 
+/* แก้ไขบันทึก: หา entry แล้วเปิด modal โหมดแก้ไข */
+function editHandover(type, id){
+  type=_hoType(type);
+  const e=(_handover[type]||[]).find(x=>x.id===id);
+  if(!e){ toast('ไม่พบบันทึก','red'); return; }
+  openHandoverAdd(type, e);
+}
+/* บันทึกการแก้ไข — เปลี่ยนข้อความได้ + ย้ายประเภทได้ (ย้าย = เด้งขึ้นเป็นล่าสุดของประเภทใหม่) */
+function updateHandover(origType, id, newType, text){
+  origType=_hoType(origType); newType=_hoType(newType); text=String(text||'').trim(); if(!text) return;
+  const arr=_handover[origType]||[];
+  const idx=arr.findIndex(x=>x.id===id); if(idx<0) return;
+  const e=arr[idx]; e.text=text; e.editedAt=new Date().toISOString();
+  if(newType!==origType){ arr.splice(idx,1); _handover[newType].unshift(e); }   // ย้ายประเภท
+  _saveHandover();
+}
 
+/* ── modal เพิ่ม/แก้ไขต่อกะ — append เข้า #iotCard เพื่อให้โชว์ได้แม้อยู่ใน native fullscreen ── */
+let _hoAddType='machine';
+let _hoEditId=null, _hoEditOrigType=null;
+function openHandoverAdd(presetType, editEntry){
+  closeHandoverAdd();                 // เคลียร์ modal/สถานะเดิมก่อน (รีเซ็ต _hoEditId) — ต้องมาก่อนตั้งค่าใหม่
+  const isEdit=!!editEntry;
+  _hoEditId       = isEdit ? editEntry.id : null;
+  _hoEditOrigType = isEdit ? _hoType(presetType) : null;
+  _hoAddType      = _hoType(presetType||'machine');
+  const card=document.getElementById('iotCard');
+  const fs = card && card.classList.contains('iot-fs');
+  const host = fs ? card : document.body;     // ใน fullscreen ต้องเป็นลูกของ card ถึงจะเห็น
+  const ov=document.createElement('div');
+  ov.id='hoAddOv'; ov.className='ho-modal-bg';
+  ov.style.position = fs ? 'absolute' : 'fixed';
+  ov.addEventListener('click',e=>{ if(e.target===ov) closeHandoverAdd(); });
+  const seg = HO_ORDER.map(t=>{
+    const c=HO_TYPES[t];
+    return `<button type="button" data-t="${t}" class="${t===_hoAddType?'on':''}" onclick="_hoPickType('${t}')">${c.icon} ${escapeHtml(c.label)}</button>`;
+  }).join('');
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${isEdit?'แก้ไข':'เพิ่ม'}บันทึกต่อกะ">
+    <div class="ho-modal-hd" id="hoModalHd" style="background:${HO_TYPES[_hoAddType].grad}">${isEdit?'✏️ แก้ไขบันทึกต่อกะ':'📝 เพิ่มบันทึกต่อกะ'}</div>
+    <div class="ho-modal-bd">
+      <div>
+        <label class="ho-lbl">ประเภท</label>
+        <div class="ho-seg" id="hoSeg">${seg}</div>
+      </div>
+      <div>
+        <label class="ho-lbl" for="hoText">ข้อความต่อกะ — พิมพ์อะไรก็ได้</label>
+        <textarea id="hoText" class="ho-ta" rows="5" placeholder="เช่น งานค้างที่ส่งต่อ / ปัญหาเครื่อง / สิ่งที่กะถัดไปต้องรู้ …"></textarea>
+      </div>
+      <div class="row" style="gap:8px;justify-content:flex-end;margin:0">
+        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ยกเลิก</button>
+        <button type="button" class="btn btn-green" onclick="submitHandover()">💾 ${isEdit?'บันทึกการแก้ไข':'บันทึกต่อกะ'}</button>
+      </div>
+    </div>
+  </div>`;
+  host.appendChild(ov);
+  const ta=ov.querySelector('#hoText');
+  if(ta){ if(isEdit) ta.value=editEntry.text||''; setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },30); }
+}
+function closeHandoverAdd(){ const o=document.getElementById('hoAddOv'); if(o) o.remove(); _hoEditId=null; _hoEditOrigType=null; }
+function _hoPickType(t){
+  _hoAddType=_hoType(t);
+  const seg=document.getElementById('hoSeg');
+  if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.t===_hoAddType));
+  const hd=document.getElementById('hoModalHd');
+  if(hd) hd.style.background=HO_TYPES[_hoAddType].grad;
+}
+function submitHandover(){
+  const ta=document.getElementById('hoText');
+  const text=ta?ta.value.trim():'';
+  if(!text){ if(ta) ta.focus(); toast('พิมพ์ข้อความก่อนบันทึก','orange'); return; }
+  if(_hoEditId){
+    updateHandover(_hoEditOrigType, _hoEditId, _hoAddType, text);
+    closeHandoverAdd(); renderHandoverPanels();
+    toast('แก้ไขบันทึกต่อกะแล้ว','green');
+  }else{
+    addHandover(_hoAddType, text);
+    closeHandoverAdd(); renderHandoverPanels();      // อัปเดตแผงทันที (ถ้าเปิดเต็มจออยู่)
+    toast('บันทึกต่อกะ '+HO_TYPES[_hoAddType].label+' แล้ว','green');
+  }
+}
+
+/* ── ลบบันทึก — ใช้ overlay ยืนยันของตัวเอง (confirmModal เดิมโชว์ไม่ได้ใน native fullscreen) ── */
+function askDeleteHandover(type, id){
+  type=_hoType(type);
+  const e=(_handover[type]||[]).find(x=>x.id===id);
+  if(!e){ toast('ไม่พบบันทึก','red'); return; }
+  closeHandoverAdd();
+  const card=document.getElementById('iotCard');
+  const fs = card && card.classList.contains('iot-fs');
+  const host = fs ? card : document.body;
+  const ov=document.createElement('div');
+  ov.id='hoAddOv'; ov.className='ho-modal-bg';     // ใช้ id เดิม → Esc/คลิกพื้นหลังปิดได้เหมือนกัน
+  ov.style.position = fs ? 'absolute' : 'fixed';
+  ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHandoverAdd(); });
+  const snip = e.text.length>120 ? e.text.slice(0,120)+'…' : e.text;
+  ov.innerHTML=`<div class="ho-modal" role="alertdialog" aria-modal="true" aria-label="ลบบันทึกต่อกะ" style="max-width:400px">
+    <div class="ho-modal-hd" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🗑️ ลบบันทึกต่อกะ</div>
+    <div class="ho-modal-bd">
+      <div style="font-size:13.5px;color:#334155;line-height:1.6">ต้องการลบบันทึก <b>${escapeHtml(HO_TYPES[type].label)}</b> นี้? ลบแล้วกู้คืนไม่ได้</div>
+      <div style="background:#f8fafc;border:1px solid #eef2f7;border-left:3px solid #FCA5A5;border-radius:9px;padding:9px 11px;font-size:13px;color:#475569;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto">${escapeHtml(snip)}</div>
+      <div class="row" style="gap:8px;justify-content:flex-end;margin:0">
+        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ยกเลิก</button>
+        <button type="button" class="btn" style="background:var(--red);color:#fff;border:none" onclick="confirmDeleteHandover('${type}','${id}')">🗑️ ลบเลย</button>
+      </div>
+    </div>
+  </div>`;
+  host.appendChild(ov);
+}
+function confirmDeleteHandover(type, id){
+  type=_hoType(type);
+  const arr=_handover[type]||[]; const i=arr.findIndex(x=>x.id===id);
+  if(i>=0){ arr.splice(i,1); _saveHandover(); }
+  closeHandoverAdd();
+  renderHandoverPanels();
+  toast('ลบบันทึกต่อกะแล้ว','green');
+}
 
 
 async function renderHome() {
@@ -4998,6 +5345,21 @@ function acProcValveSearch(ev) {
     searchProcess();   // เลือกแล้วค้นหาให้เลย
   });
 }
+// รวม records จาก cloud + local แล้วเลือกชุดที่ "ใหม่กว่า" รายตัวตาม updated_at (เสมอกัน = local ที่เพิ่งแก้ชนะ)
+// แก้อาการ: แก้ไข record ที่หน้าประวัติ แล้วค้นหา Process ยังเห็นค่าเดิม เพราะ D1 ยังไม่ propagate (req #6)
+function _mergeProdFreshest(cloudRecs, localRecs){
+  const byId=new Map(); let anon=0;
+  const t = r => new Date(r.updated_at || r.updatedAt || r.timestamp || 0).getTime();
+  const put = r => {
+    const id = r.record_id || r.recordId;
+    if(!id){ byId.set('__a'+(anon++), r); return; }   // ไม่มี id → เก็บแยก ไม่ทับใคร
+    const ex = byId.get(id);
+    if(!ex || t(r) >= t(ex)) byId.set(id, r);
+  };
+  (cloudRecs||[]).forEach(put);
+  (localRecs||[]).forEach(put);     // ใส่ local ทีหลัง → ค่าที่ updated_at ≥ ทับ (local ที่เพิ่งแก้ชนะตอนเสมอ)
+  return [...byId.values()];
+}
 async function searchProcess() {
   const q = $('searchValve').value.trim();
   if (!q) return;
@@ -5010,7 +5372,9 @@ async function searchProcess() {
     if (API) {
       try {
         const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
-        if (rRes.records?.length) records = filterVsm(rRes.records);
+        // เดิม: ใช้ผล cloud ทับ local ทั้งหมด → การ "กดแก้ไข" ที่หน้าประวัติ ที่ D1 ยังกระจายไม่ทัน
+        //       เลยไม่ขึ้นเป็นค่าล่าสุด (req #6). ตอนนี้: รวม cloud+local เลือกตัวที่ updated_at ใหม่กว่ารายตัว
+        if (rRes.records?.length) records = _mergeProdFreshest(filterVsm(rRes.records), records);
       } catch (e) { /* fallback to local */ }
       await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
     }
