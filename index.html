@@ -658,7 +658,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v1.9</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.0</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2803,6 +2803,7 @@ async function reload() {
 
     setConnBadge('online');
     flushUnsynced();   // sync สำเร็จ → ส่งข้อมูลค้าง (ถ้ามี) ขึ้น Cloud ทันที
+    _hoFlush();        // ต่อกะที่บันทึกตอน offline → ดันขึ้น cloud ด้วย
     toast('Sync ข้อมูลจาก Cloud สำเร็จ', 'green');
     ensureValidZone(); renderZoneTabs(); populateZoneSelects();
     renderHome(); renderZone(); renderSettings();
@@ -3925,12 +3926,14 @@ function iotEnterFs(card){
   document.addEventListener('keydown',_iotFsKey,true);
   card.addEventListener('keydown',_iotMcKey);   // เปิดใช้ Enter/Space ที่เครื่อง (a11y) เฉพาะตอนเต็มจอ
   iotSetMode('iot');                            // เริ่มที่ "IOT เป็นหลัก" เสมอ
-  renderHandoverPanels();                       // เติมข้อมูลต่อกะลงแผง side
+  renderHandoverPanels();                       // เติมข้อมูลต่อกะลงแผง side (local ทันที)
+  startHandoverSync();                          // ดึงล่าสุดจาก cloud + poll ทุก 15 วิ (ข้ามเครื่อง)
 }
 function iotExitFs(card){
   card=card||document.getElementById('iotCard'); if(!card) return;
   iotCloseMcPop();                              // ปิดป๊อปอัปรายละเอียดเครื่องถ้าเปิดค้างอยู่
   closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
+  stopHandoverSync();                            // หยุด poll ต่อกะ
   card.classList.remove('iotmode-duty');
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
@@ -3966,43 +3969,111 @@ document.addEventListener('webkitfullscreenchange',()=>{
 
 /* ============================================================
    ต่อกะ (SHIFT HANDOVER) — บันทึกข้อความส่งต่อระหว่างกะ
-   • 2 ประเภท: Machine / Induction (req #7)
-   • พิมพ์อะไรก็ได้ (free text) · เก็บล่าสุดเด่น + ประวัติย้อนหลังกดดูได้ (req #3)
-   • แสดงในผัง IOT ตอน "เต็มจอ" เท่านั้น (req #1,#4) · สลับ IOT/ต่อกะ ได้ (req #5)
-   • เก็บใน localStorage (vsm4_handover) — ต่ออุปกรณ์ (KV ส่วนกลางรับเฉพาะตัวเลข
-     จึงซิงก์ข้ามเครื่องไม่ได้โดยไม่แก้ Worker · ดู PATTERN-cross-device-kv-sync.md)
+   • 2 ประเภท: Machine / Induction
+   • ข้ามเครื่อง: sync ขึ้น Worker+D1 เฉพาะต่อกะ (vsm4-handover) → ทุกอุปกรณ์เห็นตรงกัน
+   • local-first: cache ใน localStorage (แผนที่ id→entry) + คิว offline (auto-flush)
+   • แสดงในผัง IOT ตอน "เต็มจอ" เท่านั้น · สลับ IOT/ต่อกะ · แก้/ลบได้
+   entry = {id,type,text,byId,byName,ts,editedAt,deleted,updatedAt} ; ลบ = soft delete
    ============================================================ */
-const LS_HANDOVER = 'vsm4_handover';
+const HANDOVER_API = 'https://vsm4-handover.wiphawas-sketchup.workers.dev';
+const LS_HANDOVER   = 'vsm4_handover';
+const LS_HO_PENDING = 'vsm4_handover_pending';
 const HO_TYPES = {
   machine:   { label:'Machine',   icon:'🛠️', grad:'linear-gradient(135deg,#1A56DB,#1E3A8A)' },
   induction: { label:'Induction', icon:'🔥', grad:'linear-gradient(135deg,#C2410C,#9A3412)' },
 };
 const HO_ORDER = ['machine','induction'];
 function _hoType(t){ return t==='induction' ? 'induction' : 'machine'; }
-let _handover = _loadHandover();
+
+let _hoMigrated=false;
+let _handover  = _loadHandover();        // { <id>: entry }
+let _hoPending = _loadHoPending();        // Set<id> ที่ยังไม่ได้ push ขึ้น cloud
+if(_hoMigrated){ Object.keys(_handover).forEach(id=>_hoPending.add(id)); _saveHoPending(); }  // ดันของเก่า (v1.9) ขึ้น cloud ครั้งแรก
 function _loadHandover(){
   try{
     const v = JSON.parse(localStorage.getItem(LS_HANDOVER) || 'null');
-    if(v && typeof v==='object') return { machine:Array.isArray(v.machine)?v.machine:[], induction:Array.isArray(v.induction)?v.induction:[] };
+    if(v && typeof v==='object'){
+      if(Array.isArray(v.machine) || Array.isArray(v.induction)){   // เดิม v1.9 = {machine:[],induction:[]} → แปลงเป็นแผนที่
+        const map={};
+        ['machine','induction'].forEach(tp=>(v[tp]||[]).forEach(e=>{
+          if(e&&e.id) map[e.id]={ id:e.id, type:tp, text:e.text||'', byId:e.byId||'', byName:e.byName||'',
+            ts:e.ts||new Date().toISOString(), editedAt:e.editedAt||null, deleted:0, updatedAt:e.editedAt||e.ts||new Date().toISOString() };
+        }));
+        _hoMigrated=true;
+        return map;
+      }
+      return v;    // แผนที่ id→entry อยู่แล้ว
+    }
   }catch(e){}
-  return { machine:[], induction:[] };
+  return {};
 }
 function _saveHandover(){ try{ localStorage.setItem(LS_HANDOVER, JSON.stringify(_handover)); }catch(e){} }
+function _loadHoPending(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_HO_PENDING)||'[]')); }catch(e){ return new Set(); } }
+function _saveHoPending(){ try{ localStorage.setItem(LS_HO_PENDING, JSON.stringify([..._hoPending])); }catch(e){} }
+// รายการต่อประเภท (ตัด deleted, ใหม่ล่าสุดก่อน)
+function _hoList(type){
+  type=_hoType(type);
+  return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type)
+    .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
+}
 function addHandover(type, text){
   type=_hoType(type); text=String(text||'').trim(); if(!text) return null;
-  const u=CURRENT_USER||null;
+  const u=CURRENT_USER||null, now=new Date().toISOString();
   const entry={
     id:'ho_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-    text,
-    byId:(u&&u.id)||OP||'',
-    byName:(u&&u.name)||'',
-    ts:new Date().toISOString(),
+    type, text,
+    byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
+    ts:now, editedAt:null, deleted:0, updatedAt:now,
   };
-  _handover[type].unshift(entry);                 // ล่าสุดอยู่บนสุด
-  if(_handover[type].length>200) _handover[type].length=200;   // กันบวมเกินจอ
-  _saveHandover();
+  _handover[entry.id]=entry; _saveHandover();
+  _hoPush(entry);                                 // ดันขึ้น cloud (ล้มเหลว → เข้าคิว)
   return entry;
 }
+
+/* ── cloud sync (Worker+D1 เฉพาะต่อกะ · แยกจาก api() หลัก จึงไม่โชว์แถบโหลด) ── */
+async function hoApi(path, opts={}){
+  const res=await fetch(HANDOVER_API.replace(/\/+$/,'')+path,{
+    method:opts.body?'POST':'GET',
+    headers:opts.body?{'Content-Type':'application/json'}:undefined,
+    body:opts.body?JSON.stringify(opts.body):undefined,
+  });
+  const data=await res.json().catch(()=>({ok:false}));
+  if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+  return data;
+}
+function _hoPush(entry){
+  _hoPending.add(entry.id); _saveHoPending();
+  hoApi('/put',{body:entry})
+    .then(()=>{ _hoPending.delete(entry.id); _saveHoPending(); })
+    .catch(()=>{ /* ค้างในคิว → flush ครั้งถัดไป */ });
+}
+async function _hoFlush(){
+  if(!_hoPending.size) return;
+  const entries=[..._hoPending].map(id=>_handover[id]).filter(Boolean);
+  if(!entries.length){ _hoPending.clear(); _saveHoPending(); return; }
+  try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); }catch(e){}
+}
+function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts]))); }
+let _hoSig='';
+async function syncHandover(){
+  try{
+    await _hoFlush();                              // ส่งของค้างก่อน
+    const d=await hoApi('/list');
+    let changed=false;
+    for(const ce of (d.entries||[])){
+      if(!ce||!ce.id) continue;
+      if(_hoPending.has(ce.id)) continue;          // ของเราที่ยังไม่ push → อย่าให้ cloud (เก่ากว่า) ทับ
+      const le=_handover[ce.id];
+      if(!le || new Date(ce.updatedAt) > new Date(le.updatedAt||0)){ _handover[ce.id]=ce; changed=true; }  // LWW
+    }
+    if(changed) _saveHandover();
+    _hoRenderIfChanged();
+  }catch(e){ /* offline → ใช้ local ต่อได้ */ }
+}
+function _hoRenderIfChanged(){ if(_hoSigNow()!==_hoSig) renderHandoverPanels(); }
+let _hoPoll=null;
+function startHandoverSync(){ syncHandover(); if(_hoPoll) clearInterval(_hoPoll); _hoPoll=setInterval(syncHandover,15000); }
+function stopHandoverSync(){ if(_hoPoll){ clearInterval(_hoPoll); _hoPoll=null; } }
 function _hoWhen(iso){
   const d=new Date(iso); if(isNaN(d)) return {abs:'',ago:''};
   const m=Math.floor((Date.now()-d.getTime())/60000);
@@ -4039,7 +4110,7 @@ function _hoFootHtml(e,type){
   return `<div class="ho-foot">${_hoMetaHtml(e)}${_hoActionsHtml(type,e.id)}</div>`;
 }
 function _hoPanelHtml(type){
-  const cfg=HO_TYPES[type], list=_handover[type]||[];
+  const cfg=HO_TYPES[type], list=_hoList(type);
   const latest=list[0], hist=list.slice(1);
   const ind = type==='induction' ? ' ind' : '';
   const latestHtml = latest
@@ -4070,6 +4141,7 @@ function renderHandoverPanels(){
     const p=host.querySelector(`.ho-panel[data-type="${t}"]`);
     if(p){ p.classList.add('open'); const b=p.querySelector('.ho-histbtn'); if(b) b.setAttribute('aria-expanded','true'); }
   });
+  _hoSig=_hoSigNow();     // จำ signature ที่เพิ่งวาด → กัน poll วาดซ้ำโดยไม่จำเป็น
 }
 function toggleHandoverHist(btn){
   const p=btn.closest('.ho-panel'); if(!p) return;
@@ -4091,19 +4163,17 @@ function iotSetMode(mode){
 
 /* แก้ไขบันทึก: หา entry แล้วเปิด modal โหมดแก้ไข */
 function editHandover(type, id){
-  type=_hoType(type);
-  const e=(_handover[type]||[]).find(x=>x.id===id);
+  const e=_handover[id];
   if(!e){ toast('ไม่พบบันทึก','red'); return; }
-  openHandoverAdd(type, e);
+  openHandoverAdd(e.type, e);
 }
-/* บันทึกการแก้ไข — เปลี่ยนข้อความได้ + ย้ายประเภทได้ (ย้าย = เด้งขึ้นเป็นล่าสุดของประเภทใหม่) */
+/* บันทึกการแก้ไข — เปลี่ยนข้อความ + เปลี่ยนประเภทได้ → sync ขึ้น cloud ทันที */
 function updateHandover(origType, id, newType, text){
-  origType=_hoType(origType); newType=_hoType(newType); text=String(text||'').trim(); if(!text) return;
-  const arr=_handover[origType]||[];
-  const idx=arr.findIndex(x=>x.id===id); if(idx<0) return;
-  const e=arr[idx]; e.text=text; e.editedAt=new Date().toISOString();
-  if(newType!==origType){ arr.splice(idx,1); _handover[newType].unshift(e); }   // ย้ายประเภท
-  _saveHandover();
+  text=String(text||'').trim(); if(!text) return;
+  const e=_handover[id]; if(!e) return;
+  const now=new Date().toISOString();
+  e.text=text; e.type=_hoType(newType); e.editedAt=now; e.updatedAt=now;
+  _saveHandover(); _hoPush(e);
 }
 
 /* ── modal เพิ่ม/แก้ไขต่อกะ — append เข้า #iotCard เพื่อให้โชว์ได้แม้อยู่ใน native fullscreen ── */
@@ -4172,9 +4242,9 @@ function submitHandover(){
 
 /* ── ลบบันทึก — ใช้ overlay ยืนยันของตัวเอง (confirmModal เดิมโชว์ไม่ได้ใน native fullscreen) ── */
 function askDeleteHandover(type, id){
-  type=_hoType(type);
-  const e=(_handover[type]||[]).find(x=>x.id===id);
+  const e=_handover[id];
   if(!e){ toast('ไม่พบบันทึก','red'); return; }
+  type=_hoType(e.type);
   closeHandoverAdd();
   const card=document.getElementById('iotCard');
   const fs = card && card.classList.contains('iot-fs');
@@ -4198,9 +4268,8 @@ function askDeleteHandover(type, id){
   host.appendChild(ov);
 }
 function confirmDeleteHandover(type, id){
-  type=_hoType(type);
-  const arr=_handover[type]||[]; const i=arr.findIndex(x=>x.id===id);
-  if(i>=0){ arr.splice(i,1); _saveHandover(); }
+  const e=_handover[id];
+  if(e){ e.deleted=1; e.updatedAt=new Date().toISOString(); _saveHandover(); _hoPush(e); }  // soft delete + sync ให้ทุกเครื่องหาย
   closeHandoverAdd();
   renderHandoverPanels();
   toast('ลบบันทึกต่อกะแล้ว','green');

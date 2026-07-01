@@ -1,0 +1,9 @@
+name = "vsm4-handover"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# D1: ที่เก็บข้อความต่อกะแบบข้ามเครื่อง (แยกจาก vsm4-api)
+[[d1_databases]]
+binding = "DB"
+database_name = "vsm4_handover"
+database_id = "f35f2cfd-8bc1-48ca-8bda-dcab462dd11a"
