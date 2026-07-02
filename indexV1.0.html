@@ -543,9 +543,9 @@ tbody tr:last-child td{border-bottom:none}
 .iot-fs > #iotDateInfo{grid-area:info}
 .iot-fs > #iotOaeStrip{grid-area:oae}
 
-/* ── แถบ OAE รวม + รายโซน (เฉพาะค่า OAE) ── */
-#iotOaeStrip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-#iotOaeStrip:empty{display:none}
+/* ── แถบ OAE รวม + รายโซน — ซ่อนในหน้าปกติ แสดงเฉพาะตอนเต็มจอ ── */
+#iotOaeStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.iot-fs > #iotOaeStrip:not(:empty){display:flex}
 .oae-chip{flex:1 1 130px;min-width:120px;display:flex;flex-direction:column;gap:1px;padding:8px 13px;
   border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;line-height:1.12;box-shadow:0 1px 3px rgba(15,23,42,.05)}
 .oae-chip .oae-k{font-size:10.5px;font-weight:800;letter-spacing:.2px;display:flex;align-items:center;gap:5px}
