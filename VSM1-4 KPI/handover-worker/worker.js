@@ -8,7 +8,8 @@
 //   POST /put               → upsert 1 entry (LWW ตาม updated_at)
 //   POST /bulk              → upsert หลาย entry (flush คิว offline)
 //
-// entry = {id,type('machine'|'induction'),text,byId,byName,ts,editedAt,deleted,updatedAt}
+// entry = {id,type('machine'|'induction'),cat('broken'|'note'),text,byId,byName,ts,editedAt,deleted,updatedAt}
+//   • cat = หมวด: broken=เครื่องเสีย/ค้าง · note=ข้อมูลทั่วไป (แบ่ง 3 คอลัมน์ฝั่ง UI)
 //   • id สร้างฝั่ง client → upsert idempotent (retry ปลอดภัย)
 //   • ลบ = soft delete (deleted=1) กัน entry ฟื้นจาก race
 // ============================================================
@@ -23,7 +24,7 @@ const J = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
 const SCHEMA = `CREATE TABLE IF NOT EXISTS handover (
-  id TEXT PRIMARY KEY, type TEXT NOT NULL, text TEXT NOT NULL,
+  id TEXT PRIMARY KEY, type TEXT NOT NULL, cat TEXT NOT NULL DEFAULT 'note', text TEXT NOT NULL,
   by_id TEXT, by_name TEXT, ts TEXT NOT NULL, edited_at TEXT,
   deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);`;
 
@@ -32,11 +33,12 @@ async function ensure(env) {
   if (_ready) return;
   await env.DB.prepare(SCHEMA).run();
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_handover_updated ON handover(updated_at)').run(); } catch (e) {}
+  try { await env.DB.prepare("ALTER TABLE handover ADD COLUMN cat TEXT NOT NULL DEFAULT 'note'").run(); } catch (e) {}  // ตารางเดิม → เพิ่มคอลัมน์ (มีแล้ว throw → ข้าม)
   _ready = true;
 }
 
 const rowToEntry = (r) => ({
-  id: r.id, type: r.type, text: r.text,
+  id: r.id, type: r.type, cat: r.cat === 'broken' ? 'broken' : 'note', text: r.text,
   byId: r.by_id || '', byName: r.by_name || '',
   ts: r.ts, editedAt: r.edited_at || null,
   deleted: r.deleted ? 1 : 0, updatedAt: r.updated_at,
@@ -47,6 +49,7 @@ function normEntry(b) {
   return {
     id: String(b.id || '').slice(0, 64),
     type: b.type === 'induction' ? 'induction' : 'machine',
+    cat: b.cat === 'broken' ? 'broken' : 'note',
     text: String(b.text == null ? '' : b.text).slice(0, 4000),
     byId: String(b.byId || '').slice(0, 80),
     byName: String(b.byName || '').slice(0, 120),
@@ -57,10 +60,10 @@ function normEntry(b) {
   };
 }
 // upsert ที่เขียนทับเฉพาะเมื่อ payload ใหม่กว่า (LWW) — retry/บันทึกซ้ำไม่ทำให้ค่าเก่าทับใหม่
-const UPSERT = `INSERT INTO handover (id,type,text,by_id,by_name,ts,edited_at,deleted,updated_at)
-  VALUES (?,?,?,?,?,?,?,?,?)
+const UPSERT = `INSERT INTO handover (id,type,cat,text,by_id,by_name,ts,edited_at,deleted,updated_at)
+  VALUES (?,?,?,?,?,?,?,?,?,?)
   ON CONFLICT(id) DO UPDATE SET
-    type=excluded.type, text=excluded.text, by_id=excluded.by_id, by_name=excluded.by_name,
+    type=excluded.type, cat=excluded.cat, text=excluded.text, by_id=excluded.by_id, by_name=excluded.by_name,
     ts=excluded.ts, edited_at=excluded.edited_at, deleted=excluded.deleted, updated_at=excluded.updated_at
   WHERE excluded.updated_at >= handover.updated_at`;
 
@@ -75,7 +78,7 @@ export default {
 
       if (req.method === 'GET' && (p === '/' || p === '/list')) {
         const since = url.searchParams.get('since');
-        let q = 'SELECT id,type,text,by_id,by_name,ts,edited_at,deleted,updated_at FROM handover';
+        let q = 'SELECT id,type,cat,text,by_id,by_name,ts,edited_at,deleted,updated_at FROM handover';
         const binds = [];
         if (since) { q += ' WHERE updated_at > ?'; binds.push(since); }
         q += ' ORDER BY ts DESC LIMIT 1000';
@@ -86,7 +89,7 @@ export default {
       if (req.method === 'POST' && p === '/put') {
         const e = normEntry(await req.json().catch(() => ({})));
         if (!e.id) return J({ ok: false, error: 'id required' }, 400);
-        await env.DB.prepare(UPSERT).bind(e.id, e.type, e.text, e.byId, e.byName, e.ts, e.editedAt, e.deleted, e.updatedAt).run();
+        await env.DB.prepare(UPSERT).bind(e.id, e.type, e.cat, e.text, e.byId, e.byName, e.ts, e.editedAt, e.deleted, e.updatedAt).run();
         return J({ ok: true });
       }
 
@@ -96,7 +99,7 @@ export default {
         const stmt = env.DB.prepare(UPSERT);
         const batch = arr.filter((x) => x && x.id).map((x) => {
           const e = normEntry(x);
-          return stmt.bind(e.id, e.type, e.text, e.byId, e.byName, e.ts, e.editedAt, e.deleted, e.updatedAt);
+          return stmt.bind(e.id, e.type, e.cat, e.text, e.byId, e.byName, e.ts, e.editedAt, e.deleted, e.updatedAt);
         });
         if (batch.length) await env.DB.batch(batch);
         return J({ ok: true, n: batch.length });
