@@ -611,7 +611,7 @@ tbody tr:last-child td{border-bottom:none}
 .ho-text{font-size:14px;line-height:1.55;color:#0f172a;white-space:pre-wrap;word-break:break-word}
 .iot-fs .ho-text{font-size:15px;line-height:1.6}
 .ho-sec.broken .ho-card .ho-text{font-weight:500}
-.ho-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:10.5px;color:#94a3b8;font-weight:700}
+.ho-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:#94a3b8;font-weight:700}
 .ho-meta .ho-by{color:#475569;display:inline-flex;align-items:center;gap:4px}
 .ho-meta .ho-dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1}
 .ho-edited{color:#0E9F6E;font-weight:800}
@@ -647,14 +647,18 @@ tbody tr:last-child td{border-bottom:none}
   line-height:1.55;resize:vertical;outline:none;color:#0f172a}
 .ho-ta:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
 @media (max-width:820px){
-  /* มือถือ: คอลัมน์เดียว เลื่อนทั้งหน้า — ผังอยู่บน ต่อกะอยู่ล่าง */
+  /* มือถือ: คอลัมน์เดียว เลื่อนทั้งหน้า — ต่อกะขึ้นก่อน (จุดประสงค์หลักบนมือถือ) ผังอยู่ล่าง */
   .iot-fs{grid-template-columns:1fr!important;overflow:auto!important;
     grid-template-rows:auto auto auto auto auto!important;
-    grid-template-areas:"head" "info" "oae" "floor" "side"!important}
+    grid-template-areas:"head" "info" "oae" "side" "floor"!important}
   .iot-fs > #iotFsSide{overflow:visible}                               /* กัน scroll ซ้อน — ให้ทั้งหน้าเลื่อนแทน */
   .iot-fs > #mcViewFloor{min-height:44vh}
   .ho-cols{grid-template-columns:1fr!important}                        /* จอแคบ: ซ้อนแนวตั้ง เครื่องเสียบน ข้อมูลล่าง */
   .ho-sec.notes .ho-sec-body{column-count:1!important}
+  /* การ์ดต่อกะบนมือถือ: ตัวหนังสือ ≥16px กัน iOS ซูม + meta ≥12px อ่านออก */
+  .iot-fs .ho-text{font-size:16px}
+  .ho-meta{font-size:12px}
+  .ho-acts{display:none}                                               /* ปุ่ม ✏️🗑️ เล็กเกินบนจอสัมผัส — แตะการ์ดเปิดเมนูใหญ่แทน */
 }
 @media (prefers-reduced-motion:reduce){.ho-modal,.ho-modal-bg{animation:none}}
 </style>
@@ -690,7 +694,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.3</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.4</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4181,12 +4185,13 @@ function _hoDayLabel(iso){
   const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return `${d.getDate()} ${TH[d.getMonth()]} ${d.getFullYear()}`;
 }
-function _hoMetaHtml(e){
+function _hoMetaHtml(e,full){
   const w=_hoWhen(e.ts);
   const edited=e.editedAt?`<span class="ho-dot"></span><span class="ho-edited">✎ แก้ไขแล้ว</span>`:'';
+  // การ์ด = ไม่โชว์ชื่อคนลง (กินพื้นที่ — req มือถือ) · ป๊อปอัปอ่านเต็ม (full) ยังโชว์ครบ
+  const by=full?`<span class="ho-by">👤 ${escapeHtml(_hoBy(e))}</span><span class="ho-dot"></span>`:'';
   return `<div class="ho-meta">
-    <span class="ho-by">👤 ${escapeHtml(_hoBy(e))}</span>
-    <span class="ho-dot"></span><span>${escapeHtml(w.abs)}</span>
+    ${by}<span>${escapeHtml(w.abs)}</span>
     <span class="ho-dot"></span><span>${escapeHtml(w.ago)}</span>
     ${edited}
   </div>`;
@@ -4226,7 +4231,7 @@ function hoCardTap(id){
     <div class="ho-modal-hd" style="background:${t.grad}">${t.icon} ${escapeHtml(t.label)} · ${c.icon} ${escapeHtml(c.label)}</div>
     <div class="ho-modal-bd">
       <div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:11px 13px;font-size:15.5px;line-height:1.65;color:#0f172a;white-space:pre-wrap;word-break:break-word;max-height:46vh;overflow:auto">${escapeHtml(e.text)}</div>
-      ${_hoMetaHtml(e)}
+      ${_hoMetaHtml(e,true)}
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0;flex-wrap:wrap">
         <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ปิด</button>
         <button type="button" class="btn" style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5" onclick="askDeleteHandover('${type}','${id}')">🗑️ ลบ</button>
