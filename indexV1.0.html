@@ -558,11 +558,11 @@ tbody tr:last-child td{border-bottom:none}
 .oae-chip.good{border-color:#16a34a;color:#14532d;background:#f0fdf4}
 .oae-chip.warn{border-color:#ea580c;color:#7c2d12;background:#fff7ed}
 .oae-chip.none{border-color:#cbd5e1;color:#64748b;background:#f8fafc}
-/* เต็มจอ = จอใหญ่ TV ทุกคนอ่าน → ตัวเลข OAE ใหญ่ขึ้น */
-.iot-fs .oae-chip{padding:10px 16px}
-.iot-fs .oae-chip .oae-v{font-size:28px}
-.iot-fs .oae-chip .oae-k{font-size:13px}
-.iot-fs .oae-chip .oae-sub{font-size:11px}
+/* เต็มจอ (คอม/ไอแพด): OAE แค่พอเห็น ไม่ใช่พระเอก — ย่อเป็นชิปแถวเดียว คืนพื้นที่ให้ต่อกะ/ผัง (v2.6 req #1) */
+.iot-fs .oae-chip{flex-direction:row;align-items:baseline;gap:8px;padding:5px 12px}
+.iot-fs .oae-chip .oae-v{font-size:16px}
+.iot-fs .oae-chip .oae-k{font-size:10.5px}
+.iot-fs .oae-chip .oae-sub{font-size:9px;flex:1 1 auto;text-align:right}
 /* ปกติ: ทศนิยม 1 ตำแหน่ง + "Zone 1/2/3" · เต็มจอ: 2 ตำแหน่ง + "Zone AFTERMARKET/…" (req #3) */
 .oae-vf,.oae-kf{display:none}
 .iot-fs .oae-vf,.iot-fs .oae-kf{display:inline}
@@ -585,6 +585,8 @@ tbody tr:last-child td{border-bottom:none}
 .ho-cols{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;align-items:start}
 .iot-fs[data-hofit="2"] .ho-cols{grid-template-columns:1fr 2.1fr}
 .iot-fs[data-hofit="3"] .ho-cols{grid-template-columns:minmax(170px,19%) 1fr}
+/* ไม่มีเครื่องเสีย/ค้าง → JS ไม่วาดคอลัมน์นั้นเลย ข้อมูลทั่วไปขยายกินเต็ม (v2.6 req #2 — ทุกขนาดจอ) */
+.ho-cols.ho-solo{grid-template-columns:1fr!important}
 .ho-sec{background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:8px;min-width:0}
 .ho-sec.broken{background:#FFF7ED;border-color:#FED7AA}
 .ho-sec-hd{display:flex;align-items:center;gap:6px;padding:1px 2px 7px}
@@ -597,15 +599,18 @@ tbody tr:last-child td{border-bottom:none}
   cursor:pointer;font-size:18px;font-weight:800;color:#15803D;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .ho-sec-add:hover{background:#DCFCE7}
 .ho-sec-add:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
-/* ข้อมูลทั่วไป: ปกติ 1 คอลัมน์ · ข้อมูลมาก (hofit 2-3) → ไหลเป็น 2 คอลัมน์ (ส่วนที่ 2 → ส่วนที่ 3) */
+/* ข้อมูลทั่วไป: ปกติ 1 คอลัมน์ · ล้น → 2 คอลัมน์ (hofit 2) · ยังล้นอีก → 3 คอลัมน์ (hofit 3) แทนแถบเลื่อน (v2.6 req #3) */
 .ho-sec.notes .ho-sec-body{column-count:1;column-gap:8px}
-.iot-fs[data-hofit="2"] .ho-sec.notes .ho-sec-body,
-.iot-fs[data-hofit="3"] .ho-sec.notes .ho-sec-body{column-count:2}
+.iot-fs[data-hofit="2"] .ho-sec.notes .ho-sec-body{column-count:2}
+.iot-fs[data-hofit="3"] .ho-sec.notes .ho-sec-body{column-count:3}
 .ho-card{background:#fff;border:1px solid #eef2f7;border-left:3px solid #cbd5e1;border-radius:9px;padding:9px 11px;
   margin-bottom:8px;break-inside:avoid;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .ho-card:hover{border-color:#94a3b8;box-shadow:0 2px 8px rgba(15,23,42,.12)}
 .ho-card:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
-.ho-sec.notes .ho-card{display:inline-block;width:100%}      /* กันการ์ดถูกตัดครึ่งระหว่างคอลัมน์ */
+.ho-sec.notes .ho-card{display:inline-block;width:100%}      /* กันการ์ดสั้นถูกตัดครึ่งระหว่างคอลัมน์ */
+/* การ์ดยาวหลายบรรทัด (.ho-flow จาก JS): ยอมตัดข้ามคอลัมน์แบบหนังสือพิมพ์ — ส่วนเกินไหลไปช่อง 2/3 แทนแถบเลื่อน (v2.6 req #3) */
+.ho-sec.notes .ho-card.ho-flow{display:block;break-inside:auto}
+.ho-sec.notes .ho-card.ho-flow .ho-foot{break-inside:avoid}
 .ho-sec.broken .ho-card{border-left-color:#ea580c}
 .ho-card.newest{border-left-color:#1A56DB;box-shadow:0 1px 5px rgba(26,86,219,.14)}
 .ho-sec.broken .ho-card.newest{border-left-color:#ea580c;box-shadow:0 1px 5px rgba(234,88,12,.16)}
@@ -667,8 +672,9 @@ tbody tr:last-child td{border-bottom:none}
   .iot-fs .ho-text{font-size:16px}
   .ho-meta{font-size:12px}
   .ho-acts{display:none}                                               /* ปุ่ม ✏️🗑️ เล็กเกินบนจอสัมผัส — แตะการ์ดเปิดเมนูใหญ่แทน */
-  /* OAE บนมือถือ: เล็กพอมองเห็น ไม่แย่งพื้นที่ต่อกะ */
-  .iot-fs .oae-chip{padding:6px 10px}
+  /* OAE บนมือถือ: เล็กพอมองเห็น ไม่แย่งพื้นที่ต่อกะ (คงชิปแนวตั้งเดิม — แถวเดียวใช้เฉพาะจอใหญ่) */
+  .iot-fs .oae-chip{flex-direction:column;align-items:stretch;padding:6px 10px}
+  .iot-fs .oae-chip .oae-sub{flex:0 0 auto;text-align:left}
   .iot-fs .oae-chip .oae-v{font-size:16px}
   .iot-fs .oae-chip .oae-k{font-size:10px}
   .iot-fs .oae-chip .oae-sub{font-size:9px}
@@ -713,7 +719,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.5</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.6</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4246,7 +4252,9 @@ function _hoFootHtml(e,type){
 }
 // แตะการ์ดตรงไหนก็ได้ → เปิดเมนู อ่านเต็ม/แก้ไข/ลบ (req #1 — ปุ่มเล็กกดยากบนจอสัมผัส/ทีวี)
 function _hoCardHtml(e,type,newest){
-  return `<div class="ho-card${newest?' newest':''}" role="button" tabindex="0" title="แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ"
+  // การ์ดยาว (ข้อความหลายบรรทัด/ยาวมาก) → .ho-flow ให้ตัดข้ามคอลัมน์ได้ ไม่ถูกบีบแคบจนต้องเลื่อน (req #3)
+  const t=e.text||'', flow=(t.length>200||(t.match(/\n/g)||[]).length>=5)?' ho-flow':'';
+  return `<div class="ho-card${newest?' newest':''}${flow}" role="button" tabindex="0" title="แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
     <div class="ho-text">${escapeHtml(e.text)}</div>
@@ -4307,6 +4315,8 @@ function _hoPanelHtml(type){
   const cfg=HO_TYPES[type], list=_hoList(type);
   const broken=list.filter(e=>_hoCat(e)==='broken');
   const notes =list.filter(e=>_hoCat(e)!=='broken');
+  // ไม่มีเครื่องเสีย/ค้าง → ตัดคอลัมน์ทิ้งทั้งอัน (req #2) — เพิ่มยังได้จาก ＋/ปุ่มต่อกะ (modal มีตัวเลือกหมวด)
+  const showBroken=broken.length>0;
   return `<div class="ho-panel" data-type="${type}">
     <div class="ho-hd" style="background:${cfg.grad}">
       <span class="ho-ic">${cfg.icon}</span>
@@ -4314,8 +4324,8 @@ function _hoPanelHtml(type){
       ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
     </div>
     <div class="ho-bd">
-      <div class="ho-cols">
-        ${_hoSecHtml(type,'broken',broken)}
+      <div class="ho-cols${showBroken?'':' ho-solo'}">
+        ${showBroken?_hoSecHtml(type,'broken',broken):''}
         ${_hoSecHtml(type,'note',notes)}
       </div>
     </div>
@@ -4328,7 +4338,8 @@ function renderHandoverPanels(){
   _hoAutoFit();           // ปรับสัดส่วน ต่อกะ⇄ผัง ให้พอดี 1 หน้า (req #2,#4,#5)
 }
 /* ── auto-fit (แทนปุ่มสลับ IOT/ต่อกะเดิม): ข้อมูลมากจนต้องเลื่อน → ขยายฝั่งต่อกะเป็นขั้น ๆ
-   ระดับ 1 = ผังใหญ่ · 2 = ครึ่งจอ + ข้อมูลทั่วไปไหล 2 คอลัมน์ · 3 = ต่อกะเต็ม ผังย่อเหลือขั้นต่ำ (minmax 300px) ── */
+   ระดับ 1 = ผังใหญ่ · 2 = ครึ่งจอ + ข้อมูลทั่วไปไหล 2 คอลัมน์ · 3 = ต่อกะเต็ม ผังย่อเหลือขั้นต่ำ (minmax 300px)
+   + ข้อมูลทั่วไปไหลเป็น 3 คอลัมน์ (v2.6 req #3 — ส่วนเกินไปช่องที่ 3 แทนแถบเลื่อน) ── */
 function _hoAutoFit(){
   const card=document.getElementById('iotCard');
   if(!card||!card.classList.contains('iot-fs')) return;
