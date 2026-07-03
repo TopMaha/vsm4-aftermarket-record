@@ -534,6 +534,16 @@ tbody tr:last-child td{border-bottom:none}
 /* side panel: ซ่อนปกติ → แสดงเฉพาะเต็มจอ · ปุ่มกางผัง: ใช้เฉพาะมือถือเต็มจอ (ดู media query ล่าง) */
 #iotFsSide{display:none}
 #iotMapBtn{display:none}
+/* ── ปุ่มสลับภาษา ไทย|EN (v2.8) — ตัวหลักอยู่ header ข้างปุ่มตั้งค่า ⚙️
+   ตัวสำรอง #iotLangSeg โชว์เฉพาะตอน IOT เต็มจอ (การ์ดเต็มจอทับ header จนกดปุ่มหลักไม่ได้) ── */
+.lang-seg{display:inline-flex;height:30px;border:1.5px solid #e2e8f0;border-radius:7px;overflow:hidden;background:#f8fafc;flex:0 0 auto}
+.lang-seg button{border:none;background:transparent;padding:0 9px;font-size:11px;font-weight:800;color:#64748b;cursor:pointer;line-height:1;font-family:inherit}
+.lang-seg button.on{background:#1A56DB;color:#fff}
+.hdr .lang-seg{height:34px;border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.15)}
+.hdr .lang-seg button{color:rgba(255,255,255,.85);padding:0 10px;font-size:11.5px}
+.hdr .lang-seg button.on{background:#fff;color:var(--blue-dark)}
+#iotLangSeg{display:none}
+.iot-fs #iotLangSeg{display:inline-flex}
 /* เต็มจอ = grid 3 คอลัมน์ (side | เส้นแบ่งลาก | floor) — ผู้ใช้ลากเส้นแบ่งปรับสัดส่วนเองได้ (v2.7 req #3)
    --iot-split = ความกว้างฝั่งต่อกะ (จำใน localStorage) · clamp กันผังแคบเกิน ~300px ไม่มีวันมองไม่เห็น */
 .iot-fs{display:grid!important;grid-template-columns:clamp(260px,var(--iot-split,52%),calc(100% - 330px)) 12px minmax(300px,1fr);
@@ -733,6 +743,11 @@ tbody tr:last-child td{border-bottom:none}
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
       <button class="hdr-icon-btn" onclick="setPane('settings')" title="ตั้งค่า" aria-label="ตั้งค่า">⚙️</button>
+      <!-- สลับภาษา ไทย|EN — มีผลหน้าตรวจสอบเครื่องจักร + ต่อกะ (ค่าเริ่มต้น = ไทย, จำไว้ข้ามครั้ง) -->
+      <span class="lang-seg" role="group" aria-label="เลือกภาษา / Language" title="เลือกภาษา / Language">
+        <button type="button" class="lang-th on" onclick="setLang('th')">ไทย</button>
+        <button type="button" class="lang-en" onclick="setLang('en')">EN</button>
+      </span>
     </div>
   </div>
   <!-- แถวที่ 2: ตัวตนผู้ใช้ (ซ้าย) + สถานะการเชื่อมต่อ + ปุ่มออกจากระบบ (ขวา) — แยกออกมาให้กดง่าย ไม่ทับกัน -->
@@ -782,14 +797,19 @@ tbody tr:last-child td{border-bottom:none}
   <!-- Machine Status Checker + Floor Plan -->
   <div class="card" id="iotCard" style="margin-top:10px;padding-bottom:6px">
     <div id="iotHeadRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-      <div class="card-title" style="margin:0"><span class="ci">🏭</span>ตรวจสอบสถานะเครื่องจักร</div>
+      <div class="card-title" style="margin:0"><span class="ci">🏭</span><span id="iotTitleTxt">ตรวจสอบสถานะเครื่องจักร</span></div>
       <div style="display:flex;gap:4px;align-items:center">
+        <!-- สลับภาษา (ตัวสำรอง — โชว์เฉพาะตอนเต็มจอ เพราะปุ่มหลักที่ header ถูกการ์ดเต็มจอทับ) -->
+        <span id="iotLangSeg" class="lang-seg" role="group" aria-label="เลือกภาษา / Language" title="เลือกภาษา / Language">
+          <button type="button" class="lang-th on" onclick="setLang('th')">ไทย</button>
+          <button type="button" class="lang-en" onclick="setLang('en')">EN</button>
+        </span>
         <span class="iot-zoom-ctrls" style="display:flex;gap:4px">
           <button onclick="iotZoomBtn(-1)" title="ย่อ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
           <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
           <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         </span>
-        <button onclick="openHandoverAdd()" title="เพิ่มบันทึกต่อกะ" aria-label="เพิ่มบันทึกต่อกะ" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #0E9F6E;background:#F3FAF7;color:#057A55;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">📝 ต่อกะ</button>
+        <button id="hoAddBtn" onclick="openHandoverAdd()" title="เพิ่มบันทึกต่อกะ" aria-label="เพิ่มบันทึกต่อกะ" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #0E9F6E;background:#F3FAF7;color:#057A55;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">📝 ต่อกะ</button>
         <button id="iotFsBtn" onclick="iotFullscreen()" title="เต็มจอ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #1A56DB;background:#EBF4FF;color:#1A56DB;font-size:15px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">⛶</button>
       </div>
     </div>
@@ -3626,11 +3646,64 @@ function toggleMcView() {
   if (btn) btn.textContent = showFloor ? '📋 รายการ' : '🗺️ แผนผัง';
 }
 
+/* ============================================================
+   ภาษา ไทย | EN (v2.8) — ครอบคลุมหน้าตรวจสอบสถานะเครื่องจักร + ต่อกะทั้งระบบ
+   • ค่าเริ่มต้น = ไทย (ข้อความเดิมทั้งหมด) · กด ไทย|EN ที่หัวการ์ด → สลับสดทั้งจอ
+   • TT(th,en) = คืนข้อความตามภาษาปัจจุบัน — ใส่ตรงจุด render ข้อความ UI จึงสลับได้ทันที
+     (ข้อความที่ผู้ใช้พิมพ์เอง เช่น โน้ตต่อกะ แสดงตามที่พิมพ์ ไม่แปล)
+   • จำภาษาใน localStorage (guard try/catch — เปิดผ่าน data: URL แล้ว storage ใช้ไม่ได้)
+   ============================================================ */
+const LS_LANG = 'vsm4_lang';
+let VSM_LANG = (function(){ try{ return localStorage.getItem(LS_LANG)==='en' ? 'en' : 'th'; }catch(e){ return 'th'; } })();
+function TT(th,en){ return VSM_LANG==='en' ? en : th; }
+function setLang(l){
+  l = l==='en' ? 'en' : 'th';
+  if(l===VSM_LANG) return;
+  VSM_LANG = l;
+  try{ localStorage.setItem(LS_LANG,l); }catch(e){}
+  applyLangStatic();
+  renderMachineStatusChecker();           // แถบวันที่ + OAE + ผัง/legend วาดใหม่ตามภาษา
+  renderHandoverPanels();                 // แผงต่อกะ (+ ป๊อปอัปย้อนหลัง refresh ในตัว)
+  _hoRelangModal();                       // modal เพิ่ม/แก้ไขเปิดค้าง → เปิดใหม่ภาษาใหม่ คงข้อความที่พิมพ์
+  if(_iotMcId && document.getElementById('iotMcPop')) iotShowMcPop(_iotMcId);  // ป๊อปอัปเครื่องเปิดค้าง → วาดใหม่
+}
+/* ปุ่ม/ป้ายที่เป็น HTML คงที่ (ไม่ได้วาดใหม่ตอน render) — ตั้งข้อความตามภาษาที่นี่ */
+function applyLangStatic(){
+  const en = VSM_LANG==='en';
+  // ปุ่มภาษามี 2 ชุด (header + สำรองตอนเต็มจอ) — อัปเดตสถานะ .on พร้อมกันทุกชุด
+  document.querySelectorAll('.lang-seg .lang-th').forEach(b=>b.classList.toggle('on',!en));
+  document.querySelectorAll('.lang-seg .lang-en').forEach(b=>b.classList.toggle('on',en));
+  const ttl=document.getElementById('iotTitleTxt'); if(ttl) ttl.textContent=TT('ตรวจสอบสถานะเครื่องจักร','Machine Status');
+  const zb=document.querySelectorAll('.iot-zoom-ctrls button');
+  if(zb.length===3){ zb[0].title=TT('ย่อ','Zoom out'); zb[1].title=TT('รีเซ็ต','Reset zoom'); zb[2].title=TT('ขยาย','Zoom in'); }
+  const ab=document.getElementById('hoAddBtn');
+  if(ab){ ab.innerHTML='📝 '+TT('ต่อกะ','Handover'); const t=TT('เพิ่มบันทึกต่อกะ','Add handover note'); ab.title=t; ab.setAttribute('aria-label',t); }
+  const card=document.getElementById('iotCard');
+  const fs = card && card.classList.contains('iot-fs');
+  const fb=document.getElementById('iotFsBtn');
+  if(fb) fb.title = fs ? TT('ออกจากเต็มจอ','Exit fullscreen') : TT('เต็มจอ','Fullscreen');
+  const sp=document.getElementById('iotSplit');
+  if(sp) sp.title=TT('ลากซ้าย-ขวาเพื่อปรับขนาด ต่อกะ ⇄ ผัง · ดับเบิลคลิก = คืนค่าเริ่มต้น','Drag left–right to resize Handover ⇄ Map · Double-click = reset');
+  const side=document.getElementById('iotFsSide');
+  if(side) side.setAttribute('aria-label',TT('ข้อมูลต่อกะ','Shift handover'));
+  const oae=document.getElementById('iotOaeStrip');
+  if(oae) oae.setAttribute('aria-label',TT('สรุป OAE รวมและรายโซน','OAE summary — total and per zone'));
+  _iotMapBtnLabel(card && card.classList.contains('iot-map-open'));
+}
+/* ปุ่มกาง/ซ่อนผัง (มือถือเต็มจอ) — ข้อความตามภาษา + สถานะกาง (ใช้ร่วมกัน 3 จุด) */
+function _iotMapBtnLabel(open){
+  const b=document.getElementById('iotMapBtn'); if(!b) return;
+  b.innerHTML = open ? '🗺️ '+TT('ซ่อนผังเครื่องจักร','Hide floor map')+' ▴'
+                     : '🗺️ '+TT('ดูผังเครื่องจักร','Show floor map')+' ▾';
+  b.setAttribute('aria-expanded',String(!!open));
+}
+applyLangStatic();   // เปิดแอปมาเป็น EN ค้างไว้ → ป้ายคงที่ต้องเป็น EN ตั้งแต่แรก
+
 function renderMachineStatusChecker(recs) {
   // IoT floor plan เป็นผังจริงของ VSM4 เท่านั้น — VSM1/2/3 ยังไม่มีผัง (เพิ่มภายหลัง)
   if (!canSeeAllVsm() && myVsm() !== 'vsm4') {
     const fw = $('mcViewFloor');
-    if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง</div>`;
+    if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
     if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
     return;
@@ -3638,7 +3711,7 @@ function renderMachineStatusChecker(recs) {
   const dFrom = $('dashFrom')?.value || todayISO();
   const dTo   = $('dashTo')?.value   || dFrom;
   const selShift = state.shiftFilter || 'all';
-  const shiftLabel = selShift==='all'?'🔄 รวมทุกกะ': selShift==='day'?'☀️ กะกลางวัน':'🌙 กะกลางคืน';
+  const shiftLabel = selShift==='all'?'🔄 '+TT('รวมทุกกะ','All shifts'): selShift==='day'?'☀️ '+TT('กะกลางวัน','Day shift'):'🌙 '+TT('กะกลางคืน','Night shift');
   if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${dFrom===dTo?dFrom:dFrom+' → '+dTo}  ${shiftLabel}`;
 
   // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
@@ -3686,9 +3759,9 @@ function renderIotOaeStrip(filtered){
   const vcls=v=> v==null ? 'none' : (v>=0.75?'good':'warn');                                 // เกณฑ์เดียวกับผัง (≥75% เขียว)
   const total=_oaeOf(rows);
   let html=`<div class="oae-chip total">
-      <span class="oae-k">📊 OAE รวมทั้งหมด</span>
+      <span class="oae-k">📊 ${TT('OAE รวมทั้งหมด','Overall OAE')}</span>
       <span class="oae-v">${fmtV(total)}</span>
-      <span class="oae-sub">ทุกโซน · เป้า ≥75%</span>
+      <span class="oae-sub">${TT('ทุกโซน · เป้า ≥75%','All zones · target ≥75%')}</span>
     </div>`;
   html+=zones.map((z,i)=>{
     const v=_oaeOf(rows.filter(r=>r.zone===z));
@@ -3825,7 +3898,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
     const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
     parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
-    const aria = active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ปิดเครื่อง`;
+    const aria = active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ${TT('ปิดเครื่อง','off')}`;
     g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
   }
 
@@ -3840,10 +3913,10 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
         <span style="width:11px;height:11px;background:#ea580c;border-radius:2px;display:inline-block"></span>OAE &lt;75%
       </span>
       <span style="display:inline-flex;align-items:center;gap:4px;color:#111827">
-        <span style="width:11px;height:11px;background:#000;border-radius:2px;display:inline-block"></span>ปิดเครื่อง
+        <span style="width:11px;height:11px;background:#000;border-radius:2px;display:inline-block"></span>${TT('ปิดเครื่อง','Off')}
       </span>
-      <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 แตะที่เครื่องเพื่อดูงาน · Valve / Lot / OPR</span>
-      <span style="font-size:10px;color:#6b7280;margin-left:auto">เปิด <b>${nOn}</b> / รวม <b>${tot}</b> เครื่อง</span>
+      <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
+      <span style="font-size:10px;color:#6b7280;margin-left:auto">${TT('เปิด','Running')} <b>${nOn}</b> / ${TT('รวม','total')} <b>${tot}</b> ${TT('เครื่อง','machines')}</span>
     </div>
     <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
       <div id="iotScaleWrap" style="transform-origin:top left;transition:transform .2s">
@@ -3882,7 +3955,8 @@ function iotMcTap(id){
   if(!card||!card.classList.contains('iot-fs')) return; // ดูรายละเอียดได้เฉพาะตอนเต็มจอ
   iotShowMcPop(id);
 }
-function iotCloseMcPop(){ const p=document.getElementById('iotMcPop'); if(p) p.remove(); }
+let _iotMcId=null;   // เครื่องที่ป๊อปอัปเปิดอยู่ — ใช้วาดป๊อปอัปใหม่ตอนสลับภาษา
+function iotCloseMcPop(){ const p=document.getElementById('iotMcPop'); if(p) p.remove(); _iotMcId=null; }
 function _iotMcKey(e){
   if(e.key!=='Enter'&&e.key!==' ') return;
   const g=e.target&&e.target.closest&&e.target.closest('.iot-mc');
@@ -3901,7 +3975,7 @@ function _iotMcDetail(id){
     const st=r.shift_type==='night'?'night':'day';
     const opr=Number(r.opr)||0; tot+=opr;
     shifts[st].push({
-      valve:(r.valve_no||r.valveNo||'').trim()||'(ไม่ระบุวาล์ว)',
+      valve:(r.valve_no||r.valveNo||'').trim()||TT('(ไม่ระบุวาล์ว)','(no valve)'),
       lot:(r.lot||'').trim(),
       opr,
       date:(r.shift_date||r.record_date||'').slice(0,10),
@@ -3930,7 +4004,7 @@ function _iotShiftSec(label,emoji,rows){
   return `<div style="margin-bottom:12px">
     <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#334155;margin-bottom:5px">
       <span>${emoji}</span>${label}
-      <span style="margin-left:auto;font-size:11px;color:#64748b;font-weight:700">รวม <b style="color:#0f172a">${sub.toLocaleString()}</b></span>
+      <span style="margin-left:auto;font-size:11px;color:#64748b;font-weight:700">${TT('รวม','Total')} <b style="color:#0f172a">${sub.toLocaleString()}</b></span>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed">
       <thead><tr>
@@ -3946,7 +4020,7 @@ function _iotHelpBlock(det){
   if(!(det.status==='warn' || det.helps.length)) return '';
   let inner;
   if(!det.helps.length){
-    inner=`<div style="font-size:12px;color:#92400e;background:#fffbeb;border:1px dashed #fcd34d;border-radius:9px;padding:8px 10px">ยังไม่มีการบันทึก “ขอความช่วยเหลือ” สำหรับเครื่องนี้</div>`;
+    inner=`<div style="font-size:12px;color:#92400e;background:#fffbeb;border:1px dashed #fcd34d;border-radius:9px;padding:8px 10px">${TT('ยังไม่มีการบันทึก “ขอความช่วยเหลือ” สำหรับเครื่องนี้','No “help request” recorded for this machine')}</div>`;
   } else {
     inner=det.helps.map(({h,r})=>{
       const open=h.status!=='done';
@@ -3954,18 +4028,18 @@ function _iotHelpBlock(det){
       const dt=(r.shift_date||r.record_date||'').slice(0,10);
       return `<div style="border:1.5px solid ${open?'#FCA5A5':'#A7F3D0'};background:${open?'#FEF2F2':'#F0FDF4'};border-radius:10px;padding:8px 10px;margin-top:6px">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:800">
-          <span style="color:${open?'#B91C1C':'#047857'}">${open?'⏳ รอดำเนินการ':'✅ แก้ไขแล้ว'}</span>
+          <span style="color:${open?'#B91C1C':'#047857'}">${open?'⏳ '+TT('รอดำเนินการ','Pending'):'✅ '+TT('แก้ไขแล้ว','Resolved')}</span>
           <span style="color:#64748b;font-weight:700">${sh} ${dt}</span>
         </div>
         <div style="font-size:13px;color:#0f172a;margin-top:4px;white-space:pre-wrap">${escapeHtml(h.text)}</div>
-        <div style="font-size:10px;color:#94a3b8;margin-top:3px">โดย ${escapeHtml(h.by||'-')}${h.done_by?` · ปิดโดย ${escapeHtml(h.done_by)}`:''}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:3px">${TT('โดย','By')} ${escapeHtml(h.by||'-')}${h.done_by?` · ${TT('ปิดโดย','closed by')} ${escapeHtml(h.done_by)}`:''}</div>
       </div>`;
     }).join('');
   }
   return `<div style="margin-top:6px;border-top:1px dashed #e2e8f0;padding-top:11px">
     <div style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#B91C1C;margin-bottom:6px">
       <span style="background:linear-gradient(135deg,#B91C1C,#EF4444);width:22px;height:22px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px">🆘</span>
-      ขอความช่วยเหลือ
+      ${TT('ขอความช่วยเหลือ','Help requests')}
     </div>
     ${inner}
   </div>`;
@@ -3974,36 +4048,37 @@ function iotShowMcPop(id){
   const card=document.getElementById('iotCard'); if(!card) return;
   iotCloseMcPop();
   const det=_iotMcDetail(id);
-  const theme = det.status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:'ทำงาน'}
-              : det.status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:'ต้องช่วยเหลือ'}
-              : {bg:'linear-gradient(135deg,#475569,#334155)',pill:'#e2e8f0',pt:'#1e293b',label:'ปิดเครื่อง'};
+  const theme = det.status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:TT('ทำงาน','Running')}
+              : det.status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:TT('ต้องช่วยเหลือ','Needs help')}
+              : {bg:'linear-gradient(135deg,#475569,#334155)',pill:'#e2e8f0',pt:'#1e293b',label:TT('ปิดเครื่อง','Off')};
   let body;
   if(!det.active){
     body=`<div style="text-align:center;padding:24px 8px;color:#64748b">
       <div style="font-size:34px;margin-bottom:6px">🌙</div>
-      <div style="font-size:13px;font-weight:700">ปิดเครื่อง — ไม่มีงานในช่วงที่เลือก</div>
+      <div style="font-size:13px;font-weight:700">${TT('ปิดเครื่อง — ไม่มีงานในช่วงที่เลือก','Off — no jobs in selected period')}</div>
       <div style="font-size:11px;margin-top:5px">${escapeHtml((_iotData&&_iotData.rangeLabel)||'')}</div>
     </div>`;
   } else {
     const noRows=!det.shifts.day.length&&!det.shifts.night.length;
     body=`<div style="display:flex;gap:8px;margin-bottom:13px">
         ${_iotStat('OAE',(det.oae*100).toFixed(0)+'%',det.status==='warn'?'#ea580c':'#16a34a')}
-        ${_iotStat('OPR รวม',det.tot.toLocaleString(),'#1A56DB')}
-        ${_iotStat('วาล์ว',det.valves+' ชนิด','#7c3aed')}
+        ${_iotStat(TT('OPR รวม','Total OPR'),det.tot.toLocaleString(),'#1A56DB')}
+        ${_iotStat(TT('วาล์ว','Valves'),det.valves+TT(' ชนิด',' types'),'#7c3aed')}
       </div>
-      ${_iotShiftSec('กะกลางวัน','☀️',det.shifts.day)}
-      ${_iotShiftSec('กะกลางคืน','🌙',det.shifts.night)}
-      ${noRows?'<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">ไม่มีรายละเอียดงาน</div>':''}
+      ${_iotShiftSec(TT('กะกลางวัน','Day shift'),'☀️',det.shifts.day)}
+      ${_iotShiftSec(TT('กะกลางคืน','Night shift'),'🌙',det.shifts.night)}
+      ${noRows?`<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">${TT('ไม่มีรายละเอียดงาน','No job details')}</div>`:''}
       ${_iotHelpBlock(det)}`;
   }
   const pop=document.createElement('div');
   pop.id='iotMcPop'; pop.className='iotpop-bg';
+  _iotMcId=id;                                    // จำไว้ให้สลับภาษาแล้ววาดใหม่ได้ (iotCloseMcPop ล้างให้)
   pop.addEventListener('click',e=>{ if(e.target===pop) iotCloseMcPop(); });
-  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true" aria-label="รายละเอียดเครื่อง ${escapeHtml(id)}">
+  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true" aria-label="${TT('รายละเอียดเครื่อง','Machine details')} ${escapeHtml(id)}">
     <div class="iotpop-hd" style="background:${theme.bg}">
       <span style="font-family:'Courier New',monospace;font-size:17px;font-weight:800;letter-spacing:.5px">${escapeHtml(id)}</span>
       <span style="background:${theme.pill};color:${theme.pt};font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">${theme.label}</span>
-      <button class="iotpop-cl" onclick="iotCloseMcPop()" aria-label="ปิด">✕</button>
+      <button class="iotpop-cl" onclick="iotCloseMcPop()" aria-label="${TT('ปิด','Close')}">✕</button>
     </div>
     <div class="iotpop-bd">${body}</div>
   </div>`;
@@ -4023,8 +4098,7 @@ function iotFullscreen(){
 function iotToggleMap(){
   const card=document.getElementById('iotCard'); if(!card) return;
   const open=card.classList.toggle('iot-map-open');
-  const b=document.getElementById('iotMapBtn');
-  if(b){ b.innerHTML=open?'🗺️ ซ่อนผังเครื่องจักร ▴':'🗺️ ดูผังเครื่องจักร ▾'; b.setAttribute('aria-expanded',String(open)); }
+  _iotMapBtnLabel(open);
   if(open){
     _applyIotZoom();
     const f=document.getElementById('mcViewFloor');
@@ -4033,8 +4107,7 @@ function iotToggleMap(){
 }
 function _iotMapReset(card){
   card.classList.remove('iot-map-open');
-  const b=document.getElementById('iotMapBtn');
-  if(b){ b.innerHTML='🗺️ ดูผังเครื่องจักร ▾'; b.setAttribute('aria-expanded','false'); }
+  _iotMapBtnLabel(false);
 }
 function iotEnterFs(card){
   // ย้าย card ขึ้นเป็นลูกตรงของ <body> กัน ancestor ที่มี transform/contain/backdrop-filter
@@ -4047,7 +4120,7 @@ function iotEnterFs(card){
   card.classList.add('iot-fs');
   _iotSplitApplySaved(card);                    // คืนสัดส่วน ต่อกะ⇄ผัง ที่ผู้ใช้เคยลากปรับไว้
   document.documentElement.style.overflow='hidden';
-  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='✕';b.title='ออกจากเต็มจอ';}
+  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='✕';b.title=TT('ออกจากเต็มจอ','Exit fullscreen');}
   const rq=card.requestFullscreen||card.webkitRequestFullscreen;
   if(rq){ try{ const p=rq.call(card); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
   document.addEventListener('keydown',_iotFsKey,true);
@@ -4065,7 +4138,7 @@ function iotExitFs(card){
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
   document.documentElement.style.overflow='';
-  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='⛶';b.title='เต็มจอ';}
+  const b=document.getElementById('iotFsBtn'); if(b){b.textContent='⛶';b.title=TT('เต็มจอ','Fullscreen');}
   if(document.fullscreenElement&&document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
   else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){ document.webkitExitFullscreen(); }
   // คืน card กลับตำแหน่งเดิมในแท็บ Dashboard
@@ -4114,9 +4187,10 @@ const HO_ORDER = ['machine','induction'];
 function _hoType(t){ return t==='induction' ? 'induction' : 'machine'; }
 // หมวดต่อกะ (req: แบ่ง 3 ส่วน) — broken=เครื่องเสีย/ค้าง (คอลัมน์ 1) · note=ข้อมูลทั่วไป (คอลัมน์ 2→3 ไหลอัตโนมัติ)
 const HO_CATS = {
-  broken: { label:'เครื่องเสีย/ค้าง', short:'เครื่องเสีย/ค้าง', icon:'🔧' },
-  note:   { label:'ข้อมูลทั่วไป',      short:'ข้อมูลทั่วไป',      icon:'📋' },
+  broken: { label:'เครื่องเสีย/ค้าง', en:'Broken / Pending', icon:'🔧' },
+  note:   { label:'ข้อมูลทั่วไป',      en:'General Info',      icon:'📋' },
 };
+function _hoCatLabel(c){ return TT(c.label, c.en); }   // ป้ายหมวดตามภาษา (label=ไทย, en=อังกฤษ)
 function _hoCat(x){ const c=(x&&typeof x==='object')?x.cat:x; return c==='broken' ? 'broken' : 'note'; }
 
 let _hoMigrated=false;
@@ -4216,13 +4290,13 @@ function _hoWhen(iso){
   const d=new Date(iso); if(isNaN(d)) return {abs:'',ago:''};
   const m=Math.floor((Date.now()-d.getTime())/60000);
   let ago;
-  if(m<1) ago='เมื่อสักครู่';
-  else if(m<60) ago=m+' นาทีที่แล้ว';
-  else if(m<1440) ago=Math.floor(m/60)+' ชม.ที่แล้ว';
-  else ago=Math.floor(m/1440)+' วันที่แล้ว';
-  const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  if(m<1) ago=TT('เมื่อสักครู่','just now');
+  else if(m<60) ago=m+TT(' นาทีที่แล้ว',' min ago');
+  else if(m<1440) ago=Math.floor(m/60)+TT(' ชม.ที่แล้ว',' hr ago');
+  else ago=Math.floor(m/1440)+TT(' วันที่แล้ว',' d ago');
+  const MO=_hoMonths();
   const P2=n=>String(n).padStart(2,'0');
-  return { abs:`${d.getDate()} ${TH[d.getMonth()]} ${P2(d.getHours())}:${P2(d.getMinutes())}`, ago };
+  return { abs:`${d.getDate()} ${MO[d.getMonth()]} ${P2(d.getHours())}:${P2(d.getMinutes())}`, ago };
 }
 function _hoBy(e){
   const id=(e.byId||'').trim(), nm=(e.byName||'').trim();
@@ -4234,19 +4308,24 @@ function _hoDayKey(iso){
   const P2=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${P2(d.getMonth()+1)}-${P2(d.getDate())}`;
 }
+function _hoMonths(){
+  return VSM_LANG==='en'
+    ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    : ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+}
 function _hoDayLabel(iso){
   const d=new Date(iso); if(isNaN(d)) return '';
   const key=_hoDayKey(iso);
   const today=_hoDayKey(new Date().toISOString());
   const yest=_hoDayKey(new Date(Date.now()-86400000).toISOString());
-  if(key===today) return 'วันนี้';
-  if(key===yest)  return 'เมื่อวาน';
-  const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${d.getDate()} ${TH[d.getMonth()]} ${d.getFullYear()}`;
+  if(key===today) return TT('วันนี้','Today');
+  if(key===yest)  return TT('เมื่อวาน','Yesterday');
+  const MO=_hoMonths();
+  return `${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`;
 }
 function _hoMetaHtml(e,full){
   const w=_hoWhen(e.ts);
-  const edited=e.editedAt?`<span class="ho-dot"></span><span class="ho-edited">✎ แก้ไขแล้ว</span>`:'';
+  const edited=e.editedAt?`<span class="ho-dot"></span><span class="ho-edited">✎ ${TT('แก้ไขแล้ว','edited')}</span>`:'';
   // การ์ด = ไม่โชว์ชื่อคนลง (กินพื้นที่ — req มือถือ) · ป๊อปอัปอ่านเต็ม (full) ยังโชว์ครบ
   const by=full?`<span class="ho-by">👤 ${escapeHtml(_hoBy(e))}</span><span class="ho-dot"></span>`:'';
   return `<div class="ho-meta">
@@ -4257,8 +4336,8 @@ function _hoMetaHtml(e,full){
 }
 function _hoActionsHtml(type,id){
   return `<div class="ho-acts">
-    <button type="button" class="ho-act" title="แก้ไข" aria-label="แก้ไขบันทึก" onclick="event.stopPropagation();editHandover('${type}','${id}')">✏️</button>
-    <button type="button" class="ho-act ho-del" title="ลบ" aria-label="ลบบันทึก" onclick="event.stopPropagation();askDeleteHandover('${type}','${id}')">🗑️</button>
+    <button type="button" class="ho-act" title="${TT('แก้ไข','Edit')}" aria-label="${TT('แก้ไขบันทึก','Edit note')}" onclick="event.stopPropagation();editHandover('${type}','${id}')">✏️</button>
+    <button type="button" class="ho-act ho-del" title="${TT('ลบ','Delete')}" aria-label="${TT('ลบบันทึก','Delete note')}" onclick="event.stopPropagation();askDeleteHandover('${type}','${id}')">🗑️</button>
   </div>`;
 }
 function _hoFootHtml(e,type){
@@ -4268,8 +4347,8 @@ function _hoFootHtml(e,type){
 // withCat = ติดป้ายหมวดบนการ์ด (ใช้ในป๊อปอัปย้อนหลังที่ปนทั้ง 2 หมวด)
 function _hoCardHtml(e,type,newest,withCat){
   const cat=_hoCat(e), c=HO_CATS[cat];
-  const tag=withCat?`<div class="ho-cat-tag ${cat}">${c.icon} ${escapeHtml(c.label)}</div>`:'';
-  return `<div class="ho-card${newest?' newest':''}" role="button" tabindex="0" title="แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ"
+  const tag=withCat?`<div class="ho-cat-tag ${cat}">${c.icon} ${escapeHtml(_hoCatLabel(c))}</div>`:'';
+  return `<div class="ho-card${newest?' newest':''}" role="button" tabindex="0" title="${TT('แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ','Tap to read / edit / delete')}"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
     ${tag}<div class="ho-text">${escapeHtml(e.text)}</div>
@@ -4279,7 +4358,7 @@ function _hoCardHtml(e,type,newest,withCat){
 /* แตะการ์ด → ป๊อปอัปอ่านข้อความเต็ม + ปุ่มแก้ไข/ลบขนาดใหญ่ */
 function hoCardTap(id){
   const e=_handover[id];
-  if(!e||e.deleted){ toast('ไม่พบบันทึก','red'); return; }
+  if(!e||e.deleted){ toast(TT('ไม่พบบันทึก','Note not found'),'red'); return; }
   closeHandoverAdd();
   const card=document.getElementById('iotCard');
   const fs=card&&card.classList.contains('iot-fs');
@@ -4289,15 +4368,15 @@ function hoCardTap(id){
   ov.style.position=fs?'absolute':'fixed';
   ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHandoverAdd(); });
   const type=_hoType(e.type), cat=_hoCat(e), c=HO_CATS[cat], t=HO_TYPES[type];
-  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="บันทึกต่อกะ">
-    <div class="ho-modal-hd" style="background:${t.grad}">${t.icon} ${escapeHtml(t.label)} · ${c.icon} ${escapeHtml(c.label)}</div>
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${TT('บันทึกต่อกะ','Handover note')}">
+    <div class="ho-modal-hd" style="background:${t.grad}">${t.icon} ${escapeHtml(t.label)} · ${c.icon} ${escapeHtml(_hoCatLabel(c))}</div>
     <div class="ho-modal-bd">
       <div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:11px 13px;font-size:15.5px;line-height:1.65;color:#0f172a;white-space:pre-wrap;word-break:break-word;max-height:46vh;overflow:auto">${escapeHtml(e.text)}</div>
       ${_hoMetaHtml(e,true)}
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0;flex-wrap:wrap">
-        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ปิด</button>
-        <button type="button" class="btn" style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5" onclick="askDeleteHandover('${type}','${id}')">🗑️ ลบ</button>
-        <button type="button" class="btn" style="background:#1A56DB;color:#fff;border:none" onclick="editHandover('${type}','${id}')">✏️ แก้ไข</button>
+        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">${TT('ปิด','Close')}</button>
+        <button type="button" class="btn" style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5" onclick="askDeleteHandover('${type}','${id}')">🗑️ ${TT('ลบ','Delete')}</button>
+        <button type="button" class="btn" style="background:#1A56DB;color:#fff;border:none" onclick="editHandover('${type}','${id}')">✏️ ${TT('แก้ไข','Edit')}</button>
       </div>
     </div>
   </div>`;
@@ -4322,15 +4401,15 @@ function _hoSecHtml(type,cat,arr){
   const body = shown.length
     ? shown.map((e,i)=>_hoCardHtml(e,type,i===0)).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
     : `<div class="ho-empty" role="button" tabindex="0" style="cursor:pointer" onclick="openHandoverAdd('${type}',null,'${cat}')"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openHandoverAdd('${type}',null,'${cat}')}">ยังไม่มี — <b>แตะที่นี่</b> หรือกด <b>＋</b> เพื่อเพิ่ม</div>`;
-  const histBtn = hidden>0 ? `<button type="button" class="ho-hist-btn" onclick="hoHistoryPop('${type}')">🕘 ดูข้อมูลย้อนหลัง ${hidden} รายการ</button>` : '';
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openHandoverAdd('${type}',null,'${cat}')}">${TT('ยังไม่มี — <b>แตะที่นี่</b> หรือกด <b>＋</b> เพื่อเพิ่ม','None yet — <b>tap here</b> or press <b>＋</b> to add')}</div>`;
+  const histBtn = hidden>0 ? `<button type="button" class="ho-hist-btn" onclick="hoHistoryPop('${type}')">🕘 ${TT('ดูข้อมูลย้อนหลัง '+hidden+' รายการ','View '+hidden+' older entries')}</button>` : '';
   return `<div class="ho-sec ${cat==='broken'?'broken':'notes'}" data-cat="${cat}">
     <div class="ho-sec-hd">
       <span class="ho-sec-ic">${c.icon}</span>
-      <span class="ho-sec-ttl">${escapeHtml(c.label)}</span>
+      <span class="ho-sec-ttl">${escapeHtml(_hoCatLabel(c))}</span>
       <span class="ho-sec-cnt">${hidden>0?shown.length+'/'+arr.length:arr.length}</span>
-      ${hidden>0?`<button type="button" class="ho-sec-hist" onclick="hoHistoryPop('${type}')" title="ดูข้อมูลย้อนหลัง" aria-label="ดูข้อมูลย้อนหลัง ${escapeHtml(HO_TYPES[type].label)}">🕘</button>`:''}
-      <button type="button" class="ho-sec-add" onclick="openHandoverAdd('${type}',null,'${cat}')" aria-label="เพิ่ม ${escapeHtml(c.label)} ${escapeHtml(HO_TYPES[type].label)}">＋</button>
+      ${hidden>0?`<button type="button" class="ho-sec-hist" onclick="hoHistoryPop('${type}')" title="${TT('ดูข้อมูลย้อนหลัง','View history')}" aria-label="${TT('ดูข้อมูลย้อนหลัง','View history')} ${escapeHtml(HO_TYPES[type].label)}">🕘</button>`:''}
+      <button type="button" class="ho-sec-add" onclick="openHandoverAdd('${type}',null,'${cat}')" aria-label="${TT('เพิ่ม','Add')} ${escapeHtml(_hoCatLabel(c))} ${escapeHtml(HO_TYPES[type].label)}">＋</button>
     </div>
     <div class="ho-sec-body">${body}${histBtn}</div>
   </div>`;
@@ -4344,14 +4423,14 @@ function hoHistMore(){ _hoHistLimit+=200; _hoHistShow(); }
 function _hoHistListHtml(type){
   const list=_hoList(type);
   const shown=list.slice(0,_hoHistLimit), more=list.length-shown.length;
-  if(!shown.length) return '<div class="ho-empty">ยังไม่มีบันทึก</div>';
+  if(!shown.length) return `<div class="ho-empty">${TT('ยังไม่มีบันทึก','No notes yet')}</div>`;
   let html='', day='';
   shown.forEach(e=>{
     const k=_hoDayKey(e.ts);
     if(k!==day){ day=k; html+=`<div class="ho-day-hd">📅 ${escapeHtml(_hoDayLabel(e.ts))}</div>`; }
     html+=_hoCardHtml(e,type,false,true);
   });
-  if(more>0) html+=`<button type="button" class="ho-hist-btn" onclick="hoHistMore()">＋ ดูเก่ากว่านี้อีก ${more} รายการ</button>`;
+  if(more>0) html+=`<button type="button" class="ho-hist-btn" onclick="hoHistMore()">＋ ${TT('ดูเก่ากว่านี้อีก '+more+' รายการ','Show '+more+' more')}</button>`;
   return html;
 }
 function _hoHistShow(){
@@ -4367,10 +4446,10 @@ function _hoHistShow(){
   ov.id='hoHistOv'; ov.className='ho-modal-bg';
   ov.style.position=fs?'absolute':'fixed';
   ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHoHistory(); });
-  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="ข้อมูลต่อกะย้อนหลัง" style="max-width:620px;max-height:86%">
-    <div class="ho-modal-hd" style="background:${cfg.grad}">🕘 ต่อกะย้อนหลัง — ${cfg.icon} ${escapeHtml(cfg.label)}
-      <span class="ho-cnt" style="margin-left:auto">${n} รายการ</span>
-      <button class="iotpop-cl" onclick="closeHoHistory()" aria-label="ปิด" style="margin-left:8px">✕</button>
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${TT('ข้อมูลต่อกะย้อนหลัง','Handover history')}" style="max-width:620px;max-height:86%">
+    <div class="ho-modal-hd" style="background:${cfg.grad}">🕘 ${TT('ต่อกะย้อนหลัง','Handover history')} — ${cfg.icon} ${escapeHtml(cfg.label)}
+      <span class="ho-cnt" style="margin-left:auto">${n} ${TT('รายการ','entries')}</span>
+      <button class="iotpop-cl" onclick="closeHoHistory()" aria-label="${TT('ปิด','Close')}" style="margin-left:8px">✕</button>
     </div>
     <div class="ho-modal-bd ho-hist-bd" style="overflow:auto;min-height:0">${_hoHistListHtml(type)}</div>
   </div>`;
@@ -4387,7 +4466,7 @@ function _hoPanelHtml(type){
   return `<div class="ho-panel" data-type="${type}">
     <div class="ho-hd" style="background:${cfg.grad}">
       <span class="ho-ic">${cfg.icon}</span>
-      <span class="ho-ttl">ข้อมูลต่อกะ ${escapeHtml(cfg.label)}</span>
+      <span class="ho-ttl">${TT('ข้อมูลต่อกะ '+escapeHtml(cfg.label), escapeHtml(cfg.label)+' Handover')}</span>
       ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
     </div>
     <div class="ho-bd">
@@ -4456,7 +4535,7 @@ window.addEventListener('resize',()=>{ clearTimeout(_iotRszT); _iotRszT=setTimeo
 /* แก้ไขบันทึก: หา entry แล้วเปิด modal โหมดแก้ไข */
 function editHandover(type, id){
   const e=_handover[id];
-  if(!e){ toast('ไม่พบบันทึก','red'); return; }
+  if(!e){ toast(TT('ไม่พบบันทึก','Note not found'),'red'); return; }
   openHandoverAdd(e.type, e);
 }
 /* บันทึกการแก้ไข — เปลี่ยนข้อความ + เปลี่ยนประเภทได้ → sync ขึ้น cloud ทันที */
@@ -4495,28 +4574,28 @@ function openHandoverAdd(presetType, editEntry, presetCat){
   }).join('');
   const catSeg = ['broken','note'].map(k=>{
     const c=HO_CATS[k];
-    return `<button type="button" data-c="${k}" class="${k===_hoAddCat?'on':''}" onclick="_hoPickCat('${k}')">${c.icon} ${escapeHtml(c.short)}</button>`;
+    return `<button type="button" data-c="${k}" class="${k===_hoAddCat?'on':''}" onclick="_hoPickCat('${k}')">${c.icon} ${escapeHtml(_hoCatLabel(c))}</button>`;
   }).join('');
-  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${isEdit?'แก้ไข':'เพิ่ม'}บันทึกต่อกะ">
-    <div class="ho-modal-hd" id="hoModalHd" style="background:${HO_TYPES[_hoAddType].grad}">${isEdit?'✏️ แก้ไขบันทึกต่อกะ':'📝 เพิ่มบันทึกต่อกะ'}</div>
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${isEdit?TT('แก้ไขบันทึกต่อกะ','Edit handover note'):TT('เพิ่มบันทึกต่อกะ','Add handover note')}">
+    <div class="ho-modal-hd" id="hoModalHd" style="background:${HO_TYPES[_hoAddType].grad}">${isEdit?'✏️ '+TT('แก้ไขบันทึกต่อกะ','Edit handover note'):'📝 '+TT('เพิ่มบันทึกต่อกะ','Add handover note')}</div>
     <div class="ho-modal-bd">
       <div>
-        <label class="ho-lbl">ประเภท</label>
+        <label class="ho-lbl">${TT('ประเภท','Type')}</label>
         <div class="ho-seg" id="hoSeg">${seg}</div>
       </div>
       <div>
-        <label class="ho-lbl">หมวด — จะไปอยู่คอลัมน์ไหน</label>
+        <label class="ho-lbl">${TT('หมวด — จะไปอยู่คอลัมน์ไหน','Category — which column it goes in')}</label>
         <div class="ho-seg" id="hoCatSeg">${catSeg}</div>
       </div>
       <div>
-        <label class="ho-lbl" for="hoText">ข้อความต่อกะ — พิมพ์อะไรก็ได้</label>
-        <textarea id="hoText" class="ho-ta" rows="6" placeholder="เช่น งานค้างที่ส่งต่อ / ปัญหาเครื่อง / สิ่งที่กะถัดไปต้องรู้ …"
+        <label class="ho-lbl" for="hoText">${TT('ข้อความต่อกะ — พิมพ์อะไรก็ได้','Handover message — type anything')}</label>
+        <textarea id="hoText" class="ho-ta" rows="6" placeholder="${TT('เช่น งานค้างที่ส่งต่อ / ปัญหาเครื่อง / สิ่งที่กะถัดไปต้องรู้ …','e.g. pending work / machine issues / what the next shift must know …')}"
           onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();submitHandover()}"></textarea>
-        <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 Ctrl+Enter = บันทึกเร็ว · ขึ้นบรรทัดใหม่ได้ตามปกติ</div>
+        <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Ctrl+Enter = บันทึกเร็ว · ขึ้นบรรทัดใหม่ได้ตามปกติ','Ctrl+Enter = quick save · Enter = new line')}</div>
       </div>
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0">
-        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ยกเลิก</button>
-        <button type="button" class="btn btn-green" onclick="submitHandover()">💾 ${isEdit?'บันทึกการแก้ไข':'บันทึกต่อกะ'}</button>
+        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">${TT('ยกเลิก','Cancel')}</button>
+        <button type="button" class="btn btn-green" onclick="submitHandover()">💾 ${isEdit?TT('บันทึกการแก้ไข','Save changes'):TT('บันทึกต่อกะ','Save note')}</button>
       </div>
     </div>
   </div>`;
@@ -4528,6 +4607,24 @@ function openHandoverAdd(presetType, editEntry, presetCat){
   }
 }
 function closeHandoverAdd(){ const o=document.getElementById('hoAddOv'); if(o) o.remove(); _hoEditId=null; _hoEditOrigType=null; }
+/* สลับภาษาตอน modal เพิ่ม/แก้ไขเปิดค้าง → เปิดใหม่เป็นภาษาใหม่ คงข้อความ/ประเภท/หมวดที่เลือกไว้
+   (ป๊อปอัปอ่านเต็ม/ยืนยันลบ ใช้ id เดียวกันแต่ไม่มี textarea → ปิดเฉย ๆ แตะใหม่ได้ทันที) */
+function _hoRelangModal(){
+  const ov=document.getElementById('hoAddOv'); if(!ov) return;
+  const ta=document.getElementById('hoText');
+  if(!ta){ closeHandoverAdd(); return; }
+  const val=ta.value, tp=_hoAddType, ct=_hoAddCat, editId=_hoEditId, origType=_hoEditOrigType;
+  const drafts={..._hoDrafts};
+  closeHandoverAdd();
+  if(editId && _handover[editId]){
+    openHandoverAdd(origType, _handover[editId]);
+    _hoPickType(tp); _hoPickCat(ct);       // คงประเภท/หมวดที่ผู้ใช้เพิ่งเปลี่ยนใน modal
+  }else{
+    openHandoverAdd(tp, null, ct);
+    _hoDrafts=drafts;                      // openHandoverAdd ล้างร่างตอนเพิ่มใหม่ — คืนร่างทุกช่องที่พิมพ์ค้าง
+  }
+  const t2=document.getElementById('hoText'); if(t2) t2.value=val;
+}
 function _hoPickType(t){
   const next=_hoType(t);
   const ta=document.getElementById('hoText');
@@ -4555,23 +4652,24 @@ function _hoPickCat(c){
 function submitHandover(){
   const ta=document.getElementById('hoText');
   const text=ta?ta.value.trim():'';
-  if(!text){ if(ta) ta.focus(); toast('พิมพ์ข้อความก่อนบันทึก','orange'); return; }
+  if(!text){ if(ta) ta.focus(); toast(TT('พิมพ์ข้อความก่อนบันทึก','Type a message first'),'orange'); return; }
   if(_hoEditId){
     updateHandover(_hoEditOrigType, _hoEditId, _hoAddType, text, _hoAddCat);
     closeHandoverAdd(); renderHandoverPanels();
-    toast('แก้ไขบันทึกต่อกะแล้ว','green');
+    toast(TT('แก้ไขบันทึกต่อกะแล้ว','Handover note updated'),'green');
   }else{
     addHandover(_hoAddType, text, _hoAddCat);
     _hoDrafts[_hoDraftKey()]='';                      // บันทึกแล้ว → ล้างร่างเฉพาะช่องนี้
     closeHandoverAdd(); renderHandoverPanels();      // อัปเดตแผงทันที (ถ้าเปิดเต็มจออยู่)
-    toast('บันทึกต่อกะ '+HO_CATS[_hoAddCat].short+' ('+HO_TYPES[_hoAddType].label+') แล้ว','green');
+    const cl=_hoCatLabel(HO_CATS[_hoAddCat]), tl=HO_TYPES[_hoAddType].label;
+    toast(TT('บันทึกต่อกะ '+cl+' ('+tl+') แล้ว','Saved '+cl+' ('+tl+') note'),'green');
   }
 }
 
 /* ── ลบบันทึก — ใช้ overlay ยืนยันของตัวเอง (confirmModal เดิมโชว์ไม่ได้ใน native fullscreen) ── */
 function askDeleteHandover(type, id){
   const e=_handover[id];
-  if(!e){ toast('ไม่พบบันทึก','red'); return; }
+  if(!e){ toast(TT('ไม่พบบันทึก','Note not found'),'red'); return; }
   type=_hoType(e.type);
   closeHandoverAdd();
   const card=document.getElementById('iotCard');
@@ -4582,14 +4680,14 @@ function askDeleteHandover(type, id){
   ov.style.position = fs ? 'absolute' : 'fixed';
   ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHandoverAdd(); });
   const snip = e.text.length>120 ? e.text.slice(0,120)+'…' : e.text;
-  ov.innerHTML=`<div class="ho-modal" role="alertdialog" aria-modal="true" aria-label="ลบบันทึกต่อกะ" style="max-width:400px">
-    <div class="ho-modal-hd" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🗑️ ลบบันทึกต่อกะ</div>
+  ov.innerHTML=`<div class="ho-modal" role="alertdialog" aria-modal="true" aria-label="${TT('ลบบันทึกต่อกะ','Delete handover note')}" style="max-width:400px">
+    <div class="ho-modal-hd" style="background:linear-gradient(135deg,#B91C1C,#EF4444)">🗑️ ${TT('ลบบันทึกต่อกะ','Delete handover note')}</div>
     <div class="ho-modal-bd">
-      <div style="font-size:13.5px;color:#334155;line-height:1.6">ต้องการลบบันทึก <b>${escapeHtml(HO_TYPES[type].label)}</b> นี้? ลบแล้วกู้คืนไม่ได้</div>
+      <div style="font-size:13.5px;color:#334155;line-height:1.6">${TT('ต้องการลบบันทึก <b>'+escapeHtml(HO_TYPES[type].label)+'</b> นี้? ลบแล้วกู้คืนไม่ได้','Delete this <b>'+escapeHtml(HO_TYPES[type].label)+'</b> note? This cannot be undone.')}</div>
       <div style="background:#f8fafc;border:1px solid #eef2f7;border-left:3px solid #FCA5A5;border-radius:9px;padding:9px 11px;font-size:13px;color:#475569;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto">${escapeHtml(snip)}</div>
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0">
-        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">ยกเลิก</button>
-        <button type="button" class="btn" style="background:var(--red);color:#fff;border:none" onclick="confirmDeleteHandover('${type}','${id}')">🗑️ ลบเลย</button>
+        <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">${TT('ยกเลิก','Cancel')}</button>
+        <button type="button" class="btn" style="background:var(--red);color:#fff;border:none" onclick="confirmDeleteHandover('${type}','${id}')">🗑️ ${TT('ลบเลย','Delete')}</button>
       </div>
     </div>
   </div>`;
@@ -4600,7 +4698,7 @@ function confirmDeleteHandover(type, id){
   if(e){ e.deleted=1; e.updatedAt=new Date().toISOString(); _saveHandover(); _hoPush(e); }  // soft delete + sync ให้ทุกเครื่องหาย
   closeHandoverAdd();
   renderHandoverPanels();
-  toast('ลบบันทึกต่อกะแล้ว','green');
+  toast(TT('ลบบันทึกต่อกะแล้ว','Handover note deleted'),'green');
 }
 
 
