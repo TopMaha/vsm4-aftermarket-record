@@ -534,15 +534,25 @@ tbody tr:last-child td{border-bottom:none}
 /* side panel: ซ่อนปกติ → แสดงเฉพาะเต็มจอ · ปุ่มกางผัง: ใช้เฉพาะมือถือเต็มจอ (ดู media query ล่าง) */
 #iotFsSide{display:none}
 #iotMapBtn{display:none}
-/* เต็มจอ = grid 2 คอลัมน์ (side | floor) — ความกว้างปรับอัตโนมัติตามข้อมูล (data-hofit 1→3)
-   ผังมีขั้นต่ำ minmax(300px) เสมอ = "ขนาดเล็กสุดที่ยอมรับได้" ไม่มีวันมองไม่เห็น */
-.iot-fs{display:grid!important;grid-template-columns:minmax(320px,34%) minmax(300px,1fr);grid-template-rows:auto auto auto 1fr;
-  grid-template-areas:"head head" "info info" "oae oae" "side floor";column-gap:14px;row-gap:8px}
-.iot-fs[data-hofit="2"]{grid-template-columns:minmax(320px,52%) minmax(300px,1fr)}
-.iot-fs[data-hofit="3"]{grid-template-columns:1fr minmax(300px,27%)}
+/* เต็มจอ = grid 3 คอลัมน์ (side | เส้นแบ่งลาก | floor) — ผู้ใช้ลากเส้นแบ่งปรับสัดส่วนเองได้ (v2.7 req #3)
+   --iot-split = ความกว้างฝั่งต่อกะ (จำใน localStorage) · clamp กันผังแคบเกิน ~300px ไม่มีวันมองไม่เห็น */
+.iot-fs{display:grid!important;grid-template-columns:clamp(260px,var(--iot-split,52%),calc(100% - 330px)) 12px minmax(300px,1fr);
+  grid-template-rows:auto auto auto 1fr;
+  grid-template-areas:"head head head" "info info info" "oae oae oae" "side split floor";column-gap:4px;row-gap:8px}
 .iot-fs > #iotHeadRow{grid-area:head;margin-bottom:0}
 .iot-fs > #iotDateInfo{grid-area:info}
 .iot-fs > #iotOaeStrip{grid-area:oae}
+/* เส้นแบ่งลากปรับขนาด ต่อกะ ⇄ ผัง: ชี้เมาส์ = ลูกศร ⬌ · ลากซ้าย-ขวา · ดับเบิลคลิก = คืนค่าเริ่มต้น */
+#iotSplit{display:none}
+.iot-fs > #iotSplit{grid-area:split;display:flex;align-items:center;justify-content:center;cursor:col-resize;
+  touch-action:none;user-select:none;position:relative;border-radius:8px}
+.iot-fs > #iotSplit::before{content:'';width:4px;height:100%;border-radius:99px;background:#e2e8f0;transition:background .15s}
+.iot-fs > #iotSplit:hover::before,.iot-fs > #iotSplit.drag::before{background:#94a3b8}
+.iot-fs > #iotSplit::after{content:'⬌';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:26px;height:38px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#475569;
+  background:#fff;border:1.5px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 6px rgba(15,23,42,.18);
+  opacity:0;transition:opacity .15s;pointer-events:none}
+.iot-fs > #iotSplit:hover::after,.iot-fs > #iotSplit.drag::after{opacity:1}
 
 /* ── แถบ OAE รวม + รายโซน — ซ่อนในหน้าปกติ แสดงเฉพาะตอนเต็มจอ ── */
 #iotOaeStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -567,8 +577,10 @@ tbody tr:last-child td{border-bottom:none}
 .oae-vf,.oae-kf{display:none}
 .iot-fs .oae-vf,.iot-fs .oae-kf{display:inline}
 .iot-fs .oae-vn,.iot-fs .oae-kn,.iot-fs .oae-zsub{display:none}
-.iot-fs > #iotFsSide{grid-area:side;display:flex;flex-direction:column;min-height:0;gap:10px;
+/* จอคอม: Machine | Induction วางเคียงกันเป็น 2 คอลัมน์แนวตั้ง อ่านบน→ล่าง (v2.7 req #1 — แนวนอนอ่านยาก เลิกใช้) */
+.iot-fs > #iotFsSide{grid-area:side;display:flex;flex-direction:row;align-items:stretch;min-height:0;gap:10px;
   overflow:hidden;padding-right:2px}
+.iot-fs > #iotFsSide .ho-panel{flex:1 1 0;min-width:0}
 .iot-fs > #mcViewFloor{grid-area:floor;min-height:0}
 
 /* ── การ์ดต่อกะ (3 ส่วน: เครื่องเสีย/ค้าง | ข้อมูลทั่วไป → ไหลไปคอลัมน์ 3 เมื่อข้อมูลมาก) ── */
@@ -580,37 +592,31 @@ tbody tr:last-child td{border-bottom:none}
   display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 .ho-hd .ho-ttl{font-size:13.5px;font-weight:800;letter-spacing:.2px}
 .ho-hd .ho-cnt{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:999px}
-.ho-bd{padding:10px;min-height:0;overflow:auto;flex:1 1 auto}
-/* ส่วนที่ 1 (เครื่องเสีย) | ส่วนที่ 2-3 (ข้อมูลทั่วไป) — กว้างขึ้นตามระดับ data-hofit */
-.ho-cols{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;align-items:start}
-.iot-fs[data-hofit="2"] .ho-cols{grid-template-columns:1fr 2.1fr}
-.iot-fs[data-hofit="3"] .ho-cols{grid-template-columns:minmax(170px,19%) 1fr}
-/* ไม่มีเครื่องเสีย/ค้าง → JS ไม่วาดคอลัมน์นั้นเลย ข้อมูลทั่วไปขยายกินเต็ม (v2.6 req #2 — ทุกขนาดจอ) */
-.ho-cols.ho-solo{grid-template-columns:1fr!important}
-.ho-sec{background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:8px;min-width:0}
+.ho-bd{padding:8px;min-height:0;overflow:auto;flex:1 1 auto}
+/* แนวตั้งเสมอ: เครื่องเสีย/ค้าง อยู่บน → ข้อมูลทั่วไปต่อด้านล่าง (v2.7 req #1) · ไม่มีเครื่องเสีย → JS ไม่วาด sec นั้น */
+.ho-cols{display:grid;grid-template-columns:1fr;gap:8px;align-items:start}
+.ho-sec{background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:6px;min-width:0}
 .ho-sec.broken{background:#FFF7ED;border-color:#FED7AA}
-.ho-sec-hd{display:flex;align-items:center;gap:6px;padding:1px 2px 7px}
-.ho-sec-ic{font-size:13px}
-.ho-sec-ttl{font-size:11.5px;font-weight:800;color:#334155}
+.ho-sec-hd{display:flex;align-items:center;gap:6px;padding:0 2px 4px}
+.ho-sec-ic{font-size:12px}
+.ho-sec-ttl{font-size:10.5px;font-weight:800;color:#334155}
 .ho-sec.broken .ho-sec-ttl{color:#9A3412}
-.ho-sec-cnt{font-size:10px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:999px;padding:1px 7px}
+.ho-sec-cnt{font-size:9.5px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:999px;padding:1px 7px}
 .ho-sec.broken .ho-sec-cnt{background:#FED7AA;color:#9A3412}
-.ho-sec-add{margin-left:auto;width:32px;height:32px;min-width:32px;border:1.5px solid #16a34a;background:#F0FDF4;border-radius:9px;
-  cursor:pointer;font-size:18px;font-weight:800;color:#15803D;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.ho-sec-add{margin-left:auto;width:30px;height:30px;min-width:30px;border:1.5px solid #16a34a;background:#F0FDF4;border-radius:9px;
+  cursor:pointer;font-size:17px;font-weight:800;color:#15803D;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .ho-sec-add:hover{background:#DCFCE7}
 .ho-sec-add:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
-/* ข้อมูลทั่วไป: ปกติ 1 คอลัมน์ · ล้น → 2 คอลัมน์ (hofit 2) · ยังล้นอีก → 3 คอลัมน์ (hofit 3) แทนแถบเลื่อน (v2.6 req #3) */
-.ho-sec.notes .ho-sec-body{column-count:1;column-gap:8px}
-.iot-fs[data-hofit="2"] .ho-sec.notes .ho-sec-body{column-count:2}
-.iot-fs[data-hofit="3"] .ho-sec.notes .ho-sec-body{column-count:3}
-.ho-card{background:#fff;border:1px solid #eef2f7;border-left:3px solid #cbd5e1;border-radius:9px;padding:9px 11px;
-  margin-bottom:8px;break-inside:avoid;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+/* ปุ่ม 🕘 ดูย้อนหลัง — โผล่เมื่อมีข้อมูลเก่าถูกซ่อน (v2.7 req #5) */
+.ho-sec-hist{margin-left:auto;width:30px;height:30px;min-width:30px;border:1px solid #cbd5e1;background:#fff;border-radius:9px;
+  cursor:pointer;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.ho-sec-hist:hover{background:#EBF4FF;border-color:#1A56DB}
+.ho-sec-hist:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
+.ho-sec-hist + .ho-sec-add{margin-left:0}
+.ho-card{background:#fff;border:1px solid #eef2f7;border-left:3px solid #cbd5e1;border-radius:9px;padding:8px 10px;
+  margin-bottom:6px;break-inside:avoid;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .ho-card:hover{border-color:#94a3b8;box-shadow:0 2px 8px rgba(15,23,42,.12)}
 .ho-card:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
-.ho-sec.notes .ho-card{display:inline-block;width:100%}      /* กันการ์ดสั้นถูกตัดครึ่งระหว่างคอลัมน์ */
-/* การ์ดยาวหลายบรรทัด (.ho-flow จาก JS): ยอมตัดข้ามคอลัมน์แบบหนังสือพิมพ์ — ส่วนเกินไหลไปช่อง 2/3 แทนแถบเลื่อน (v2.6 req #3) */
-.ho-sec.notes .ho-card.ho-flow{display:block;break-inside:auto}
-.ho-sec.notes .ho-card.ho-flow .ho-foot{break-inside:avoid}
 .ho-sec.broken .ho-card{border-left-color:#ea580c}
 .ho-card.newest{border-left-color:#1A56DB;box-shadow:0 1px 5px rgba(26,86,219,.14)}
 .ho-sec.broken .ho-card.newest{border-left-color:#ea580c;box-shadow:0 1px 5px rgba(234,88,12,.16)}
@@ -632,9 +638,16 @@ tbody tr:last-child td{border-bottom:none}
 .ho-act.ho-del:hover{background:#FEF2F2;border-color:#FCA5A5}
 .ho-empty{font-size:12px;color:#94a3b8;text-align:center;padding:14px 8px;background:#fff;
   border:1px dashed #cbd5e1;border-radius:9px;line-height:1.5}
-.ho-more{width:100%;border:1px dashed #cbd5e1;background:#fff;color:#475569;font-size:11px;font-weight:800;
-  padding:6px;border-radius:8px;cursor:pointer;margin-top:2px}
-.ho-more:hover{background:#f1f5f9}
+/* ปุ่มเปิดดูข้อมูลย้อนหลัง (ท้ายรายการ) + องค์ประกอบในป๊อปอัปย้อนหลัง (v2.7 req #5) */
+.ho-hist-btn{width:100%;border:1.5px dashed #94a3b8;background:#f8fafc;color:#334155;font-size:11px;font-weight:800;
+  padding:7px;border-radius:8px;cursor:pointer;margin-top:2px}
+.ho-hist-btn:hover{background:#EBF4FF;border-color:#1A56DB;color:#1A56DB}
+.ho-day-hd{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;color:#475569;margin:10px 0 7px}
+.ho-day-hd:first-child{margin-top:0}
+.ho-day-hd::after{content:'';flex:1;height:1px;background:#e2e8f0}
+.ho-cat-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;color:#64748b;
+  background:#f1f5f9;border-radius:999px;padding:1px 8px;margin-bottom:5px}
+.ho-cat-tag.broken{background:#FFF7ED;color:#9A3412}
 
 /* modal เพิ่มต่อกะ (append เข้า #iotCard เพื่อให้โชว์ได้ใน native fullscreen) */
 .ho-modal-bg{inset:0;z-index:2200;background:rgba(13,17,23,.6);display:flex;align-items:center;justify-content:center;
@@ -663,11 +676,7 @@ tbody tr:last-child td{border-bottom:none}
   /* แผงสูงเท่าเนื้อหาจริง — ไม่ clamp ไม่ shrink ไม่ scroll ข้างใน อ่านครบทุกการ์ด */
   .iot-fs .ho-panel{min-height:0;flex:none;margin-bottom:10px}
   .iot-fs .ho-bd{overflow:visible}
-  .ho-cols{grid-template-columns:1fr!important}                        /* จอแคบ: ซ้อนแนวตั้ง เครื่องเสียบน ข้อมูลล่าง */
-  /* column-count:auto (ไม่ใช่ 1) — ค่า 1 ยังเป็น multicol ซึ่ง Chrome คำนวณความสูง intrinsic
-     ใน grid auto row ขาด ~20px → เนื้อหาล้นทับปุ่ม/ผังด้านล่าง */
-  .ho-sec.notes .ho-sec-body{column-count:auto!important}
-  .ho-sec.notes .ho-card{display:block}
+  .iot-fs > #iotSplit{display:none}                                    /* จอแคบไม่มีเส้นแบ่งลาก — เลื่อนทั้งหน้าแทน */
   /* การ์ดต่อกะบนมือถือ: ตัวหนังสือ ≥16px กัน iOS ซูม + meta ≥12px อ่านออก */
   .iot-fs .ho-text{font-size:16px}
   .ho-meta{font-size:12px}
@@ -790,6 +799,8 @@ tbody tr:last-child td{border-bottom:none}
     <div id="mcViewFloor"></div>
     <!-- แผงข้อมูลต่อกะ (แสดงเฉพาะตอน IOT เต็มจอ) -->
     <div id="iotFsSide" aria-label="ข้อมูลต่อกะ"></div>
+    <!-- เส้นแบ่งลากปรับขนาด ต่อกะ ⇄ ผัง (เฉพาะเต็มจอจอใหญ่) -->
+    <div id="iotSplit" role="separator" aria-orientation="vertical" title="ลากซ้าย-ขวาเพื่อปรับขนาด ต่อกะ ⇄ ผัง · ดับเบิลคลิก = คืนค่าเริ่มต้น"></div>
     <!-- มือถือเต็มจอ: ผังพับเก็บ — กดปุ่มนี้เพื่อกาง/ซ่อน (จอใหญ่ไม่ใช้ ผังโชว์ตลอด) -->
     <button type="button" id="iotMapBtn" onclick="iotToggleMap()" aria-expanded="false" aria-controls="mcViewFloor">🗺️ ดูผังเครื่องจักร ▾</button>
   </div>
@@ -4034,6 +4045,7 @@ function iotEnterFs(card){
     document.body.appendChild(card);
   }
   card.classList.add('iot-fs');
+  _iotSplitApplySaved(card);                    // คืนสัดส่วน ต่อกะ⇄ผัง ที่ผู้ใช้เคยลากปรับไว้
   document.documentElement.style.overflow='hidden';
   const b=document.getElementById('iotFsBtn'); if(b){b.textContent='✕';b.title='ออกจากเต็มจอ';}
   const rq=card.requestFullscreen||card.webkitRequestFullscreen;
@@ -4047,9 +4059,9 @@ function iotExitFs(card){
   card=card||document.getElementById('iotCard'); if(!card) return;
   iotCloseMcPop();                              // ปิดป๊อปอัปรายละเอียดเครื่องถ้าเปิดค้างอยู่
   closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
+  closeHoHistory();                              // ปิดป๊อปอัปต่อกะย้อนหลังถ้าเปิดค้าง
   stopHandoverSync();                            // หยุด poll ต่อกะ
   _iotMapReset(card);                            // เก็บสถานะกางผัง (มือถือ) กลับค่าเริ่มต้น
-  card.removeAttribute('data-hofit');
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
   document.documentElement.style.overflow='';
@@ -4067,6 +4079,7 @@ function iotExitFs(card){
 function _iotFsKey(e){
   if(e.key==='Escape'){
     if(document.getElementById('hoAddOv')){ e.preventDefault(); closeHandoverAdd(); return; }   // ปิด modal เพิ่มต่อกะก่อน
+    if(document.getElementById('hoHistOv')){ e.preventDefault(); closeHoHistory(); return; }    // ปิดป๊อปอัปย้อนหลังก่อน
     if(document.getElementById('iotMcPop')){ e.preventDefault(); iotCloseMcPop(); return; } // ปิดป๊อปอัปก่อน แล้วค่อยออกเต็มจอ
     const card=document.getElementById('iotCard');
     if(card&&card.classList.contains('iot-fs')){ e.preventDefault(); iotExitFs(card); }
@@ -4174,7 +4187,8 @@ async function _hoFlush(){
   if(!entries.length){ _hoPending.clear(); _saveHoPending(); return; }
   try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); }catch(e){}
 }
-function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e)]))); }
+// บวก bucket รายชั่วโมง → รายการที่พ้นช่วง "ล่าสุด" ถูกวาดย้ายไปย้อนหลังเองภายใน ≤1 ชม. (poll เทียบ sig ทุก 15 วิ)
+function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e)])))+'|'+Math.floor(Date.now()/3600000); }
 let _hoSig='';
 async function syncHandover(){
   try{
@@ -4251,13 +4265,14 @@ function _hoFootHtml(e,type){
   return `<div class="ho-foot">${_hoMetaHtml(e)}${_hoActionsHtml(type,e.id)}</div>`;
 }
 // แตะการ์ดตรงไหนก็ได้ → เปิดเมนู อ่านเต็ม/แก้ไข/ลบ (req #1 — ปุ่มเล็กกดยากบนจอสัมผัส/ทีวี)
-function _hoCardHtml(e,type,newest){
-  // การ์ดยาว (ข้อความหลายบรรทัด/ยาวมาก) → .ho-flow ให้ตัดข้ามคอลัมน์ได้ ไม่ถูกบีบแคบจนต้องเลื่อน (req #3)
-  const t=e.text||'', flow=(t.length>200||(t.match(/\n/g)||[]).length>=5)?' ho-flow':'';
-  return `<div class="ho-card${newest?' newest':''}${flow}" role="button" tabindex="0" title="แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ"
+// withCat = ติดป้ายหมวดบนการ์ด (ใช้ในป๊อปอัปย้อนหลังที่ปนทั้ง 2 หมวด)
+function _hoCardHtml(e,type,newest,withCat){
+  const cat=_hoCat(e), c=HO_CATS[cat];
+  const tag=withCat?`<div class="ho-cat-tag ${cat}">${c.icon} ${escapeHtml(c.label)}</div>`:'';
+  return `<div class="ho-card${newest?' newest':''}" role="button" tabindex="0" title="แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
-    <div class="ho-text">${escapeHtml(e.text)}</div>
+    ${tag}<div class="ho-text">${escapeHtml(e.text)}</div>
     ${_hoFootHtml(e,type)}
   </div>`;
 }
@@ -4288,34 +4303,86 @@ function hoCardTap(id){
   </div>`;
   host.appendChild(ov);
 }
-const HO_SEC_CAP=40;      // เรนเดอร์ต่อ section (กัน DOM บวมเมื่อสะสมเป็นพันรายการ) — ที่เหลือกด "ดูเก่ากว่านี้"
-let _hoMore={};           // {'machine|broken':true} = กางดูทั้งหมดของ section นั้น
-function hoShowMore(type,cat){ _hoMore[_hoType(type)+'|'+_hoCat(cat)]=true; renderHandoverPanels(); }
-// section เดียว (คอลัมน์): broken=เครื่องเสีย/ค้าง · note=ข้อมูลทั่วไป (ไหล 2 คอลัมน์)
+const HO_SEC_CAP=40;      // เรนเดอร์ต่อ section (กัน DOM บวมเมื่อสะสมเป็นพันรายการ) — ที่เหลือดูในป๊อปอัปย้อนหลัง
+/* แบ่ง "ล่าสุด" vs "ย้อนหลัง" (v2.7 req #5)
+   ล่าสุด = ภายใน 24 ชม. หรือวันเดียวกับรายการใหม่สุด (กันโน้ตกะดึกเมื่อวานหาย + กันบอร์ดว่างถ้าไม่มีของใหม่) */
+function _hoRecentSplit(arr){
+  if(!arr.length) return {recent:arr,old:[]};
+  const cut=Date.now()-86400000, newestDay=_hoDayKey(arr[0].ts);
+  const recent=[],old=[];
+  arr.forEach(e=>{ (new Date(e.ts).getTime()>=cut||_hoDayKey(e.ts)===newestDay)?recent.push(e):old.push(e); });
+  return {recent,old};
+}
+// section เดียว: broken=เครื่องเสีย/ค้าง (โชว์ทั้งหมด — คือสถานะปัจจุบันจนกว่าจะซ่อมเสร็จ/ลบ)
+//              note=ข้อมูลทั่วไป (โชว์เฉพาะล่าสุด — ของเก่ากด 🕘 ดูย้อนหลัง)
 function _hoSecHtml(type,cat,arr){
-  const c=HO_CATS[cat], key=_hoType(type)+'|'+_hoCat(cat);
-  const limit=_hoMore[key]?300:HO_SEC_CAP;
-  const shown=arr.slice(0,limit), more=arr.length-shown.length;
+  const c=HO_CATS[cat];
+  const sp = cat==='note' ? _hoRecentSplit(arr) : {recent:arr,old:[]};
+  const shown=sp.recent.slice(0,HO_SEC_CAP), hidden=arr.length-shown.length;
   const body = shown.length
     ? shown.map((e,i)=>_hoCardHtml(e,type,i===0)).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
     : `<div class="ho-empty" role="button" tabindex="0" style="cursor:pointer" onclick="openHandoverAdd('${type}',null,'${cat}')"
         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openHandoverAdd('${type}',null,'${cat}')}">ยังไม่มี — <b>แตะที่นี่</b> หรือกด <b>＋</b> เพื่อเพิ่ม</div>`;
-  const moreBtn = more>0 ? `<button type="button" class="ho-more" onclick="hoShowMore('${type}','${cat}')">＋ ดูเก่ากว่านี้อีก ${more} รายการ</button>` : '';
+  const histBtn = hidden>0 ? `<button type="button" class="ho-hist-btn" onclick="hoHistoryPop('${type}')">🕘 ดูข้อมูลย้อนหลัง ${hidden} รายการ</button>` : '';
   return `<div class="ho-sec ${cat==='broken'?'broken':'notes'}" data-cat="${cat}">
     <div class="ho-sec-hd">
       <span class="ho-sec-ic">${c.icon}</span>
       <span class="ho-sec-ttl">${escapeHtml(c.label)}</span>
-      <span class="ho-sec-cnt">${arr.length}</span>
+      <span class="ho-sec-cnt">${hidden>0?shown.length+'/'+arr.length:arr.length}</span>
+      ${hidden>0?`<button type="button" class="ho-sec-hist" onclick="hoHistoryPop('${type}')" title="ดูข้อมูลย้อนหลัง" aria-label="ดูข้อมูลย้อนหลัง ${escapeHtml(HO_TYPES[type].label)}">🕘</button>`:''}
       <button type="button" class="ho-sec-add" onclick="openHandoverAdd('${type}',null,'${cat}')" aria-label="เพิ่ม ${escapeHtml(c.label)} ${escapeHtml(HO_TYPES[type].label)}">＋</button>
     </div>
-    <div class="ho-sec-body">${body}${moreBtn}</div>
+    <div class="ho-sec-body">${body}${histBtn}</div>
   </div>`;
 }
+/* ── ป๊อปอัปดูข้อมูลย้อนหลัง: ทุกบันทึกของประเภทนั้น (ทั้ง 2 หมวด) จัดกลุ่มตามวัน ใหม่→เก่า
+   แตะการ์ดข้างใน = อ่านเต็ม/แก้ไข/ลบ ได้เหมือนบนบอร์ด ── */
+let _hoHistType=null, _hoHistLimit=200;
+function hoHistoryPop(type){ _hoHistType=_hoType(type); _hoHistLimit=200; _hoHistShow(); }
+function closeHoHistory(){ const o=document.getElementById('hoHistOv'); if(o) o.remove(); _hoHistType=null; }
+function hoHistMore(){ _hoHistLimit+=200; _hoHistShow(); }
+function _hoHistListHtml(type){
+  const list=_hoList(type);
+  const shown=list.slice(0,_hoHistLimit), more=list.length-shown.length;
+  if(!shown.length) return '<div class="ho-empty">ยังไม่มีบันทึก</div>';
+  let html='', day='';
+  shown.forEach(e=>{
+    const k=_hoDayKey(e.ts);
+    if(k!==day){ day=k; html+=`<div class="ho-day-hd">📅 ${escapeHtml(_hoDayLabel(e.ts))}</div>`; }
+    html+=_hoCardHtml(e,type,false,true);
+  });
+  if(more>0) html+=`<button type="button" class="ho-hist-btn" onclick="hoHistMore()">＋ ดูเก่ากว่านี้อีก ${more} รายการ</button>`;
+  return html;
+}
+function _hoHistShow(){
+  const type=_hoHistType; if(!type) return;
+  const prev=document.getElementById('hoHistOv');
+  const keepScroll=prev?((prev.querySelector('.ho-hist-bd')||{}).scrollTop||0):0;   // รีเฟรชจาก sync → คงตำแหน่งเลื่อน
+  if(prev) prev.remove();
+  const card=document.getElementById('iotCard');
+  const fs=card&&card.classList.contains('iot-fs');
+  const host=fs?card:document.body;
+  const cfg=HO_TYPES[type], n=_hoList(type).length;
+  const ov=document.createElement('div');
+  ov.id='hoHistOv'; ov.className='ho-modal-bg';
+  ov.style.position=fs?'absolute':'fixed';
+  ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHoHistory(); });
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="ข้อมูลต่อกะย้อนหลัง" style="max-width:620px;max-height:86%">
+    <div class="ho-modal-hd" style="background:${cfg.grad}">🕘 ต่อกะย้อนหลัง — ${cfg.icon} ${escapeHtml(cfg.label)}
+      <span class="ho-cnt" style="margin-left:auto">${n} รายการ</span>
+      <button class="iotpop-cl" onclick="closeHoHistory()" aria-label="ปิด" style="margin-left:8px">✕</button>
+    </div>
+    <div class="ho-modal-bd ho-hist-bd" style="overflow:auto;min-height:0">${_hoHistListHtml(type)}</div>
+  </div>`;
+  host.appendChild(ov);
+  const bd=ov.querySelector('.ho-hist-bd'); if(bd&&keepScroll) bd.scrollTop=keepScroll;
+}
+function _hoHistRefresh(){ if(_hoHistType&&document.getElementById('hoHistOv')) _hoHistShow(); }
 function _hoPanelHtml(type){
   const cfg=HO_TYPES[type], list=_hoList(type);
   const broken=list.filter(e=>_hoCat(e)==='broken');
   const notes =list.filter(e=>_hoCat(e)!=='broken');
-  // ไม่มีเครื่องเสีย/ค้าง → ตัดคอลัมน์ทิ้งทั้งอัน (req #2) — เพิ่มยังได้จาก ＋/ปุ่มต่อกะ (modal มีตัวเลือกหมวด)
+  // ไม่มีเครื่องเสีย/ค้าง → ตัด sec ทิ้งทั้งอัน (req #2) — เพิ่มยังได้จาก ＋/ปุ่มต่อกะ (modal มีตัวเลือกหมวด)
   const showBroken=broken.length>0;
   return `<div class="ho-panel" data-type="${type}">
     <div class="ho-hd" style="background:${cfg.grad}">
@@ -4324,7 +4391,7 @@ function _hoPanelHtml(type){
       ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
     </div>
     <div class="ho-bd">
-      <div class="ho-cols${showBroken?'':' ho-solo'}">
+      <div class="ho-cols">
         ${showBroken?_hoSecHtml(type,'broken',broken):''}
         ${_hoSecHtml(type,'note',notes)}
       </div>
@@ -4335,27 +4402,56 @@ function renderHandoverPanels(){
   const host=document.getElementById('iotFsSide'); if(!host) return;
   host.innerHTML = HO_ORDER.map(_hoPanelHtml).join('');
   _hoSig=_hoSigNow();     // จำ signature ที่เพิ่งวาด → กัน poll วาดซ้ำโดยไม่จำเป็น
-  _hoAutoFit();           // ปรับสัดส่วน ต่อกะ⇄ผัง ให้พอดี 1 หน้า (req #2,#4,#5)
+  _hoHistRefresh();       // ป๊อปอัปย้อนหลังเปิดค้างอยู่ → วาดเนื้อหาใหม่ให้ตรงข้อมูลล่าสุด
 }
-/* ── auto-fit (แทนปุ่มสลับ IOT/ต่อกะเดิม): ข้อมูลมากจนต้องเลื่อน → ขยายฝั่งต่อกะเป็นขั้น ๆ
-   ระดับ 1 = ผังใหญ่ · 2 = ครึ่งจอ + ข้อมูลทั่วไปไหล 2 คอลัมน์ · 3 = ต่อกะเต็ม ผังย่อเหลือขั้นต่ำ (minmax 300px)
-   + ข้อมูลทั่วไปไหลเป็น 3 คอลัมน์ (v2.6 req #3 — ส่วนเกินไปช่องที่ 3 แทนแถบเลื่อน) ── */
-function _hoAutoFit(){
-  const card=document.getElementById('iotCard');
-  if(!card||!card.classList.contains('iot-fs')) return;
-  const side=document.getElementById('iotFsSide'); if(!side) return;
-  if(window.innerWidth<=820){ card.removeAttribute('data-hofit'); return; }   // มือถือ: เลื่อนทั้งหน้าตาม media query
-  const panels=[...side.querySelectorAll('.ho-panel')];
-  // ความสูงที่เนื้อหาต้องใช้จริง — วัดจาก scrollHeight ของ body (panel อาจถูกบีบให้ scroll ภายใน)
-  const need=()=>panels.reduce((h,p)=>{
-    const hd=p.querySelector('.ho-hd'), bd=p.querySelector('.ho-bd');
-    return h+(hd?hd.offsetHeight:0)+(bd?bd.scrollHeight:0)+4;
-  },0)+Math.max(0,panels.length-1)*10;
-  let lv=1; card.setAttribute('data-hofit','1');
-  while(lv<3 && need()>side.clientHeight+2){ lv++; card.setAttribute('data-hofit',String(lv)); }
+/* ── เส้นแบ่งลากปรับขนาด ต่อกะ ⇄ ผัง (v2.7 req #3 — แทน auto-fit เดิม: ผู้ใช้ลากปรับเองตามต้องการ)
+   เอาเมาส์ชี้รอยต่อ = ลูกศร ⬌ · ลากซ้าย-ขวา · ดับเบิลคลิก = คืนค่าเริ่มต้น · จำสัดส่วนไว้ข้ามครั้ง ── */
+const LS_IOT_SPLIT='vsm4_iot_split';
+function _iotSplitApplySaved(card){
+  try{
+    const v=parseFloat(localStorage.getItem(LS_IOT_SPLIT));
+    if(v>=18&&v<=80) card.style.setProperty('--iot-split',v+'%');
+  }catch(e){}
 }
-let _hoFitT=null;
-window.addEventListener('resize',()=>{ clearTimeout(_hoFitT); _hoFitT=setTimeout(_hoAutoFit,150); });
+(function(){
+  const sp=document.getElementById('iotSplit'); if(!sp) return;
+  let raf=null, cur=null;
+  const zoom=()=>{ if(!raf) raf=requestAnimationFrame(()=>{ raf=null; _applyIotZoom(); }); };  // ผังปรับความสูงตามกว้างใหม่แบบสด
+  sp.addEventListener('pointerdown',e=>{
+    const card=document.getElementById('iotCard');
+    if(!card||!card.classList.contains('iot-fs')) return;
+    e.preventDefault();
+    try{ sp.setPointerCapture(e.pointerId); }catch(_){}
+    sp.classList.add('drag');
+    document.body.style.userSelect='none';
+    const move=ev=>{
+      const r=card.getBoundingClientRect(); if(!r.width) return;
+      cur=Math.min(80,Math.max(18,(ev.clientX-r.left)/r.width*100));
+      card.style.setProperty('--iot-split',cur.toFixed(1)+'%');
+      zoom();
+    };
+    const up=()=>{
+      sp.removeEventListener('pointermove',move);
+      sp.removeEventListener('pointerup',up);
+      sp.removeEventListener('pointercancel',up);
+      sp.classList.remove('drag');
+      document.body.style.userSelect='';
+      if(cur!=null){ try{ localStorage.setItem(LS_IOT_SPLIT,cur.toFixed(1)); }catch(e){} }
+      _applyIotZoom();
+    };
+    sp.addEventListener('pointermove',move);
+    sp.addEventListener('pointerup',up);
+    sp.addEventListener('pointercancel',up);
+  });
+  sp.addEventListener('dblclick',()=>{
+    const card=document.getElementById('iotCard'); if(!card) return;
+    card.style.removeProperty('--iot-split'); cur=null;
+    try{ localStorage.removeItem(LS_IOT_SPLIT); }catch(e){}
+    _applyIotZoom();
+  });
+})();
+let _iotRszT=null;
+window.addEventListener('resize',()=>{ clearTimeout(_iotRszT); _iotRszT=setTimeout(_applyIotZoom,150); });
 
 /* แก้ไขบันทึก: หา entry แล้วเปิด modal โหมดแก้ไข */
 function editHandover(type, id){
