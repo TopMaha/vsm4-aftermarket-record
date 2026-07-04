@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.6</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.8</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3666,6 +3666,9 @@ function setLang(l){
   renderHandoverPanels();                 // แผงต่อกะ (+ ป๊อปอัปย้อนหลัง refresh ในตัว)
   _hoRelangModal();                       // modal เพิ่ม/แก้ไขเปิดค้าง → เปิดใหม่ภาษาใหม่ คงข้อความที่พิมพ์
   if(_iotMcId && document.getElementById('iotMcPop')) iotShowMcPop(_iotMcId);  // ป๊อปอัปเครื่องเปิดค้าง → วาดใหม่
+  // แปลทั้งแอป (นิยามอยู่ถัดลงไป — เรียกตอนกดปุ่มเท่านั้น จึงพร้อมเสมอ)
+  if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }
+  else { i18nStop(); i18nRestore(); }
 }
 /* ปุ่ม/ป้ายที่เป็น HTML คงที่ (ไม่ได้วาดใหม่ตอน render) — ตั้งข้อความตามภาษาที่นี่ */
 function applyLangStatic(){
@@ -3688,6 +3691,12 @@ function applyLangStatic(){
   if(side) side.setAttribute('aria-label',TT('ข้อมูลต่อกะ','Shift handover'));
   const oae=document.getElementById('iotOaeStrip');
   if(oae) oae.setAttribute('aria-label',TT('สรุป OAE รวมและรายโซน','OAE summary — total and per zone'));
+  // เมนูล่าง: ป้ายแท็บตามภาษา (คำว่า "บันทึก" ชนกับปุ่ม Save จึงตั้งตรงนี้ ไม่พึ่งพจนานุกรม)
+  const NAV={prod:['ติดตามงาน','Track'],kpi:['บันทึก','Record'],history:['ประวัติ','History'],plan:['วางแผน','Plan']};
+  document.querySelectorAll('button[data-pane]').forEach(b=>{
+    const m=NAV[b.dataset.pane]; if(!m) return;
+    const l=b.querySelector('.lbl'); if(l) l.textContent=TT(m[0],m[1]);
+  });
   _iotMapBtnLabel(card && card.classList.contains('iot-map-open'));
 }
 /* ปุ่มกาง/ซ่อนผัง (มือถือเต็มจอ) — ข้อความตามภาษา + สถานะกาง (ใช้ร่วมกัน 3 จุด) */
@@ -3698,6 +3707,447 @@ function _iotMapBtnLabel(open){
   b.setAttribute('aria-expanded',String(!!open));
 }
 applyLangStatic();   // เปิดแอปมาเป็น EN ค้างไว้ → ป้ายคงที่ต้องเป็น EN ตั้งแต่แรก
+
+/* ============================================================
+   แปลทั้งแอป (v2.9) — พจนานุกรม UI ไทย→EN + ตัวเดิน DOM + MutationObserver
+   • แปลเฉพาะข้อความที่ "ตรงพจนานุกรม" = ข้อความของแอปเท่านั้น
+     ข้อความที่พนักงานพิมพ์เอง (โน้ต/ขอความช่วยเหลือ/ชื่อ) ไม่อยู่ในพจนานุกรม → ไม่ถูกแปล
+   • § ในคีย์ = ตำแหน่งค่าแปรผัน (ตัวเลข/ชื่อ/วันที่) — ค่าที่จับได้ถูกคงไว้ตามเดิมเสมอ
+   • เก็บต้นฉบับไทยไว้ (WeakMap) → สลับกลับไทยได้โดยไม่ต้องรีเฟรช
+   • observer จับทุกการ render ใหม่ → หน้าที่เปิดทีหลัง/ป๊อปอัป/toast แปลอัตโนมัติ
+   ============================================================ */
+const I18N_X = {
+// ── ล็อกอิน / header ──
+"กรอกรหัสพนักงานของคุณเอง — ระบบจะแยก VSM ให้อัตโนมัติ":"Enter your own employee code — the system assigns your VSM automatically",
+"เช่น L-XXXX":"e.g. L-XXXX","เช่น L-9999":"e.g. L-9999",
+"ตัวอย่างรูปแบบรหัส:":"Code format examples:",
+"เข้าใช้งาน →":"Sign in →",
+"พิมพ์รหัสพนักงานของคุณเพื่อเข้าใช้งาน":"Type your employee code to sign in",
+"กรอกรหัสพนักงาน":"Enter employee code",
+"ยังไม่ได้เข้าใช้งาน":"Not signed in",
+"ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
+"ระบบบันทึกผลิต + KPI · v2.8":"Production Record + KPI · v2.8",
+"โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
+"เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
+// ── ปุ่ม/คำทั่วไป ──
+"บันทึก":"Save","แก้ไข":"Edit","ลบ":"Delete","เพิ่ม":"Add","ปิด":"Close","ยกเลิก":"Cancel","❌ ยกเลิก":"❌ Cancelled",
+"ตกลง":"OK","✓ ตกลง":"✓ OK","ค้นหา":"Search","🔍 ค้นหา":"🔍 Search","ล้าง":"Clear","รายละเอียด":"Details",
+"ยืนยัน":"Confirm","⚠️ ยืนยัน":"⚠️ Confirm","ทั้งหมด":"All","หรือ":"or","หรือกด":"or press","และ":"and",
+"วันที่":"Date","สถานะ":"Status","หมายเหตุ":"Note","จัดการ":"Actions","ประเภท":"Type","รายการ":"items",
+"ชิ้น":"pcs","ชม.":"h","กะ":"Shift","รวม":"Total","รวม:":"Total:","แสดง":"Showing","ใหม่":"new","ซ้ำ":"duplicates",
+"เดิม":"Old","ใหม่ *":"New *","ลบแล้ว":"Deleted","บันทึก!":"Saved!","รอ…":"wait…","กำลังโหลด…":"Loading…",
+"ไม่มีข้อมูล":"No data","ไม่พบข้อมูล":"Data not found","ไม่พบรายการ":"No results","เครื่อง":"Machine",
+"➕ เพิ่ม":"➕ Add","💾 บันทึก":"💾 Save","✕ ลบ":"✕ Delete","(ไม่บังคับ)":"(optional)","*จำเป็น":"*required",
+"(ไม่ระบุ)":"(unspecified)","ลูกค้า":"Customers","วาล์ว":"Valves","ชนิด":"types","พนักงาน":"Employees",
+// ── Dashboard / ตัวกรอง ──
+"รวมทุกกะ":"All shifts","🔄 รวมทุกกะ":"🔄 All shifts","กะกลางวัน":"Day shift","☀️ กะกลางวัน":"☀️ Day shift",
+"กะกลางคืน":"Night shift","🌙 กะกลางคืน":"🌙 Night shift","☀️ กลางวัน":"☀️ Day","🌙 กลางคืน":"🌙 Night",
+"กลางวัน":"Day","กลางคืน":"Night","เฉพาะกะกลางวัน":"Day shift only","เฉพาะกะกลางคืน":"Night shift only",
+"จากวันที่":"From date","ถึงวันที่":"To date","จาก":"From","ถึง":"To",
+"ภาพรวมวันนี้":"Today Overview","วันนี้":"Today","เมื่อวาน":"Yesterday","เดือนนี้":"This month","7 วันล่าสุด":"Last 7 days",
+"✓ ผลิตเสร็จเดือนนี้ (ชิ้น) — กดดูรายการ":"✓ Finished this month (pcs) — tap to view",
+"ผลิตเสร็จ":"Finished","▶ WIP (กำลังผลิต)":"▶ WIP (in production)","WIP (กำลังผลิต)":"WIP (in production)",
+"📝 KPI วันนี้ (record)":"📝 KPI today (records)","📦 Production วันนี้":"📦 Production today",
+"งาน WIP ตามลูกค้า":"WIP by customer","ไม่มีงาน WIP":"No WIP jobs","ไม่ระบุลูกค้า":"No customer",
+"เฉพาะงานที่กำลังผลิต (ผ่าน QC แล้วถือว่าจบ ดูได้ที่การ์ด \"ผลิตเสร็จ\")":"Only jobs still in production (passed QC = finished — see the \"Finished\" card)",
+"Output ของ Process":"Output by Process","ยอด OPR รวมตาม":"Total OPR by","process ที่ตั้งให้เครื่อง":"process assigned to each machine",
+"(เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)":"(e.g. N-202 = ROLL → N-202's OPR counts toward ROLL) — independent of what operators type · set a machine's process in ⚙️ Settings → Machines (tap chips to filter · tap a row for valves)",
+"ช่วงเวลาที่แสดง":"Period shown","ค้นหา Process จาก Valve No":"Find Process by Valve No",
+"เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
+"🔎 เลือก process ที่จะแสดง":"🔎 Choose processes to show","เลือกทั้งหมด":"Select all",
+"ไม่มีข้อมูล OPR":"No OPR data","ไม่มีวาล์ว":"No valves","วาล์วเบอร์":"Valve","รวม OPR":"Total OPR",
+"OPR รวม":"Total OPR","OPR รวม:":"Total OPR:","SCRAP รวม:":"Total SCRAP:","ยอด OPR":"OPR total",
+"ยังไม่มีข้อมูลในกะนี้":"No data for this shift yet","ยังไม่มีข้อมูล KPI วันนี้":"No KPI data today yet",
+"ยังไม่มีข้อมูล KPI ในช่วงนี้":"No KPI data in this period yet","โหลด dashboard ไม่สำเร็จ":"Failed to load dashboard",
+"📊 สรุปรวมของ Zone นี้":"📊 Zone summary","🏭 รายเครื่องจักร":"🏭 By machine","ขั้น Target:":"Target tier:",
+"ยังไม่มีเครื่องจักรในโซนนี้":"No machines in this zone yet",
+"ยังไม่มีเครื่องจักรในโซนนี้ — ไปที่ ⚙️ ตั้งค่า → เครื่องจักร เพื่อเพิ่ม":"No machines in this zone yet — add them in ⚙️ Settings → Machines",
+"กดเพื่อดูรายละเอียดแต่ละเครื่อง →":"Tap to see each machine →",
+"รอดำเนินการ":"Pending","⏳ รอดำเนินการ":"⏳ Pending","แก้ไขแล้ว":"Resolved","✅ แก้ไขแล้ว":"✅ Resolved",
+"(แก้ไขแล้ว)":"(resolved)","ทำเครื่องหมายแก้ไขแล้ว":"Mark resolved","✅ ทำเครื่องหมายแก้ไขแล้ว":"✅ Mark resolved",
+"ขอความช่วยเหลือ":"Help requests","ไม่มีรายการที่รอดำเนินการ 🎉":"Nothing pending 🎉",
+"ไม่พบรายการ (ลองโหลดข้อมูลใหม่)":"Item not found (try reloading)","โดย":"By","ปิดโดย":"closed by","แตะเพื่อดู":"tap to view",
+// ── หน้าบันทึกข้อมูล ──
+"บันทึกข้อมูล":"Record Data","บันทึกข้อมูล KPI + Production":"Record KPI + Production data",
+"📅 วันที่ผลิต":"📅 Production date","วันที่ผลิต":"Production date","• อัตโนมัติ":"• automatic",
+"ระบบใช้วันที่ปัจจุบันอัตโนมัติ — แก้ไขได้เฉพาะ Admin":"Uses today's date automatically — only Admin can change it",
+"🔒 แก้ไขวันที่ (เฉพาะ Admin)":"🔒 Edit date (Admin only)","แก้ไขวันที่ (เฉพาะ Admin)":"Edit date (Admin only)",
+"⏱️ กะ (ตรวจจับจากเวลา)":"⏱️ Shift (auto from time)","— กรอกเวลาก่อน —":"— enter time first —",
+"👤 ผู้บันทึก (จาก Lock In)":"👤 Recorded by (from lock-in)","💾 บันทึกข้อมูลทั้งหมด":"💾 Save all data",
+"☁️ ข้อมูลจะถูกบันทึกลงฐานข้อมูลกลาง (D1) ทันที — ผู้ใช้คนอื่นสามารถเปิดดูข้อมูลย้อนหลังได้":"☁️ Data is saved to the central database (D1) immediately — other users can view it in History",
+"ปิด — ไม่ผลิตในกะนี้":"Off — not producing this shift","➕ เพิ่มช่วงเวลา":"➕ Add time range",
+"ช่วง 1 (หลัก)":"Range 1 (main)","OPR (ชิ้น) *":"OPR (pcs) *","OPR (ชิ้น)":"OPR (pcs)","Scrap (ชิ้น)":"Scrap (pcs)",
+"เช่น 1000 หรือ 250*5":"e.g. 1000 or 250*5","เช่น 1000+152":"e.g. 1000+152",
+"เวลา (เริ่ม → สิ้นสุด)":"Time (start → end)","👤 พนักงาน (พิมพ์ค้น)":"👤 Employee (type to search)",
+"พนักงาน (พิมพ์ค้น)":"Employee (type to search)","ค้นรหัส/ชื่อ":"Search code/name",
+"🧩 ข้อมูลงานที่ผลิต (link → Production Tracker)":"🧩 Production job info (link → Production Tracker)",
+"🧩 Lot (ข้อมูลงานที่ผลิต)":"🧩 Lot (production job info)","🧩 Valve No (ข้อมูลงานที่ผลิต)":"🧩 Valve No (production job info)",
+"สแกนบาร์โค้ด":"Scan barcode","พิมพ์/เลือก Lot":"Type/select Lot","พิมพ์/เลือก":"Type/select","ล่าสุด":"latest",
+"สูงสุด 4 ช่วงต่อเครื่อง":"Max 4 ranges per machine","สูงสุด 30 slot":"Max 30 slots",
+"ล็อควันที่แล้ว":"Date locked","ปกติระบบจะใช้":"Normally the system uses","วันที่ปัจจุบันอัตโนมัติ":"today's date automatically",
+"การแก้ไขวันที่สงวนไว้สำหรับ Admin เพื่อแก้ข้อมูลที่ลงผิดวันเท่านั้น":"Date editing is reserved for Admin, only for fixing entries logged on the wrong day",
+"รหัส Admin":"Admin code","ล็อควันที่":"Lock date","🔓 ล็อควันที่":"🔓 Lock date",
+"ปลดล็อควันที่ — แก้ไขได้ย้อนหลัง 3 วัน":"Date unlocked — editable up to 3 days back",
+"รหัสไม่ถูกต้อง":"Wrong code","❌ รหัสไม่ถูกต้อง":"❌ Wrong code","❌ รหัสผ่านไม่ถูกต้อง":"❌ Wrong password",
+"📅 วันที่:":"📅 Date:","กะ:":"Shift:","เวลา:":"Time:","พนักงาน:":"Employee:","-- เวลา --":"-- time --",
+"🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)":"🆘 OAE below 75% — need any help? (optional)",
+"เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ / ต้องการกำลังคนเพิ่ม":"e.g. machine down waiting for technician / material shortage / need more manpower",
+"ตรวจสอบข้อมูลก่อนบันทึก":"Review before saving","✅ ยืนยันบันทึก":"✅ Confirm save",
+"กรุณากรอกชื่อผู้บันทึก":"Please enter the recorder's name","เลือกวันที่":"Pick a date",
+"⚠️ ไม่สามารถบันทึกวันในอนาคต (เกิน 1 วัน)":"⚠️ Cannot record a future date (beyond 1 day)",
+"⚠️ ไม่สามารถย้อนหลังเกิน 3 วัน":"⚠️ Cannot backdate more than 3 days",
+"ไม่มีข้อมูลให้บันทึก — เปิดเครื่องและกรอก OPR ก่อน":"Nothing to save — turn on a machine and enter OPR first",
+"ยังไม่ลง":"missing","ยังไม่ใส่":"not set","⚠️ ข้อมูลไม่ครบถ้วน":"⚠️ Incomplete data",
+"กรุณากรอกให้ครบก่อนกดบันทึก — ข้อมูลในฟอร์มยังคงอยู่":"Please complete them before saving — your form data is kept",
+"✏️ กลับไปแก้ไข":"✏️ Go back and fix","กำลังบันทึกขึ้น Cloud…":"Saving to Cloud…",
+"✅ บันทึกขึ้น Cloud สำเร็จ":"✅ Saved to Cloud",
+"บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา":"Saved locally — will sync to Cloud automatically when back online",
+"กำลังบันทึก…":"Saving…","กรุณารอสักครู่ • อย่าเพิ่งปิดหน้านี้":"Please wait • don't close this page yet",
+"ไม่พบเบอร์วาล์วนี้ใน Master valve — ตั้งค่า Process ที่หน้าตั้งค่าก่อน":"Valve not found in Master valve — set its Process in Settings first",
+"เลือก process":"Select process","— เลือก process —":"— select process —","ล้างทั้งหมด?":"Clear all?","ยังไม่มี slot":"No slots yet",
+"กรอกข้อมูลก่อน":"Enter data first","OAE เกิน 100% — กรุณาตรวจสอบ OPR และ Target":"OAE over 100% — please check OPR and Target",
+// ── สแกนบาร์โค้ด ──
+"📷 สแกน / พิมพ์ บาร์โค้ด":"📷 Scan / type barcode","📷 กล้อง":"📷 Camera","⌨️ พิมพ์เอง":"⌨️ Type manually","พิมพ์เอง":"Type manually",
+"🔦 เปิดไฟฉาย":"🔦 Torch on","🔦 ปิดไฟฉาย":"🔦 Torch off","กล้องนี้เปิดไฟฉายไม่ได้":"This camera has no torch",
+"ยกบาร์โค้ดให้เต็มกรอบ ระยะ ~10-15 ซม. · ถือนิ่ง 1-2 วินาที":"Fill the frame with the barcode, ~10–15 cm away · hold still 1–2 s",
+"บาร์โค้ดเลอะน้ำมัน/ไม่ชัด?":"Barcode oily/blurry?","เปิด 🔦 ไฟฉาย เช็ดคราบ หรือกด":"Turn on the 🔦 torch, wipe it clean, or tap",
+"บาร์โค้ด (18 หลัก)":"Barcode (18 digits)","⚠️ ใช้บาร์โค้ดหน้าที่ 2":"⚠️ Use the barcode on page 2",
+"บาร์โค้ดที่สแกนมีตัวอักษรภาษาอังกฤษ (":"Scanned barcode contains a letter (",") ตำแหน่งที่ 3 จากซ้าย":") at position 3 from the left",
+"กรุณาใช้บาร์โค้ดหน้าที่ 2":"Please use the barcode on page 2",
+"❌ ข้อมูลบาร์โค้ดไม่ถูกต้องกับฐานข้อมูล":"❌ Barcode doesn't match the database",
+"ไม่พบในระบบ — กรุณาตรวจสอบ หรือเพิ่มที่":"not found — please check or add it at",
+"❌ บาร์โค้ดสั้นเกินไป":"❌ Barcode too short","อ่านได้":"read","— ต้องมีอย่างน้อย 7 หลัก":"— needs at least 7 digits",
+"⚠️ เบราว์เซอร์ไม่อนุญาตกล้องบน":"⚠️ Browser blocks the camera on","วิธีแก้:":"Fix:",
+"เปิดผ่าน Worker URL (HTTPS) แทน — หรือ":"open via the Worker URL (HTTPS) instead — or",
+"⚠️ ไม่พบกล้อง — ตรวจ permission ในเบราว์เซอร์ หรือใช้ \"พิมพ์เอง\"":"⚠️ No camera found — check browser permission or use \"Type manually\"",
+"คุณต้องอนุญาต permission กล้องในเบราว์เซอร์":"You must allow camera permission in the browser",
+"— กดที่ icon 🔒 ใน address bar":"— tap the 🔒 icon in the address bar","⚠️ เปิดกล้องไม่ได้:":"⚠️ Can't open camera:",
+"⚠️ ไลบรารีกล้องโหลดไม่ได้ — ตรวจอินเทอร์เน็ตหรือใช้ \"พิมพ์เอง\" ด้านล่าง":"⚠️ Camera library failed to load — check internet or use \"Type manually\" below",
+"ด้านล่าง":"below",
+// ── ติดตามงาน / ประวัติ ──
+"ติดตามงาน":"Track","ประวัติ":"History","จบงานแล้ว — ยอดตาม Process สุดท้าย":"Finished — totals by last process",
+"แตะเพื่อดู/แก้ไข":"tap to view/edit","จบงาน":"Finish","· ส่งต่อ":"· forwarded","ส่งต่อหลัง FG":"forward after FG",
+"แตะเพื่อแก้เลข Lot":"tap to edit Lot","ยังไม่มี Production records":"No production records yet",
+"ขั้นถัดไป / ค้าง":"next step / pending","✓ จบงาน · QC อัตโนมัติ":"✓ Finished · auto QC",
+"⚠️ พนักงานพิมพ์เอง":"⚠️ typed by operator","พนักงานพิมพ์เอง":"typed by operator","Process ล่าสุด":"Latest process",
+"Process สุดท้าย":"Last process","จบงาน (หลัง FG)":"Finished (after FG)","ค้นหาไม่สำเร็จ:":"Search failed:",
+"💡 process เหล่านี้พนักงานพิมพ์เอง (นอก flow ของวาล์ว) — กด ✏️ เพื่อแก้เป็น process ที่ถูกต้อง บันทึกแล้วอัปเดตฐานข้อมูลทันที":"💡 These processes were typed by operators (outside the valve's flow) — tap ✏️ to correct them; saving updates the database immediately",
+"💡 กด ✏️ เพื่อแก้ไขรายการ — บันทึกแล้วอัปเดตฐานข้อมูลทันที":"💡 Tap ✏️ to edit an item — saving updates the database immediately",
+"แก้เลข Lot":"Edit Lot number","แก้เลข Lot ของ":"Edit Lot number of",
+"ระบบจะแก้ทุก record ของ lot นี้ — ทั้ง":"All records of this lot will be updated — both",
+"ทั้ง Local และฐานข้อมูล (D1)":"in Local and the database (D1)","ไม่พบ lot":"Lot not found",
+"กรอกเลข Lot ใหม่":"Enter the new Lot number","เลข Lot เหมือนเดิม":"Lot number unchanged",
+"กำลังแก้เลข Lot ทั้ง Local และฐานข้อมูล…":"Updating Lot in Local and the database…",
+"แก้ Local แล้ว — Cloud ไม่สำเร็จ:":"Updated locally — Cloud failed:",
+"ค้นหา Valve/Machine/Lot":"Search Valve/Machine/Lot","ลบฟิลเตอร์ทั้งหมด ดูข้อมูลย้อนหลังทั้งหมด":"Clear all filters, view all history",
+"📚 ดูทั้งหมด":"📚 View all","ดึงข้อมูลล่าสุดจาก D1":"Fetch latest from D1","☁️ ดึงจาก Cloud":"☁️ Fetch from Cloud",
+"⬇️ โหลดเพิ่ม":"⬇️ Load more","รายการ · อาจมีเพิ่มเติม":"items · there may be more","แสดงข้อมูลทั้งหมด":"Showing all data",
+"ยังไม่ตั้งค่า Worker URL (ใช้ข้อมูล Local ได้)":"Worker URL not set (Local data still works)",
+"กำลังดึงข้อมูลจาก D1…":"Fetching from D1…","ดึงไม่สำเร็จ:":"Fetch failed:","ลองล้างคำค้น":"try clearing the search",
+"ข้อมูลยังไม่พร้อมแก้ไข — กด ☁️ ดึงจาก Cloud อีกครั้ง":"Data not ready to edit — tap ☁️ Fetch from Cloud again",
+"ข้อมูลยังไม่พร้อมลบ":"Data not ready to delete","ข้อมูล KPI":"KPI data","งาน Production":"Production jobs",
+"กำลังดึงข้อมูลทั้งหมดเพื่อ Export…":"Fetching everything for export…","ไม่มีข้อมูลให้ export":"Nothing to export",
+"เวลาเริ่ม":"Start time","เวลาสิ้นสุด":"End time","ไม่พบ Record ID":"Record ID not found",
+"ลบ KPI record นี้?":"Delete this KPI record?","ข้อมูลจะถูกลบออกจาก Local และ Cloud ทันที":"It will be deleted from Local and Cloud immediately",
+"ลบออกจาก Local แล้ว":"Deleted locally","ลบจาก Cloud สำเร็จ":"Deleted from Cloud","ลบ Local แล้ว — Cloud:":"Deleted locally — Cloud:",
+"ลบ Production record นี้?":"Delete this Production record?","ยืนยันการแก้ไขข้อมูล?":"Confirm changes?",
+"การเปลี่ยนแปลงจะบันทึกลงระบบทันที":"Changes are saved to the system immediately",
+"แก้ไข KPI Record":"Edit KPI Record","จะคำนวณได้ต้องมีทั้ง":"requires both","เวลาเริ่ม–สิ้นสุด":"start–end time",
+"ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%":"if either is missing, DLE = 0%","ไม่พบ record ใน local":"Record not found locally",
+"กำลังบันทึกการแก้ไข…":"Saving changes…","แก้ไข + อัพเดต Cloud สำเร็จ":"Edited + Cloud updated",
+"แก้ไข Local แล้ว — Cloud ไม่สำเร็จ:":"Edited locally — Cloud failed:","แก้ไขแล้ว (local)":"Edited (local)",
+"(นอกตัวเลือก)":"(not in options)","อื่นๆ — พิมพ์เอง…":"Other — type manually…","พิมพ์ process เอง":"Type process manually",
+"แก้ไข Production Record":"Edit Production Record","พนักงานพิมพ์ Process “":"Operator typed process “",
+"” ซึ่งไม่มีใน process ของวาล์วนี้ — กดเลือก process ที่ถูกต้องด้านล่าง (ค่าเดิมถูกเก็บไว้ในช่องหมายเหตุแล้ว)":"” which is not in this valve's process list — pick the correct one below (the original value is kept in the note field)",
+"(เก็บค่าที่พนักงานพิมพ์ไว้แล้ว)":"(operator's original value kept)","รายการล่าสุด":"latest items",
+"จับคู่อัตโนมัติ (แก้ทีเดียวหลายตัว)":"Auto-match (fix many at once)","จับคู่อัตโนมัติ":"Auto-match","จับคู่ได้":"matched",
+"งานเก่าที่ process ไม่ตรงตัวเลือกของวาล์ว — กด":"old jobs whose process doesn't match the valve's options — tap",
+"แก้ไข Valve No ที่พิมพ์ผิด":"Fix mistyped Valve No","แก้":"Fix","ให้เป็น Valve No ที่ถูกต้อง":"to the correct Valve No",
+"ระบบจะแก้ทุก record ที่ใช้เลขนี้ ทั้งใน Local และฐานข้อมูล":"All records using this number will be fixed, in Local and the database",
+"ที่ถูกต้อง":"correct","พิมพ์ค้นวาล์วที่มีในระบบ":"Search valves in the system","กรอก Valve No ที่ถูกต้อง":"Enter the correct Valve No",
+"เหมือนเดิม":"unchanged","ยังไม่มีในระบบ — ยืนยันแก้เป็นเลขนี้?":"not in the system yet — confirm this number?",
+"ไม่พบ record":"No records found","ตัวต้องแก้เอง":"to fix manually","· อีก":"· plus",
+"ตรวจสอบความถูกต้อง — ติ๊กออกถ้าไม่ใช่ แล้วกดยืนยัน":"Verify — untick wrong ones, then confirm",
+"ล้างเลือก":"Clear selection","ยืนยันแก้ที่เลือก":"Confirm selected fixes","ไม่ได้เลือกรายการ":"Nothing selected",
+"แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ:":"Fixed locally — some Cloud updates failed:",
+"รายการผลิตเสร็จ":"Finished items","เลือกเดือน":"Pick month","วันที่ผลิตจบ ตั้งแต่":"Finish date from",
+"กรอกค้น":"Search","รายการ · รวม":"items · total","วันที่ผลิตจบ":"Finish date",
+// ── วางแผน ──
+"วางแผนการผลิต":"Production Planning","➕ เพิ่มแผน":"➕ Add plan","📋 วางแผน (Excel)":"📋 Paste plan (Excel)",
+"🆔 วาง IDs (Excel)":"🆔 Paste IDs (Excel)","วันที่ขาย ตั้งแต่":"Sale date from","วางแผน":"Planned",
+"⚙️ กำลังผลิต":"⚙️ In production","กำลังผลิต":"In production","✅ เสร็จแล้ว":"✅ Done","เสร็จแล้ว":"Done",
+"✅ เสร็จ":"✅ Done","เสร็จ":"Done","↺ ล้าง Filter":"↺ Clear filter","ล้าง Filter — ดูแผนทั้งหมด":"Clear filter — view all plans",
+"📅 วันที่ขาย":"📅 Sale date","วันที่ขาย":"Sale date","ผู้สร้าง":"Created by",
+"☁️ แผนทุกรายการ sync ลง D1 — ทุกคนที่ login จะเห็นและแก้ไขร่วมกันได้":"☁️ All plans sync to D1 — everyone logged in sees and edits them together",
+"ยังไม่มีแผนผลิต — กด":"No production plans yet — tap","ลบแผนนี้?":"Delete this plan?",
+"📋 วางข้อมูลจาก Excel":"📋 Paste data from Excel","วิธีใช้:":"How to:",
+"Copy cells จาก Excel (Ctrl+C) แล้ว Ctrl+V ในกล่องด้านล่าง":"Copy cells in Excel (Ctrl+C) then Ctrl+V into the box below",
+"คอลัมน์ที่ระบบรู้จัก (ตามลำดับ):":"Recognized columns (in order):",
+"1. วันที่ขาย/Date 2. Valve No 3. Lot 4. Qty 5. สถานะ 6. หมายเหตุ":"1. Sale date/Date 2. Valve No 3. Lot 4. Qty 5. Status 6. Note",
+"รองรับ: BE (พ.ศ.), Excel serial date, DD/MM/YYYY, ตัวเลข 1,000 (มี comma), ไทย \"20 พ.ค. 2569\"":"Supports: BE (Buddhist year), Excel serial date, DD/MM/YYYY, numbers with commas, Thai dates \"20 พ.ค. 2569\"",
+"ถ้ามี header row ระบบจะ auto-detect ลำดับ column ให้":"With a header row, column order is auto-detected",
+"💾 บันทึกแผน":"💾 Save plan","⚠️ ยัง parse ข้อมูลไม่ได้":"⚠️ Couldn't parse the data yet",
+"ตรวจพบ separator:":"Detected separator:","อาจติดที่:":"Possible issue:","ไม่มี Valve No":"No Valve No",
+"ที่ตำแหน่งคาดหวัง (คอลัมน์ที่ 2) — ลองตรวจลำดับคอลัมน์ใหม่":"at the expected position (column 2) — check the column order",
+"ไม่สำเร็จ — เก็บ Local แล้ว":"failed — kept locally",
+// ── Valve IDs / master data ──
+"🆔 Valve IDs (1 Valve มีหลาย ID)":"🆔 Valve IDs (one valve, many IDs)","จำนวน ID":"ID count",
+"ค้นหา ID / Valve / Lot":"Search ID / Valve / Lot","➕ เพิ่ม ID":"➕ Add ID",
+"รายการ — เก็บเป็น 7 ตัวขวาของบาร์โค้ด เช่น":"items — stored as the rightmost 7 chars of the barcode, e.g.",
+"แก้ไข ID":"Edit ID","เพิ่ม ID ใหม่":"Add new ID","กรอก ID Code":"Enter ID code","กรอก Valve No":"Enter Valve No",
+"วาง IDs จาก Excel":"Paste IDs from Excel","ใน Excel แล้ว Paste ลงช่องด้านล่าง — รับ 3 คอลัมน์:":"in Excel then paste below — 3 columns:",
+"ตัวอย่าง:":"Example:","วางข้อมูลจาก Excel ที่นี่...":"Paste Excel data here...","💾 บันทึกลงระบบ":"💾 Save to system",
+"ไม่พบข้อมูลที่อ่านได้":"No readable data found","เพื่อบันทึกทั้งหมด":"to save all","ลอง Sync ใหม่":"Retry sync",
+"ยังไม่ตั้ง API":"API not set","ไม่มี IDs ใน Local":"No IDs locally","กำลัง Sync…":"Syncing…",
+"แก้ไข Valve":"Edit valve","เพิ่ม Valve":"Add valve","(ลำดับการผลิต)":"(production order)","คลิกเลือก —":"Click to select —",
+"ตัวเลขบน pill = ลำดับการผลิต":"numbers on pills = production order","กดซ้ำเพื่อยกเลิก":"click again to remove",
+"แทนที่ Valve เดิมด้วยข้อมูลใหม่":"Replace the existing valve with this data","💾 บันทึก Valve":"💾 Save valve",
+"วาง Valve Master Data จาก Excel":"Paste valve master data from Excel",
+"Copy จาก Excel → Valve No | Customer | Process1 | Process2 | ...":"Copy from Excel → Valve No | Customer | Process1 | Process2 | ...",
+"จำนวน Process ต่างกันได้แต่ละแถว — Valve No":"Rows can have different process counts — duplicate Valve No",
+"จะแจ้งและแทนที่ Process อัตโนมัติ":"will be reported and its processes replaced automatically",
+"ซ้ำ→แทนที่":"dupes→replaced","แถว":"rows","แทนที่ Process":"processes replaced",
+// ── ตั้งค่า ──
+"👤 ผู้ใช้งานปัจจุบัน":"👤 Current user","📦 รับงานเข้า Process ถัดไป (หลัง FG)":"📦 Take jobs into the next process (after FG)",
+"🌐 การเชื่อมต่อ Cloud":"🌐 Cloud connection","🔒 ล็อกไว้ (admin เท่านั้น)":"🔒 Locked (admin only)",
+"🧪 ทดสอบการเชื่อมต่อ":"🧪 Test connection","💾 บันทึก URL ใหม่":"💾 Save new URL",
+"☁️ Sync ทั้งหมดไป Cloud":"☁️ Sync everything to Cloud","🔒 ล็อกกลับ":"🔒 Re-lock",
+"⚠️ คุณกำลังอยู่ใน Admin Mode — สามารถแก้ไข URL และ sync ข้อมูลทั้งระบบได้":"⚠️ You are in Admin Mode — you can edit the URL and sync system-wide data",
+"💾 ข้อมูลในเครื่อง (Local)":"💾 Local data","👥 พนักงาน":"👥 Employees","🔄 รีเซ็ต Master Data":"🔄 Reset master data",
+"🗑️ ล้าง Records ทั้งหมด":"🗑️ Clear all records","🎯 ค่าเป้าหมาย KPI (แยกตาม Zone)":"🎯 KPI targets (per zone)",
+"💾 บันทึก Targets ทั้งหมด":"💾 Save all targets",
+"หมายเหตุ: PPLH ของ Zone 2 (INDUCTION) สูงกว่า Zone อื่นเพราะเครื่อง induction มีรอบเร็วกว่า":"Note: Zone 2 (INDUCTION) has a higher PPLH because induction machines cycle faster",
+"🔎 ค้นหา Valve":"🔎 Search valve","📋 วางจาก Excel":"📋 Paste from Excel","รหัส":"Code","ชื่อ":"Name",
+"ชื่อ-นามสกุล":"Full name","➕ เพิ่ม/แก้ไข":"➕ Add/Edit","คน · กรอง:":"people · filter:","ทุก VSM":"All VSM",
+"ℹ️ การตั้ง VSM ที่นี่มีผล":"ℹ️ VSM set here applies to","เฉพาะเครื่องนี้":"this device only",
+"(รอด sync กับ D1) — ถ้าจะให้ทุกเครื่องเหมือนกัน ให้ใส่รหัสใน":"(survives D1 sync) — to make all devices match, put the code in",
+"ใน index.html แล้ว push":"in index.html and push","🏭 เครื่องจักร":"🏭 Machines","เครื่องจักร":"Machines",
+"กรอกรหัสเครื่อง":"Enter machine code","บันทึกเครื่องจักร":"Save machine",
+"ยืนยันรหัส Admin เพื่อรีเซ็ต Master Data":"Confirm Admin code to reset master data",
+"รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?":"Reset master data (Valves / Machines / Employees / Targets) to defaults?",
+"ไม่ถูกลบ — แต่ค่าที่แก้ไว้จะหายทั้งหมด":"are not deleted — but all customizations will be lost",
+"รีเซ็ตเป็นค่าเริ่มต้นแล้ว":"Reset to defaults","ยืนยันรหัส Admin เพื่อล้าง Records ทั้งหมด (กู้คืนไม่ได้)":"Confirm Admin code to clear ALL records (cannot be undone)",
+"ล้าง Records ทั้งหมด (KPI + Production)?":"Clear all records (KPI + Production)?","ลบแล้ว กู้คืนไม่ได้":"deleted permanently",
+"ล้างทั้งหมด":"Clear all","ลบ Records ทั้งหมดแล้ว":"All records cleared","(กดเพื่อล็อก)":"(tap to lock)",
+"ล็อกแล้ว — กลับมาเห็นเฉพาะ VSM ของคุณ":"Locked — back to seeing only your VSM","ต้องปลดล็อก Admin ก่อน":"Unlock Admin first",
+"กรอก URL":"Enter URL","กำลังทดสอบ…":"Testing…","บันทึก Targets แล้ว":"Targets saved",
+"ยังไม่มีข้อมูล — กด":"No data yet — tap","เพื่อนำเข้า":"to import","กรอกรหัสผ่าน":"Enter password",
+"🔓 ปลดล็อก":"🔓 Unlock","🔐 หน้าตั้งค่าเฉพาะ Admin":"🔐 Admin-only settings",
+"🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM":"🔓 Unlock Admin Mode — see all VSM data",
+"ในโค้ดแล้ว — แก้ที่ VSM_EMP_MAP ใน index.html":"in code — change VSM_EMP_MAP in index.html","(เครื่องนี้)":"(this device)",
+// ── งานค้างหลัง FG ──
+"(Master valve) จนจบงาน — บางเบอร์":"(Master valve) until the job ends — some numbers go",
+"เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม \"→\" ไปขั้นถัดไปของเบอร์นั้นเอง":"directly, some pass P/T/POL first · the \"→\" button advances to that number's own next step",
+"ตามลำดับ process ของวาล์วเบอร์นั้น":"following that valve's process order","VSM4 จบที่":"VSM4 ends at",
+"🔎 ค้นหา Valve หรือ Lot":"🔎 Search valve or lot","🔄 ดึงทั้งหมด":"🔄 Fetch all","📦 งานค้างหลัง FG":"📦 Pending after FG",
+"· ตรงคำค้น":"· matching","ถอยกลับ 1 ขั้น":"Step back 1","↩︎ ถอย":"↩︎ Back",
+"ไม่พบงานค้างที่ตรงกับคำค้น":"No pending jobs match your search","ไม่มีงานค้างหลัง FG 🎉":"Nothing pending after FG 🎉",
+"↩︎ เอากลับ (QC)":"↩︎ Restore (QC)","⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ก่อนจึงแก้สถานะได้":"⚠️ Offline — must be online to change status",
+"กำลังเอางานกลับ…":"Restoring…","❌ ไม่สำเร็จ กรุณาลองใหม่":"❌ Failed, please try again",
+"⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงขยับสถานะงานได้ เพื่อให้ทุกเครื่องเห็นตรงกัน":"⚠️ Offline — must be online (D1) to move job status so all devices stay in sync",
+"กำลังอัปเดตสถานะงานขึ้น Cloud…":"Updating job status to Cloud…",
+"❌ บันทึกขึ้น Cloud ไม่สำเร็จ — สถานะยังไม่เปลี่ยน กรุณาลองใหม่":"❌ Cloud save failed — status unchanged, please try again",
+"กำลังดึงงานทั้งหมด…":"Fetching all jobs…","กดเพื่อแก้ไข":"tap to edit",
+// ── อื่น ๆ / toast ระบบ ──
+"เครือข่ายช้า — ข้อมูลถูกเก็บใน Local แล้ว":"Slow network — data kept locally","ยังไม่ตั้งค่า API URL":"API URL not set",
+"⚠️ มีข้อมูลที่ยังไม่ได้บันทึก":"⚠️ Unsaved data","คุณมีข้อมูลที่ยังไม่ได้บันทึก":"You have unsaved data",
+"ต้องการบันทึกทันที หรือ แก้ไขก่อน?":"Save now or edit first?","💾 บันทึกเลย":"💾 Save now","✏️ แก้ไขก่อน":"✏️ Edit first",
+"🚫 ออกโดยไม่บันทึก":"🚫 Leave without saving",
+"พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม — งานยังบันทึกขึ้นเซิร์ฟเวอร์ได้ตามปกติ":"Browser storage is full — jobs still save to the server normally",
+"(ถ้าเปิดในแอป LINE แนะนำให้กดมุมขวาบนแล้วเลือก \"เปิดด้วย Safari/Chrome\")":"(If opened in the LINE app, tap the top-right menu and choose \"Open in Safari/Chrome\")",
+"โหมดเปิดไฟล์นี้ไม่รองรับการบันทึกถาวร — ใช้งานได้ปกติแต่ข้อมูลจะหายเมื่อรีเฟรช":"This file mode doesn't support persistent storage — works fine, but data is lost on refresh",
+"ใช้ข้อมูลใน LocalStorage (โหมด Local)":"Using LocalStorage data (Local mode)",
+"Sync ข้อมูลจาก Cloud สำเร็จ":"Synced from Cloud","Sync ไม่สำเร็จ — เก็บ Local แล้ว":"Sync failed — kept locally",
+"Sync ไม่สำเร็จ — ยังใช้ Local ได้ปกติ":"Sync failed — Local still works",
+"บันทึกขึ้น Cloud ไม่สำเร็จ — เก็บ Local แล้ว":"Cloud save failed — kept locally",
+"ม.ค.":"Jan","ก.พ.":"Feb","มี.ค.":"Mar","เม.ย.":"Apr","พ.ค.":"May","มิ.ย.":"Jun","ก.ค.":"Jul","ส.ค.":"Aug","ก.ย.":"Sep","ต.ค.":"Oct","พ.ย.":"Nov","ธ.ค.":"Dec",
+"มกรา":"Jan","กุมภา":"Feb","มีนา":"Mar","เมษา":"Apr","พฤษภา":"May","มิถุนา":"Jun","กรกฎา":"Jul","สิงหา":"Aug","กันยา":"Sep","ตุลา":"Oct","พฤศจิกา":"Nov","ธันวา":"Dec",
+"OPR: 0 · WT: 0 ชม.":"OPR: 0 · WT: 0 h",
+// ── เก็บตกจากการสแกนหน้าจริง (ปุ่ม/ป้ายที่มี emoji นำหน้า) ──
+"🕐 ช่วง 1 (หลัก)":"🕐 Range 1 (main)",
+"📋 วางแผน":"📋 Planning",
+"🔄 โหลดข้อมูลใหม่":"🔄 Reload data",
+"🔎 ค้นหา ID / Valve / Lot":"🔎 Search ID / Valve / Lot",
+};
+/* template: § = ค่าแปรผัน (จับด้วย regex คงค่าเดิมไว้) */
+const I18N_T = [
+["§ → § (§) · บันทึกขึ้น Cloud แล้ว","§ → § (§) · saved to Cloud"],
+["↩︎ § Lot § — เอากลับมาที่ § แล้ว","↩︎ § Lot § — restored to §"],
+["✅ § Lot § — จบงานแล้ว · บันทึกขึ้น Cloud (ทุกเครื่องเห็นตรงกัน)","✅ § Lot § — finished · saved to Cloud (synced to all devices)"],
+["✅ งานที่จบแล้ว (§) — กดเพื่อดู/เอากลับ","✅ Finished jobs (§) — tap to view/restore"],
+["Lot § · § ชิ้น · จบ §","Lot § · § pcs · finished §"],
+["Lot § · § ชิ้น","Lot § · § pcs"],
+["⏭️ ID ซ้ำ §","⏭️ Duplicate IDs: §"],
+["▶ ดูรายการ § record","▶ View § records"],
+["☁️ ส่งข้อมูลที่ค้างขึ้น Cloud สำเร็จ § รายการ","☁️ Pushed § pending items to Cloud"],
+["⚠️ มี § เครื่อง OAE ต่ำกว่า 75% — กรอกขอความช่วยเหลือได้ด้านล่าง","⚠️ § machines have OAE below 75% — you can request help below"],
+["⚠️ Valve No ไม่มีในระบบ: § — บันทึกแล้ว & แจ้ง Admin","⚠️ Valve No not in system: § — saved & Admin notified"],
+["✓ พบ § รายการ","✓ Found § items"],
+["📅 § · รวม OPR","📅 § · total OPR"],
+["🛠️ Process § — งานที่อยู่ขั้นนี้","🛠️ Process § — jobs at this stage"],
+["§ เครื่อง · เป้า §","§ machines · target §"],
+["§ เครื่อง · § record","§ machines · § records"],
+["— ช่วงที่ §","— range §"],
+["ช่วง §","Range §"],
+["ชั่วโมงทำงาน: § ชม. — WT (หักพักเที่ยง): § ชม.","Working hours: § h — WT (lunch deducted): § h"],
+["§ ชิ้น","§ pcs"],
+["ชิ้น · § ลูกค้า · § วาล์ว · § lot · กดที่ลูกค้าเพื่อดูรายละเอียด","pcs · § customers · § valves · § lots · tap a customer for details"],
+["ชิ้น · § process","pcs · § processes"],
+["ดูที่แก้ไขแล้ว (§)","View resolved (§)"],
+["โดย § · §","By § · §"],
+["· ปิดโดย §","· closed by §"],
+["ปิดโดย §","closed by §"],
+["· ล่าสุดโดย §","· last by §"],
+["ต้องมากกว่าหรือเท่ากับ OPR (§ ชิ้น) — ปัจจุบัน §","must be ≥ OPR (§ pcs) — currently §"],
+["· แทนที่ซ้ำ §","· replaced § duplicates"],
+["· § บรรทัด · บรรทัดแรกแยกได้ § คอลัมน์","· § lines · first line split into § columns"],
+["บันทึก KPI § record + Production §","Saved KPI § records + Production §"],
+["เป้า §","target §"],
+["(รอ §)","(§ pending)"],
+["รอ § · เสร็จ § · แตะเพื่อดู","§ pending · § done · tap to view"],
+["พบข้อมูลที่ยังไม่ครบ § รายการ","Found § incomplete items"],
+["เพิ่ม § แผน§","Added § plans§"],
+["ไม่พบ map ของ §","No map for §"],
+["ยินดีต้อนรับ § · §","Welcome § · §"],
+["รวมทุก Zone · § · §","All zones · § · §"],
+["· § รายการ ▾","· § items ▾"],
+["ลบ ID §?","Delete ID §?"],
+["ลบ §?","Delete §?"],
+["ลบแผนซ้ำ § รายการ — ใช้ข้อมูลใหม่","Removed § duplicate plans — using new data"],
+["…และอีก § รายการ","…and § more"],
+["§ วาล์ว · § lot · § เครื่อง — กดดูวาล์ว","§ valves · § lots · § machines — tap for valves"],
+["แสดง §/§","Showing §/§"],
+["แสดงครบ § รายการ","Showing all § items"],
+["แสดงครบ §","Showing all §"],
+["แสดง § รายการ · อาจมีเพิ่มเติม","Showing § items · there may be more"],
+["· แสดง § รายการล่าสุด","· showing § latest"],
+["— เหลือ § ตัวที่ต้องแก้เอง (กำกวม / พิมพ์หลายวาล์ว / ไม่มีในระบบ)","— § left to fix manually (ambiguous / multiple valves / not in system)"],
+["ไม่พบรายการที่จับคู่อัตโนมัติได้แบบมั่นใจ§","No items could be auto-matched confidently§"],
+["OPR: § · WT: § ชม.","OPR: § · WT: § h"],
+["🆘 ขอความช่วยเหลือ §","🆘 Help requests §"],
+["ดึง § รายการจาก Cloud","Fetched § items from Cloud"],
+["หน้า §","Page §"],
+["⚠️ ซ้ำ § รายการ (จะแทนที่ Process)","⚠️ § duplicates (processes will be replaced)"],
+["✅ บันทึกแล้ว — ใหม่ § · แทนที่ Process §","✅ Saved — § new · § processes replaced"],
+["✨ ใหม่ §","✨ § new"],
+["📥 ทั้งหมด § แถว","📥 § rows total"],
+["แสดง § แถวแรก — กด","Showing first § rows — tap"],
+["ไม่พบรหัส \"§\" ในระบบ","Code \"§\" not found in the system"],
+["อ่านได้ § แถว — กำลัง sync ไป Cloud…","Read § rows — syncing to Cloud…"],
+["§ คน · กรอง:","§ people · filter:"],
+["กำลังแก้ไข §","Fixing §"],
+["กำลังแก้ 0/§","Fixing 0/§"],
+["กำลังแก้ §","Fixing §"],
+["ข้าม § ที่กรอกไม่ครบ","Skipped § incomplete"],
+["บันทึก Production § ไป Cloud สำเร็จ","Saved Production § to Cloud"],
+["Sync สำเร็จ § รายการไป Cloud","Synced § items to Cloud"],
+["ผังโรงงาน (IoT) สำหรับ § ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง","Floor plan (IoT) for § is not available yet — coming later"],
+["§ รายการ","§ items"],
+["🕐 ช่วง §","🕐 Range §"],
+["Page § (§ รายการ)","Page § (§ items)"],
+["Page § / § (§ รายการ)","Page § / § (§ items)"],
+];
+const _I18N_THRE = /[฀-๿]/;
+const I18N_TC = I18N_T.map(([th,en])=>{
+  const parts = th.split('§').map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  let i = 0;
+  return [new RegExp('^'+parts.join('([\\s\\S]*?)')+'$'), en.replace(/§/g,()=>'$'+(++i))];
+}).sort((a,b)=>b[0].source.length-a[0].source.length);   // เจาะจงกว่า (ยาวกว่า) ลองก่อน
+function _i18nTr(raw, depth){
+  depth = depth|0;
+  const key = raw.replace(/\s+/g,' ').trim();
+  if(!key || !_I18N_THRE.test(key)) return null;
+  const hit = I18N_X[key];
+  if(hit != null) return hit;
+  for(const [re,rep] of I18N_TC){
+    const m = key.match(re);
+    if(!m) continue;
+    // ค่าที่จับได้ (§) อาจมีข้อความ UI ไทยซ้อน (เช่น ป้ายกะ) → ลองแปลซ้ำอีกชั้น
+    // ข้อความพนักงาน/ชื่อคน ไม่ตรงพจนานุกรม → คงเดิมตามข้อกำหนด
+    const vals = m.slice(1).map(g => (depth<3 && g && _I18N_THRE.test(g) && _i18nTr(g, depth+1)) || g);
+    return rep.replace(/\$(\d+)/g, (_,d)=>vals[d-1] != null ? vals[d-1] : '');
+  }
+  return null;
+}
+/* ── ตัวเดิน DOM: แปล text node + attr (title/placeholder/aria-label) · เก็บต้นฉบับใน WeakMap ── */
+const _i18nOrigText = new WeakMap();
+const _i18nOrigAttr = new WeakMap();
+const I18N_ATTRS = ['title','placeholder','aria-label'];
+function _i18nSkipEl(el){
+  const t = el.nodeName;
+  return t==='SCRIPT' || t==='STYLE' || t==='TEXTAREA';
+}
+function _i18nDoText(n){
+  const v = n.nodeValue;
+  if(!v || !_I18N_THRE.test(v)) return;
+  const p = n.parentNode;
+  if(p && p.nodeName==='OPTION' && !p.hasAttribute('value')) return;   // option ไร้ value: text = ค่า submit ห้ามแปล
+  const tr = _i18nTr(v);
+  if(tr == null || tr === v) return;
+  if(!_i18nOrigText.has(n)) _i18nOrigText.set(n, v);
+  n.nodeValue = tr;
+}
+function _i18nDoAttrs(el){
+  if(!el.getAttribute) return;
+  for(const a of I18N_ATTRS){
+    const v = el.getAttribute(a);
+    if(!v || !_I18N_THRE.test(v)) continue;
+    const tr = _i18nTr(v);
+    if(tr == null || tr === v) continue;
+    let bag = _i18nOrigAttr.get(el);
+    if(!bag){ bag = {}; _i18nOrigAttr.set(el, bag); }
+    if(bag[a] == null) bag[a] = v;
+    el.setAttribute(a, tr);
+  }
+}
+function i18nApply(root){
+  if(VSM_LANG!=='en' || !root) return;
+  if(root.nodeType===3){ const p=root.parentNode; if(p && !_i18nSkipEl(p)) _i18nDoText(root); return; }
+  if(root.nodeType!==1 && root.nodeType!==9 && root.nodeType!==11) return;
+  if(root.nodeType===1){ if(_i18nSkipEl(root)) return; _i18nDoAttrs(root); }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT, {
+    acceptNode: n => n.nodeType===1 ? (_i18nSkipEl(n)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT)
+                                    : NodeFilter.FILTER_ACCEPT
+  });
+  let n; while((n = w.nextNode())){ if(n.nodeType===1) _i18nDoAttrs(n); else _i18nDoText(n); }
+}
+function i18nRestore(){
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);
+  let n;
+  while((n = w.nextNode())){
+    if(n.nodeType===3){
+      const o = _i18nOrigText.get(n);
+      if(o != null){ n.nodeValue = o; _i18nOrigText.delete(n); }
+    }else{
+      const bag = _i18nOrigAttr.get(n);
+      if(bag){ for(const a in bag) n.setAttribute(a, bag[a]); _i18nOrigAttr.delete(n); }
+    }
+  }
+}
+let _i18nMo = null;
+function i18nObserve(){
+  if(_i18nMo) return;
+  _i18nMo = new MutationObserver(recs=>{
+    if(VSM_LANG!=='en') return;
+    for(const r of recs){
+      if(r.type==='childList'){ r.addedNodes.forEach(nd=>i18nApply(nd)); }
+      else if(r.type==='characterData'){
+        // โค้ดตั้งข้อความไทยใหม่ทับ node เดิม → ต้นฉบับเก่าใช้ไม่ได้แล้ว ลบทิ้งก่อนแปลใหม่
+        if(_I18N_THRE.test(r.target.nodeValue||'')){ _i18nOrigText.delete(r.target); i18nApply(r.target); }
+      }else if(r.type==='attributes'){
+        const v = r.target.getAttribute && r.target.getAttribute(r.attributeName);
+        if(v && _I18N_THRE.test(v)){
+          const bag = _i18nOrigAttr.get(r.target);
+          if(bag) delete bag[r.attributeName];
+          _i18nDoAttrs(r.target);
+        }
+      }
+    }
+  });
+  _i18nMo.observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS});
+}
+function i18nStop(){ if(_i18nMo){ _i18nMo.disconnect(); _i18nMo = null; } }
+if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }   // เปิดแอปมาเป็น EN ค้างไว้
 
 function renderMachineStatusChecker(recs) {
   // IoT floor plan เป็นผังจริงของ VSM4 เท่านั้น — VSM1/2/3 ยังไม่มีผัง (เพิ่มภายหลัง)
