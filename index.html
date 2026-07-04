@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v2.8</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.0</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1492,7 +1492,78 @@ const VSM_EMP_MAP = {
   'TEST-V1': 'vsm1',   // ทดสอบ VSM1
   'TEST-V2': 'vsm2',   // ทดสอบ VSM2
   'TEST-V3': 'vsm3',   // ทดสอบ VSM3
-  // === เพิ่มรหัสพนักงาน VSM1 / VSM2 / VSM3 ของจริงที่นี่ ===
+  // === VSM3 ของจริง 70 คน — ตามเอกสาร "Man VSM3.xlsx" (Sheet4) ===
+  'T-814':'vsm3',     // นายพรชัย ครองใจ
+  'S-065':'vsm3',     // นายสัมฤทธิ์ ตอรัมย์
+  'L-3533':'vsm3',    // นายคมสัน เทียนชัย
+  'PST801':'vsm3',    // นายปราโมทย์ อินธิไชย
+  'L-3586':'vsm3',    // นายธวัชชัย พิลาพอง
+  'L-3105':'vsm3',    // นายสุขกมล กาภูคำ
+  'PST808':'vsm3',    // นายนาทนิรันดร์ จำปาแก้ว
+  'L-3607':'vsm3',    // นายอนุชิต อินทมาตย์
+  'L-3455':'vsm3',    // นายชัชชัย ชนะชัย
+  'S-047':'vsm3',     // นายกำปั่น เจือจาน
+  'L-3045':'vsm3',    // น.ส.นุจรินทร์ เรืองจันทา
+  'PST817':'vsm3',    // นายศรันย์ ทิวา
+  'L-3587':'vsm3',    // นายเอกรินทร์ ปัสสาคำ
+  'L-3597':'vsm3',    // นายอนุสรณ์ ขุนจร
+  'L-2972':'vsm3',    // น.ส.ทัศดี เวียงแก้ว
+  'PST789':'vsm3',    // นายณัฐพงษ์ ศรีปราชญ์
+  'PST751':'vsm3',    // นายฉัตรชัย เชียงริน
+  'S-055':'vsm3',     // นายวีรศักดิ์ สัตนาโค
+  'PST799':'vsm3',    // นายรภีพัฒน์ ขุมเงิน
+  'L-3557':'vsm3',    // นายพุฒิพงศ์ ภูษี
+  'L-3571':'vsm3',    // นายชนกันต์ ผลมีศักดิ์
+  'L-3442':'vsm3',    // นางประภาภรณ์ อรุณโรจน์
+  'PST684':'vsm3',    // นายชโนทัย สุขสมบัติ
+  'T-644':'vsm3',     // นายชัชวาลย์ เชื้อกลางใหญ่
+  'S-044':'vsm3',     // นายสมยศ แดงสูงเนิน
+  'S-069':'vsm3',     // นางสาวอทิตยา ศรสิทธิ์
+  'PST783':'vsm3',    // นายพายุ กุลอัก
+  'L-2722':'vsm3',    // นายณรงค์ ปาติตัง
+  'PST753':'vsm3',    // นายทวีวัฒน์ นักบุญ
+  'L-3330':'vsm3',    // นายธีรพงษ์ สิงห์สำราญ
+  'PST752':'vsm3',    // นายพิษณุ พิมมะทา
+  'L-3453':'vsm3',    // นายประจญ ชะตารัมย์
+  'L-1195':'vsm3',    // น.ส.สุดาภร สุดใจ
+  'L-3114':'vsm3',    // นายคชา กล้าหาญ
+  'L-3093':'vsm3',    // นายวิรัช แจ่มจำรัส
+  'PST774':'vsm3',    // นายทัศนพล หงส์ชุม
+  'TEMP':'vsm3',      // นายกุศล พีภูเขียว (รหัสตามเอกสาร = "Temp")
+  'T-334':'vsm3',     // นายบัณฑิต ศรีสงคราม
+  'L-2809':'vsm3',    // น.ส.อรชา ทาสีคำ
+  'PST807':'vsm3',    // นายจักรพันธ์ แก่นจันทร์
+  'L-3295':'vsm3',    // นายชวภณ เสียงเย็น
+  'L-3362':'vsm3',    // นายสุรสิทธิ์ นรสาร
+  'PST800':'vsm3',    // นายปฎิพล แกมชัยภูมิ
+  'L-1567':'vsm3',    // นายภาศุ สงค์พิมพ์
+  'L-3538':'vsm3',    // นายพนมพร สมพร
+  'S-056':'vsm3',     // นายสุรชัย เจริญจิตต์
+  'PST818':'vsm3',    // นายชนากานต์ แพงเพ็ง
+  'L-3606':'vsm3',    // นายอภิสิทธิ์ ป้องศรี
+  'L-3565':'vsm3',    // นายมงคล เวนุอาธร
+  'L-2623':'vsm3',    // น.ส.หยาดพิรุณ สัตถาผล
+  'PST650':'vsm3',    // นายบุรัญ หาริวงค์
+  'L-3559':'vsm3',    // นายธนากร สีหานาม
+  'PST812':'vsm3',    // นายภูวดล พริ้งเพราะ
+  'L-3528':'vsm3',    // นายสามารถ สำราญใจ
+  'S-051':'vsm3',     // นายฐิติศักดิ์ ปรางมาศ
+  'L-913':'vsm3',     // นายอรุณ อินผ่อง
+  'PST819':'vsm3',    // นายอนุชิต สีสุชาติ
+  'L-3394':'vsm3',    // นายวีระยุทธ งามดี
+  'L-3500':'vsm3',    // นายอัตพล โผภูเขียว
+  'PST771':'vsm3',    // นายประเสริฐศักดิ์ สมบัติ
+  'L-3567':'vsm3',    // นายพัชกฤตย์ ขันศิลา
+  'L-2136':'vsm3',    // นายทองพูน เพิ่มพูล
+  'PST743':'vsm3',    // นายพัฒนกร ศิริเวช
+  'PST773':'vsm3',    // นายสุรพงศ์ คำดี
+  'L-3495':'vsm3',    // นายพรประชา ไชยลาด
+  'L-3169':'vsm3',    // นายสมพงษ์ ลองพล
+  'PST794':'vsm3',    // นายพุฒิพงษ์ ฝากเมีย
+  'L-1372':'vsm3',    // นายวิชัย เจริญเขต
+  'L-2033':'vsm3',    // นายเอกชัย ประดิษฐ์เทา
+  'T-368':'vsm3',     // นายวันชัย จันทร์สว่าง
+  // === เพิ่มรหัสพนักงาน VSM1 / VSM2 ของจริงที่นี่ ===
 };
 
 /* override ราย "เครื่อง" — เก็บใน localStorage, รอด sync กับ D1
@@ -1570,11 +1641,11 @@ const ZONE_DEFS = {
   ZD: { label:'Zone D', vsm:'vsm2' },
   ZE: { label:'Zone E', vsm:'vsm2' },
   ZF: { label:'Zone F', vsm:'vsm2' },
-  // VSM 3
-  ZH: { label:'Zone H', vsm:'vsm3' },
-  ZI: { label:'Zone I', vsm:'vsm3' },
-  ZJ: { label:'Zone J', vsm:'vsm3' },
-  ZK: { label:'Zone K', vsm:'vsm3' },
+  // VSM 3 — 4 กลุ่มไลน์ตามเอกสารจัดกะ (Man VSM3.xlsx: ภาพรวม/Control)
+  ZH: { label:'FORD 1-5',             vsm:'vsm3' },   // F1 F2 F3 F4 F5
+  ZI: { label:'RENAULT·T3·M3·N4·BUFF', vsm:'vsm3' },  // R1 R2 T3 MIT-3 NIS-4 Buffing
+  ZJ: { label:'ISUZU·NIS 1+3',        vsm:'vsm3' },   // I1 I2 NIS-1 NIS-3
+  ZK: { label:'TRUCK·MIT 1+4·POL',    vsm:'vsm3' },   // Truck MIT-1 MIT-4 Polish
 };
 const ZONE_LABEL = Object.fromEntries(Object.entries(ZONE_DEFS).map(([k,v]) => [k, v.label]));
 function zoneVsm(z)       { return ZONE_DEFS[z] ? ZONE_DEFS[z].vsm : DEFAULT_VSM; }
@@ -1588,30 +1659,143 @@ function ensureValidZone() {
   if (!zs.includes(state.zone)) state.zone = zs[0] || 'ZONE1';
 }
 
-/* เครื่องจักร "ทดสอบ" ของ VSM1/2/3 (2 เครื่อง/zone) — merge เข้า state ถ้ายังไม่มี
+/* เครื่องจักร "ทดสอบ" ของ VSM1/2 (2 เครื่อง/zone) — merge เข้า state ถ้ายังไม่มี
    (D1 มีแค่ zone ของ VSM4 → ต้อง seed ฝั่ง client ให้ครบ) */
 const SEED_VSM_MACHINES = {};
 for (const z of Object.keys(ZONE_DEFS)) {
-  if (ZONE_DEFS[z].vsm === 'vsm4') continue;   // VSM4 ใช้ของเดิม
+  if (ZONE_DEFS[z].vsm !== 'vsm1' && ZONE_DEFS[z].vsm !== 'vsm2') continue;   // VSM4 ใช้ของเดิม · VSM3 = เครื่องจริงด้านล่าง
   SEED_VSM_MACHINES[z] = [
     { id:`${z}-01`, target:2000, man_std:0.5 },
     { id:`${z}-02`, target:2000, man_std:0.5 },
   ];
 }
+/* ▼ เครื่องจักรจริง VSM3 — 19 ไลน์ตามเอกสาร "Layout VSM3.xlsx" + จัดกะ (Man VSM3.xlsx)
+   (G-274 / G-2018 / G-2070 อยู่ 2 ไลน์ตามเอกสารต้นฉบับ — คนละโซนกัน) */
+const VSM3_LINES = {
+  F1: ['G-287','G-2096','G-289','G-284','G-283','G-2019'],
+  F2: ['G-286','G-292','G-288','G-285','G-252','G-290'],
+  F3: ['G-299','G-298','G-297','G-296','G-295','G-294'],
+  F4: ['G-2007','G-293','G-2005','G-2004','G-2003','G-2002','G-2066'],
+  F5: ['G-2014','G-2013','G-2012','G-2069','G-2085','G-2009','G-2063'],
+  R1: ['G-264','G-266','G-258','G-272','G-271','L-246','G-2067'],
+  R2: ['G-265','G-269','G-263','G-2070','G-2093','L-251'],
+  T3: ['G-257','L-257','G-2059','G-2060','G-2061','G-2082'],
+  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274'],          // MIT-3
+  N4: ['G-2042','G-1112','G-2036','G-261','G-2090'],                             // NIS-4
+  BUF:['G-231','G-233','G-225','G-280','G-2064','G-2041','G-279','G-2021'],      // Buffing (G-279/G-2021 ตามจัดกะ)
+  I1: ['G-274','G-256','G-249','G-259','L-250','G-2070','G-2055'],
+  I2: ['G-275','G-282','G-230','G-260','L-249','G-281'],
+  N1: ['G-2006','G-2018','G-2017','G-2086','G-236','L-252','G-2015'],            // NIS-1
+  N3: ['G-2071','G-291','G-2024','G-2011','G-239','L-258','G-2026'],             // NIS-3
+  TR: ['L-245','L-244','G-2091','G-2045','G-1119','G-1111','G-238','L-264','L-265','G-245','G-2092','G-2020'], // Truck
+  M1: ['G-224','L-241','L-242','G-234','G-244','G-268','G-2078'],                // MIT-1
+  M4: ['G-2084','G-2018','G-2016','G-2087','G-2088','G-2089'],                   // MIT-4
+  POL:['D-203','D-229','D-228'],                                                 // Polish
+};
+const VSM3_ZONE_LINES = {
+  ZH: ['F1','F2','F3','F4','F5'],
+  ZI: ['R1','R2','T3','M3','N4','BUF'],
+  ZJ: ['I1','I2','N1','N3'],
+  ZK: ['TR','M1','M4','POL'],
+};
+for (const z of Object.keys(VSM3_ZONE_LINES)) {
+  const seen = new Set();
+  SEED_VSM_MACHINES[z] = [];
+  for (const ln of VSM3_ZONE_LINES[z]) for (const id of (VSM3_LINES[ln] || [])) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    SEED_VSM_MACHINES[z].push({ id, target:2000, man_std:0.5 });
+  }
+}
 function ensureVsmZones() {
   if (!state.machines || typeof state.machines !== 'object') state.machines = {};
   for (const z of Object.keys(SEED_VSM_MACHINES)) {
-    if (!Array.isArray(state.machines[z]) || state.machines[z].length === 0) {
+    const cur = state.machines[z];
+    // VSM3: อัปเกรดจากเครื่อง "ทดสอบ" เดิม (ZH-01…) → เครื่องจริงตามผัง ครั้งเดียว
+    const oldTestSeed = ZONE_DEFS[z].vsm === 'vsm3' && Array.isArray(cur) && cur.length > 0 &&
+      cur.every(m => new RegExp('^' + z + '-\\d+$', 'i').test(String((m && m.id) || '')));
+    if (!Array.isArray(cur) || cur.length === 0 || oldTestSeed) {
       state.machines[z] = JSON.parse(JSON.stringify(SEED_VSM_MACHINES[z]));
     }
   }
 }
 
-/* พนักงาน "ทดสอบ" VSM1/2/3 — เพิ่มเข้า state.employees ถ้ายังไม่มี (D1 ไม่มี) */
+/* พนักงาน VSM1/2 (ทดสอบ) + VSM3 ของจริง 70 คน — เพิ่มเข้า state.employees ถ้ายังไม่มี (D1 ไม่มี) */
 const SEED_VSM_EMPLOYEES = [
   { id:'TEST-V1', name:'ทดสอบ VSM1' },
   { id:'TEST-V2', name:'ทดสอบ VSM2' },
   { id:'TEST-V3', name:'ทดสอบ VSM3' },
+  // === VSM3 ตามเอกสาร "Man VSM3.xlsx" (Sheet4) ===
+  { id:'T-814', name:'นายพรชัย ครองใจ' },
+  { id:'S-065', name:'นายสัมฤทธิ์ ตอรัมย์' },
+  { id:'L-3533', name:'นายคมสัน เทียนชัย' },
+  { id:'PST801', name:'นายปราโมทย์ อินธิไชย' },
+  { id:'L-3586', name:'นายธวัชชัย พิลาพอง' },
+  { id:'L-3105', name:'นายสุขกมล กาภูคำ' },
+  { id:'PST808', name:'นายนาทนิรันดร์ จำปาแก้ว' },
+  { id:'L-3607', name:'นายอนุชิต อินทมาตย์' },
+  { id:'L-3455', name:'นายชัชชัย ชนะชัย' },
+  { id:'S-047', name:'นายกำปั่น เจือจาน' },
+  { id:'L-3045', name:'น.ส.นุจรินทร์ เรืองจันทา' },
+  { id:'PST817', name:'นายศรันย์ ทิวา' },
+  { id:'L-3587', name:'นายเอกรินทร์ ปัสสาคำ' },
+  { id:'L-3597', name:'นายอนุสรณ์ ขุนจร' },
+  { id:'L-2972', name:'น.ส.ทัศดี เวียงแก้ว' },
+  { id:'PST789', name:'นายณัฐพงษ์ ศรีปราชญ์' },
+  { id:'PST751', name:'นายฉัตรชัย เชียงริน' },
+  { id:'S-055', name:'นายวีรศักดิ์ สัตนาโค' },
+  { id:'PST799', name:'นายรภีพัฒน์ ขุมเงิน' },
+  { id:'L-3557', name:'นายพุฒิพงศ์ ภูษี' },
+  { id:'L-3571', name:'นายชนกันต์ ผลมีศักดิ์' },
+  { id:'L-3442', name:'นางประภาภรณ์ อรุณโรจน์' },
+  { id:'PST684', name:'นายชโนทัย สุขสมบัติ' },
+  { id:'T-644', name:'นายชัชวาลย์ เชื้อกลางใหญ่' },
+  { id:'S-044', name:'นายสมยศ แดงสูงเนิน' },
+  { id:'S-069', name:'นางสาวอทิตยา ศรสิทธิ์' },
+  { id:'PST783', name:'นายพายุ กุลอัก' },
+  { id:'L-2722', name:'นายณรงค์ ปาติตัง' },
+  { id:'PST753', name:'นายทวีวัฒน์ นักบุญ' },
+  { id:'L-3330', name:'นายธีรพงษ์ สิงห์สำราญ' },
+  { id:'PST752', name:'นายพิษณุ พิมมะทา' },
+  { id:'L-3453', name:'นายประจญ ชะตารัมย์' },
+  { id:'L-1195', name:'น.ส.สุดาภร สุดใจ' },
+  { id:'L-3114', name:'นายคชา กล้าหาญ' },
+  { id:'L-3093', name:'นายวิรัช แจ่มจำรัส' },
+  { id:'PST774', name:'นายทัศนพล หงส์ชุม' },
+  { id:'TEMP', name:'นายกุศล พีภูเขียว' },
+  { id:'T-334', name:'นายบัณฑิต ศรีสงคราม' },
+  { id:'L-2809', name:'น.ส.อรชา ทาสีคำ' },
+  { id:'PST807', name:'นายจักรพันธ์ แก่นจันทร์' },
+  { id:'L-3295', name:'นายชวภณ เสียงเย็น' },
+  { id:'L-3362', name:'นายสุรสิทธิ์ นรสาร' },
+  { id:'PST800', name:'นายปฎิพล แกมชัยภูมิ' },
+  { id:'L-1567', name:'นายภาศุ สงค์พิมพ์' },
+  { id:'L-3538', name:'นายพนมพร สมพร' },
+  { id:'S-056', name:'นายสุรชัย เจริญจิตต์' },
+  { id:'PST818', name:'นายชนากานต์ แพงเพ็ง' },
+  { id:'L-3606', name:'นายอภิสิทธิ์ ป้องศรี' },
+  { id:'L-3565', name:'นายมงคล เวนุอาธร' },
+  { id:'L-2623', name:'น.ส.หยาดพิรุณ สัตถาผล' },
+  { id:'PST650', name:'นายบุรัญ หาริวงค์' },
+  { id:'L-3559', name:'นายธนากร สีหานาม' },
+  { id:'PST812', name:'นายภูวดล พริ้งเพราะ' },
+  { id:'L-3528', name:'นายสามารถ สำราญใจ' },
+  { id:'S-051', name:'นายฐิติศักดิ์ ปรางมาศ' },
+  { id:'L-913', name:'นายอรุณ อินผ่อง' },
+  { id:'PST819', name:'นายอนุชิต สีสุชาติ' },
+  { id:'L-3394', name:'นายวีระยุทธ งามดี' },
+  { id:'L-3500', name:'นายอัตพล โผภูเขียว' },
+  { id:'PST771', name:'นายประเสริฐศักดิ์ สมบัติ' },
+  { id:'L-3567', name:'นายพัชกฤตย์ ขันศิลา' },
+  { id:'L-2136', name:'นายทองพูน เพิ่มพูล' },
+  { id:'PST743', name:'นายพัฒนกร ศิริเวช' },
+  { id:'PST773', name:'นายสุรพงศ์ คำดี' },
+  { id:'L-3495', name:'นายพรประชา ไชยลาด' },
+  { id:'L-3169', name:'นายสมพงษ์ ลองพล' },
+  { id:'PST794', name:'นายพุฒิพงษ์ ฝากเมีย' },
+  { id:'L-1372', name:'นายวิชัย เจริญเขต' },
+  { id:'L-2033', name:'นายเอกชัย ประดิษฐ์เทา' },
+  { id:'T-368', name:'นายวันชัย จันทร์สว่าง' },
 ];
 function ensureSeedEmployees() {
   if (!Array.isArray(state.employees)) state.employees = [];
@@ -3726,7 +3910,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v2.8":"Production Record + KPI · v2.8",
+"ระบบบันทึกผลิต + KPI · v3.0":"Production Record + KPI · v3.0",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4150,8 +4334,9 @@ function i18nStop(){ if(_i18nMo){ _i18nMo.disconnect(); _i18nMo = null; } }
 if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }   // เปิดแอปมาเป็น EN ค้างไว้
 
 function renderMachineStatusChecker(recs) {
-  // IoT floor plan เป็นผังจริงของ VSM4 เท่านั้น — VSM1/2/3 ยังไม่มีผัง (เพิ่มภายหลัง)
-  if (!canSeeAllVsm() && myVsm() !== 'vsm4') {
+  // IoT floor plan มีผังจริงของ VSM4 + VSM3 (ตามเอกสาร Layout VSM3) — VSM1/2 ยังไม่มีผัง (เพิ่มภายหลัง)
+  const fpv = _fpVsm();
+  if (fpv !== 'vsm4' && fpv !== 'vsm3') {
     const fw = $('mcViewFloor');
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
@@ -4166,12 +4351,14 @@ function renderMachineStatusChecker(recs) {
 
   // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
   // ถ้าไม่ได้ส่งมา → กรองจาก state.kpiRecords ตาม "ช่วงวันที่" (ไม่ใช่วันเดียว) + กะ
-  const filtered = Array.isArray(recs) ? recs : filterVsm(state.kpiRecords).filter(r => {
+  let filtered = Array.isArray(recs) ? recs : filterVsm(state.kpiRecords).filter(r => {
     const d = (r.shift_date || r.record_date || '').slice(0,10);
     if (d < dFrom || d > dTo) return false;
     if (selShift !== 'all' && r.shift_type !== selShift) return false;
     return true;
   });
+  // Admin เห็นทุก VSM → ตัดให้เหลือ VSM ของผังที่กำลังแสดง (สลับด้วยปุ่ม VSM 4|VSM 3)
+  if (canSeeAllVsm()) filtered = filtered.filter(r => vsmOf(r) === fpv);
 
   // เครื่องที่มี record ในช่วง = "เปิดเครื่อง" (ไม่งั้นจะขึ้นดำ = ปิด)
   const activeMachines = new Set(filtered.map(r => r.machine_id));
@@ -4201,8 +4388,8 @@ function _oaeOf(recs){ let o=0,t=0; for(const r of (recs||[])){ o+=(+r.opr||0); 
 function renderIotOaeStrip(filtered){
   const host=$('iotOaeStrip'); if(!host) return;
   const rows=Array.isArray(filtered)?filtered:[];
-  const zones=Object.keys(ZONE_DEFS).filter(z=>ZONE_DEFS[z]&&ZONE_DEFS[z].vsm==='vsm4');   // ZONE1/2/3
-  const ZDOT=['#7C3AED','#1A56DB','#D97706'];                                                // สีโซนตรงกับการ์ด fp-zone
+  const zones=zonesForVsm(_fpVsm());                                                         // โซนของผังที่กำลังแสดง (VSM4=3 · VSM3=4)
+  const ZDOT=['#7C3AED','#1A56DB','#D97706','#0E9F6E'];                                      // สีโซนตรงกับการ์ด fp-zone
   // สองรูปแบบในชิปเดียว สลับด้วย CSS: ปกติ .oae-vn (1 ตำแหน่ง) · เต็มจอ .oae-vf (2 ตำแหน่ง — req #3)
   const fmt =(v,d)=> v==null ? '—' : (v*100).toFixed(d)+'%';
   const fmtV=v=>`<span class="oae-vn">${fmt(v,1)}</span><span class="oae-vf">${fmt(v,2)}</span>`;
@@ -4225,6 +4412,61 @@ function renderIotOaeStrip(filtered){
   host.innerHTML=html;
 }
 
+/* ============================================================
+   VSM3 Factory Floor Plan — พิกัด px จริงจากเอกสาร "Layout VSM3.xlsx" (drawing)
+   FP3_MC = เครื่องจักร 126 เครื่อง · FP3_LB = ป้ายไลน์สีเหลือง 19 ป้าย (POL/N3/M1/…)
+   ============================================================ */
+const FP3_MC=[
+  {id:'D-203',x:324,y:12,w:40,h:59},{id:'D-229',x:367,y:12,w:40,h:59},{id:'D-228',x:410,y:12,w:40,h:59},{id:'G-2078',x:210,y:79,w:45,h:50},
+  {id:'G-268',x:216,y:154,w:43,h:42},{id:'G-2071',x:329,y:171,w:45,h:50},{id:'G-291',x:377,y:171,w:45,h:50},{id:'G-2024',x:425,y:171,w:45,h:50},
+  {id:'G-2011',x:474,y:171,w:45,h:50},{id:'G-239',x:523,y:171,w:45,h:50},{id:'L-258',x:572,y:171,w:45,h:50},{id:'G-2026',x:621,y:171,w:45,h:50},
+  {id:'G-224',x:0,y:180,w:42,h:42},{id:'L-241',x:44,y:180,w:42,h:42},{id:'L-242',x:88,y:181,w:40,h:42},{id:'G-234',x:130,y:181,w:40,h:42},
+  {id:'G-244',x:172,y:181,w:40,h:42},{id:'G-2006',x:365,y:225,w:45,h:50},{id:'G-2018',x:413,y:225,w:45,h:50},{id:'G-2017',x:461,y:225,w:45,h:50},
+  {id:'G-2086',x:510,y:225,w:45,h:50},{id:'G-236',x:560,y:226,w:45,h:50},{id:'L-252',x:608,y:226,w:45,h:50},{id:'G-2015',x:657,y:226,w:45,h:50},
+  {id:'G-2084',x:0,y:234,w:45,h:50},{id:'G-2018',x:48,y:234,w:45,h:50},{id:'G-2016',x:96,y:234,w:45,h:50},{id:'G-2087',x:145,y:234,w:45,h:50},
+  {id:'G-2088',x:194,y:235,w:45,h:50},{id:'G-2089',x:243,y:235,w:45,h:50},{id:'G-275',x:407,y:285,w:45,h:50},{id:'G-282',x:455,y:285,w:45,h:50},
+  {id:'G-230',x:504,y:285,w:45,h:50},{id:'G-260',x:553,y:286,w:45,h:50},{id:'L-249',x:602,y:286,w:45,h:50},{id:'G-281',x:651,y:286,w:45,h:50},
+  {id:'L-264',x:0,y:290,w:45,h:50},{id:'G-238',x:48,y:290,w:45,h:50},{id:'G-1111',x:96,y:290,w:45,h:50},{id:'G-245',x:145,y:290,w:45,h:50},
+  {id:'G-2045',x:194,y:291,w:45,h:50},{id:'G-2020',x:243,y:291,w:45,h:50},{id:'G-274',x:407,y:340,w:45,h:50},{id:'G-256',x:455,y:340,w:45,h:50},
+  {id:'G-249',x:504,y:340,w:45,h:50},{id:'G-259',x:553,y:340,w:45,h:50},{id:'L-250',x:602,y:340,w:45,h:50},{id:'G-2070',x:651,y:340,w:45,h:50},
+  {id:'L-265',x:0,y:344,w:45,h:50},{id:'G-2091',x:48,y:344,w:45,h:50},{id:'G-1119',x:96,y:344,w:45,h:50},{id:'L-244',x:145,y:344,w:45,h:50},
+  {id:'L-245',x:194,y:345,w:45,h:50},{id:'G-2092',x:243,y:345,w:45,h:50},{id:'G-2055',x:553,y:392,w:45,h:50},{id:'G-231',x:7,y:413,w:45,h:50},
+  {id:'G-233',x:55,y:413,w:45,h:50},{id:'G-225',x:141,y:413,w:45,h:50},{id:'G-280',x:190,y:413,w:45,h:50},{id:'G-2064',x:253,y:414,w:45,h:50},
+  {id:'G-2041',x:302,y:414,w:45,h:50},{id:'G-265',x:397,y:476,w:45,h:50},{id:'G-269',x:445,y:476,w:45,h:50},{id:'G-263',x:494,y:476,w:45,h:50},
+  {id:'G-2070',x:544,y:476,w:45,h:50},{id:'G-2093',x:592,y:476,w:45,h:50},{id:'L-251',x:641,y:476,w:45,h:50},{id:'G-257',x:0,y:481,w:45,h:50},
+  {id:'L-257',x:48,y:481,w:45,h:50},{id:'G-2059',x:96,y:481,w:45,h:50},{id:'G-2060',x:145,y:481,w:45,h:50},{id:'G-2061',x:194,y:482,w:45,h:50},
+  {id:'G-2082',x:243,y:482,w:45,h:50},{id:'G-264',x:367,y:535,w:45,h:50},{id:'G-266',x:415,y:535,w:45,h:50},{id:'G-258',x:463,y:535,w:45,h:50},
+  {id:'G-272',x:512,y:535,w:45,h:50},{id:'G-271',x:561,y:536,w:45,h:50},{id:'L-246',x:610,y:536,w:45,h:50},{id:'G-2067',x:659,y:536,w:45,h:50},
+  {id:'G-2068',x:0,y:539,w:45,h:50},{id:'G-2040',x:48,y:539,w:45,h:50},{id:'G-2079',x:96,y:539,w:45,h:50},{id:'G-2031',x:145,y:539,w:45,h:50},
+  {id:'G-2001',x:194,y:539,w:45,h:50},{id:'G-2081',x:243,y:539,w:45,h:50},{id:'G-274',x:292,y:539,w:45,h:50},{id:'G-1112',x:47,y:603,w:62,h:29},
+  {id:'G-2042',x:0,y:608,w:45,h:50},{id:'G-261',x:111,y:608,w:45,h:50},{id:'G-2090',x:160,y:609,w:45,h:50},{id:'G-279',x:209,y:609,w:45,h:50},
+  {id:'G-2021',x:257,y:609,w:45,h:50},{id:'G-2014',x:359,y:611,w:45,h:50},{id:'G-2013',x:407,y:611,w:45,h:50},{id:'G-2012',x:455,y:611,w:45,h:50},
+  {id:'G-2069',x:504,y:611,w:45,h:50},{id:'G-2085',x:553,y:611,w:45,h:50},{id:'G-2009',x:602,y:611,w:45,h:50},{id:'G-2063',x:651,y:611,w:45,h:50},
+  {id:'G-2036',x:47,y:634,w:62,h:29},{id:'G-2007',x:0,y:678,w:45,h:50},{id:'G-293',x:48,y:678,w:45,h:50},{id:'G-2005',x:96,y:678,w:45,h:50},
+  {id:'G-2004',x:145,y:678,w:45,h:50},{id:'G-2003',x:194,y:679,w:45,h:50},{id:'G-2002',x:243,y:679,w:45,h:50},{id:'G-2066',x:292,y:679,w:45,h:50},
+  {id:'G-286',x:407,y:680,w:45,h:50},{id:'G-292',x:455,y:680,w:45,h:50},{id:'G-288',x:503,y:680,w:45,h:50},{id:'G-285',x:551,y:680,w:45,h:50},
+  {id:'G-252',x:601,y:680,w:45,h:50},{id:'G-290',x:650,y:680,w:45,h:50},{id:'G-287',x:405,y:738,w:45,h:50},{id:'G-2096',x:453,y:738,w:45,h:50},
+  {id:'G-289',x:501,y:738,w:45,h:50},{id:'G-284',x:550,y:738,w:45,h:50},{id:'G-283',x:599,y:739,w:45,h:50},{id:'G-2019',x:648,y:739,w:45,h:50},
+  {id:'G-299',x:0,y:741,w:45,h:50},{id:'G-298',x:48,y:741,w:45,h:50},{id:'G-297',x:96,y:741,w:45,h:50},{id:'G-296',x:145,y:741,w:45,h:50},
+  {id:'G-295',x:194,y:742,w:45,h:50},{id:'G-294',x:243,y:742,w:45,h:50},
+];
+const FP3_LB=[
+  {id:'POL',x:279,y:11,w:42,h:31},{id:'N3',x:287,y:182,w:38,h:31},{id:'M1',x:219,y:197,w:38,h:31},{id:'N1',x:325,y:235,w:38,h:31},{id:'M4',x:281,y:248,w:38,h:31},{id:'I2',x:367,y:297,w:38,h:31},
+  {id:'TR',x:292,y:324,w:38,h:31},{id:'I1',x:365,y:345,w:38,h:31},{id:'BUF',x:351,y:429,w:41,h:31},{id:'R2',x:356,y:486,w:38,h:31},{id:'T3',x:292,y:491,w:38,h:31},{id:'M3',x:292,y:525,w:38,h:31},
+  {id:'R1',x:343,y:528,w:38,h:31},{id:'F5',x:357,y:592,w:38,h:31},{id:'N4',x:295,y:594,w:38,h:31},{id:'F2',x:379,y:673,w:38,h:31},{id:'F4',x:330,y:701,w:38,h:31},{id:'F1',x:363,y:745,w:38,h:31},
+  {id:'F3',x:293,y:754,w:38,h:31},
+];
+
+/* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
+let _iotVsmSel='vsm4';
+try{ _iotVsmSel=localStorage.getItem('vsm4_iot_vsm')||'vsm4'; }catch(e){}
+function _fpVsm(){ return canSeeAllVsm() ? (_iotVsmSel==='vsm3'?'vsm3':'vsm4') : myVsm(); }
+function iotSetVsm(v){
+  _iotVsmSel = v==='vsm3' ? 'vsm3' : 'vsm4';
+  try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
+  renderMachineStatusChecker();
+}
+
 /* VSM4 Factory Floor Plan — Zone positions match physical layout images
    LEFT = Zone 3 (Orange border) = Ford6 & Perkins
    MIDDLE = Zone 2 (Blue border) = Induction
@@ -4233,6 +4475,7 @@ function renderIotOaeStrip(filtered){
 function renderFloorPlan(activeMachines, oaeMap={}) {
   const wrap = $('mcViewFloor');
   if (!wrap) return;
+  const fpv = _fpVsm();
 
   const MC = [
     {id:'G-1109',r1:2, c1:0, r2:4, c2:2},
@@ -4302,14 +4545,20 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   ];
 
   const CX=35, CY=15;
+  // แปลงเป็นกล่อง px ชุดเดียวกันทั้ง 2 ผัง — VSM4 จาก grid เดิม · VSM3 จากพิกัดเอกสาร Layout
+  const boxes = fpv==='vsm3'
+    ? FP3_MC
+    : MC.map(m=>({id:m.id, x:m.c1*CX+2, y:m.r1*CY+2, w:(m.c2-m.c1)*CX-4, h:(m.r2-m.r1)*CY-4}));
+  const labels = fpv==='vsm3' ? FP3_LB : [];
   // กรอบให้พอดีเครื่องจริง — บีบพื้นที่ว่างที่ไม่ได้ใช้ออก (req #1)
-  const minC=Math.min(...MC.map(m=>m.c1)), maxC=Math.max(...MC.map(m=>m.c2));
-  const minR=Math.min(...MC.map(m=>m.r1)), maxR=Math.max(...MC.map(m=>m.r2));
-  const PAD=6;
-  const VBX=minC*CX-PAD, VBY=minR*CY-PAD;
-  const W=(maxC-minC)*CX+PAD*2, H=(maxR-minR)*CY+PAD*2;
-  const tot=MC.length;
-  const nOn=MC.filter(m=>activeMachines.has(m.id)).length;
+  const allB=[...boxes,...labels];
+  const PAD=8;
+  const minX=Math.min(...allB.map(b=>b.x)), maxX=Math.max(...allB.map(b=>b.x+b.w));
+  const minY=Math.min(...allB.map(b=>b.y)), maxY=Math.max(...allB.map(b=>b.y+b.h));
+  const VBX=minX-PAD, VBY=minY-PAD;
+  const W=maxX-minX+PAD*2, H=maxY-minY+PAD*2;
+  const tot=boxes.length;
+  const nOn=boxes.filter(m=>activeMachines.has(m.id)).length;
 
   let g=[];
   g.push(`<defs>
@@ -4322,9 +4571,8 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   // Single unified background
   g.push(`<rect x="${VBX}" y="${VBY}" width="${W}" height="${H}" fill="#e5e7eb"/>`);
 
-  for(const mc of MC){
-    const x=mc.c1*CX+2, y=mc.r1*CY+2;
-    const w=(mc.c2-mc.c1)*CX-4, h=(mc.r2-mc.r1)*CY-4;
+  for(const mc of boxes){
+    const x=mc.x, y=mc.y, w=mc.w, h=mc.h;
     if(w<2||h<2) continue;
 
     const active = activeMachines.has(mc.id);
@@ -4352,10 +4600,24 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
   }
 
+  // ป้ายไลน์สีเหลือง (เฉพาะ VSM3) — POL/N3/M1/… ตามเอกสาร Layout · ไม่ใช่เครื่อง กดไม่ได้
+  for(const lb of labels){
+    const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
+    g.push(`<g aria-hidden="true"><rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="#111827" stroke-width="1.5" rx="4"/>`+
+      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text></g>`);
+  }
+
   const svgHtml=`<svg id="iotSvg" viewBox="${VBX} ${VBY} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
+
+  // Admin: ปุ่มสลับผัง VSM 4 ⇄ VSM 3 (ผู้ใช้ทั่วไปเห็นเฉพาะผัง VSM ตัวเอง — ไม่มีปุ่ม)
+  const vsmBtn = canSeeAllVsm() ? `
+      <span style="display:inline-flex;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden">
+        ${['vsm4','vsm3'].map(v=>`<button type="button" onclick="iotSetVsm('${v}')" style="border:0;cursor:pointer;padding:3px 10px;font-size:10.5px;font-weight:800;${v===fpv?'background:#1A56DB;color:#fff':'background:#fff;color:#334155'}">${VSM_LABEL[v]}</button>`).join('')}
+      </span>` : '';
 
   wrap.innerHTML=`
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
+      ${vsmBtn}
       <span style="display:inline-flex;align-items:center;gap:4px;color:#14532d">
         <span style="width:11px;height:11px;background:#16a34a;border-radius:2px;display:inline-block"></span>OAE ≥75%
       </span>
@@ -4668,10 +4930,17 @@ function _loadHandover(){
 function _saveHandover(){ try{ localStorage.setItem(LS_HANDOVER, JSON.stringify(_handover)); }catch(e){} }
 function _loadHoPending(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_HO_PENDING)||'[]')); }catch(e){ return new Set(); } }
 function _saveHoPending(){ try{ localStorage.setItem(LS_HO_PENDING, JSON.stringify([..._hoPending])); }catch(e){} }
-// รายการต่อประเภท (ตัด deleted, ใหม่ล่าสุดก่อน)
+// VSM ของ entry ต่อกะ — สืบจากรหัสผู้บันทึก (byId) ผ่าน VSM_EMP_MAP เหมือน vsmOf(record)
+// ของเก่าทั้งหมดเป็นคน VSM4 → default vsm4 · แต่ละ VSM จึงเห็นเฉพาะบอร์ดของตัวเอง (Admin เห็นหมด)
+function _hoVsm(e){
+  const id=String((e&&e.byId)||'').trim().toUpperCase();
+  if(id){ if(VSM_EMP_MAP[id]) return VSM_EMP_MAP[id]; if(_empVsmOv[id]) return _empVsmOv[id]; }
+  return (e&&e.vsm)||DEFAULT_VSM;
+}
+// รายการต่อประเภท (ตัด deleted + เฉพาะ VSM ตัวเอง, ใหม่ล่าสุดก่อน)
 function _hoList(type){
   type=_hoType(type);
-  return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type)
+  return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type && (canSeeAllVsm() || _hoVsm(e)===myVsm()))
     .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
 }
 function addHandover(type, text, cat){
@@ -4681,6 +4950,7 @@ function addHandover(type, text, cat){
     id:'ho_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
     type, cat:_hoCat(cat), text,
     byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
+    vsm:myVsm(),   // ประทับ VSM ผู้บันทึก (Worker ไม่เก็บ field นี้ — ใช้เป็น fallback ฝั่ง local เท่านั้น)
     ts:now, editedAt:null, deleted:0, updatedAt:now,
   };
   _handover[entry.id]=entry; _saveHandover();
