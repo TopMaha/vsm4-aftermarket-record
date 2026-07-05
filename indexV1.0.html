@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.1</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.2</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1598,30 +1598,50 @@ function empById(id) {
   const up = String(id).trim().toUpperCase();
   return (state.employees || []).find(e => (e.id||'').toUpperCase() === up) || null;
 }
-// ดึงรหัสพนักงานออกจาก record (operator มักเป็น "L-1827 — ชื่อ")
+// ดึงรหัสพนักงานออกจาก record (operator มักเป็น "L-1827 — ชื่อ" · shift_ids = "L-1827,S-047")
+// รองรับทั้ง snake_case (local) และ camelCase (บาง API) → ตัดชื่อหลัง "—" และ id ตัวถัดไปหลัง ","
 function recEmpId(rec) {
   if (!rec) return '';
-  const raw = rec.emp_id || rec.shift_ids || rec.created_by || rec.operator || rec.op || '';
-  return String(raw).split('—')[0].trim().split(/\s+/)[0].trim();
+  const raw = rec.emp_id || rec.empId || rec.shift_ids || rec.shiftIds
+           || rec.created_by || rec.createdBy || rec.operator || rec.op || '';
+  return String(raw).split('—')[0].split(',')[0].trim().split(/\s+/)[0].trim();
 }
-// VSM ของ record: สืบจากรหัสผู้บันทึกผ่าน map (กฎกลาง) ก่อน → ค่าที่ stamp ไว้ → vsm4
-// (ใช้ map ก่อน เพราะ D1 ตัดคอลัมน์ vsm ทิ้ง — สืบจากผู้บันทึกจึงแม่นกว่าตอนออนไลน์)
+// VSM ของ zone (case-insensitive) — คืน null ถ้าไม่รู้จัก zone
+// zone เป็นคอลัมน์หลักที่ "รอด" D1 round-trip เสมอ (ต่างจาก vsm ที่ถูกตัดทิ้ง)
+function zoneVsmKey(z) {
+  if (!z) return null;
+  const up = String(z).toUpperCase();
+  return ZONE_DEFS[up] ? ZONE_DEFS[up].vsm : null;
+}
+// VSM ของ record — ลำดับความเชื่อถือ:
+//   1) zone → VSM  (deterministic + รอด D1 · เครื่อง/สายสังกัด VSM เดียวเสมอ) = แม่นสุด
+//   2) รหัสผู้บันทึก → VSM_EMP_MAP / override ในเครื่อง
+//   3) ค่า vsm ที่ stamp ไว้ (ออฟไลน์ ก่อน sync) → 4) vsm4
+// เดิมใช้ (2) ก่อน แต่ D1 ตัดคอลัมน์ vsm ทิ้ง และ record บางชนิด (เช่น prod หรือกรอกโดย admin)
+// ไม่มีรหัส VSM3 ในแมป → ถูกจัดเป็น vsm4 (ข้อมูล VSM3 หลุดไปโผล่ VSM4). zone รอด round-trip จึงย้ายมาก่อน
 function vsmOf(rec) {
+  if (!rec) return DEFAULT_VSM;
+  const zv = zoneVsmKey(rec.zone || rec.zone_key || rec.zoneKey);
+  if (zv) return zv;
   const id = recEmpId(rec);
   if (id) {
     const up = id.toUpperCase();
     if (VSM_EMP_MAP[up]) return VSM_EMP_MAP[up];
     if (_empVsmOv[up])   return _empVsmOv[up];
   }
-  if (rec && rec.vsm) return rec.vsm;   // fallback: ค่าที่ stamp ไว้ (ออฟไลน์/แยกรหัสไม่ออก)
+  if (rec.vsm) return rec.vsm;   // fallback: ค่าที่ stamp ไว้ (ออฟไลน์/แยกรหัสไม่ออก)
   return DEFAULT_VSM;
 }
 function myVsm() { return CURRENT_USER ? resolveEmpVsm(CURRENT_USER.id) : DEFAULT_VSM; }
-function canSeeAllVsm(){ return !!state.adminUnlocked; }   // Admin เห็นทุก VSM
-// กรอง array ของ record ให้เหลือเฉพาะ VSM ของผู้ใช้ (Admin = เห็นหมด)
+function canSeeAllVsm(){ return !!state.adminUnlocked; }   // Admin ปลดล็อก → สลับดูได้ทุกสาย (แต่ทีละสาย)
+// VSM ที่กำลัง "ดู/ทำงาน" อยู่ตอนนี้ (แหล่งเดียวของทั้งแอป):
+//   • ผู้ใช้ทั่วไป = VSM ของตัวเอง (ล็อกตายตัว)
+//   • Admin      = ตามปุ่มสลับ VSM4⇄VSM3 (_iotVsmSel) → ถูกล็อกทีละสายเช่นกัน ไม่เห็นข้อมูลปนข้าม VSM
+function viewVsm() { return canSeeAllVsm() ? (_iotVsmSel === 'vsm3' ? 'vsm3' : 'vsm4') : myVsm(); }
+// กรอง array ของ record ให้เหลือเฉพาะ VSM ที่กำลังดูอยู่ (Admin ก็ถูกล็อกตามปุ่มสลับ ไม่เห็นรวมทุก VSM แล้ว)
 function filterVsm(arr) {
-  if (!Array.isArray(arr) || canSeeAllVsm()) return arr;
-  const v = myVsm();
+  if (!Array.isArray(arr)) return arr;
+  const v = viewVsm();
   return arr.filter(r => vsmOf(r) === v);
 }
 
@@ -1653,7 +1673,7 @@ const ZONE_LABEL = Object.fromEntries(Object.entries(ZONE_DEFS).map(([k,v]) => [
 function zoneVsm(z)       { return ZONE_DEFS[z] ? ZONE_DEFS[z].vsm : DEFAULT_VSM; }
 function zonesForVsm(vsm) { return Object.keys(ZONE_DEFS).filter(z => ZONE_DEFS[z].vsm === vsm); }
 // zone ที่ผู้ใช้ปัจจุบันเห็น (Admin = ทุก zone)
-function currentZones()   { return canSeeAllVsm() ? Object.keys(ZONE_DEFS) : zonesForVsm(myVsm()); }
+function currentZones()   { return zonesForVsm(viewVsm()); }   // โซนของ VSM ที่กำลังดู (Admin ก็ล็อกตามปุ่มสลับ)
 function currentZoneKeys(){ return currentZones().map(z => z.toLowerCase()); }   // สำหรับ target keys
 // ตั้ง state.zone ให้เป็น zone ที่ valid ของ VSM ปัจจุบัน
 function ensureValidZone() {
@@ -2151,7 +2171,8 @@ function setPane(name) {
   if (name === 'settings' && !state.adminUnlocked) {
     promptAdmin('🔐 หน้าตั้งค่าเฉพาะ Admin', () => {
       state.adminUnlocked = true;
-      toast('🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM', 'green');
+      toast('🔓 ปลดล็อก Admin Mode — สลับดูได้ทุก VSM (ทีละสายด้วยปุ่ม VSM4⇄VSM3)', 'green');
+      if (typeof refreshVsmViews === 'function') refreshVsmViews();   // อัปเดตหัวแอป + มุมมองตามสายที่ล็อกดู
       _doSetPane('settings');
     });
     return;
@@ -2634,7 +2655,7 @@ async function addPlanRow() {
     status: 'planned',
     note: '',
     created_by: CURRENT_USER?.id || '',
-    vsm: myVsm(),
+    vsm: viewVsm(),   // Admin สร้างแผนตอนล็อกสาย → แผนสังกัดสายที่กำลังดู
   };
   state.plans.unshift(newPlan);
   lsSave(LS.PLANS, state.plans);
@@ -2856,7 +2877,7 @@ async function confirmPaste() {
   for (const r of rows) {
     const k = planKey(r);
     const reuseId = seen[k]?.plan_id || existingByKey[k]?.plan_id || planNewId();
-    seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '', vsm: myVsm() };
+    seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '', vsm: viewVsm() };
   }
   const plans = Object.values(seen);
   const batchKeys = new Set(Object.keys(seen));
@@ -2933,21 +2954,25 @@ function hideLock() {
     c.style.display = 'flex';
     document.getElementById('userAv').textContent = (CURRENT_USER.id || '?').slice(0, 2).toUpperCase();
     document.getElementById('userName').textContent = CURRENT_USER.name || CURRENT_USER.id;
-    // แสดง VSM ของผู้ใช้ (auto — ไม่ต้องเลือกเอง)
-    const vsmKey = myVsm();
-    const vb = document.getElementById('userVsm');
-    if (vb) vb.textContent = VSM_LABEL[vsmKey] || vsmKey;
-    const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : 'AFTERMARKET';   // VSM3 = สาย Machining
-    const ht = document.getElementById('hdrTitle');
-    if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
-    try { document.title = `${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`; } catch (e) {}
     // ใส่ค่าใน op-name field
     const op = document.getElementById('op-name');
     if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
-    // ชื่อผู้ใช้ในหน้าตั้งค่า (คู่กับปุ่มออกจากระบบ)
-    const su = document.getElementById('settingsUser');
-    if (su) su.textContent = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[vsmKey] || vsmKey}`;
+    updateVsmHeader();
   }
+}
+// ป้าย VSM + ชื่อหัวแอป + ชื่อผู้ใช้ในตั้งค่า = ตาม VSM ที่กำลังดู (Admin สลับ VSM แล้วหัวแอปเปลี่ยนตาม
+// ไม่ค้างที่ VSM ตัวเอง — กันสับสนแบบเดิม "หัวว่า VSM4 แต่ข้อมูลเป็น VSM3")
+function updateVsmHeader() {
+  if (!CURRENT_USER) return;
+  const vsmKey = viewVsm();
+  const vb = document.getElementById('userVsm');
+  if (vb) vb.textContent = VSM_LABEL[vsmKey] || vsmKey;
+  const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : 'AFTERMARKET';   // VSM3 = สาย Machining
+  const ht = document.getElementById('hdrTitle');
+  if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
+  try { document.title = `${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`; } catch (e) {}
+  const su = document.getElementById('settingsUser');
+  if (su) su.textContent = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[vsmKey] || vsmKey}`;
 }
 // ไม่มี dropdown รายชื่อแล้ว — ต้องพิมพ์รหัสพนักงานของตัวเอง (กันคนอื่นเดา/เลือกจากลิสต์)
 function lockClearErr() {
@@ -3944,7 +3969,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.1":"Production Record + KPI · v3.1",
+"ระบบบันทึกผลิต + KPI · v3.2":"Production Record + KPI · v3.2",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4494,11 +4519,14 @@ const FP3_LB=[
 /* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
 let _iotVsmSel='vsm4';
 try{ _iotVsmSel=localStorage.getItem('vsm4_iot_vsm')||'vsm4'; }catch(e){}
-function _fpVsm(){ return canSeeAllVsm() ? (_iotVsmSel==='vsm3'?'vsm3':'vsm4') : myVsm(); }
+function _fpVsm(){ return viewVsm(); }   // ผังโรงงาน = VSM ที่กำลังดู (แหล่งเดียวกับทั้งแอป)
 function iotSetVsm(v){
   _iotVsmSel = v==='vsm3' ? 'vsm3' : 'vsm4';
   try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
-  renderMachineStatusChecker();
+  // Admin สลับ VSM → ล็อกทั้งแอปตามสายที่เลือก (ประวัติ/Dashboard/KPI/ต่อกะ/ฟอร์มบันทึก/รายชื่อพนักงาน) ไม่ใช่แค่ผัง
+  if (typeof updateVsmHeader === 'function') updateVsmHeader();   // หัวแอป + ป้าย VSM เปลี่ยนตามสายที่เลือก
+  if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  else renderMachineStatusChecker();
 }
 
 /* VSM4 Factory Floor Plan — Zone positions match physical layout images
@@ -4974,7 +5002,7 @@ function _hoVsm(e){
 // รายการต่อประเภท (ตัด deleted + เฉพาะ VSM ตัวเอง, ใหม่ล่าสุดก่อน)
 function _hoList(type){
   type=_hoType(type);
-  return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type && (canSeeAllVsm() || _hoVsm(e)===myVsm()))
+  return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type && _hoVsm(e)===viewVsm())
     .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
 }
 function addHandover(type, text, cat){
@@ -5551,7 +5579,7 @@ async function renderHome() {
   if ($('kpiPerZone')) {
     // โชว์เฉพาะ zone ของ VSM ตัวเอง (เสมอ) + zone อื่นที่ "มีข้อมูลจริง" วันนี้
     // กัน zone ว่าง (เช่น A–K ของ VSM1/2/3) โผล่มากระพริบตอน admin restore
-    const _ownZones = zonesForVsm(myVsm());
+    const _ownZones = zonesForVsm(viewVsm());
     const _zonesToShow = currentZones().filter(z =>
       _ownZones.includes(z) || kpiInRange.some(r => r.zone === z));
     $('kpiPerZone').innerHTML = _zonesToShow.map(z => {
@@ -5897,10 +5925,23 @@ function empMultiHtml(sid, max) {
     <div class="ac-dd" id="${sid}_emp_dd"></div>
   </div>`;
 }
+// VSM ของช่องกรอก (สืบจาก zone ที่อยู่หน้าสุดของ input/shift id เช่น "ZH__L_F1_s0_emp" → ZH → vsm3)
+// → ให้ dropdown พนักงานโชว์เฉพาะคนใน VSM ของโซนนั้น (ไม่ปนข้าม VSM) · หา zone ไม่เจอ = VSM ผู้ใช้
+function _empVsmForInput(anyId) {
+  const zoneKey = String(anyId || '').split('_')[0].toUpperCase();
+  return zoneVsmKey(zoneKey) || myVsm();
+}
+function _empPoolForInput(anyId, q) {
+  const vsm = _empVsmForInput(anyId);
+  return state.employees.filter(e =>
+    resolveEmpVsm(e.id) === vsm &&
+    ((e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q))
+  ).slice(0, 12);
+}
 function acEmpSearchMulti(ev, sid) {
   const q = ev.target.value.trim().toLowerCase();
   if (!q) { $(sid + '_emp_dd')?.classList.remove('open'); return; }
-  const list = state.employees.filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q)).slice(0, 12);
+  const list = _empPoolForInput(sid, q);
   acDropdown(sid + '_emp', list, function pickEmpMulti(it, inputId) {
     var s = inputId.replace(/_emp$/, '');
     _addEmpChip(s, it.id, it.name);
@@ -6462,7 +6503,9 @@ async function _saveKpiImpl() {
     status:          'In Progress',
     operator:        r.operator,
     note:            `auto-linked KPI ${r.zone}/${r.machine_id}`,
-    vsm:             r.vsm || myVsm(),
+    zone:            r.zone,          // ให้ vsmOf สืบ VSM จาก zone ได้ (แม่นกว่า operator เมื่อ admin กรอกแทน)
+    machine_id:      r.machine_id,
+    vsm:             r.vsm || viewVsm(),
   }));
 
   // 1) เก็บลง LocalStorage ทันที (เร็ว, ใช้งานต่อได้แม้ offline)
@@ -6525,7 +6568,7 @@ function acClose(id) { setTimeout(() => $(id + '_dd')?.classList.remove('open'),
 function acEmpSearch(ev, id) {
   const q = ev.target.value.trim().toLowerCase();
   if (!q) { $(id + '_dd').classList.remove('open'); return; }
-  const list = state.employees.filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q)).slice(0, 12);
+  const list = _empPoolForInput(id, q);   // เฉพาะพนักงาน VSM ของโซนช่องนี้
   acDropdown(id, list, function pickEmp(it, inputId) {
     document.getElementById(inputId).value = `${it.id} — ${it.name}`;
     document.getElementById(inputId + '_dd').classList.remove('open');
@@ -6703,7 +6746,7 @@ async function _saveSlotsImpl() {
       valve_no: v, lot, quantity: q,
       current_process: p, status: 'In Progress',
       operator: $('op-name').value || OP, note: n,
-      vsm: myVsm(),
+      vsm: viewVsm(),
     });
   });
   if (invalid) toast(`ข้าม ${invalid} slot ที่กรอกไม่ครบ`, 'orange');
@@ -8183,7 +8226,7 @@ async function syncAllToCloud() {
     if (state.ids && state.ids.length) { await api('/api/ids/bulk', { body: { ids: state.ids } }); synced += state.ids.length; }
     for (const e of state.employees) { await api('/api/employees', { body: e }); }
     synced += state.employees.length;
-    for (const z of currentZones()) {
+    for (const z of Object.keys(state.machines || {})) {   // Sync ALL = ทุกโซนทุก VSM (ไม่ผูกกับสายที่ล็อกดูอยู่)
       for (const m of (state.machines[z]||[])) { await api('/api/machines', { body: { zone: z, ...m } }); synced++; }
     }
     if (state.kpiRecords.length)  { await api('/api/kpi',          { body: { records: state.kpiRecords  } }); synced += state.kpiRecords.length; }
@@ -8282,7 +8325,7 @@ function adminToggle() {
     $('apiUrl').style.cursor = 'text';
     $('adminPanel').style.display = 'block';
     $('adminBtn').textContent = '🔓 Admin (กดเพื่อล็อก)';
-    toast('🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM', 'green');
+    toast('🔓 ปลดล็อก Admin Mode — สลับดูได้ทุก VSM (ทีละสายด้วยปุ่ม VSM4⇄VSM3)', 'green');
     refreshVsmViews();
   });
 }
@@ -8297,8 +8340,9 @@ function adminLock() {
   toast('🔒 ล็อกแล้ว — กลับมาเห็นเฉพาะ VSM ของคุณ', 'orange');
   refreshVsmViews();
 }
-// re-render ทุกมุมมองที่กรองตาม VSM (เรียกเมื่อสลับ Admin mode)
+// re-render ทุกมุมมองที่กรองตาม VSM (เรียกเมื่อสลับ Admin mode / สลับสาย VSM / login)
 function refreshVsmViews() {
+  try { updateVsmHeader(); } catch (e) {}   // ป้าย VSM + หัวแอปตามสายที่กำลังดู
   try { ensureValidZone(); renderZoneTabs(); renderZone(); } catch (e) {}
   try { populateZoneSelects(); } catch (e) {}
   try { renderHome(); } catch (e) {}
