@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.0</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.1</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -852,6 +852,8 @@ tbody tr:last-child td{border-bottom:none}
       <label>👤 ผู้บันทึก (จาก Lock In)</label>
       <input type="text" id="op-name" readonly style="background:#F8FAFF;border-style:dashed;text-align:center;font-weight:800;color:var(--blue-dark);font-size:15px">
     </div>
+    <!-- ปุ่มสลับ Auto Line ⇄ รายเครื่อง (เฉพาะ VSM3) — เรนเดอร์โดย renderAutoLineBar() -->
+    <div id="autoLineBar"></div>
   </div>
 
   <div class="ztabs" id="ztabs"><!-- zone tabs สร้างตาม VSM ที่ login --></div>
@@ -1669,43 +1671,65 @@ for (const z of Object.keys(ZONE_DEFS)) {
     { id:`${z}-02`, target:2000, man_std:0.5 },
   ];
 }
-/* ▼ เครื่องจักรจริง VSM3 — 19 ไลน์ตามเอกสาร "Layout VSM3.xlsx" + จัดกะ (Man VSM3.xlsx)
-   (G-274 / G-2018 / G-2070 อยู่ 2 ไลน์ตามเอกสารต้นฉบับ — คนละโซนกัน) */
+/* ▼ เครื่องจักรจริง VSM3 — สาย (Line) แบบ Auto Line ตามเอกสารผู้ใช้ (v3.1)
+   • แต่ละ Line เดินทุกเครื่องพร้อมกัน (transfer line) — กรอกครั้งเดียว → record ทุกเครื่อง
+   • G-274 / G-2018 / G-2070 อยู่ 2 ไลน์ตามต้นฉบับ (คนละโซน) — SEED dedupe ต่อ zone
+   • Buff / Truck / Polish แตกเป็นสายย่อยตามเอกสารใหม่ · แก้ typo: T3 G-208→G-2082, I1 ตัด G-256 ซ้ำ */
 const VSM3_LINES = {
-  F1: ['G-287','G-2096','G-289','G-284','G-283','G-2019'],
-  F2: ['G-286','G-292','G-288','G-285','G-252','G-290'],
-  F3: ['G-299','G-298','G-297','G-296','G-295','G-294'],
-  F4: ['G-2007','G-293','G-2005','G-2004','G-2003','G-2002','G-2066'],
-  F5: ['G-2014','G-2013','G-2012','G-2069','G-2085','G-2009','G-2063'],
-  R1: ['G-264','G-266','G-258','G-272','G-271','L-246','G-2067'],
-  R2: ['G-265','G-269','G-263','G-2070','G-2093','L-251'],
-  T3: ['G-257','L-257','G-2059','G-2060','G-2061','G-2082'],
-  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274'],          // MIT-3
-  N4: ['G-2042','G-1112','G-2036','G-261','G-2090'],                             // NIS-4
-  BUF:['G-231','G-233','G-225','G-280','G-2064','G-2041','G-279','G-2021'],      // Buffing (G-279/G-2021 ตามจัดกะ)
-  I1: ['G-274','G-256','G-249','G-259','L-250','G-2070','G-2055'],
-  I2: ['G-275','G-282','G-230','G-260','L-249','G-281'],
-  N1: ['G-2006','G-2018','G-2017','G-2086','G-236','L-252','G-2015'],            // NIS-1
-  N3: ['G-2071','G-291','G-2024','G-2011','G-239','L-258','G-2026'],             // NIS-3
-  TR: ['L-245','L-244','G-2091','G-2045','G-1119','G-1111','G-238','L-264','L-265','G-245','G-2092','G-2020'], // Truck
-  M1: ['G-224','L-241','L-242','G-234','G-244','G-268','G-2078'],                // MIT-1
-  M4: ['G-2084','G-2018','G-2016','G-2087','G-2088','G-2089'],                   // MIT-4
-  POL:['D-203','D-229','D-228'],                                                 // Polish
+  F1: ['G-2019','G-283','G-289','G-2096','G-287'],
+  F2: ['G-290','G-252','G-285','G-288','G-292','G-286'],
+  F3: ['G-294','G-295','G-296','G-297','G-298','G-299'],
+  F4: ['G-2066','G-2002','G-2003','G-2004','G-2005','G-293','G-2007'],
+  F5: ['G-2009','G-2085','G-2069','G-2012','G-2013','G-2014'],
+  R1: ['G-2067','L-246','G-271','G-272','G-258','G-266','G-264'],
+  R2: ['L-251','G-2093','G-2070','G-263','G-269','G-265'],
+  T3: ['G-2082','G-2061','G-2060','G-2059','L-257','G-257'],                     // TOYOTA 3 (G-208→G-2082)
+  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274'],           // Mitsubishi 3
+  N4: ['G-2042','G-1112','G-2036','G-261','G-2090','G-279','G-2021'],            // NISSAN 4
+  BUF1:['G-231','G-233'],                                                        // Buff G-233
+  BUF2:['G-225','G-280'],                                                        // Buff G-280
+  BUF3:['G-2064','G-2041'],                                                      // Buff G-2041
+  I1: ['G-2070','L-250','G-256','G-2055','G-249','G-274'],                       // ISUZU 1 (ตัด G-256 ซ้ำ)
+  I2: ['G-281','L-249','G-260','G-230','G-282','G-275'],                         // ISUZU 2
+  N1: ['G-2015','L-252','G-236','G-2086','G-2017','G-2018','G-2006'],            // NISSAN 1
+  N3: ['G-2026','L-258','G-239','G-2011','G-2024','G-291','G-2071'],             // NISSAN 3
+  TRFG:  ['G-2020'],                                                             // TRUCK FG
+  TRL264:['L-264'],                                                              // TRUCK L-264
+  TRL265:['L-265'],                                                              // TRUCK L-265
+  TROTH: ['G-2092','L-245','L-244','G-1119','G-2091','G-238','G-1111','G-245','G-2045'], // TRUCK Other
+  M4: ['G-2089','G-2088','G-2087','G-2016','G-2018','G-2084'],                   // Mitsubishi 4
+  M1: ['G-224','L-241','L-242','G-234','G-244','G-268','G-2078'],                // Mitsubishi 1
+  POL229:['D-229'],                                                             // Polish D-229
+  POL203:['D-203'],                                                             // Polish D-203
+  POL228:['D-228'],                                                             // Polish D-228
+};
+// ป้ายชื่อสายที่แสดงในการ์ด Auto Line
+const VSM3_LINE_LABEL = {
+  F1:'FORD 1', F2:'FORD 2', F3:'FORD 3', F4:'FORD 4', F5:'FORD 5',
+  R1:'RENAULT 1', R2:'RENAULT 2', T3:'TOYOTA 3', M3:'Mitsubishi 3',
+  BUF1:'Buff G-233', BUF2:'Buff G-280', BUF3:'Buff G-2041',
+  N4:'NISSAN 4', I1:'ISUZU 1', I2:'ISUZU 2', N1:'NISSAN 1', N3:'NISSAN 3',
+  TRFG:'TRUCK FG', TRL264:'TRUCK L-264', TRL265:'TRUCK L-265', TROTH:'TRUCK Other',
+  M4:'Mitsubishi 4', M1:'Mitsubishi 1',
+  POL229:'Polish D-229', POL203:'Polish D-203', POL228:'Polish D-228',
 };
 const VSM3_ZONE_LINES = {
   ZH: ['F1','F2','F3','F4','F5'],
-  ZI: ['R1','R2','T3','M3','N4','BUF'],
+  ZI: ['R1','R2','T3','M3','N4','BUF1','BUF2','BUF3'],
   ZJ: ['I1','I2','N1','N3'],
-  ZK: ['TR','M1','M4','POL'],
+  ZK: ['TRFG','TRL264','TRL265','TROTH','M4','M1','POL229','POL203','POL228'],
+};
+// เครื่องที่ไม่อยู่ใน Line ใด (เดิมเคยมี) — คงไว้ให้ลง "รายเครื่อง" ได้ ไม่ลบทิ้ง
+// (ZI: G-2042/G-1112/G-2036/G-261/G-2090/G-279/G-2021 ย้ายเข้าสาย NISSAN 4 แล้ว)
+const VSM3_ZONE_EXTRA = {
+  ZH: ['G-284','G-2063'],
 };
 for (const z of Object.keys(VSM3_ZONE_LINES)) {
   const seen = new Set();
   SEED_VSM_MACHINES[z] = [];
-  for (const ln of VSM3_ZONE_LINES[z]) for (const id of (VSM3_LINES[ln] || [])) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    SEED_VSM_MACHINES[z].push({ id, target:2000, man_std:0.5 });
-  }
+  const pushMc = id => { if (seen.has(id)) return; seen.add(id); SEED_VSM_MACHINES[z].push({ id, target:2000, man_std:0.5 }); };
+  for (const ln of VSM3_ZONE_LINES[z]) for (const id of (VSM3_LINES[ln] || [])) pushMc(id);
+  for (const id of (VSM3_ZONE_EXTRA[z] || [])) pushMc(id);   // เครื่อง extra ต่อท้าย (ลงรายเครื่องได้)
 }
 function ensureVsmZones() {
   if (!state.machines || typeof state.machines !== 'object') state.machines = {};
@@ -2045,21 +2069,14 @@ function _resolveConfirm(v) {
 
 /* ===== ตรวจว่ามีข้อมูล KPI ค้างใน form หรือไม่ ===== */
 function hasUnsavedKpiData() {
-  // หากมีเครื่องที่เปิดไว้ + มี opr/scrap ใน shift ใดๆ → ถือว่ามีข้อมูลค้าง
-  for (const z of currentZones()) {
-    const machines = state.machines[z] || [];
-    for (let mi = 0; mi < machines.length; mi++) {
-      const on = $(`${z}_${mi}_on`);
-      if (!on?.checked) continue;
-      const body = $(`${z}_${mi}_body`);
-      if (!body) continue;
-      const shifts = body.querySelectorAll('.shift');
-      for (const sb of shifts) {
-        const sid = sb.id.replace('_block', '');
-        const opr   = fnum($(sid+'_opr')?.value);
-        const scrap = +($(sid+'_sc')?.value || 0);
-        if (opr || scrap) return true;
-      }
+  // สแกน DOM ของการ์ดที่เรนเดอร์อยู่ (รองรับทั้งรายเครื่อง + ราย Line/Auto Line)
+  const cont = $('zone-machines'); if (!cont) return false;
+  for (const card of cont.querySelectorAll('.mc')) {
+    const on = document.getElementById(card.id + '_on');
+    if (!on?.checked) continue;
+    for (const sb of card.querySelectorAll('.shift')) {
+      const sid = sb.id.replace('_block', '');
+      if (fnum($(sid+'_opr')?.value) || +($(sid+'_sc')?.value || 0)) return true;
     }
   }
   return false;
@@ -2920,8 +2937,10 @@ function hideLock() {
     const vsmKey = myVsm();
     const vb = document.getElementById('userVsm');
     if (vb) vb.textContent = VSM_LABEL[vsmKey] || vsmKey;
+    const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : 'AFTERMARKET';   // VSM3 = สาย Machining
     const ht = document.getElementById('hdrTitle');
-    if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} AFTERMARKET RECORD`;
+    if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
+    try { document.title = `${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`; } catch (e) {}
     // ใส่ค่าใน op-name field
     const op = document.getElementById('op-name');
     if (op) op.value = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''}`;
@@ -3432,6 +3451,19 @@ function calcZonePdac(krecs, zoneKey) {
   };
 }
 
+// จำนวนพนักงาน "ไม่ซ้ำ" ในชุด record (คนที่ทำหลายสาย/เครื่องนับครั้งเดียว) — ใช้ shift_ids (รอด cloud) → fallback emp_id
+function _distinctHeadcount(recs) {
+  const set = new Set();
+  for (const r of (recs || [])) {
+    const raw = String((r && (r.shift_ids || r.emp_id)) || '');
+    for (const part of raw.split(/[,;]/)) {
+      const id = part.split('—')[0].trim().split(/\s+/)[0].trim().toUpperCase();
+      if (id) set.add(id);
+    }
+  }
+  return set.size;
+}
+
 function zoneKpiInner(krecs, dark=false, zoneKey='') {
   if (!krecs.length) return '<div class="zkpi-empty">ยังไม่มีข้อมูลในกะนี้</div>';
   const sum = (k) => krecs.reduce((s,r)=>s + (Number(r[k])||0), 0);
@@ -3460,6 +3492,8 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
     <span>SCRAP: <b>${nn(sum('scrap'))}</b></span>
     <span>·</span>
     <span>Target: <b>${nn(sum('target'))}</b></span>
+    <span>·</span>
+    <span>👷 กำลังคน: <b>${_distinctHeadcount(krecs)}</b></span>
     <span>·</span>
     <span>${krecs.length} record</span>
   </div>`;
@@ -3910,7 +3944,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.0":"Production Record + KPI · v3.0",
+"ระบบบันทึกผลิต + KPI · v3.1":"Production Record + KPI · v3.1",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -5199,7 +5233,9 @@ function _hoPanelHtml(type){
 }
 function renderHandoverPanels(){
   const host=document.getElementById('iotFsSide'); if(!host) return;
-  host.innerHTML = HO_ORDER.map(_hoPanelHtml).join('');
+  // VSM3 = สายออโต้ → ต่อกะมีแค่ Machine (ไม่มี Induction)
+  const order = (_fpVsm()==='vsm3') ? ['machine'] : HO_ORDER;
+  host.innerHTML = order.map(_hoPanelHtml).join('');
   _hoSig=_hoSigNow();     // จำ signature ที่เพิ่งวาด → กัน poll วาดซ้ำโดยไม่จำเป็น
   _hoHistRefresh();       // ป๊อปอัปย้อนหลังเปิดค้างอยู่ → วาดเนื้อหาใหม่ให้ตรงข้อมูลล่าสุด
 }
@@ -5279,6 +5315,8 @@ function openHandoverAdd(presetType, editEntry, presetCat){
   _hoEditId       = isEdit ? editEntry.id : null;
   _hoEditOrigType = isEdit ? _hoType(presetType) : null;
   _hoAddType      = _hoType(presetType||'machine');
+  const _vsm3Ho   = (_fpVsm()==='vsm3');        // VSM3 = Machine อย่างเดียว → ซ่อนตัวเลือกประเภท
+  if(_vsm3Ho) _hoAddType='machine';
   _hoAddCat       = isEdit ? _hoCat(editEntry) : _hoCat(presetCat||'note');   // เลือกหมวดตอนบันทึก
   if(!isEdit) _hoDrafts={};                          // เริ่มเพิ่มใหม่ → ล้างร่างทุกช่อง (ประเภท×หมวด แยกอิสระ)
   const card=document.getElementById('iotCard');
@@ -5288,7 +5326,7 @@ function openHandoverAdd(presetType, editEntry, presetCat){
   ov.id='hoAddOv'; ov.className='ho-modal-bg';
   ov.style.position = fs ? 'absolute' : 'fixed';
   ov.addEventListener('click',e=>{ if(e.target===ov) closeHandoverAdd(); });
-  const seg = HO_ORDER.map(t=>{
+  const seg = (_vsm3Ho ? ['machine'] : HO_ORDER).map(t=>{
     const c=HO_TYPES[t];
     return `<button type="button" data-t="${t}" class="${t===_hoAddType?'on':''}" onclick="_hoPickType('${t}')">${c.icon} ${escapeHtml(c.label)}</button>`;
   }).join('');
@@ -5299,10 +5337,10 @@ function openHandoverAdd(presetType, editEntry, presetCat){
   ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${isEdit?TT('แก้ไขบันทึกต่อกะ','Edit handover note'):TT('เพิ่มบันทึกต่อกะ','Add handover note')}">
     <div class="ho-modal-hd" id="hoModalHd" style="background:${HO_TYPES[_hoAddType].grad}">${isEdit?'✏️ '+TT('แก้ไขบันทึกต่อกะ','Edit handover note'):'📝 '+TT('เพิ่มบันทึกต่อกะ','Add handover note')}</div>
     <div class="ho-modal-bd">
-      <div>
+      ${_vsm3Ho ? `<div class="ho-seg" id="hoSeg" style="display:none">${seg}</div>` : `<div>
         <label class="ho-lbl">${TT('ประเภท','Type')}</label>
         <div class="ho-seg" id="hoSeg">${seg}</div>
-      </div>
+      </div>`}
       <div>
         <label class="ho-lbl">${TT('หมวด — จะไปอยู่คอลัมน์ไหน','Category — which column it goes in')}</label>
         <div class="ho-seg" id="hoCatSeg">${catSeg}</div>
@@ -5721,16 +5759,52 @@ function calcWT(s, e) {
   return { hr, wt: Math.max(hr - dedMin/60, 0) };
 }
 
+/* ===== VSM3 AUTO LINE — สลับโหมด ราย Line ⇄ รายเครื่อง (เฉพาะ VSM3) ===== */
+let _vsm3AutoLine = true;
+try { const _v = localStorage.getItem('vsm4_vsm3_autoline'); if (_v !== null) _vsm3AutoLine = _v === '1'; } catch (e) {}
+function renderAutoLineBar() {
+  const host = $('autoLineBar'); if (!host) return;
+  if (zoneVsm(state.zone) !== 'vsm3') { host.innerHTML = ''; return; }
+  const on = _vsm3AutoLine;
+  const btn = (active, on2, txt) => `flex:1;padding:9px 8px;border-radius:9px;font-weight:800;font-size:12px;cursor:pointer;border:1.5px solid var(--blue-soft);${active?'background:var(--blue);color:#fff':'background:#fff;color:var(--blue)'}`;
+  host.innerHTML = `<div class="fr" style="margin:12px 0 0">
+    <label>⚡ โหมดบันทึก (เฉพาะ VSM3)</label>
+    <div style="display:flex;gap:6px">
+      <button type="button" style="${btn(on)}" onclick="setAutoLine(true)">⚡ Auto Line (ราย Line)</button>
+      <button type="button" style="${btn(!on)}" onclick="setAutoLine(false)">🔧 รายเครื่อง</button>
+    </div>
+    <div class="muted" style="font-size:10px;margin-top:5px">${on?'กรอกครั้งเดียว → บันทึกทุกเครื่องในสาย · Process อัตโนมัติต่อเครื่อง':'ลงข้อมูลทีละเครื่องแบบปกติ'}</div>
+  </div>`;
+}
+function setAutoLine(v) {
+  v = !!v;
+  if (v === _vsm3AutoLine) return;
+  _vsm3AutoLine = v;
+  try { localStorage.setItem('vsm4_vsm3_autoline', v ? '1' : '0'); } catch (e) {}
+  _unitShiftCount = {};
+  renderZone();
+}
+
 function renderZone() {
   const zone = state.zone;
-  const machines = state.machines[zone] || [];
   const cont = $('zone-machines');
+  if (!cont) return;
+  renderAutoLineBar();
+  // VSM3 + Auto Line ON → การ์ดราย Line · มิฉะนั้น → การ์ดรายเครื่อง (เดิม)
+  if (zoneVsm(zone) === 'vsm3' && _vsm3AutoLine) {
+    const lines = VSM3_ZONE_LINES[zone] || [];
+    cont.innerHTML = lines.length ? lines.map(lk => lineHtml(zone, lk)).join('')
+      : '<div class="card center muted">ยังไม่มีสายในโซนนี้</div>';
+    return;
+  }
+  const machines = state.machines[zone] || [];
   cont.innerHTML = machines.length ? machines.map((m, mi) => mcHtml(zone, mi, m)).join('')
     : '<div class="card center muted">ยังไม่มีเครื่องจักรในโซนนี้ — ไปที่ ⚙️ ตั้งค่า → เครื่องจักร เพื่อเพิ่ม</div>';
 }
 
 function mcHtml(zone, mi, m) {
   const pid = `${zone}_${mi}`;
+  const opts = { isLine:false, hideProcess:false, multiEmp: zoneVsm(zone) === 'vsm3' };
   return `<div class="mc" id="${pid}">
     <div class="mc-hd">
       <div>
@@ -5739,30 +5813,60 @@ function mcHtml(zone, mi, m) {
       </div>
       <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
     </div>
-    <div class="mc-body" id="${pid}_body">${shiftHtml(zone, mi, 0, m)}<button class="shift-add" onclick="addShift('${zone}',${mi})">➕ เพิ่มช่วงเวลา</button></div>
+    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}<button class="shift-add" onclick="addShiftP('${pid}')">➕ เพิ่มช่วงเวลา</button></div>
     <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
   </div>`;
 }
 
-function shiftHtml(zone, mi, si, m) {
-  const sid = `${zone}_${mi}_s${si}`;
+/* การ์ดราย Line (Auto Line) — 1 การ์ด = 1 สาย เดินทุกเครื่องพร้อมกัน */
+function lineHtml(zone, lineKey) {
+  const pid = `${zone}__L_${lineKey}`;
+  const ids = VSM3_LINES[lineKey] || [];
+  const m = { id:lineKey, target:2000, man_std:0.5 };
+  const opts = { isLine:true, hideProcess:true, multiEmp:true };
+  const label = VSM3_LINE_LABEL[lineKey] || lineKey;
+  return `<div class="mc" id="${pid}" style="border-color:var(--blue-soft)">
+    <div class="mc-hd">
+      <div>
+        <span class="mc-id">⚡ ${escapeHtml(label)}</span>
+        <div class="mc-std">${ids.length} เครื่อง · เดินพร้อมกัน (Auto Line)</div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.5">${ids.map(escapeHtml).join(' · ')}</div>
+      </div>
+      <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
+    </div>
+    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}<button class="shift-add" onclick="addShiftP('${pid}')">➕ เพิ่มช่วงเวลา</button></div>
+    <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
+  </div>`;
+}
+
+function shiftHtml(pid, si, m, opts) {
+  opts = opts || {};
+  const sid = `${pid}_s${si}`;
   const label = si === 0 ? 'ช่วง 1 (หลัก)' : `ช่วง ${si+1}`;
+  const empBlock = opts.multiEmp ? empMultiHtml(sid) :
+    `<div class="fr ac" style="margin:0"><label>👤 พนักงาน (พิมพ์ค้น)</label>
+      <input type="text" id="${sid}_emp" placeholder="ค้นรหัส/ชื่อ" oninput="acEmpSearch(event,'${sid}_emp')" autocomplete="off">
+      <div class="ac-dd" id="${sid}_emp_dd"></div>
+    </div>`;
+  const procBlock = opts.hideProcess ?
+    `<div class="muted" style="font-size:10px;margin-top:4px">⚙️ Process ใช้ตามที่ตั้งไว้ของแต่ละเครื่องอัตโนมัติ (Auto Line)</div>` :
+    `<div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
+        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" onfocus="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
+        <div class="ac-dd" id="${sid}_p_dd"></div>
+      </div>`;
   return `<div class="shift" id="${sid}_block">
-    <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShift('${zone}',${mi},${si})">✕ ลบ</button>`:''}</div>
+    <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShiftP('${pid}',${si})">✕ ลบ</button>`:''}</div>
     <div class="fg">
-      <div class="fr" style="margin:0"><label>OPR (ชิ้น) *</label><input type="text" inputmode="text" id="${sid}_opr" placeholder="เช่น 1000 หรือ 250*5" oninput="_formDirty=true;_updateFabState();updShiftTotal('${zone}',${mi})" onblur="evalFormula(this);updShiftTotal('${zone}',${mi})"></div>
+      <div class="fr" style="margin:0"><label>OPR (ชิ้น) *</label><input type="text" inputmode="text" id="${sid}_opr" placeholder="เช่น 1000 หรือ 250*5" oninput="_formDirty=true;_updateFabState();updShiftTotal('${pid}')" onblur="evalFormula(this);updShiftTotal('${pid}')"></div>
       <div class="fr" style="margin:0"><label>Scrap (ชิ้น)</label><input type="number" id="${sid}_sc" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
       <div class="fr" style="margin:0"><label>Target</label><input type="text" inputmode="text" id="${sid}_tgt" placeholder="${m.target||'เช่น 1000+152'}" oninput="_formDirty=true;_updateFabState()" onblur="evalFormula(this)"></div>
       <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
     </div>
     <div class="fr" style="margin-top:6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
-      <div class="time-row"><select id="${sid}_ts" onchange="updWT('${zone}',${mi},${si});updShiftDetect()">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onchange="updWT('${zone}',${mi},${si})">${timeOpts()}</select></div>
+      <div class="time-row"><select id="${sid}_ts" onchange="updWTP('${pid}',${si});updShiftDetect()">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onchange="updWTP('${pid}',${si})">${timeOpts()}</select></div>
       <div id="${sid}_wt" class="muted" style="font-size:11px;margin-top:3px"></div>
     </div>
-    <div class="fr ac" style="margin:0"><label>👤 พนักงาน (พิมพ์ค้น)</label>
-      <input type="text" id="${sid}_emp" placeholder="ค้นรหัส/ชื่อ" oninput="acEmpSearch(event,'${sid}_emp')" autocomplete="off">
-      <div class="ac-dd" id="${sid}_emp_dd"></div>
-    </div>
+    ${empBlock}
     <div class="fr" style="margin-top:6px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
         <div style="font-size:10px;font-weight:800;color:var(--blue)">🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) <span style="color:var(--red)">*จำเป็น</span></div>
@@ -5778,16 +5882,88 @@ function shiftHtml(zone, mi, si, m) {
           <div class="ac-dd" id="${sid}_lot_dd"></div>
         </div>
       </div>
-      <div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
-        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" onfocus="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
-        <div class="ac-dd" id="${sid}_p_dd"></div>
-      </div>
+      ${procBlock}
     </div>
     <div class="shift-total" id="${sid}_total">OPR: 0 · WT: 0 ชม.</div>
   </div>`;
 }
 
-let zoneShiftCount = {};
+/* ===== ช่องพนักงานหลายคน (VSM3 — สูงสุด 5 คน/สาย) ===== */
+function empMultiHtml(sid, max) {
+  max = max || 5;
+  return `<div class="fr ac" style="margin:0"><label>👤 พนักงาน (สูงสุด ${max} คน/สาย — เลือกเพื่อเพิ่ม)</label>
+    <div id="${sid}_emps" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px"></div>
+    <input type="text" id="${sid}_emp" placeholder="ค้นรหัส/ชื่อ แล้วเลือกเพิ่ม" oninput="acEmpSearchMulti(event,'${sid}')" autocomplete="off">
+    <div class="ac-dd" id="${sid}_emp_dd"></div>
+  </div>`;
+}
+function acEmpSearchMulti(ev, sid) {
+  const q = ev.target.value.trim().toLowerCase();
+  if (!q) { $(sid + '_emp_dd')?.classList.remove('open'); return; }
+  const list = state.employees.filter(e => (e.id||'').toLowerCase().includes(q) || (e.name||'').toLowerCase().includes(q)).slice(0, 12);
+  acDropdown(sid + '_emp', list, function pickEmpMulti(it, inputId) {
+    var s = inputId.replace(/_emp$/, '');
+    _addEmpChip(s, it.id, it.name);
+    var el = document.getElementById(inputId); if (el) el.value = '';
+    var dd = document.getElementById(inputId + '_dd'); if (dd) dd.classList.remove('open');
+  });
+}
+function _addEmpChip(sid, id, name, max) {
+  max = max || 5;
+  const host = $(`${sid}_emps`); if (!host) return;
+  id = String(id || '').trim(); if (!id) return;
+  const up = id.toUpperCase();
+  for (const c of host.querySelectorAll('[data-empid]')) { if ((c.getAttribute('data-empid')||'').toUpperCase() === up) return; }
+  if (host.querySelectorAll('[data-empid]').length >= max) { toast(`เพิ่มพนักงานได้สูงสุด ${max} คน/สาย`, 'orange'); return; }
+  const chip = document.createElement('span');
+  chip.className = 'emp-chip'; chip.setAttribute('data-empid', id); chip.setAttribute('data-empname', name || '');
+  chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:999px;padding:3px 6px 3px 10px;font-size:11px;font-weight:700;color:var(--blue-dark)';
+  chip.innerHTML = `<span><b>${escapeHtml(id)}</b>${name?' '+escapeHtml(name):''}</span><button type="button" title="ลบ" onclick="_delEmpChip(this)" style="border:none;background:#fff;border-radius:50%;width:16px;height:16px;min-width:16px;cursor:pointer;color:var(--red);font-weight:800;line-height:1;padding:0">✕</button>`;
+  host.appendChild(chip);
+  _formDirty = true; _updateFabState();
+  const inp = $(`${sid}_emp`);
+  if (inp && host.querySelectorAll('[data-empid]').length >= max) { inp.disabled = true; inp.placeholder = `ครบ ${max} คนแล้ว`; }
+}
+function _delEmpChip(btn) {
+  const chip = btn.closest('.emp-chip'); const host = chip && chip.parentNode;
+  if (chip) chip.remove();
+  if (host) { const sid = host.id.replace(/_emps$/, ''); const inp = $(`${sid}_emp`); if (inp) { inp.disabled = false; inp.placeholder = 'ค้นรหัส/ชื่อ แล้วเลือกเพิ่ม'; } }
+  _formDirty = true; _updateFabState();
+}
+// อ่านรายชื่อพนักงาน (distinct) จากช่อง multi หรือช่องเดี่ยว
+function _readCrew(sid) {
+  const crew = [], seen = new Set();
+  const host = $(`${sid}_emps`);
+  if (host) host.querySelectorAll('[data-empid]').forEach(ch => {
+    const id = (ch.getAttribute('data-empid')||'').trim(), name = ch.getAttribute('data-empname')||'';
+    const up = id.toUpperCase();
+    if (id && !seen.has(up)) { seen.add(up); crew.push({ id, name }); }
+  });
+  // เผื่อพิมพ์ค้างในช่องแต่ยังไม่ได้กดเลือกเพิ่ม
+  const raw = ($(`${sid}_emp`)?.value || '').trim();
+  if (raw) {
+    const id = raw.split('—')[0].trim().split(/\s+/)[0].trim();
+    const name = raw.includes('—') ? raw.split('—').slice(1).join('—').trim() : '';
+    const up = id.toUpperCase();
+    if (id && !seen.has(up)) { seen.add(up); crew.push({ id, name }); }
+  }
+  return crew;
+}
+
+// ข้อมูลของ "หน่วย" (เครื่อง/สาย) จาก pid — ใช้โดย addShiftP
+function _unitInfo(pid) {
+  const li = pid.indexOf('__L_');
+  if (li >= 0) {
+    const zone = pid.slice(0, li), lineKey = pid.slice(li + 4);
+    return { zone, isLine:true, lineKey, m:{ id:lineKey, target:2000, man_std:0.5 }, opts:{ isLine:true, hideProcess:true, multiEmp:true } };
+  }
+  const us = pid.lastIndexOf('_');
+  const zone = pid.slice(0, us), mi = +pid.slice(us + 1);
+  const m = (state.machines[zone] || [])[mi] || { target:2000, man_std:0.5 };
+  return { zone, isLine:false, mi, m, opts:{ isLine:false, hideProcess:false, multiEmp: zoneVsm(zone) === 'vsm3' } };
+}
+
+let _unitShiftCount = {};   // pid → จำนวนช่วงเวลา (แทน zoneShiftCount เดิม)
 
 function toggleMc(pid) {
   const on   = $(pid + '_on').checked;
@@ -5795,36 +5971,31 @@ function toggleMc(pid) {
   $(pid + '_off').style.display = on ? 'none' : 'block';
   if (on) { _formDirty = true; _updateFabState(); }
 }
-function addShift(zone, mi) {
-  if (!zoneShiftCount[zone]) zoneShiftCount[zone] = {};
-  const cnt = (zoneShiftCount[zone][mi] || 0) + 1;
-  if (cnt >= 4) { toast('สูงสุด 4 ช่วงต่อเครื่อง', 'orange'); return; }
-  zoneShiftCount[zone][mi] = cnt;
-  const m = state.machines[zone][mi];
-  const html = shiftHtml(zone, mi, cnt, m);
-  const body = $(`${zone}_${mi}_body`);
+function addShiftP(pid) {
+  const cnt = (_unitShiftCount[pid] || 0) + 1;
+  if (cnt >= 4) { toast('สูงสุด 4 ช่วงต่อหน่วย', 'orange'); return; }
+  _unitShiftCount[pid] = cnt;
+  const info = _unitInfo(pid);
+  const html = shiftHtml(pid, cnt, info.m, info.opts);
+  const body = $(`${pid}_body`); if (!body) return;
   body.insertBefore(document.createRange().createContextualFragment(html), body.querySelector('.shift-add'));
 }
-function delShift(zone, mi, si) {
-  $(`${zone}_${mi}_s${si}_block`)?.remove();
+function delShiftP(pid, si) {
+  $(`${pid}_s${si}_block`)?.remove();
 }
-function updWT(zone, mi, si) {
-  const sid = `${zone}_${mi}_s${si}`;
-  const s = $(sid + '_ts').value, e = $(sid + '_te').value;
+function updWTP(pid, si) {
+  const sid = `${pid}_s${si}`;
+  const s = $(sid + '_ts')?.value, e = $(sid + '_te')?.value;
   const { hr, wt } = calcWT(s, e);
-  $(sid + '_wt').textContent = (hr ? `ชั่วโมงทำงาน: ${hr.toFixed(2)} ชม. — WT (หักพักเที่ยง): ${wt.toFixed(2)} ชม.` : '');
-  updShiftTotal(zone, mi);
+  if ($(sid + '_wt')) $(sid + '_wt').textContent = (hr ? `ชั่วโมงทำงาน: ${hr.toFixed(2)} ชม. — WT (หักพักเที่ยง): ${wt.toFixed(2)} ชม.` : '');
+  updShiftTotal(pid);
 }
-function updShiftTotal(zone, mi) {
-  // sum opr + wt of all shifts in this machine
-  const body = $(`${zone}_${mi}_body`);
-  let totalOpr = 0, totalWT = 0, si = 0;
+function updShiftTotal(pid) {
+  const body = $(`${pid}_body`); if (!body) return;
   body.querySelectorAll('.shift').forEach(sb => {
     const sid = sb.id.replace('_block', '');
-    totalOpr += fnum($(sid+'_opr')?.value);
     const wt = calcWT($(sid+'_ts')?.value, $(sid+'_te')?.value).wt;
-    totalWT += wt;
-    $(sid + '_total').textContent = `OPR: ${nn(fnum($(sid+'_opr')?.value))} · WT: ${wt.toFixed(2)} ชม.`;
+    if ($(sid + '_total')) $(sid + '_total').textContent = `OPR: ${nn(fnum($(sid+'_opr')?.value))} · WT: ${wt.toFixed(2)} ชม.`;
   });
 }
 /* ---------------------------------------------------------------
@@ -5964,12 +6135,12 @@ function _doDateUnlock() {
 
 function updShiftDetect() {
   const prod = $('prod-date').value || todayISO();
-  for (const z of currentZones()) {
-    const machines = state.machines[z] || [];
-    for (let mi = 0; mi < machines.length; mi++) {
-      const on = $(`${z}_${mi}_on`);
+  const cont = $('zone-machines');
+  if (cont) {
+    for (const card of cont.querySelectorAll('.mc')) {
+      const on = document.getElementById(card.id + '_on');
       if (!on?.checked) continue;
-      const ts = $(`${z}_${mi}_s0_ts`)?.value;
+      const ts = card.querySelector('select[id$="_s0_ts"]')?.value;
       if (ts) {
         const [h, m] = ts.split(':').map(Number);
         // วันที่ของกะ = วันที่ผลิต (prod-date) เสมอ — ไม่เลื่อนวันตามเวลาเริ่ม
@@ -5996,7 +6167,7 @@ function _showSubmitSummary(records, prodDate) {
       const existingHelp = (rec.shifts?.[0]?.help?.text) || '';
       return `<div style="border:1.5px solid ${low?'#FCA5A5':'var(--border)'};border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;background:${low?'#FEF2F2':'var(--blue-light)'}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="font-weight:800;color:var(--blue-dark)">🏭 ${escapeHtml(rec.machine_id)}</span>
+          <span style="font-weight:800;color:var(--blue-dark)">${rec.line_label?`⚡ ${escapeHtml(rec.line_label)} · `:''}🏭 ${escapeHtml(rec.machine_id)}</span>
           <span style="font-weight:400;color:var(--muted)">${escapeHtml(rec.zone)}</span>
           <span style="margin-left:auto;font-weight:800;font-size:14px;color:${low?'#DC2626':'#059669'}">OAE ${oaePct}%</span>
         </div>
@@ -6057,6 +6228,23 @@ function _showSubmitSummary(records, prodDate) {
   });
 }
 
+// resolve machine objects ของสาย (คง target/man_std จริงจาก state) — ใช้ตอนบันทึก Auto Line
+function _lineMachines(z, ids) {
+  const map = {};
+  for (const mm of (state.machines[z] || [])) map[mm.id] = mm;
+  const out = [], seen = new Set();
+  for (const id of ids) { if (seen.has(id)) continue; seen.add(id); out.push(map[id] || { id, target:2000, man_std:0.5 }); }
+  return out;
+}
+// อ่านพนักงานจากช่องเดี่ยว (VSM4/1/2) เป็นรูปแบบ crew [{id,name}]
+function _readSingleEmp(sid) {
+  const e = ($(sid + '_emp')?.value || '').trim();
+  if (!e) return [];
+  const id = e.split('—')[0].trim().split(/\s+/)[0].trim();
+  const name = e.includes('—') ? e.split('—').slice(1).join('—').trim() : '';
+  return id ? [{ id, name }] : [];
+}
+
 // กันบันทึกซ้ำ: ghost-tap บนมือถือ/กดปุ่มสองครั้ง/dialog ซ้อน → ห้ามรัน saveKpi ซ้อนกัน
 let _savingKpi = false;
 async function saveKpi() {
@@ -6079,82 +6267,102 @@ async function _saveKpiImpl() {
   if (_diffD > 1) { toast('⚠️ ไม่สามารถบันทึกวันในอนาคต (เกิน 1 วัน)', 'red'); return; }
   if (_diffD < -3) { toast('⚠️ ไม่สามารถย้อนหลังเกิน 3 วัน', 'orange'); return; }
 
-  const records = [];
+  // สร้างรายการ "หน่วยบันทึก" — VSM3+Auto Line = ราย Line (1 การ์ด → หลายเครื่อง) · อื่น = รายเครื่อง
+  const units = [];
   for (const z of currentZones()) {
-    const machines = state.machines[z] || [];
-    for (let mi = 0; mi < machines.length; mi++) {
-      const on = $(`${z}_${mi}_on`);
-      if (!on?.checked) continue;
-      const m = machines[mi];
-      const body = $(`${z}_${mi}_body`);
-      const shifts = [];
-      let mainShiftType = '', shiftDate = prodDate;
-      body.querySelectorAll('.shift').forEach((sb, si) => {
-        const sid = sb.id.replace('_block', '');
-        const opr = fnum($(sid+'_opr')?.value);
-        const scrap = +($(sid+'_sc')?.value || 0);
-        const target = fnum($(sid+'_tgt')?.value) || m.target || 0;
-        const ct = +($(sid+'_ct')?.value || 0);
-        const ts = $(sid+'_ts')?.value || '';
-        const te = $(sid+'_te')?.value || '';
-        const emp = $(sid+'_emp')?.value || '';
-        const valve = $(sid+'_v')?.value || '';
-        const lot = $(sid+'_lot')?.value || '';
-        const proc = $(sid+'_p')?.value || '';
-        const { wt } = calcWT(ts, te);
-        if (!opr && !scrap) return;
-        if (si === 0 && ts) {
-          const [h0, m0] = ts.split(':').map(Number);
-          const { st, sd } = _resolveShift(prodDate, (h0 || 0) * 60 + (m0 || 0));
-          mainShiftType = st; shiftDate = sd;
-        }
-        shifts.push({ si, opr, scrap, target, ct, ts, te, wt, emp, valve, lot, proc });
-      });
-      if (!shifts.length) continue;
-      // FIX 2: สร้าง record แยกต่างหากสำหรับแต่ละ shift (ช่วงเวลา) ไม่รวม/ไม่ merge
-      for (const shiftEntry of shifts) {
-        const sOpr    = shiftEntry.opr;
-        const sScrap  = shiftEntry.scrap;
-        const sTarget = shiftEntry.target;
-        const sCT     = shiftEntry.ct;
-        const sWT     = shiftEntry.wt;
-        const sTs     = shiftEntry.ts;
-        const sTe     = shiftEntry.te;
-        // คำนวณ shift_type + shift_date จากเวลาเริ่มของแต่ละ slot
-        let slotShiftType = mainShiftType, slotShiftDate = shiftDate;
-        if (sTs) {
-          const [h2, m2] = sTs.split(':').map(Number);
-          const { st: _st2, sd: _sd2 } = _resolveShift(prodDate, (h2 || 0) * 60 + (m2 || 0));
-          slotShiftType = _st2; slotShiftDate = _sd2;
-        }
-        const manUsed = m.man_std;
-        // FIX 10: DLE — guard division by zero; CT in seconds, cap in seconds
-        // DLE = (OPR * CT_sec * Man_STD) / (Man_STD * WT_hours * 3600)
-        //     = (OPR * CT_sec) / (WT_hours * 3600)
-        const cap     = manUsed * sWT * 3600; // capacity in person-seconds
-        // FIX 7: OAE cap at 1 for display; keep raw for storage
+    if (zoneVsm(z) === 'vsm3' && _vsm3AutoLine) {
+      for (const lk of (VSM3_ZONE_LINES[z] || [])) {
+        units.push({ pid:`${z}__L_${lk}`, z, isLine:true, multiEmp:true,
+          label: VSM3_LINE_LABEL[lk] || lk, lineKey: lk, machines: _lineMachines(z, VSM3_LINES[lk] || []) });
+      }
+    } else {
+      const machines = state.machines[z] || [];
+      for (let mi = 0; mi < machines.length; mi++) {
+        units.push({ pid:`${z}_${mi}`, z, isLine:false, multiEmp: zoneVsm(z) === 'vsm3',
+          label: machines[mi].id, lineKey:'', machines: [machines[mi]] });
+      }
+    }
+  }
+
+  const records = [];
+  for (const unit of units) {
+    const on = document.getElementById(unit.pid + '_on');
+    if (!on?.checked) continue;
+    const body = $(`${unit.pid}_body`);
+    if (!body) continue;
+    const N = unit.machines.length || 1;
+    // อ่านช่วงเวลาทั้งหมดของหน่วยนี้
+    const slots = [];
+    let mainShiftType = '', shiftDate = prodDate;
+    body.querySelectorAll('.shift').forEach((sb, si) => {
+      const sid = sb.id.replace('_block', '');
+      const opr = fnum($(sid+'_opr')?.value);
+      const scrap = +($(sid+'_sc')?.value || 0);
+      const target = fnum($(sid+'_tgt')?.value) || 0;
+      const ct = +($(sid+'_ct')?.value || 0);
+      const ts = $(sid+'_ts')?.value || '';
+      const te = $(sid+'_te')?.value || '';
+      const valve = $(sid+'_v')?.value || '';
+      const lot = $(sid+'_lot')?.value || '';
+      const proc = unit.isLine ? '' : ($(sid+'_p')?.value || '');   // Auto Line → Process อัตโนมัติต่อเครื่อง
+      const crew = unit.multiEmp ? _readCrew(sid) : _readSingleEmp(sid);
+      const { wt } = calcWT(ts, te);
+      if (!opr && !scrap) return;
+      if (si === 0 && ts) {
+        const [h0, m0] = ts.split(':').map(Number);
+        const { st, sd } = _resolveShift(prodDate, (h0 || 0) * 60 + (m0 || 0));
+        mainShiftType = st; shiftDate = sd;
+      }
+      slots.push({ si, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, crew });
+    });
+    if (!slots.length) continue;
+
+    for (const slot of slots) {
+      // shift_type + shift_date จากเวลาเริ่มของ slot
+      let slotShiftType = mainShiftType, slotShiftDate = shiftDate;
+      if (slot.ts) {
+        const [h2, m2] = slot.ts.split(':').map(Number);
+        const { st: _st2, sd: _sd2 } = _resolveShift(prodDate, (h2 || 0) * 60 + (m2 || 0));
+        slotShiftType = _st2; slotShiftDate = _sd2;
+      }
+      // pack พนักงาน (durable ผ่านคอลัมน์ที่มีอยู่): emp_id = คนแรก (ให้ vsmOf แยก VSM ได้)
+      const crew = slot.crew, crewCount = crew.length;
+      const empIdPrimary  = crewCount ? `${crew[0].id}${crew[0].name ? ` — ${crew[0].name}` : ''}` : '';
+      const empNameJoined = crewCount ? crew.map(c => c.name || c.id).join(', ') : '';
+      const shiftIdsJoined = crewCount ? crew.map(c => c.id).join(',') : '';
+      const sOpr = slot.opr, sScrap = slot.scrap, sCT = slot.ct, sWT = slot.wt, sTs = slot.ts, sTe = slot.te;
+
+      // 1 record ต่อ 1 เครื่องในหน่วย (สาย = ทุกเครื่อง · เครื่องเดี่ยว = เครื่องเดียว)
+      for (const mObj of unit.machines) {
+        const sTarget  = slot.target || mObj.target || 0;
+        const lastProc = unit.isLine ? mcProcess(mObj) : (slot.proc || '');
+        // กำลังคนจริง (เฉพาะ VSM3 ที่มี crew): สาย = แบ่งทีมต่อเครื่อง (Σ=จำนวนคนจริง) · เครื่องเดี่ยว = จำนวนคน
+        let manUsed = mObj.man_std;
+        if (zoneVsm(unit.z) === 'vsm3' && crewCount > 0) manUsed = unit.isLine ? (crewCount / N) : crewCount;
+        const cap     = manUsed * sWT * 3600;
         const oae     = sTarget > 0 ? sOpr / sTarget : 0;
-        // FIX 10: DLE requires both cap > 0 and CT > 0; CT is in seconds
-        const dle     = (cap > 0 && sCT > 0) ? (sOpr * sCT * m.man_std) / cap : 0;
+        const dle     = (cap > 0 && sCT > 0) ? (sOpr * sCT * mObj.man_std) / cap : 0;
         const pplh    = sWT > 0 ? sOpr / sWT : 0;
         const oprPdac = sTarget * 0.85;
         const pdac    = oprPdac > 0 ? sOpr / oprPdac : 0;
         const scrapRate = (sOpr + sScrap) > 0 ? sScrap / (sOpr + sScrap) : 0;
         const pdacPass  = pdac >= 0.9 ? 'PASS' : 'FAIL';
+        const shiftEntry = { si: slot.si, opr:sOpr, scrap:sScrap, target:sTarget, ct:sCT, ts:sTs, te:sTe, wt:sWT,
+          emp: empIdPrimary, valve: slot.valve, lot: slot.lot, proc: lastProc };
         records.push({
           record_date: slotShiftDate, shift_date: slotShiftDate, shift_type: slotShiftType,
-          zone: z, zone_label: ZONE_LABEL[z], machine_id: m.id,
-          emp_id: shiftEntry.emp || '', emp_name: shiftEntry.emp || '',
-          shift_ids: shiftEntry.emp,
+          zone: unit.z, zone_label: ZONE_LABEL[unit.z], machine_id: mObj.id,
+          emp_id: empIdPrimary, emp_name: empNameJoined, shift_ids: shiftIdsJoined,
           shifts: [shiftEntry],
           opr: sOpr, target: sTarget, scrap: sScrap, ct: sCT, wt: sWT,
           time_start: sTs, time_end: sTe,
-          man_std: m.man_std, man_used: manUsed,
+          man_std: mObj.man_std, man_used: manUsed, man_count: crewCount,
+          line_key: unit.isLine ? unit.lineKey : '', line_label: unit.isLine ? unit.label : '',
           oae, dle, pplh, pdac_val: pdac, pdac_pass: pdacPass, scrap_rate: scrapRate, opr_pdac: oprPdac,
           operator: OP, shift_detail: `${sTs}-${sTe}:OPR=${sOpr}`,
-          valve_no: shiftEntry.valve || '', lot: shiftEntry.lot || '', last_process: shiftEntry.proc || '',
-          valve_unknown: shiftEntry.valve ? !isKnownValve(shiftEntry.valve) : false,
-          vsm: myVsm(),
+          valve_no: slot.valve || '', lot: slot.lot || '', last_process: lastProc,
+          valve_unknown: slot.valve ? !isKnownValve(slot.valve) : false,
+          vsm: zoneVsm(unit.z),
         });
       }
     }
@@ -6170,8 +6378,12 @@ async function _saveKpiImpl() {
   for (const rec of records) {
     const slotEntry = rec.shifts?.[0] || {};
     const slotNum   = (slotEntry.si != null ? slotEntry.si : 0) + 1;
-    const key       = `${rec.machine_id}__s${slotNum}`;
-    const grpLabel  = `🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : '');
+    const isLine    = !!rec.line_key;
+    // Auto Line: ทุกเครื่องในสาย/ช่วงเดียวกันใช้ข้อมูลชุดเดียว → รวมเป็นกลุ่มเดียว (dedupe ผ่าน key ซ้ำ)
+    const key       = isLine ? `L:${rec.line_key}__s${slotNum}` : `${rec.machine_id}__s${slotNum}`;
+    const grpLabel  = isLine
+      ? `⚡ ${rec.line_label}${slotNum > 1 ? ` — ช่วงที่ ${slotNum}` : ''}`
+      : (`🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : ''));
     const errs = [];
 
     if (!rec.opr || rec.opr <= 0)
@@ -6185,7 +6397,7 @@ async function _saveKpiImpl() {
     if (!slotEntry.ts || !slotEntry.te)
       errs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง' });
     if (!rec.emp_id)
-      errs.push({ field: 'พนักงาน (พิมพ์ค้น)', msg: 'ยังไม่ลง' });
+      errs.push({ field: isLine ? 'พนักงาน (อย่างน้อย 1 คน)' : 'พนักงาน (พิมพ์ค้น)', msg: 'ยังไม่ลง' });
     // 🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) — บังคับกรอก Valve No + Lot
     if (!rec.valve_no || !String(rec.valve_no).trim())
       errs.push({ field: '🧩 Valve No (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
@@ -6266,7 +6478,7 @@ async function _saveKpiImpl() {
   // reset dirty flag + FAB after successful save
   _formDirty = false; _updateFabState();
   // 2) reset form — clear ALL inputs by re-rendering
-  zoneShiftCount = {};
+  _unitShiftCount = {};
   renderZone();
 
   // 3) หลังบันทึกสำเร็จ → ไปหน้า Dashboard อัตโนมัติ
