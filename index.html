@@ -1709,7 +1709,7 @@ const VSM3_LINES = {
   BUF1:['G-231','G-233'],                                                        // Buff G-233
   BUF2:['G-225','G-280'],                                                        // Buff G-280
   BUF3:['G-2064','G-2041'],                                                      // Buff G-2041
-  I1: ['G-2070','L-250','G-256','G-2055','G-249','G-274'],                       // ISUZU 1 (ตัด G-256 ซ้ำ)
+  I1: ['G-2070','L-250','G-256','G-2055','G-249','G-259','G-274'],               // ISUZU 1 (ตัด G-256 ซ้ำ · +G-259 ที่ตกหล่นจากผัง)
   I2: ['G-281','L-249','G-260','G-230','G-282','G-275'],                         // ISUZU 2
   N1: ['G-2015','L-252','G-236','G-2086','G-2017','G-2018','G-2006'],            // NISSAN 1
   N3: ['G-2026','L-258','G-239','G-2011','G-2024','G-291','G-2071'],             // NISSAN 3
@@ -1760,6 +1760,12 @@ function ensureVsmZones() {
       cur.every(m => new RegExp('^' + z + '-\\d+$', 'i').test(String((m && m.id) || '')));
     if (!Array.isArray(cur) || cur.length === 0 || oldTestSeed) {
       state.machines[z] = JSON.parse(JSON.stringify(SEED_VSM_MACHINES[z]));
+    } else {
+      // เติมเครื่องที่ seed ไว้แต่ยังไม่มีในเครื่องนี้ (เช่น G-259 ที่เพิ่งเพิ่มเข้าไลน์) — ไม่ลบ/ไม่ทับของเดิม
+      const have = new Set(cur.map(m => String((m && m.id) || '').toUpperCase()));
+      for (const sm of SEED_VSM_MACHINES[z]) {
+        if (!have.has(String(sm.id).toUpperCase())) cur.push(JSON.parse(JSON.stringify(sm)));
+      }
     }
   }
 }
