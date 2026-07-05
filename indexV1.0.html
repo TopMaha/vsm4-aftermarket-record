@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.2</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.3</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1704,7 +1704,7 @@ const VSM3_LINES = {
   R1: ['G-2067','L-246','G-271','G-272','G-258','G-266','G-264'],
   R2: ['L-251','G-2093','G-2070','G-263','G-269','G-265'],
   T3: ['G-2082','G-2061','G-2060','G-2059','L-257','G-257'],                     // TOYOTA 3 (G-208→G-2082)
-  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274'],           // Mitsubishi 3
+  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274','G-2063'],  // Mitsubishi 3 (+G-2063 ย้ายจากเครื่องเดี่ยว ZH)
   N4: ['G-2042','G-1112','G-2036','G-261','G-2090','G-279','G-2021'],            // NISSAN 4
   BUF1:['G-231','G-233'],                                                        // Buff G-233
   BUF2:['G-225','G-280'],                                                        // Buff G-280
@@ -1742,7 +1742,7 @@ const VSM3_ZONE_LINES = {
 // เครื่องที่ไม่อยู่ใน Line ใด (เดิมเคยมี) — คงไว้ให้ลง "รายเครื่อง" ได้ ไม่ลบทิ้ง
 // (ZI: G-2042/G-1112/G-2036/G-261/G-2090/G-279/G-2021 ย้ายเข้าสาย NISSAN 4 แล้ว)
 const VSM3_ZONE_EXTRA = {
-  ZH: ['G-2063'],   // G-284 ย้ายเข้าไลน์ Ford 1 (F1) แล้ว — เหลือ G-2063 เป็นเครื่องเดี่ยว
+  // (ว่าง) — G-284→Ford 1 (F1), G-2063→Mitsubishi 3 (M3) ย้ายเข้าไลน์หมดแล้ว · เพิ่มเครื่องเดี่ยวใหม่ที่นี่ได้
 };
 for (const z of Object.keys(VSM3_ZONE_LINES)) {
   const seen = new Set();
@@ -1753,6 +1753,12 @@ for (const z of Object.keys(VSM3_ZONE_LINES)) {
 }
 function ensureVsmZones() {
   if (!state.machines || typeof state.machines !== 'object') state.machines = {};
+  // แผนที่ id → โซน VSM3 ที่ถูกต้องตาม seed ปัจจุบัน (ใช้จับเครื่องที่ "ย้ายโซน" เช่น G-2063 ZH→ZI)
+  const seedZoneOf = {};
+  for (const z of Object.keys(SEED_VSM_MACHINES)) {
+    if (ZONE_DEFS[z].vsm !== 'vsm3') continue;
+    for (const sm of SEED_VSM_MACHINES[z]) seedZoneOf[String(sm.id).toUpperCase()] = z;
+  }
   for (const z of Object.keys(SEED_VSM_MACHINES)) {
     const cur = state.machines[z];
     // VSM3: อัปเกรดจากเครื่อง "ทดสอบ" เดิม (ZH-01…) → เครื่องจริงตามผัง ครั้งเดียว
@@ -1761,7 +1767,14 @@ function ensureVsmZones() {
     if (!Array.isArray(cur) || cur.length === 0 || oldTestSeed) {
       state.machines[z] = JSON.parse(JSON.stringify(SEED_VSM_MACHINES[z]));
     } else {
-      // เติมเครื่องที่ seed ไว้แต่ยังไม่มีในเครื่องนี้ (เช่น G-259 ที่เพิ่งเพิ่มเข้าไลน์) — ไม่ลบ/ไม่ทับของเดิม
+      // VSM3: ลบเครื่องที่ seed ย้ายไปโซน VSM3 อื่นแล้ว (เช่น G-2063 ZH→ZI) — ไม่แตะเครื่องที่ admin เพิ่มเอง (ไม่อยู่ใน seed)
+      if (ZONE_DEFS[z].vsm === 'vsm3') {
+        for (let i = cur.length - 1; i >= 0; i--) {
+          const correct = seedZoneOf[String((cur[i] && cur[i].id) || '').toUpperCase()];
+          if (correct && correct !== z) cur.splice(i, 1);
+        }
+      }
+      // เติมเครื่องที่ seed ไว้แต่ยังไม่มีในเครื่องนี้ (เช่น G-259/G-2063 ที่เพิ่งเข้าไลน์) — ไม่ลบ/ไม่ทับของเดิม
       const have = new Set(cur.map(m => String((m && m.id) || '').toUpperCase()));
       for (const sm of SEED_VSM_MACHINES[z]) {
         if (!have.has(String(sm.id).toUpperCase())) cur.push(JSON.parse(JSON.stringify(sm)));
@@ -3975,7 +3988,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.2":"Production Record + KPI · v3.2",
+"ระบบบันทึกผลิต + KPI · v3.3":"Production Record + KPI · v3.3",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
