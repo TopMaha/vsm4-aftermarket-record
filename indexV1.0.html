@@ -738,7 +738,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.3</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.4</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1040,6 +1040,9 @@ tbody tr:last-child td{border-bottom:none}
     <button class="btn" style="background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-bd);font-weight:800;white-space:nowrap" onclick="lockOut()">⏏ ออกจากระบบ</button>
   </div>
 
+  <!-- ปุ่มเลือก VSM (เฉพาะ Admin) — เลือกดู/แก้ไขข้อมูลทีละสาย จะได้ไม่งง -->
+  <div id="settingsVsmBar"></div>
+
   <!-- แจ้งเตือน Valve No ที่ไม่มีในฐานข้อมูล (Admin ตรวจสอบ/เพิ่มเข้าระบบ) -->
   <div id="unknownValveAlert"></div>
 
@@ -1151,12 +1154,10 @@ tbody tr:last-child td{border-bottom:none}
 
   <div class="section-title">🏭 เครื่องจักร</div>
   <div class="card">
+    <!-- บอกว่ากำลังแก้ไขเครื่องของ VSM ไหน (สลับสายที่ปุ่ม VSM ด้านบนสุด) -->
+    <div id="mcVsmNote" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
     <div class="fr"><label>Zone</label>
-      <select id="mcZone" onchange="renderMachineList()">
-        <option value="ZONE1">ZONE 1 — AFTERMARKET</option>
-        <option value="ZONE2">ZONE 2 — INDUCTION</option>
-        <option value="ZONE3">ZONE 3 — FORD6 & PERKINS</option>
-      </select>
+      <select id="mcZone" onchange="renderMachineList()"></select>
     </div>
     <div class="fg-auto mb-8">
       <div class="fr" style="margin:0"><label>รหัส</label><input type="text" id="newMcId" placeholder="L-999"></div>
@@ -1166,7 +1167,11 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <datalist id="procOptions"><option>SSG</option><option>TOP&HOD</option><option>VET</option><option>COT</option><option>COPY</option><option>CB</option><option>IND</option><option>TG</option><option>SFG</option><option>FG</option><option>P/T</option><option>QC</option></datalist>
     <button class="btn btn-blue btn-sm mb-8" onclick="addMachine()">➕ เพิ่ม/แก้ไข</button>
-    <div class="tbl-wrap"><table id="mcTable"><thead><tr><th>รหัส</th><th>Target</th><th>Man_STD</th><th>Process</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+    <div class="row mb-8" style="gap:6px;flex-wrap:wrap;align-items:center">
+      <input type="search" id="mcSearch" placeholder="🔎 ค้นหารหัส / Process" oninput="renderMachineList()" style="flex:1;min-width:150px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px;font-size:13px">
+      <span class="muted" style="font-size:12px">รวม <b id="mcCount">0</b> เครื่อง</span>
+    </div>
+    <div class="tbl-wrap"><table id="mcTable"><thead></thead><tbody></tbody></table></div>
   </div>
 
 </section>
@@ -1483,6 +1488,8 @@ const VSM_LIST = [
   { key:'vsm4', label:'VSM 4' },
 ];
 const VSM_LABEL  = Object.fromEntries(VSM_LIST.map(v => [v.key, v.label]));
+const VSM_KEYS   = VSM_LIST.map(v => v.key);            // ['vsm1','vsm2','vsm3','vsm4'] — ลำดับปุ่มสลับ
+const isVsmKey   = k => VSM_KEYS.includes(k);           // ตรวจว่าเป็นคีย์ VSM ที่ถูกต้อง
 const DEFAULT_VSM = 'vsm4';
 
 /* ▼▼▼ แหล่งข้อมูลหลัก: รหัสพนักงาน → VSM (รหัสตัวพิมพ์ใหญ่)
@@ -1636,8 +1643,8 @@ function myVsm() { return CURRENT_USER ? resolveEmpVsm(CURRENT_USER.id) : DEFAUL
 function canSeeAllVsm(){ return !!state.adminUnlocked; }   // Admin ปลดล็อก → สลับดูได้ทุกสาย (แต่ทีละสาย)
 // VSM ที่กำลัง "ดู/ทำงาน" อยู่ตอนนี้ (แหล่งเดียวของทั้งแอป):
 //   • ผู้ใช้ทั่วไป = VSM ของตัวเอง (ล็อกตายตัว)
-//   • Admin      = ตามปุ่มสลับ VSM4⇄VSM3 (_iotVsmSel) → ถูกล็อกทีละสายเช่นกัน ไม่เห็นข้อมูลปนข้าม VSM
-function viewVsm() { return canSeeAllVsm() ? (_iotVsmSel === 'vsm3' ? 'vsm3' : 'vsm4') : myVsm(); }
+//   • Admin      = ตามปุ่มสลับ VSM (_iotVsmSel = vsm1/2/3/4) → ถูกล็อกทีละสายเช่นกัน ไม่เห็นข้อมูลปนข้าม VSM
+function viewVsm() { return canSeeAllVsm() ? (isVsmKey(_iotVsmSel) ? _iotVsmSel : DEFAULT_VSM) : myVsm(); }
 // กรอง array ของ record ให้เหลือเฉพาะ VSM ที่กำลังดูอยู่ (Admin ก็ถูกล็อกตามปุ่มสลับ ไม่เห็นรวมทุก VSM แล้ว)
 function filterVsm(arr) {
   if (!Array.isArray(arr)) return arr;
@@ -2190,7 +2197,7 @@ function setPane(name) {
   if (name === 'settings' && !state.adminUnlocked) {
     promptAdmin('🔐 หน้าตั้งค่าเฉพาะ Admin', () => {
       state.adminUnlocked = true;
-      toast('🔓 ปลดล็อก Admin Mode — สลับดูได้ทุก VSM (ทีละสายด้วยปุ่ม VSM4⇄VSM3)', 'green');
+      toast('🔓 ปลดล็อก Admin Mode — เลือกดู VSM ได้ทุกสาย (ทีละสาย) ที่ปุ่มด้านบนหน้าตั้งค่า', 'green');
       if (typeof refreshVsmViews === 'function') refreshVsmViews();   // อัปเดตหัวแอป + มุมมองตามสายที่ล็อกดู
       _doSetPane('settings');
     });
@@ -3280,7 +3287,7 @@ function renderProcOutput(kpiRecords) {
 
 /* ── ช่วงเวลาของ "Output ของ Process" — เลือกเองได้ที่หน้าติดตามงาน ──
    แยกอิสระจากตัวกรองวันที่ของ Dashboard เพื่อให้สะดวก ไม่ต้องสลับหน้า
-   มุมมองรวมทุก VSM (ทุกคนเห็นเหมือนกัน) ครอบคลุมทุกกะในช่วงที่เลือก   */
+   แสดงเฉพาะ VSM ที่ผู้ใช้สังกัด (Admin = ตามสายที่เลือก) ครอบคลุมทุกกะในช่วงที่เลือก   */
 const _procIso = d => `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
 function _markProcPreset(kind) {
   document.querySelectorAll('#procPresets .prchip').forEach(b => {
@@ -3314,7 +3321,7 @@ async function refreshProcOutput() {
     const d = (r.shift_date || r.record_date || '').slice(0, 10);
     return d >= f && d <= t;
   };
-  // local ก่อน (รองรับ offline) — ทุก VSM เพื่อให้ทุกคนเห็นเหมือนกัน
+  // local ก่อน (รองรับ offline)
   let recs = (state.kpiRecords || []).filter(inRange);
   if (API) {
     try {
@@ -3330,7 +3337,8 @@ async function refreshProcOutput() {
       }
     } catch (e) {}
   }
-  renderProcOutput(recs);
+  // ★ แสดงเฉพาะ VSM ที่ผู้ใช้สังกัด (Admin = ตามสายที่เลือก) — ไม่ปนข้ามสายอีกต่อไป
+  renderProcOutput(filterVsm(recs));
 }
 // ดึง targets (รวมสถานะงานหลัง FG) ล่าสุดจาก Cloud → ใช้ก่อนแสดงผลที่ต้องเห็นตรงกันทุกเครื่อง
 async function pullJobProcTargets() {
@@ -3988,7 +3996,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.3":"Production Record + KPI · v3.3",
+"ระบบบันทึกผลิต + KPI · v3.4":"Production Record + KPI · v3.4",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4537,10 +4545,11 @@ const FP3_LB=[
 
 /* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
 let _iotVsmSel='vsm4';
-try{ _iotVsmSel=localStorage.getItem('vsm4_iot_vsm')||'vsm4'; }catch(e){}
+try{ const _s=localStorage.getItem('vsm4_iot_vsm'); if(isVsmKey(_s)) _iotVsmSel=_s; }catch(e){}
 function _fpVsm(){ return viewVsm(); }   // ผังโรงงาน = VSM ที่กำลังดู (แหล่งเดียวกับทั้งแอป)
+// Admin เลือกดู VSM ไหนก็ได้ (vsm1/2/3/4) — ล็อกทีละสาย ไม่ปนข้อมูลข้าม VSM
 function iotSetVsm(v){
-  _iotVsmSel = v==='vsm3' ? 'vsm3' : 'vsm4';
+  _iotVsmSel = isVsmKey(v) ? v : DEFAULT_VSM;
   try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
   // Admin สลับ VSM → ล็อกทั้งแอปตามสายที่เลือก (ประวัติ/Dashboard/KPI/ต่อกะ/ฟอร์มบันทึก/รายชื่อพนักงาน) ไม่ใช่แค่ผัง
   if (typeof updateVsmHeader === 'function') updateVsmHeader();   // หัวแอป + ป้าย VSM เปลี่ยนตามสายที่เลือก
@@ -4690,10 +4699,11 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
 
   const svgHtml=`<svg id="iotSvg" viewBox="${VBX} ${VBY} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
 
-  // Admin: ปุ่มสลับผัง VSM 4 ⇄ VSM 3 (ผู้ใช้ทั่วไปเห็นเฉพาะผัง VSM ตัวเอง — ไม่มีปุ่ม)
+  // Admin: ปุ่มสลับผังทุก VSM (1/2/3/4) — ผู้ใช้ทั่วไปเห็นเฉพาะผัง VSM ตัวเอง (ไม่มีปุ่ม)
+  // VSM1/2 ยังไม่มีผังจริง → เลือกแล้วจะขึ้นข้อความ "จะเพิ่มภายหลัง"
   const vsmBtn = canSeeAllVsm() ? `
       <span style="display:inline-flex;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden">
-        ${['vsm4','vsm3'].map(v=>`<button type="button" onclick="iotSetVsm('${v}')" style="border:0;cursor:pointer;padding:3px 10px;font-size:10.5px;font-weight:800;${v===fpv?'background:#1A56DB;color:#fff':'background:#fff;color:#334155'}">${VSM_LABEL[v]}</button>`).join('')}
+        ${VSM_KEYS.map(v=>`<button type="button" onclick="iotSetVsm('${v}')" style="border:0;cursor:pointer;padding:3px 10px;font-size:10.5px;font-weight:800;${v===fpv?'background:#1A56DB;color:#fff':'background:#fff;color:#334155'}">${VSM_LABEL[v]}</button>`).join('')}
       </span>` : '';
 
   wrap.innerHTML=`
@@ -5545,10 +5555,9 @@ async function renderHome() {
   let statsRes = stats;
   if (API) {
     try {
-      const [p, k, s] = await Promise.all([
+      const [p, k] = await Promise.all([
         api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
         api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
-        api(`/api/stats`).catch(()=>null),
       ]);
       // กรอง tombstones + VSM ออกจาก API records
       if (p?.records) {
@@ -5559,16 +5568,8 @@ async function renderHome() {
         const _fk = filterVsm(k.records.filter(r => !_deletedKpiIds.has(r.record_id)));
         kpiRes = { ...k, records: _fk };
       } else if (k) kpiRes = k;
-      // Smart merge: ใช้ API เฉพาะ field ที่มีข้อมูล ไม่ทับ local ทั้งดุ้น
-      // ถ้ามี tombstones ให้ใช้ local stats เสมอ (กัน API คืน records ที่ลบแล้ว)
-      // /api/stats เป็นยอดรวมทุก VSM — ใช้ได้เฉพาะ Admin; ผู้ใช้ทั่วไปใช้ local stats ที่กรอง VSM แล้ว
-      // มี override งานหลัง FG → ใช้ local stats (override-aware) เพราะ server ยังไม่รู้จักสถานะ "จบงาน"
-      if (s && _deletedProdIds.size === 0 && canSeeAllVsm() && !_hasPostFgOverrides()) statsRes = {
-        total_done:  (s.total_done  != null) ? s.total_done  : stats.total_done,
-        total_wip:   (s.total_wip   != null) ? s.total_wip   : stats.total_wip,
-        by_customer: Object.keys(s.by_customer||{}).length ? s.by_customer : stats.by_customer,
-        by_process:  Object.keys(s.by_process||{}).length  ? s.by_process  : stats.by_process,
-      };
+      // หมายเหตุ: WIP + ตารางลูกค้า ใช้ computeLocalStats() (กรองตาม VSM ที่กำลังดู + รู้จักงานจบหลัง FG)
+      // ไม่ใช้ /api/stats อีกต่อไป เพราะเป็นยอด "รวมทุก VSM" ซึ่งขัดกับมุมมองล็อกทีละสาย (Admin ก็ดูทีละ VSM)
     } catch (e) {}
   }
 
@@ -5636,7 +5637,7 @@ async function renderHome() {
         ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v.wip)}</span></td></tr>`).join('')
         : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
     }
-    // Process table — มุมมองรวมทั้งโรงงาน (ทุก VSM) ใช้ช่วงเวลาของตัวเอง (procFrom/procTo)
+    // Process table — เฉพาะ VSM ที่กำลังดู (พนักงาน = สายตัวเอง · Admin = สายที่เลือก) ใช้ช่วงเวลาของตัวเอง (procFrom/procTo)
     refreshProcOutput();
   } catch (e) {
     toast('โหลด dashboard ไม่สำเร็จ', 'red');
@@ -7887,10 +7888,47 @@ async function saveProdEdit() {
 /* ============================================================
    SETTINGS
    ============================================================ */
+/* ===== ปุ่มเลือก VSM บนสุดของหน้าตั้งค่า (เฉพาะ Admin) =====
+   เลือกดู/แก้ไขข้อมูล + เครื่องจักร ทีละสาย (vsm1/2/3/4) — ใช้ iotSetVsm() แหล่งเดียวกับทั้งแอป
+   ผู้ใช้ทั่วไป (ไม่ใช่ admin) เห็นแค่ป้ายบอกว่าอยู่ VSM ไหน (ล็อกตายตัว) */
+function renderSettingsVsmBar() {
+  const bar = document.getElementById('settingsVsmBar');
+  if (!bar) return;
+  const cur = viewVsm();
+  if (!canSeeAllVsm()) {
+    bar.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:8px;padding:10px 12px">
+        <span style="font-size:18px">🏭</span>
+        <div style="font-size:12px;color:var(--muted)">กำลังดูสาย <b style="color:var(--blue-dark);font-size:14px">${escapeHtml(VSM_LABEL[cur]||cur)}</b> · ปลดล็อก <b>Admin</b> ด้านล่างเพื่อสลับดู VSM อื่น</div>
+      </div>`;
+    return;
+  }
+  bar.innerHTML = `
+    <div class="card" style="background:linear-gradient(135deg,#EEF2FF,#DBEAFE);border:1.5px solid var(--blue-soft);padding:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+        <span style="font-size:20px;line-height:1">🏭</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--blue-dark)">เลือกสายการผลิต (VSM) ที่จะดู/แก้ไข</div>
+          <div style="font-size:11px;color:var(--muted)">🔓 Admin — สลับได้ทีละสาย · ข้อมูล เครื่องจักร เป้าหมาย และพนักงาน จะกรองตาม VSM ที่เลือก</div>
+        </div>
+      </div>
+      <div role="tablist" aria-label="เลือก VSM" style="display:flex;gap:6px;flex-wrap:wrap">
+        ${VSM_KEYS.map(v => {
+          const on = v === cur;
+          return `<button type="button" role="tab" aria-selected="${on}" onclick="iotSetVsm('${v}')"
+            style="flex:1;min-width:72px;cursor:pointer;padding:10px 8px;border-radius:10px;font-size:13px;font-weight:800;transition:all .15s;
+            ${on ? 'background:var(--blue);color:#fff;border:1.5px solid var(--blue);box-shadow:0 3px 10px rgba(26,86,219,.28)'
+                 : 'background:#fff;color:var(--blue-dark);border:1.5px solid var(--blue-soft)'}">
+            ${escapeHtml(VSM_LABEL[v]||v)}${on ? ' ✓' : ''}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
 function renderSettings() {
   // ⚡ เพื่อความเร็ว: render หน้าตั้งค่า (ตารางวาล์ว/พนักงาน/เครื่อง ที่อาจมีหลายพันแถว)
   // เฉพาะตอนที่หน้าตั้งค่าเปิดอยู่จริงเท่านั้น — setPane จะเปิดหน้าก่อนเรียก จึงทำงานปกติ
   if (document.querySelector('section.pane.active')?.id !== 'pane-settings') return;
+  renderSettingsVsmBar();
   if ($('apiUrl')) $('apiUrl').value = API;
   if ($('settingsUser')) $('settingsUser').textContent = CURRENT_USER
     ? `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[myVsm()] || myVsm()}`
@@ -8344,7 +8382,7 @@ function adminToggle() {
     $('apiUrl').style.cursor = 'text';
     $('adminPanel').style.display = 'block';
     $('adminBtn').textContent = '🔓 Admin (กดเพื่อล็อก)';
-    toast('🔓 ปลดล็อก Admin Mode — สลับดูได้ทุก VSM (ทีละสายด้วยปุ่ม VSM4⇄VSM3)', 'green');
+    toast('🔓 ปลดล็อก Admin Mode — เลือกดู VSM ได้ทุกสาย (ทีละสาย) ที่ปุ่มด้านบนหน้าตั้งค่า', 'green');
     refreshVsmViews();
   });
 }
@@ -9297,10 +9335,55 @@ async function refreshPostFgFromCloud(silent) {
   renderPostFgJobs();
 }
 
+/* ตารางเครื่องจักร — เรียงได้ (กดหัวคอลัมน์) + ค้นหา + บอกบริบท VSM/Zone
+   เรียงตามรหัสเป็น "ธรรมชาติ" (L-229 < L-233 < L-2063) ไม่ใช่ตัวอักษรล้วน */
+let _mcSort = { key: 'id', dir: 1 };
+function sortMachines(key) {
+  if (_mcSort.key === key) _mcSort.dir = -_mcSort.dir;
+  else { _mcSort.key = key; _mcSort.dir = 1; }
+  renderMachineList();
+}
+function _mcCmpId(a, b) {
+  const re = /(\d+|\D+)/g;
+  const pa = String(a).toUpperCase().match(re) || [], pb = String(b).toUpperCase().match(re) || [];
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] ?? '', y = pb[i] ?? '';
+    const nx = /^\d/.test(x), ny = /^\d/.test(y);
+    if (nx && ny) { const d = (+x) - (+y); if (d) return d; }
+    else if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
 function renderMachineList() {
-  const z = $('mcZone').value;
-  const rows = (state.machines[z]||[]).map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
-  $('mcTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="5" class="center muted">ไม่มีข้อมูล</td></tr>';
+  const mz = $('mcZone');
+  if (!mz) return;
+  // กัน dropdown ยังว่าง/ค่าไม่ตรง VSM ปัจจุบัน (เช่นเพิ่งสลับสาย) → เติม option ก่อน
+  if (!mz.options.length || !currentZones().includes(mz.value)) populateZoneSelects();
+  const z = mz.value;
+  const vsm = viewVsm();
+  const note = $('mcVsmNote');
+  if (note) note.innerHTML = `กำลังแก้ไขเครื่องของ <b style="color:var(--blue-dark)">${escapeHtml(VSM_LABEL[vsm]||vsm)}</b> · โซน <b>${escapeHtml(ZONE_LABEL[z]||z||'—')}</b>${canSeeAllVsm()?' · สลับสายที่ปุ่ม VSM ด้านบนสุด' : ''}`;
+
+  const q = ($('mcSearch')?.value || '').trim().toLowerCase();
+  let list = (state.machines[z] || []).slice();
+  if (q) list = list.filter(m => (m.id||'').toLowerCase().includes(q) || mcProcess(m).toLowerCase().includes(q));
+  const k = _mcSort.key, dir = _mcSort.dir;
+  list.sort((a, b) => {
+    if (k === 'id') return _mcCmpId(a.id, b.id) * dir;
+    let r = 0;
+    if (k === 'target')       r = (+a.target||0)  - (+b.target||0);
+    else if (k === 'man_std') r = (+a.man_std||0) - (+b.man_std||0);
+    else if (k === 'process') r = mcProcess(a).localeCompare(mcProcess(b));
+    return (r * dir) || _mcCmpId(a.id, b.id);   // เสมอกัน → เรียงตามรหัส (คงที่)
+  });
+  if ($('mcCount')) $('mcCount').textContent = list.length;
+  // หัวตารางกดเรียงได้ (ลูกศรบอกทิศ)
+  const arrow = key => _mcSort.key === key ? (_mcSort.dir > 0 ? ' ▲' : ' ▼') : '';
+  const th = (key, label) => `<th onclick="sortMachines('${key}')" style="cursor:pointer;user-select:none;white-space:nowrap" title="กดเพื่อเรียง">${label}${arrow(key)}</th>`;
+  const thead = $('mcTable').querySelector('thead');
+  if (thead) thead.innerHTML = `<tr>${th('id','รหัส')}${th('target','Target')}${th('man_std','Man_STD')}${th('process','Process')}<th>จัดการ</th></tr>`;
+  const rows = list.map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
+  $('mcTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="5" class="center muted">${q?'ไม่พบเครื่องที่ค้นหา':'ไม่มีข้อมูล'}</td></tr>`;
 }
 function editMachine(zone, id) {
   const m = (state.machines[zone]||[]).find(x => x.id === id);
