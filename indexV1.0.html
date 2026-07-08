@@ -547,11 +547,12 @@ tbody tr:last-child td{border-bottom:none}
 /* เต็มจอ = grid 3 คอลัมน์ (side | เส้นแบ่งลาก | floor) — ผู้ใช้ลากเส้นแบ่งปรับสัดส่วนเองได้ (v2.7 req #3)
    --iot-split = ความกว้างฝั่งต่อกะ (จำใน localStorage) · clamp กันผังแคบเกิน ~300px ไม่มีวันมองไม่เห็น */
 .iot-fs{display:grid!important;grid-template-columns:clamp(260px,var(--iot-split,52%),calc(100% - 330px)) 12px minmax(300px,1fr);
-  grid-template-rows:auto auto auto 1fr;
-  grid-template-areas:"head head head" "info info info" "oae oae oae" "side split floor";column-gap:4px;row-gap:8px}
+  grid-template-rows:auto auto auto auto 1fr;
+  grid-template-areas:"head head head" "info info info" "oae oae oae" "wip wip wip" "side split floor";column-gap:4px;row-gap:8px}
 .iot-fs > #iotHeadRow{grid-area:head;margin-bottom:0}
 .iot-fs > #iotDateInfo{grid-area:info}
 .iot-fs > #iotOaeStrip{grid-area:oae}
+.iot-fs > #iotWipStrip{grid-area:wip}
 /* เส้นแบ่งลากปรับขนาด ต่อกะ ⇄ ผัง: ชี้เมาส์ = ลูกศร ⬌ · ลากซ้าย-ขวา · ดับเบิลคลิก = คืนค่าเริ่มต้น */
 #iotSplit{display:none}
 .iot-fs > #iotSplit{grid-area:split;display:flex;align-items:center;justify-content:center;cursor:col-resize;
@@ -567,6 +568,19 @@ tbody tr:last-child td{border-bottom:none}
 /* ── แถบ OAE รวม + รายโซน — ซ่อนในหน้าปกติ แสดงเฉพาะตอนเต็มจอ ── */
 #iotOaeStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .iot-fs > #iotOaeStrip:not(:empty){display:flex}
+
+/* ── แถบ WIP / WIP IN 1.5 / WIP OUT (IOT เต็มจอ) — กดดูรายละเอียดได้ ── */
+#iotWipStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.iot-fs > #iotWipStrip:not(:empty){display:flex}
+.wipchip{flex:1 1 150px;min-width:130px;display:flex;flex-direction:column;gap:2px;padding:9px 14px;cursor:pointer;
+  border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;line-height:1.15;box-shadow:0 1px 3px rgba(15,23,42,.05);
+  text-align:left;transition:transform .12s,box-shadow .12s}
+.wipchip:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(15,23,42,.14)}
+.wipchip .wipchip-k{font-size:11px;font-weight:800;letter-spacing:.2px;opacity:.85}
+.wipchip .wipchip-v{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.wipchip.in{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:#1E3A8A;color:#fff}
+.wipchip.wip{background:linear-gradient(135deg,#C2410C,#EA580C);border-color:#C2410C;color:#fff}
+.wipchip.out{background:linear-gradient(135deg,#047857,#059669);border-color:#047857;color:#fff}
 .oae-chip{flex:1 1 130px;min-width:120px;display:flex;flex-direction:column;gap:1px;padding:8px 13px;
   border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;line-height:1.12;box-shadow:0 1px 3px rgba(15,23,42,.05)}
 .oae-chip .oae-k{font-size:10.5px;font-weight:800;letter-spacing:.2px;display:flex;align-items:center;gap:5px}
@@ -815,6 +829,7 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
     <div id="iotOaeStrip" aria-label="สรุป OAE รวมและรายโซน"></div>
+    <div id="iotWipStrip" aria-label="สรุป WIP / WIP IN 1.5 / WIP OUT"></div>
     <div id="mcViewList" style="display:none"></div>
     <div id="mcViewFloor"></div>
     <!-- แผงข้อมูลต่อกะ (แสดงเฉพาะตอน IOT เต็มจอ) -->
@@ -831,6 +846,24 @@ tbody tr:last-child td{border-bottom:none}
 
 <!-- ============== TAB: บันทึกข้อมูล (default landing) ============== -->
 <section id="pane-kpi" class="pane active">
+
+  <!-- เข้ายอด WIP IN 1.5 — งานที่รับเข้าจาก VSM2 มารอผลิตที่ Process แรก -->
+  <div class="card" id="wipInCard" style="border:1.5px solid var(--blue-soft);background:linear-gradient(180deg,#F7FAFF,#fff)">
+    <div class="card-title"><span class="ci">🏬</span>เข้ายอด WIP IN 1.5 <span style="font-weight:600;color:var(--muted);font-size:11px">• งานรับเข้าจาก VSM2</span></div>
+    <div class="muted" style="font-size:11px;margin:-4px 0 8px">บันทึกงานที่รับเข้ามา → รอผลิตที่ Process แรก · พอเริ่มลงยอดผลิตจะย้ายไปเป็น WIP อัตโนมัติ</div>
+    <div class="fg-auto">
+      <div class="fr" style="margin:0"><label>Valve No</label>
+        <input type="text" id="wipInValve" list="valveList" placeholder="เช่น VF1349M0" autocomplete="off" style="text-transform:uppercase;font-weight:700"></div>
+      <div class="fr" style="margin:0"><label>LOT</label>
+        <input type="text" id="wipInLot" placeholder="เช่น L-01" autocomplete="off"></div>
+      <div class="fr" style="margin:0"><label>Q'ty (จำนวน)</label>
+        <input type="number" id="wipInQty" min="1" step="1" inputmode="numeric" placeholder="เช่น 1000"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();submitWipIn();}"></div>
+    </div>
+    <button class="btn btn-blue btn-block mt-8" onclick="submitWipIn()" style="padding:11px;font-size:15px">➕ เข้ายอด WIP IN 1.5</button>
+    <div class="muted center mt-8" id="wipInSummary" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:7px;border-radius:9px"></div>
+  </div>
+
   <div class="card">
     <div class="card-title"><span class="ci">📥</span>บันทึกข้อมูล</div>
     <div class="fg">
@@ -868,6 +901,18 @@ tbody tr:last-child td{border-bottom:none}
 
 <!-- ============== TAB: ติดตามงาน ============== -->
 <section id="pane-prod" class="pane">
+
+  <!-- สถานะงานในพื้นที่: WIP IN 1.5 / WIP / WIP OUT (กดดูรายละเอียดได้) -->
+  <div class="card" id="wipBucketCard">
+    <div class="card-title"><span class="ci">📦</span>สถานะงานในพื้นที่</div>
+    <div class="muted" style="font-size:11px;margin:-4px 0 8px">WIP IN 1.5 = งานรับเข้ารอผลิต · WIP = กำลังผลิต · WIP OUT = ผ่าน FG แล้ว — กดการ์ดเพื่อดู Valve / ยอด / Process / ประวัติ</div>
+    <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="stat click" style="background:var(--blue-light);border-color:var(--blue-soft)" onclick="showWipDetail('in')"><div class="v" style="color:var(--blue)" id="wbIn">0</div><div class="l">📥 WIP IN 1.5</div></div>
+      <div class="stat orange click" onclick="showWipDetail('wip')"><div class="v" id="wbWip">0</div><div class="l">▶ WIP กำลังผลิต</div></div>
+      <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l">✓ WIP OUT (ผ่าน FG)</div></div>
+    </div>
+    <div id="wbAlerts"></div>
+  </div>
 
   <!-- ภาพรวมวันนี้ -->
   <div class="card">
@@ -3101,6 +3146,7 @@ async function init() {
 
   // ถ้ามี API URL ก็ลอง sync เพิ่ม (ไม่บล็อก UI)
   if (API) { reload(); startAutoSync(); }
+  startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (poll 15 วิ) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
 }
 
 async function reload() {
@@ -4427,6 +4473,7 @@ function renderMachineStatusChecker(recs) {
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
     if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
+    if ($('iotWipStrip')) renderIotWipStrip();
     return;
   }
   const dFrom = $('dashFrom')?.value || todayISO();
@@ -4466,6 +4513,7 @@ function renderMachineStatusChecker(recs) {
   _iotData = { active: activeMachines, oae: oaeMap, byMc, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
 
   renderIotOaeStrip(filtered);
+  renderIotWipStrip();
   renderFloorPlan(activeMachines, oaeMap);
 }
 
@@ -5516,6 +5564,369 @@ function confirmDeleteHandover(type, id){
   toast(TT('ลบบันทึกต่อกะแล้ว','Handover note deleted'),'green');
 }
 
+/* ============================================================
+   WIP IN 1.5  — งานที่รับเข้าจาก VSM2 มารอผลิตที่ Process แรก
+   • เก็บข้ามเครื่องผ่าน handover-worker (endpoints /wipin/*) — pattern เดียวกับต่อกะ
+   • 3 ถังไม่นับซ้ำ: IN (รับเข้ายังไม่ผลิต) → WIP (กำลังผลิต) → WIP OUT (ผ่าน FG)
+   ============================================================ */
+const WIPIN_API      = HANDOVER_API;                  // worker เดียวกัน (path prefix /wipin)
+const LS_WIPIN       = 'vsm4_wipin';
+const LS_WIPIN_PEND  = 'vsm4_wipin_pending';
+let _wipin      = _loadWipin();                        // { <id>: entry }
+let _wipinPending= _loadWipinPending();                // Set<id> ที่ยังไม่ push ขึ้น cloud
+function _loadWipin(){ try{ const v=JSON.parse(localStorage.getItem(LS_WIPIN)||'null'); return (v&&typeof v==='object')?v:{}; }catch(e){ return {}; } }
+function _saveWipin(){ try{ localStorage.setItem(LS_WIPIN, JSON.stringify(_wipin)); }catch(e){} }
+function _loadWipinPending(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_WIPIN_PEND)||'[]')); }catch(e){ return new Set(); } }
+function _saveWipinPending(){ try{ localStorage.setItem(LS_WIPIN_PEND, JSON.stringify([..._wipinPending])); }catch(e){} }
+// VSM ของ entry — สืบจากรหัสผู้บันทึก (byId) เหมือน _hoVsm → แต่ละ VSM เห็นเฉพาะของตัวเอง (Admin เห็นทีละสายที่เลือก)
+function _wipinVsm(e){
+  const id=String((e&&e.byId)||'').trim().toUpperCase();
+  if(id){ if(VSM_EMP_MAP[id]) return VSM_EMP_MAP[id]; if(_empVsmOv[id]) return _empVsmOv[id]; }
+  return (e&&e.vsm)||DEFAULT_VSM;
+}
+// รายการที่ยังไม่ลบ + เฉพาะ VSM ที่กำลังดู (ใหม่ล่าสุดก่อน)
+function _wipinList(){
+  return Object.values(_wipin).filter(e=>e && !e.deleted && _wipinVsm(e)===viewVsm())
+    .sort((a,b)=> String(b.ts||'').localeCompare(String(a.ts||'')));
+}
+async function wipinApi(path, opts={}){
+  const res=await fetch(WIPIN_API.replace(/\/+$/,'')+path,{
+    method:opts.body?'POST':'GET',
+    headers:opts.body?{'Content-Type':'application/json'}:undefined,
+    body:opts.body?JSON.stringify(opts.body):undefined,
+  });
+  const data=await res.json().catch(()=>({ok:false}));
+  if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+  return data;
+}
+function _wipinPush(entry){
+  _wipinPending.add(entry.id); _saveWipinPending();
+  wipinApi('/wipin/put',{body:entry})
+    .then(()=>{ _wipinPending.delete(entry.id); _saveWipinPending(); })
+    .catch(()=>{ /* ค้างในคิว → flush ครั้งถัดไป */ });
+}
+async function _wipinFlush(){
+  if(!_wipinPending.size) return;
+  const entries=[..._wipinPending].map(id=>_wipin[id]).filter(Boolean);
+  if(!entries.length){ _wipinPending.clear(); _saveWipinPending(); return; }
+  try{ await wipinApi('/wipin/bulk',{body:{entries}}); _wipinPending.clear(); _saveWipinPending(); }catch(e){}
+}
+// เพิ่มงานรับเข้า 1 รายการ (valve, lot, qty) — ประทับ VSM/ผู้บันทึกจาก Lock-in
+function addWipin(valve, lot, qty){
+  valve=vKey(valve); lot=String(lot||'').trim(); qty=Math.max(0,Math.round(Number(qty)||0));
+  if(!valve || !qty) return null;
+  const u=CURRENT_USER||null, now=new Date().toISOString();
+  const entry={
+    id:'wi_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    vsm:myVsm(), valve, lot, qty,
+    byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
+    ts:now, deleted:0, updatedAt:now,
+  };
+  _wipin[entry.id]=entry; _saveWipin();
+  _wipinPush(entry);
+  return entry;
+}
+function deleteWipin(id){
+  const e=_wipin[id]; if(!e) return;
+  e.deleted=1; e.updatedAt=new Date().toISOString();
+  _saveWipin(); _wipinPush(e);
+}
+/* ── cloud sync (poll 15s เหมือนต่อกะ) ── */
+let _wipinSig='';
+function _wipinSigNow(){ return JSON.stringify(_wipinList().map(e=>[e.id,e.valve,e.lot,e.qty,e.updatedAt]))+'|'+Math.floor(Date.now()/3600000); }
+async function syncWipin(){
+  try{
+    await _wipinFlush();
+    const d=await wipinApi('/wipin/list');
+    let changed=false;
+    for(const ce of (d.entries||[])){
+      if(!ce||!ce.id) continue;
+      if(_wipinPending.has(ce.id)) continue;                 // ของเราที่ยังไม่ push → อย่าให้ cloud (เก่ากว่า) ทับ
+      const le=_wipin[ce.id];
+      if(!le || new Date(ce.updatedAt) > new Date(le.updatedAt||0)){ _wipin[ce.id]=ce; changed=true; }  // LWW
+    }
+    if(changed) _saveWipin();
+    if(_wipinSigNow()!==_wipinSig){ renderWipBuckets(); renderWipInSummary(); }
+  }catch(e){ /* offline → ใช้ local ต่อได้ */ }
+}
+let _wipinPoll=null;
+function startWipinSync(){ syncWipin(); if(_wipinPoll) clearInterval(_wipinPoll); _wipinPoll=setInterval(syncWipin,15000); }
+function stopWipinSync(){ if(_wipinPoll){ clearInterval(_wipinPoll); _wipinPoll=null; } }
+
+/* ── หัวใจ: จัดงานเป็น 3 ถัง (VSM-scoped) ────────────────────────────────
+   WIP OUT = ทุกงานที่ถึง FG แล้ว (computePostFgAll)
+   WIP     = งานที่มี prodRecord แล้ว แต่ยังไม่ถึง FG/ยังไม่ DONE — นับด้วย "กฎยอดจริง"
+   WIP IN  = งานรับเข้าที่ยังไม่มี prodRecord (พอเริ่มผลิต → ย้ายไป WIP อัตโนมัติ)         */
+function _wipMcProcMap(){
+  const mc={};
+  for(const z of Object.keys(state.machines||{}))
+    for(const m of (state.machines[z]||[])) mc[m.id]=mcProcess(m);
+  return mc;
+}
+function _valveFlow(valve){
+  const v=(state.valves||[]).find(x=>vKey(x.valveNo)===vKey(valve));
+  const procs=(v&&Array.isArray(v.processes))?v.processes.filter(Boolean):[];
+  return procs.length?procs:PROC_ORDER;
+}
+// รวม opr ต่อ process (ตาม process ของเครื่อง) เรียงตาม flow ของวาล์ว — ใช้ทั้งกฎ WIP และ history
+function _wipPerProc(recs, valve, mcProc){
+  mcProc=mcProc||_wipMcProcMap();
+  const perProc={}, lastDate={};
+  for(const r of (recs||[])){
+    const proc=mcProc[r.machine_id]||'SSG';
+    perProc[proc]=(perProc[proc]||0)+(Number(r.opr)||0);
+    const d=(r.timestamp||r.shift_date||r.record_date||'').slice(0,10);
+    if(d && (!lastDate[proc] || d>lastDate[proc])) lastDate[proc]=d;
+  }
+  const flow=_valveFlow(valve);
+  const pop=flow.filter(p=>(perProc[p]||0)>0).map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||''}));
+  return pop;
+}
+function computeWipBuckets(){
+  const vMap={};
+  for(const v of (state.valves||[])) vMap[vKey(v.valveNo)]={customer:v.customer||'Other'};
+  const custOf=k=>(vMap[k]&&vMap[k].customer)||'Other';
+  const mcProc=_wipMcProcMap();
+
+  // งานที่ถึง FG แล้ว (VSM-scoped) = WIP OUT
+  const fgItems=computePostFgAll(filterVsm(state.kpiRecords||[]));
+  const reachedFg=new Set(fgItems.map(it=>jobKey(it.valve,it.lot)));
+
+  // จัดกลุ่ม prodRecords ตาม (valve::lot)
+  const groups={};
+  for(const r of filterVsm(state.prodRecords||[])){
+    const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
+    if(!vno) continue;
+    const k=jobKey(vno,lot);
+    (groups[k]=groups[k]||{valve:vno,lot,recs:[]}).recs.push(r);
+  }
+  const producedKeys=new Set(Object.keys(groups));
+
+  // ---- WIP (กำลังผลิต) + แจ้งเตือนงานรอผลิตต่อ ----
+  const wip={total:0,byCust:{},items:[]}; const alerts=[];
+  for(const k of Object.keys(groups)){
+    const g=groups[k];
+    if(reachedFg.has(k)) continue;                        // ถึง FG แล้ว → WIP OUT
+    if(getJobProc(g.valve,g.lot)==='DONE') continue;      // จบแล้ว
+    if(!isKnownValve(g.valve)) continue;                  // วาล์วผิด → ไม่นับ
+    const pop=_wipPerProc(g.recs,g.valve,mcProc);
+    if(!pop.length) continue;
+    const last=pop[pop.length-1], prev=pop[pop.length-2];
+    let wipQty;
+    if(pop.length===1) wipQty=last.qty;
+    else if(last.qty<prev.qty){                           // ยอดล่าสุดยังไหลไม่ครบ → ที่เหลือกำลังรอผลิตต่อ
+      wipQty=prev.qty;
+      alerts.push({valve:g.valve,lot:g.lot,waiting:prev.qty-last.qty,atProc:last.proc,fromProc:prev.proc,customer:custOf(vKey(g.valve))});
+    } else wipQty=last.qty;
+    const cust=custOf(vKey(g.valve));
+    wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty;
+    wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date});
+  }
+
+  // ---- WIP OUT (ผ่าน FG) ----
+  const wipOut={total:0,byCust:{},items:[]};
+  for(const it of fgItems){
+    wipOut.total+=it.qty; wipOut.byCust[it.customer]=(wipOut.byCust[it.customer]||0)+it.qty;
+    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date});
+  }
+
+  // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
+  const wipIn={total:0,byCust:{},items:[]};
+  for(const e of _wipinList()){
+    const k=jobKey(e.valve,e.lot);
+    const started=producedKeys.has(k)||reachedFg.has(k);
+    const cust=custOf(vKey(e.valve));
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started});
+    if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
+  }
+  return {wipIn,wip,wipOut,alerts};
+}
+let _lastWipBuckets=null;
+function getWipBuckets(){ _lastWipBuckets=computeWipBuckets(); return _lastWipBuckets; }
+
+/* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
+function renderWipBuckets(){
+  const b=getWipBuckets();
+  const set=(id,v)=>{ const el=$(id); if(el) el.textContent=nn(v); };
+  set('wbIn', b.wipIn.total); set('wbWip', b.wip.total); set('wbOut', b.wipOut.total);
+  // แถบแจ้งเตือน "งานรอผลิตต่อ"
+  const al=$('wbAlerts');
+  if(al){
+    al.innerHTML = b.alerts.length ? `
+      <div style="margin-top:8px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:8px 10px">
+        <div style="font-size:12px;font-weight:800;color:#B91C1C;margin-bottom:4px">⚠️ ${TT('งานที่ยังผลิตไม่หมด — รอผลิตต่อ (กันลืม)','Unfinished lots — waiting to continue')} (${b.alerts.length})</div>
+        ${b.alerts.slice(0,8).map(a=>`<div style="font-size:12px;color:#7F1D1D;line-height:1.7">• <b>${escapeHtml(a.valve)}</b> ${a.lot?('/ '+escapeHtml(a.lot)):''} — ${TT('ค้าง','pending')} <b>${nn(a.waiting)}</b> ${TT('ชิ้น ที่','pcs at')} ${escapeHtml(a.atProc)}</div>`).join('')}
+        ${b.alerts.length>8?`<div style="font-size:11px;color:#B91C1C;margin-top:3px">… +${b.alerts.length-8}</div>`:''}
+      </div>` : '';
+  }
+  renderIotWipStrip(b);
+}
+function renderIotWipStrip(b){
+  const host=$('iotWipStrip'); if(!host) return;
+  b=b||getWipBuckets();
+  const chip=(cls,icon,label,val,bucket)=>`
+    <button type="button" class="wipchip ${cls}" onclick="showWipDetail('${bucket}',true)">
+      <span class="wipchip-k">${icon} ${label}</span>
+      <span class="wipchip-v">${nn(val)}</span>
+    </button>`;
+  host.innerHTML =
+    chip('in','📥','WIP IN 1.5',b.wipIn.total,'in') +
+    chip('wip','▶',TT('WIP กำลังผลิต','WIP in production'),b.wip.total,'wip') +
+    chip('out','✓',TT('WIP OUT ผ่าน FG','WIP OUT (past FG)'),b.wipOut.total,'out');
+}
+/* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
+function renderWipInSummary(){
+  const el=$('wipInSummary'); if(!el) return;
+  const b=getWipBuckets();
+  const pending=b.wipIn.items.filter(i=>!i.started);
+  el.innerHTML=`${TF('รับเข้าที่ยังไม่เริ่มผลิต','Received, not yet started')} <b>${nn(pending.length)}</b> ${TT('รายการ','items')} · <b>${nn(b.wipIn.total)}</b> ${TT('ชิ้น','pcs')}`;
+}
+// helper สั้น (ไม่ผูก dict) — คืนไทย/EN ตามภาษาปัจจุบัน
+function TF(th,en){ return (typeof TT==='function') ? TT(th,en) : th; }
+
+/* ── ฟอร์มเข้ายอด WIP IN 1.5 (หน้าบันทึกข้อมูล) ── */
+function submitWipIn(){
+  const vEl=$('wipInValve'), lEl=$('wipInLot'), qEl=$('wipInQty');
+  const valve=(vEl?.value||'').trim(), lot=(lEl?.value||'').trim(), qty=Number(qEl?.value||0);
+  if(!valve){ toast(TT('กรอก Valve No ก่อน','Enter Valve No first'),'orange'); vEl?.focus(); return; }
+  if(!(qty>0)){ toast(TT('กรอกจำนวน (Q\'ty)','Enter quantity'),'orange'); qEl?.focus(); return; }
+  if(!isKnownValve(valve)){
+    if(!confirm(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'))) return;
+  }
+  addWipin(valve, lot, qty);
+  if(vEl) vEl.value=''; if(lEl) lEl.value=''; if(qEl) qEl.value='';
+  vEl?.focus();
+  renderWipInSummary(); renderWipBuckets();
+  toast(TT('เข้ายอด WIP IN 1.5 แล้ว','WIP IN 1.5 saved')+` · ${escapeHtml(valve)} ${lot?('/'+escapeHtml(lot)):''} · ${nn(qty)}`,'green');
+}
+
+/* ── ป๊อปอัปรายละเอียด 3 ถัง (กดดู Valve/ยอด/Process ล่าสุด + History) ── */
+let _wipDetailBucket='wip';
+let _wipInFilter={month:'',customer:''};
+function _wipMonthsFromItems(items){
+  const set=new Set();
+  for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
+  return [...set].sort().reverse();
+}
+function wipDetailBody(bucket){
+  const b=getWipBuckets();
+  if(bucket==='in'){
+    const months=_wipMonthsFromItems(b.wipIn.items);
+    if(_wipInFilter.month==='' && months.length && !months.includes(_wipInFilter.month)) _wipInFilter.month=months[0]||'';
+    const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
+    const filt=b.wipIn.items.filter(i=>{
+      if(_wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
+      if(_wipInFilter.customer && i.customer!==_wipInFilter.customer) return false;
+      return true;
+    });
+    // สรุปตามลูกค้า (เฉพาะที่ยังไม่เริ่มผลิต)
+    const byCust={};
+    for(const i of filt){ if(i.started) continue; byCust[i.customer]=(byCust[i.customer]||0)+i.qty; }
+    const custRows=Object.entries(byCust).sort((a,c)=>c[1]-a[1]);
+    const rows=filt.slice().sort((a,c)=>String(c.ts).localeCompare(String(a.ts))).map(i=>`
+      <tr style="${i.started?'opacity:.5':''}">
+        <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
+        <td><b>${escapeHtml(i.valve)}</b></td>
+        <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
+        <td>${escapeHtml(i.lot||'-')}</td>
+        <td class="center"><b>${nn(i.qty)}</b></td>
+        <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
+        <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
+      </tr>`).join('');
+    return `
+      <div class="fg-auto mb-8">
+        <div class="fr" style="margin:0"><label>${TT('เดือน','Month')}</label>
+          <select onchange="_wipInFilter.month=this.value;_refreshWipDetail()">
+            <option value="">${TT('ทุกเดือน','All months')}</option>
+            ${months.map(m=>`<option value="${m}" ${_wipInFilter.month===m?'selected':''}>${m}</option>`).join('')}
+          </select></div>
+        <div class="fr" style="margin:0"><label>${TT('ลูกค้า','Customer')}</label>
+          <select onchange="_wipInFilter.customer=this.value;_refreshWipDetail()">
+            <option value="">${TT('ทั้งหมด','All')}</option>
+            ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+          </select></div>
+      </div>
+      ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
+      <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
+        <tbody>${rows||`<tr><td colspan="7" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
+  }
+  // wip / out
+  const bucket2=bucket==='out'?b.wipOut:b.wip;
+  const items=bucket2.items.slice().sort((a,c)=>c.qty-a.qty);
+  const byCust=Object.entries(bucket2.byCust).sort((a,c)=>c[1]-a[1]);
+  const rows=items.map(i=>`
+    <tr>
+      <td><b>${escapeHtml(i.valve)}</b></td>
+      <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
+      <td>${escapeHtml(i.lot||'-')}</td>
+      <td class="center"><b>${nn(i.qty)}</b></td>
+      <td class="center"><span class="tag ${bucket==='out'?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
+      <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
+    </tr>`).join('');
+  return `
+    ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${bucket==='out'?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
+    <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(bucket2.total)}</b> ${TT('ชิ้น','pcs')}</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
+      <tbody>${rows||`<tr><td colspan="6" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
+}
+function _wipTitle(bucket){ return bucket==='in'?'📥 WIP IN 1.5':bucket==='out'?('✓ WIP OUT — '+TT('ผ่าน FG','past FG')):('▶ WIP — '+TT('กำลังผลิต','in production')); }
+function showWipDetail(bucket, fromIot){
+  _wipDetailBucket=bucket;
+  const title=_wipTitle(bucket), body=wipDetailBody(bucket);
+  if(fromIot && document.getElementById('iotCard')?.classList.contains('iot-fs')){
+    _openIotPop(title, body);
+  } else {
+    openModal(title, body);
+  }
+}
+function _refreshWipDetail(){
+  // วาดใหม่ภายในป๊อปอัปที่เปิดอยู่ (modal หรือ iotpop)
+  const iot=document.getElementById('wipIotPop');
+  const body=wipDetailBody(_wipDetailBucket);
+  if(iot){ const bd=iot.querySelector('.iotpop-bd'); if(bd) bd.innerHTML=body; }
+  else if($('modalBd')){ $('modalBd').innerHTML=body; }
+}
+function onDeleteWipin(id){
+  if(!confirm(TT('ลบรายการรับเข้านี้?','Delete this incoming record?'))) return;
+  deleteWipin(id);
+  _refreshWipDetail(); renderWipBuckets(); renderWipInSummary();
+}
+// ประวัติการผลิตของ (valve, lot) — ผ่าน process อะไรมาบ้าง + ยอด
+function showWipHistory(valveEnc, lotEnc){
+  const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
+  const recs=filterVsm(state.prodRecords||[]).filter(r=>vKey(r.valve_no||r.valveNo)===vKey(valve) && lotKey(r.lot)===lotKey(lot));
+  const pop=_wipPerProc(recs, valve);
+  const received=_wipinList().filter(e=>vKey(e.valve)===vKey(valve)&&lotKey(e.lot)===lotKey(lot)).reduce((s,e)=>s+e.qty,0);
+  const fgItems=computePostFgAll(filterVsm(state.kpiRecords||[])).filter(it=>vKey(it.valve)===vKey(valve)&&lotKey(it.lot)===lotKey(lot));
+  const body=`
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+      ${received?`📥 ${TT('รับเข้า WIP IN 1.5','Received (WIP IN 1.5)')}: <b>${nn(received)}</b> ${TT('ชิ้น','pcs')}<br>`:''}
+      ${fgItems.length?`✓ ${TT('ผ่าน FG แล้ว','Reached FG')}: <b>${nn(fgItems.reduce((s,i)=>s+i.qty,0))}</b> ${TT('ชิ้น','pcs')} · ${TT('อยู่ที่','now at')} ${escapeHtml(fgItems[0].cur||'FG')}`:''}
+    </div>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>${TT('ขั้นตอน (Process)','Process')}</th><th class="center">${TT('ยอด','Qty')}</th><th>${TT('ล่าสุด','Last')}</th></tr></thead>
+      <tbody>${pop.length?pop.map((p,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(p.proc)}</b></td><td class="center">${nn(p.qty)}</td><td>${escapeHtml(p.date||'-')}</td></tr>`).join('')
+        :`<tr><td colspan="4" class="center muted">${TT('ยังไม่มีการผลิต','No production yet')}</td></tr>`}</tbody></table></div>`;
+  const title=`🕘 ${escapeHtml(valve)}${lot?(' / '+escapeHtml(lot)):''}`;
+  if(document.getElementById('iotCard')?.classList.contains('iot-fs')) _openIotPop(title, body, true);
+  else openModal(title, body);
+}
+// ป๊อปอัปแบบ iotpop (โชว์ได้ใน native fullscreen) — append เข้า #iotCard
+function _openIotPop(title, body, stack){
+  const card=document.getElementById('iotCard'); if(!card){ openModal(title, body); return; }
+  if(!stack){ const ex=document.getElementById('wipIotPop'); if(ex) ex.remove(); }
+  const pop=document.createElement('div');
+  pop.id=stack?('wipIotPop2_'+Date.now()):'wipIotPop';
+  pop.className='iotpop-bg';
+  pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });
+  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true">
+    <div class="iotpop-hd" style="background:linear-gradient(135deg,#1A56DB,#1E3A8A)">
+      <span style="font-size:15px;font-weight:800">${title}</span>
+      <button class="iotpop-cl" onclick="this.closest('.iotpop-bg').remove()" aria-label="${TT('ปิด','Close')}">✕</button>
+    </div>
+    <div class="iotpop-bd">${body}</div>
+  </div>`;
+  card.appendChild(pop);
+}
 
 async function renderHome() {
   // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
@@ -5624,19 +6035,22 @@ async function renderHome() {
         .reduce((s, r) => s + (+r.quantity || 0), 0);
       $('hCompleted').textContent = nn(_monthDone);
     }
-    if ($('hWip'))       $('hWip').textContent       = nn(statsRes.total_wip);
+    // WIP + ตารางลูกค้า ใช้ "กฎยอดจริง" ผ่าน computeWipBuckets() (แหล่งเดียวกับการ์ด 3 ถัง) → ตัวเลขตรงกันทั้งแอป
+    const _wb = getWipBuckets();
+    if ($('hWip'))       $('hWip').textContent       = nn(_wb.wip.total);
 
-    // Customer table (อยู่ในแท็บติดตามงาน)
+    // Customer table (อยู่ในแท็บติดตามงาน) — เฉพาะ WIP (กำลังผลิต)
     const custTable = $('custTable');
     if (custTable) {
       const custBody = custTable.querySelector('tbody');
-      const cust = statsRes.by_customer || {};
-      // เฉพาะ WIP — งานที่ผ่าน QC/เสร็จแล้วถือว่าจบ ไม่นำมาแสดงในหน้าติดตามงาน
-      const wipRows = Object.entries(cust).filter(([, v]) => (v.wip || 0) > 0);
+      const wipRows = Object.entries(_wb.wip.byCust).filter(([, v]) => (v || 0) > 0).sort((a,b)=>b[1]-a[1]);
       custBody.innerHTML = wipRows.length
-        ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v.wip)}</span></td></tr>`).join('')
+        ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v)}</span></td></tr>`).join('')
         : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
     }
+    // การ์ด 3 ถัง (WIP IN 1.5 / WIP / WIP OUT) + แถบ IOT + สรุปใต้ฟอร์มรับเข้า
+    renderWipBuckets();
+    renderWipInSummary();
     // Process table — เฉพาะ VSM ที่กำลังดู (พนักงาน = สายตัวเอง · Admin = สายที่เลือก) ใช้ช่วงเวลาของตัวเอง (procFrom/procTo)
     refreshProcOutput();
   } catch (e) {
