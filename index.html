@@ -5785,13 +5785,14 @@ function renderWipInSummary(){
 function TF(th,en){ return (typeof TT==='function') ? TT(th,en) : th; }
 
 /* ── ฟอร์มเข้ายอด WIP IN 1.5 (หน้าบันทึกข้อมูล) ── */
-function submitWipIn(){
+async function submitWipIn(){
   const vEl=$('wipInValve'), lEl=$('wipInLot'), qEl=$('wipInQty');
   const valve=(vEl?.value||'').trim(), lot=(lEl?.value||'').trim(), qty=Number(qEl?.value||0);
   if(!valve){ toast(TT('กรอก Valve No ก่อน','Enter Valve No first'),'orange'); vEl?.focus(); return; }
   if(!(qty>0)){ toast(TT('กรอกจำนวน (Q\'ty)','Enter quantity'),'orange'); qEl?.focus(); return; }
   if(!isKnownValve(valve)){
-    if(!confirm(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'))) return;
+    // ใช้ confirmModal (native confirm ไม่ทำงานใน in-app browser เช่น LINE)
+    if(!(await confirmModal(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'),{danger:false}))) return;
   }
   addWipin(valve, lot, qty);
   if(vEl) vEl.value=''; if(lEl) lEl.value=''; if(qEl) qEl.value='';
@@ -5802,7 +5803,7 @@ function submitWipIn(){
 
 /* ── ป๊อปอัปรายละเอียด 3 ถัง (กดดู Valve/ยอด/Process ล่าสุด + History) ── */
 let _wipDetailBucket='wip';
-let _wipInFilter={month:'',customer:''};
+let _wipInFilter={month:null,customer:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน
 function _wipMonthsFromItems(items){
   const set=new Set();
   for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
@@ -5812,7 +5813,7 @@ function wipDetailBody(bucket){
   const b=getWipBuckets();
   if(bucket==='in'){
     const months=_wipMonthsFromItems(b.wipIn.items);
-    if(_wipInFilter.month==='' && months.length && !months.includes(_wipInFilter.month)) _wipInFilter.month=months[0]||'';
+    if(_wipInFilter.month===null) _wipInFilter.month=months[0]||'';   // ครั้งแรก = เดือนล่าสุด · '' = ทุกเดือน (ผู้ใช้เลือกเอง ไม่เด้งกลับ)
     const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
     const filt=b.wipIn.items.filter(i=>{
       if(_wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
