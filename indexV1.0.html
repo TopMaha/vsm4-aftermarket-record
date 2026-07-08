@@ -909,23 +909,12 @@ tbody tr:last-child td{border-bottom:none}
     <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
       <div class="stat click" style="background:var(--blue-light);border-color:var(--blue-soft)" onclick="showWipDetail('in')"><div class="v" style="color:var(--blue)" id="wbIn">0</div><div class="l">📥 WIP IN 1.5</div></div>
       <div class="stat orange click" onclick="showWipDetail('wip')"><div class="v" id="wbWip">0</div><div class="l">▶ WIP กำลังผลิต</div></div>
-      <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l">✓ WIP OUT (ผ่าน FG)</div></div>
+      <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l">✓ WIP OUT เดือนนี้ (ผ่าน FG)</div></div>
     </div>
     <div id="wbAlerts"></div>
   </div>
 
-  <!-- ภาพรวมวันนี้ -->
-  <div class="card">
-    <div class="card-title"><span class="ci">📊</span>ภาพรวมวันนี้</div>
-    <div class="stats-row">
-      <div class="stat green click" onclick="showCompletedDetail()"><div class="v" id="hCompleted">0</div><div class="l">✓ ผลิตเสร็จเดือนนี้ (ชิ้น) — กดดูรายการ</div></div>
-      <div class="stat orange"><div class="v" id="hWip">0</div><div class="l">▶ WIP (กำลังผลิต)</div></div>
-    </div>
-    <div class="fg" style="margin-top:8px">
-      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue)" id="hKpiToday">0</div><div class="l">📝 KPI วันนี้ (record)</div></div>
-      <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue)" id="hProdToday">0</div><div class="l">📦 Production วันนี้</div></div>
-    </div>
-  </div>
+  <!-- (การ์ด "ภาพรวมวันนี้" ถูกนำออกตามคำขอ — ใช้การ์ด "สถานะงานในพื้นที่" ด้านบนแทน) -->
 
   <!-- สรุปลูกค้า (เฉพาะ WIP — งานที่ยังอยู่ในกระบวนการผลิต) -->
   <div class="card">
@@ -5668,25 +5657,29 @@ function _valveFlow(valve){
   const procs=(v&&Array.isArray(v.processes))?v.processes.filter(Boolean):[];
   return procs.length?procs:PROC_ORDER;
 }
-// รวม opr ต่อ process (ตาม process ของเครื่อง) เรียงตาม flow ของวาล์ว — ใช้ทั้งกฎ WIP และ history
-function _wipPerProc(recs, valve, mcProc){
-  mcProc=mcProc||_wipMcProcMap();
+// รวม "quantity" ต่อ process ที่พนักงานลง (current_process) เรียงตาม flow ของวาล์ว — ใช้ทั้งกฎ WIP และ history
+// (prodRecords ใช้ quantity + current_process · ไม่มี opr/machine_id — ตรงกับ computeLocalStats เดิม)
+function _wipPerProc(recs, valve){
   const perProc={}, lastDate={};
   for(const r of (recs||[])){
-    const proc=mcProc[r.machine_id]||'SSG';
-    perProc[proc]=(perProc[proc]||0)+(Number(r.opr)||0);
+    const proc=_procCanon((r.current_process||r.currentProcess||'').trim());
+    if(!proc) continue;
+    perProc[proc]=(perProc[proc]||0)+(Number(r.quantity)||0);
     const d=(r.timestamp||r.shift_date||r.record_date||'').slice(0,10);
     if(d && (!lastDate[proc] || d>lastDate[proc])) lastDate[proc]=d;
   }
-  const flow=_valveFlow(valve);
-  const pop=flow.filter(p=>(perProc[p]||0)>0).map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||''}));
-  return pop;
+  // เรียงตาม flow ของวาล์ว (process นอก flow ต่อท้ายตาม PROC_ORDER)
+  const flow=_valveFlow(valve).map(_procCanon);
+  const rankOf=p=>{ const i=flow.indexOf(p); return i>=0 ? i : 1000+_procRank(p); };
+  return Object.keys(perProc).filter(p=>perProc[p]>0)
+    .sort((a,b)=>rankOf(a)-rankOf(b))
+    .map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||''}));
 }
 function computeWipBuckets(){
   const vMap={};
   for(const v of (state.valves||[])) vMap[vKey(v.valveNo)]={customer:v.customer||'Other'};
   const custOf=k=>(vMap[k]&&vMap[k].customer)||'Other';
-  const mcProc=_wipMcProcMap();
+  const lastProcOf=v=>{ const f=_valveFlow(v).map(_procCanon); return f[f.length-1]||''; };
 
   // งานที่ถึง FG แล้ว (VSM-scoped) = WIP OUT
   const fgItems=computePostFgAll(filterVsm(state.kpiRecords||[]));
@@ -5709,9 +5702,10 @@ function computeWipBuckets(){
     if(reachedFg.has(k)) continue;                        // ถึง FG แล้ว → WIP OUT
     if(getJobProc(g.valve,g.lot)==='DONE') continue;      // จบแล้ว
     if(!isKnownValve(g.valve)) continue;                  // วาล์วผิด → ไม่นับ
-    const pop=_wipPerProc(g.recs,g.valve,mcProc);
+    const pop=_wipPerProc(g.recs,g.valve);
     if(!pop.length) continue;
     const last=pop[pop.length-1], prev=pop[pop.length-2];
+    if(last.proc && last.proc===lastProcOf(g.valve)) continue;   // ถึง process สุดท้ายของวาล์ว = จบ (นับที่ผลิตเสร็จ/WIP OUT)
     let wipQty;
     if(pop.length===1) wipQty=last.qty;
     else if(last.qty<prev.qty){                           // ยอดล่าสุดยังไหลไม่ครบ → ที่เหลือกำลังรอผลิตต่อ
@@ -5723,11 +5717,11 @@ function computeWipBuckets(){
     wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date});
   }
 
-  // ---- WIP OUT (ผ่าน FG) ----
+  // ---- WIP OUT (ผ่าน FG) ---- (เก็บทุกงาน · กรองเดือนตอนแสดง)
   const wipOut={total:0,byCust:{},items:[]};
   for(const it of fgItems){
     wipOut.total+=it.qty; wipOut.byCust[it.customer]=(wipOut.byCust[it.customer]||0)+it.qty;
-    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date});
+    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date||it.fgDate||''});
   }
 
   // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
@@ -5744,11 +5738,16 @@ function computeWipBuckets(){
 let _lastWipBuckets=null;
 function getWipBuckets(){ _lastWipBuckets=computeWipBuckets(); return _lastWipBuckets; }
 
+/* ยอด WIP OUT ของ "เดือนปัจจุบัน" (ตัวเลขบนการ์ด/ชิป — สอดคล้องกับ default ของป๊อปอัป) */
+function _wipOutCurMonth(b){
+  const cm=todayISO().slice(0,7);
+  return (b.wipOut.items||[]).filter(i=>(((i.date||'').slice(0,7))||cm)===cm).reduce((s,i)=>s+i.qty,0);
+}
 /* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
 function renderWipBuckets(){
   const b=getWipBuckets();
   const set=(id,v)=>{ const el=$(id); if(el) el.textContent=nn(v); };
-  set('wbIn', b.wipIn.total); set('wbWip', b.wip.total); set('wbOut', b.wipOut.total);
+  set('wbIn', b.wipIn.total); set('wbWip', b.wip.total); set('wbOut', _wipOutCurMonth(b));
   // แถบแจ้งเตือน "งานรอผลิตต่อ"
   const al=$('wbAlerts');
   if(al){
@@ -5772,7 +5771,7 @@ function renderIotWipStrip(b){
   host.innerHTML =
     chip('in','📥','WIP IN 1.5',b.wipIn.total,'in') +
     chip('wip','▶',TT('WIP กำลังผลิต','WIP in production'),b.wip.total,'wip') +
-    chip('out','✓',TT('WIP OUT ผ่าน FG','WIP OUT (past FG)'),b.wipOut.total,'out');
+    chip('out','✓',TT('WIP OUT เดือนนี้','WIP OUT this month'),_wipOutCurMonth(b),'out');
 }
 /* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
 function renderWipInSummary(){
@@ -5804,6 +5803,7 @@ async function submitWipIn(){
 /* ── ป๊อปอัปรายละเอียด 3 ถัง (กดดู Valve/ยอด/Process ล่าสุด + History) ── */
 let _wipDetailBucket='wip';
 let _wipInFilter={month:null,customer:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน
+let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
 function _wipMonthsFromItems(items){
   const set=new Set();
   for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
@@ -5852,21 +5852,45 @@ function wipDetailBody(bucket){
         <tbody>${rows||`<tr><td colspan="7" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
   }
   // wip / out
-  const bucket2=bucket==='out'?b.wipOut:b.wip;
-  const items=bucket2.items.slice().sort((a,c)=>c.qty-a.qty);
-  const byCust=Object.entries(bucket2.byCust).sort((a,c)=>c[1]-a[1]);
+  const isOut=bucket==='out';
+  const bucket2=isOut?b.wipOut:b.wip;
+  let items=bucket2.items.slice();
+  let monthCtrl='';
+  if(isOut){
+    // WIP OUT: กรองตามเดือน · default = เดือนปัจจุบัน · เปลี่ยนเดือนได้เฉพาะ Admin (ผู้ใช้ทั่วไปเห็นเดือนปัจจุบัน)
+    const curMonth=todayISO().slice(0,7);
+    const eff=_wipOutMonth||curMonth;
+    const monthOf=i=>(((i.date||'').slice(0,7))||curMonth);
+    items=items.filter(i=>monthOf(i)===eff);
+    const isAdmin=(typeof canSeeAllVsm==='function' && canSeeAllVsm());
+    if(isAdmin){
+      let months=_wipMonthsFromItems(bucket2.items);
+      if(!months.includes(curMonth)) months=[curMonth,...months];
+      monthCtrl=`<div class="fr mb-8" style="margin:0 0 8px"><label>🔒 ${TT('เลือกเดือน (Admin)','Month (Admin)')}</label>
+        <select onchange="_wipOutMonth=this.value;_refreshWipDetail()">
+          ${months.map(m=>`<option value="${m}" ${eff===m?'selected':''}>${m}${m===curMonth?' · '+TT('เดือนปัจจุบัน','current'):''}</option>`).join('')}
+        </select></div>`;
+    } else {
+      monthCtrl=`<div class="muted mb-8" style="font-size:12px">📅 ${TT('เดือน','Month')}: <b>${eff}</b></div>`;
+    }
+  }
+  items.sort((a,c)=>c.qty-a.qty);
+  const total=items.reduce((s,i)=>s+i.qty,0);
+  const byCustMap={}; for(const i of items) byCustMap[i.customer]=(byCustMap[i.customer]||0)+i.qty;
+  const byCust=Object.entries(byCustMap).sort((a,c)=>c[1]-a[1]);
   const rows=items.map(i=>`
     <tr>
       <td><b>${escapeHtml(i.valve)}</b></td>
       <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
       <td>${escapeHtml(i.lot||'-')}</td>
       <td class="center"><b>${nn(i.qty)}</b></td>
-      <td class="center"><span class="tag ${bucket==='out'?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
+      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`).join('');
   return `
-    ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${bucket==='out'?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
-    <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(bucket2.total)}</b> ${TT('ชิ้น','pcs')}</div>
+    ${monthCtrl}
+    ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
+    <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
     <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
       <tbody>${rows||`<tr><td colspan="6" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
 }
@@ -5887,8 +5911,8 @@ function _refreshWipDetail(){
   if(iot){ const bd=iot.querySelector('.iotpop-bd'); if(bd) bd.innerHTML=body; }
   else if($('modalBd')){ $('modalBd').innerHTML=body; }
 }
-function onDeleteWipin(id){
-  if(!confirm(TT('ลบรายการรับเข้านี้?','Delete this incoming record?'))) return;
+async function onDeleteWipin(id){
+  if(!(await confirmModal(TT('ลบรายการรับเข้านี้?','Delete this incoming record?')))) return;
   deleteWipin(id);
   _refreshWipDetail(); renderWipBuckets(); renderWipInSummary();
 }
@@ -9578,7 +9602,10 @@ function computePostFgAll(recs) {
     const cur = ov || 'FG';                          // ตำแหน่งเริ่มต้นในสายหลัง FG = FG
     // ยอดงาน = OPR รวมที่ FG (ยกยอดตามไปขั้นถัดไป)
     const qty = fgRecs.reduce((s, r) => s + (Number(r.opr) || 0), 0);
-    out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot) });
+    // วันที่ "ถึง FG" = วันล่าสุดของ record ที่ FG (ใช้กรองเดือนใน WIP OUT) — fallback วันที่ admin ขยับ
+    let fgDate = '';
+    for (const r of fgRecs) { const d = (r.shift_date || r.record_date || (r.timestamp || '').slice(0, 10) || ''); if (d > fgDate) fgDate = d; }
+    out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot), fgDate });
   }
   return out;
 }
