@@ -910,10 +910,12 @@ tbody tr:last-child td{border-bottom:none}
     <div id="wipInBody" class="hide">
     <div class="muted" style="font-size:11px;margin:8px 0 8px">บันทึกงานที่รับเข้ามา → รอผลิตที่ Process แรก · พอเริ่มลงยอดผลิตจะย้ายไปเป็น WIP อัตโนมัติ</div>
     <div class="fg-auto">
-      <div class="fr" style="margin:0"><label>Valve No</label>
-        <input type="text" id="wipInValve" list="valveList" placeholder="เช่น VF1349M0" autocomplete="off" style="text-transform:uppercase;font-weight:700"></div>
-      <div class="fr" style="margin:0"><label>LOT</label>
-        <input type="text" id="wipInLot" placeholder="เช่น L-01" autocomplete="off"></div>
+      <div class="fr ac" style="margin:0"><label>Valve No</label>
+        <input type="text" id="wipInValve" placeholder="เช่น VF1349M0" autocomplete="off" style="text-transform:uppercase;font-weight:700" oninput="acValveSearch(event,'wipInValve')">
+        <div class="ac-dd" id="wipInValve_dd"></div></div>
+      <div class="fr ac" style="margin:0"><label>LOT</label>
+        <input type="text" id="wipInLot" placeholder="พิมพ์/เลือก Lot" autocomplete="off" oninput="acWipInLot(event)" onfocus="acWipInLot(event)">
+        <div class="ac-dd" id="wipInLot_dd"></div></div>
       <div class="fr" style="margin:0"><label>Q'ty (จำนวน)</label>
         <input type="number" id="wipInQty" min="1" step="1" inputmode="numeric" placeholder="เช่น 1000"
           onkeydown="if(event.key==='Enter'){event.preventDefault();submitWipIn();}"></div>
@@ -7425,6 +7427,21 @@ function acLotSearch(ev, id, valveInputId) {
   acDropdown(id, lots.map(l => ({ id: l, label: '' })), function pickLot(it, inputId) {
     document.getElementById(inputId).value = it.id;
     document.getElementById(inputId + '_dd').classList.remove('open');
+  });
+}
+
+/* ===== Lot ของฟอร์มเข้ายอด WIP IN 1.5 — เสนอ Lot ที่รู้จักของวาล์วนั้นให้กดเลือก
+   แต่ "พิมพ์ Lot ใหม่เองได้" (งานรับเข้าจาก VSM2 มักเป็น Lot ใหม่ที่ยังไม่ลงทะเบียน) ===== */
+function acWipInLot(ev){
+  const q=(ev.target.value||'').trim().toLowerCase();
+  const valveNo=document.getElementById('wipInValve')?.value||'';
+  const dd=document.getElementById('wipInLot_dd'); if(!dd) return;
+  let lots=lotsForValve(valveNo);
+  if(q) lots=lots.filter(l=>l.toLowerCase().includes(q));
+  if(!lots.length){ dd.classList.remove('open'); return; }   // ไม่มีในลิสต์ = พิมพ์เองได้เลย ไม่ต้องเตือน
+  acDropdown('wipInLot', lots.map(l=>({id:l,label:''})), function pickWipInLot(it, inputId){
+    document.getElementById(inputId).value=it.id;
+    document.getElementById(inputId+'_dd').classList.remove('open');
   });
 }
 
