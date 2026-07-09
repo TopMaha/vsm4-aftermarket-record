@@ -294,6 +294,26 @@ tbody tr:last-child td{border-bottom:none}
 .proc-pill.done{background:var(--green-bg);color:var(--green);border-color:var(--green-bd)}
 .proc-pill.cur{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-bd);box-shadow:0 0 0 2px var(--orange-bd)}
 .proc-pill.future{opacity:.6}
+/* ── PROCESS CHIPS (ฟอร์มบันทึก KPI) — โชว์ process ทั้งหมดของวาล์วเป็นปุ่มกดเลือกหลายตัว
+   VSM3 ไม่จำกัด · VSM อื่นสูงสุด 3 · ปุ่ม ≥40px แตะง่ายบนแท็บเล็ตหน้างาน ── */
+.pchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.pchip{min-height:40px;padding:8px 13px;border-radius:11px;border:1.5px solid var(--border);background:#fff;color:var(--text);
+  font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;transition:background .15s,border-color .15s,color .15s}
+.pchip:active{transform:scale(.97)}
+.pchip.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(26,86,219,.35)}
+.pchip:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.pchips-hint{font-size:11px;color:var(--muted);padding:6px 2px;line-height:1.5}
+.pchips-cnt{font-size:11px;font-weight:800;color:var(--blue);background:var(--blue-light);border-radius:999px;padding:3px 9px}
+/* ── ตัวแก้ลำดับ Process ใน modal Valve (v3.7) — เปลี่ยน/ย้าย/ลบทีละตำแหน่ง ไม่ต้องลบทำใหม่ ── */
+.mseq-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.mseq-n{flex:0 0 auto;min-width:26px;height:26px;border-radius:50%;background:var(--blue-light);color:var(--blue);
+  font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.mseq-sel{flex:1;min-width:0;min-height:40px;padding:6px 8px;border:1.5px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:13.5px;font-weight:700;color:var(--text);background:#fff}
+.mseq-btn{flex:0 0 auto;width:36px;height:36px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;cursor:pointer;
+  font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;color:#475569;padding:0}
+.mseq-btn:disabled{opacity:.35;cursor:default}
+.mseq-del:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
 /* ===== ผลค้นหา Process จาก Valve — ตาราง: คอลัมน์=Process แถว=Lot ช่อง=ยอด OPR ===== */
 .pf-legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
 .pf-lg{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
@@ -544,6 +564,13 @@ tbody tr:last-child td{border-bottom:none}
 .hdr .lang-seg button.on{background:#fff;color:var(--blue-dark)}
 #iotLangSeg{display:none}
 .iot-fs #iotLangSeg{display:inline-flex}
+/* ── นาฬิกาดิจิทัลเรียลไทม์ (เวลาไทย) — โชว์เฉพาะ IOT เต็มจอ · มุมขวาบนของ header ── */
+#iotClock{display:none}
+.iot-fs #iotClock{display:inline-flex;flex-direction:column;align-items:flex-end;justify-content:center;
+  padding:4px 12px;border-radius:9px;background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;
+  line-height:1.1;box-shadow:0 2px 6px rgba(15,23,42,.25);order:-1}
+.iot-fs #iotClock #iotClockTime{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.iot-fs #iotClock #iotClockDate{font-size:9.5px;font-weight:700;opacity:.75;white-space:nowrap}
 /* เต็มจอ = grid 3 คอลัมน์ (side | เส้นแบ่งลาก | floor) — ผู้ใช้ลากเส้นแบ่งปรับสัดส่วนเองได้ (v2.7 req #3)
    --iot-split = ความกว้างฝั่งต่อกะ (จำใน localStorage) · clamp กันผังแคบเกิน ~300px ไม่มีวันมองไม่เห็น */
 .iot-fs{display:grid!important;grid-template-columns:clamp(260px,var(--iot-split,52%),calc(100% - 330px)) 12px minmax(300px,1fr);
@@ -578,6 +605,8 @@ tbody tr:last-child td{border-bottom:none}
 .wipchip:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(15,23,42,.14)}
 .wipchip .wipchip-k{font-size:11px;font-weight:800;letter-spacing:.2px;opacity:.85}
 .wipchip .wipchip-v{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+/* ยอด "เมื่อวาน" ตัวเล็กใต้ยอดหลัก — โชว์เฉพาะ WIP IN 1.5 / WIP OUT (IOT เต็มจอ) */
+.wipchip .wipchip-sub{font-size:10.5px;font-weight:700;opacity:.8;font-variant-numeric:tabular-nums;white-space:nowrap}
 .wipchip.in{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:#1E3A8A;color:#fff}
 .wipchip.wip{background:linear-gradient(135deg,#C2410C,#EA580C);border-color:#C2410C;color:#fff}
 .wipchip.out{background:linear-gradient(135deg,#047857,#059669);border-color:#047857;color:#fff}
@@ -672,12 +701,25 @@ tbody tr:last-child td{border-bottom:none}
 .ho-cat-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;color:#64748b;
   background:#f1f5f9;border-radius:999px;padding:1px 8px;margin-bottom:5px}
 .ho-cat-tag.broken{background:#FFF7ED;color:#9A3412}
+/* ── checklist "ข้อมูลทั่วไป" — checkbox ใหญ่ให้กะถัดไปแตะติ๊กเมื่อทำแล้ว (แตะง่ายบนจอสัมผัส/ทีวี) ── */
+.ho-row{display:flex;align-items:flex-start;gap:9px}
+.ho-chk{flex:0 0 auto;width:30px;height:30px;min-width:30px;margin-top:1px;border:2px solid #94a3b8;border-radius:9px;background:#fff;
+  cursor:pointer;font-size:17px;font-weight:900;line-height:1;color:#fff;display:inline-flex;align-items:center;justify-content:center;
+  touch-action:manipulation;transition:background .15s,border-color .15s;padding:0}
+.ho-chk:hover{border-color:#0E9F6E;background:#F3FAF7}
+.ho-chk:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
+.ho-chk.on{background:#0E9F6E;border-color:#0E9F6E}
+.ho-card.done{background:#F8FAF9;border-left-color:#84E1BC}
+.ho-card.done .ho-text{color:#94a3b8;text-decoration:line-through;text-decoration-color:#84E1BC;text-decoration-thickness:1.5px}
+.ho-done-meta{font-size:10.5px;font-weight:800;color:#057A55;margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ho-sec-pend{font-size:9.5px;font-weight:800;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:999px;padding:1px 7px}
 
 /* modal เพิ่มต่อกะ (append เข้า #iotCard เพื่อให้โชว์ได้ใน native fullscreen) */
 .ho-modal-bg{inset:0;z-index:2200;background:rgba(13,17,23,.6);display:flex;align-items:center;justify-content:center;
   padding:18px;animation:iotpopFade .16s ease}
-.ho-modal{background:#fff;border-radius:16px;width:100%;max-width:460px;display:flex;flex-direction:column;
+.ho-modal{background:#fff;border-radius:16px;width:100%;max-width:640px;display:flex;flex-direction:column;
   overflow:hidden;box-shadow:0 24px 70px rgba(13,17,23,.5);animation:iotpopIn .22s cubic-bezier(.2,.8,.2,1)}
+.ho-modal .ho-modal-bd{max-height:78vh;overflow:auto}
 .ho-modal-hd{display:flex;align-items:center;gap:9px;padding:13px 15px;color:#fff;font-size:15px;font-weight:800}
 .ho-modal-bd{padding:14px 15px;display:flex;flex-direction:column;gap:12px}
 .ho-lbl{font-size:11.5px;font-weight:800;color:#475569;margin-bottom:6px;display:block}
@@ -686,9 +728,22 @@ tbody tr:last-child td{border-bottom:none}
   padding:11px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .ho-seg button.on{border-color:#1A56DB;background:#EBF4FF;color:#1A56DB}
 #hoCatSeg button.on[data-c="broken"]{border-color:#ea580c;background:#FFF7ED;color:#9A3412}
-.ho-ta{width:100%;padding:11px 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:16px;
-  line-height:1.55;resize:vertical;outline:none;color:#0f172a}
+.ho-ta{width:100%;padding:12px 13px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:16px;
+  min-height:180px;line-height:1.6;resize:vertical;outline:none;color:#0f172a;box-sizing:border-box}
 .ho-ta:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+/* ── checklist builder ใน modal "ข้อมูลทั่วไป" — สร้างทีละข้อตั้งแต่ต้น (1 ช่อง = 1 ข้อ = 1 checkbox) ── */
+.ho-item-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ho-item-chk{flex:0 0 auto;width:26px;height:26px;border:2px solid #cbd5e1;border-radius:8px;background:#f8fafc;
+  display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#94a3b8}
+.ho-item-inp{flex:1;min-width:0;min-height:46px;padding:10px 13px;border:1.5px solid #cbd5e1;border-radius:10px;
+  font-family:inherit;font-size:16px;color:#0f172a;outline:none;box-sizing:border-box}
+.ho-item-inp:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.ho-item-del{flex:0 0 auto;width:34px;height:34px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;cursor:pointer;
+  font-size:13px;line-height:1;color:#64748b;display:inline-flex;align-items:center;justify-content:center}
+.ho-item-del:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
+.ho-item-add{width:100%;border:1.5px dashed #16a34a;background:#F0FDF4;color:#15803D;font-weight:800;font-size:13.5px;
+  padding:11px;border-radius:10px;cursor:pointer}
+.ho-item-add:hover{background:#DCFCE7}
 @media (max-width:820px){
   /* มือถือ: บั๊กแผงถูกบีบ/ทับผัง (v2.4) มาจาก grid auto row วัดความสูง intrinsic ขาด ~24px
      → เลิกใช้ grid เลย: flex column + order จัดลำดับ (ต่อกะก่อน → ปุ่มผัง → ผัง) เลื่อนทั้งหน้า */
@@ -752,7 +807,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.4</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.7</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -813,6 +868,8 @@ tbody tr:last-child td{border-bottom:none}
     <div id="iotHeadRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
       <div class="card-title" style="margin:0"><span class="ci">🏭</span><span id="iotTitleTxt">ตรวจสอบสถานะเครื่องจักร</span></div>
       <div style="display:flex;gap:4px;align-items:center">
+        <!-- นาฬิกาดิจิทัลเรียลไทม์ (เวลาไทย) — โชว์เฉพาะ IOT เต็มจอ, มุมขวาบน -->
+        <div id="iotClock" role="timer" aria-label="เวลาปัจจุบัน (ประเทศไทย)"><span id="iotClockTime">--:--:--</span><span id="iotClockDate"></span></div>
         <!-- สลับภาษา (ตัวสำรอง — โชว์เฉพาะตอนเต็มจอ เพราะปุ่มหลักที่ header ถูกการ์ดเต็มจอทับ) -->
         <span id="iotLangSeg" class="lang-seg" role="group" aria-label="เลือกภาษา / Language" title="เลือกภาษา / Language">
           <button type="button" class="lang-th on" onclick="setLang('th')">ไทย</button>
@@ -849,8 +906,9 @@ tbody tr:last-child td{border-bottom:none}
 
   <!-- เข้ายอด WIP IN 1.5 — งานที่รับเข้าจาก VSM2 มารอผลิตที่ Process แรก -->
   <div class="card" id="wipInCard" style="border:1.5px solid var(--blue-soft);background:linear-gradient(180deg,#F7FAFF,#fff)">
-    <div class="card-title"><span class="ci">🏬</span>เข้ายอด WIP IN 1.5 <span style="font-weight:600;color:var(--muted);font-size:11px">• งานรับเข้าจาก VSM2</span></div>
-    <div class="muted" style="font-size:11px;margin:-4px 0 8px">บันทึกงานที่รับเข้ามา → รอผลิตที่ Process แรก · พอเริ่มลงยอดผลิตจะย้ายไปเป็น WIP อัตโนมัติ</div>
+    <div class="card-title" style="cursor:pointer;user-select:none;display:flex;align-items:center" onclick="toggleWipInCard()"><span class="ci">🏬</span>เข้ายอด WIP IN 1.5 <span style="font-weight:600;color:var(--muted);font-size:11px">• งานรับเข้าจาก VSM2</span><span id="wipInChevron" style="margin-left:auto;font-size:12px;font-weight:700;color:var(--blue)">▸ เปิด</span></div>
+    <div id="wipInBody" class="hide">
+    <div class="muted" style="font-size:11px;margin:8px 0 8px">บันทึกงานที่รับเข้ามา → รอผลิตที่ Process แรก · พอเริ่มลงยอดผลิตจะย้ายไปเป็น WIP อัตโนมัติ</div>
     <div class="fg-auto">
       <div class="fr" style="margin:0"><label>Valve No</label>
         <input type="text" id="wipInValve" list="valveList" placeholder="เช่น VF1349M0" autocomplete="off" style="text-transform:uppercase;font-weight:700"></div>
@@ -862,6 +920,7 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <button class="btn btn-blue btn-block mt-8" onclick="submitWipIn()" style="padding:11px;font-size:15px">➕ เข้ายอด WIP IN 1.5</button>
     <div class="muted center mt-8" id="wipInSummary" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:7px;border-radius:9px"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -1145,6 +1204,17 @@ tbody tr:last-child td{border-bottom:none}
       <button class="btn btn-green btn-sm" onclick="openPasteValvesModal()">📋 วางจาก Excel</button>
     </div>
     <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="section-title">🔧 เครื่องมือแก้ข้อมูล (เฉพาะ VSM ที่ดูอยู่)</div>
+  <div class="card">
+    <div class="muted" style="font-size:11px;margin-bottom:8px">Export ไปแก้ใน Excel แล้ว Import กลับ · ยอดผลิตใช้ <b>record_id</b> เป็นตัวอ้างอิง (ห้ามแก้/ลบคอลัมน์นี้)</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="exportProdForEdit()">⬇️ Export ยอดผลิต</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('prodImport').click()">📥 Import ยอดที่แก้แล้ว</button>
+      <input type="file" id="prodImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importProdEdited(event)">
+      <button class="btn btn-outline btn-sm" onclick="exportValvesNoProc()">⬇️ Export Valve ยังไม่มี Process</button>
+    </div>
   </div>
 
   <div class="section-title">🆔 Valve IDs (1 Valve มีหลาย ID)</div>
@@ -1462,6 +1532,26 @@ const DEFAULT_VALVES = [
   // VF1352M0/VF1353M0 (sample ทดสอบ) ถูกลบออกจากระบบแล้ว — ไม่ seed กลับ
 ];
 
+// ยุบ process "TOP" ที่ตามด้วย "HOD" ติดกัน → "TOP&HOD" ตัวเดียว (idempotent) — ไม่แตะ process อื่น
+function normalizeValveProcesses(procs){
+  const out=[]; const a=(procs||[]).filter(Boolean);
+  for(let i=0;i<a.length;i++){
+    const cur=String(a[i]).trim(), nx=String(a[i+1]||'').trim();
+    if(cur.toUpperCase()==='TOP' && nx.toUpperCase()==='HOD'){ out.push('TOP&HOD'); i++; }
+    else out.push(cur);
+  }
+  return out;
+}
+// ยุบทั้ง state.valves — คืน true ถ้ามีการเปลี่ยน (ใช้ตัดสินใจ save/push cloud)
+function normalizeAllValves(){
+  let changed=false;
+  for(const v of (state.valves||[])){
+    const n=normalizeValveProcesses(v.processes);
+    if(n.join('|')!==(v.processes||[]).join('|')){ v.processes=n; changed=true; }
+  }
+  return changed;
+}
+
 const DEFAULT_TARGETS = {
   // flat (legacy/fallback)
   oae:0.75, dle:0.85, pplh:350, pdac:0.9, scrap:0.0012,
@@ -1493,6 +1583,9 @@ let state = {
   shiftFilter: 'all',  // 'all' | 'day' | 'night'
   adminUnlocked: false,
 };
+
+// ยุบ TOP+HOD → TOP&HOD ตั้งแต่ boot (เผื่อ offline/ยังไม่โหลด cloud) — persist ถ้ามีการเปลี่ยน
+if (normalizeAllValves()) lsSave(LS.VALVES, state.valves);
 
 /* ZONE_LABEL ถูกย้ายไปสร้างจาก ZONE_DEFS (ด้านล่าง) */
 
@@ -1934,6 +2027,7 @@ const $  = (id) => document.getElementById(id);
 const $$ = (sel) => document.querySelectorAll(sel);
 const P  = (n) => String(n).padStart(2,'0');
 const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`; };
+const yesterdayISO = () => { const d=new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`; };
 // FIX 7: pct แสดง OAE พร้อม warning badge ถ้าเกิน 100%
 const pct = (v) => (+v*100).toFixed(2)+'%';
 // pctOae: แสดง OAE โดย cap ที่ 100% และแสดง warning ถ้าเกิน
@@ -2569,6 +2663,7 @@ function applyScanResult(decoded) {
   const valveInput = document.getElementById(scanTargetSid + '_v');
   if (lotInput)   lotInput.value   = parsed.lot;
   if (valveInput) valveInput.value = parsed.valveNo;
+  if (typeof renderProcChips === 'function') renderProcChips(scanTargetSid);   // สแกนแล้ว → โชว์ process ให้กดเลือกทันที
 
   $('scanResult').className = 'scan-result show';
   $('scanResult').innerHTML = `✓ ID: <b>${escapeHtml(parsed.idCode)}</b>
@@ -3156,6 +3251,8 @@ async function reload() {
     ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
     ensureVsmZones();         // seed เครื่องทดสอบของ zone VSM1/2/3 (D1 ไม่มี)
     normalizeEmployeeVsm();   // ผูก VSM ให้พนักงานที่ดึงจาก API (เดิม = vsm4)
+    // ยุบ TOP+HOD ติดกัน → TOP&HOD ใน Master Valve; ถ้ามีการเปลี่ยน = push กลับ cloud ครั้งเดียว (idempotent)
+    if (normalizeAllValves() && API) { api('/api/valves/bulk', { body: { valves: state.valves } }).catch(()=>{}); }
     lsSave(LS.VALVES,    state.valves);
     lsSave(LS.MACHINES,  state.machines);
     lsSave(LS.EMPLOYEES, state.employees);
@@ -4030,7 +4127,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.4":"Production Record + KPI · v3.4",
+"ระบบบันทึกผลิต + KPI · v3.7":"Production Record + KPI · v3.7",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4109,6 +4206,13 @@ const I18N_X = {
 "กำลังบันทึก…":"Saving…","กรุณารอสักครู่ • อย่าเพิ่งปิดหน้านี้":"Please wait • don't close this page yet",
 "ไม่พบเบอร์วาล์วนี้ใน Master valve — ตั้งค่า Process ที่หน้าตั้งค่าก่อน":"Valve not found in Master valve — set its Process in Settings first",
 "เลือก process":"Select process","— เลือก process —":"— select process —","ล้างทั้งหมด?":"Clear all?","ยังไม่มี slot":"No slots yet",
+// ── PROCESS CHIPS (v3.7 — กดเลือกหลาย process) ──
+"Process ที่ทำ":"Processes worked",
+"· กดเลือกได้หลาย Process":"· tap to select multiple",
+"· กดเลือกได้สูงสุด 3 Process":"· tap to select up to 3",
+"เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก":"Select a Valve No first — its processes will appear here",
+"ไม่พบ Process ของวาล์วนี้ใน Master valve — ตั้งค่าที่หน้าตั้งค่าก่อน":"This valve has no processes in Master valve — set them in Settings first",
+"เลือกได้สูงสุด 3 Process":"Max 3 processes",
 "กรอกข้อมูลก่อน":"Enter data first","OAE เกิน 100% — กรุณาตรวจสอบ OPR และ Target":"OAE over 100% — please check OPR and Target",
 // ── สแกนบาร์โค้ด ──
 "📷 สแกน / พิมพ์ บาร์โค้ด":"📷 Scan / type barcode","📷 กล้อง":"📷 Camera","⌨️ พิมพ์เอง":"⌨️ Type manually","พิมพ์เอง":"Type manually",
@@ -4966,6 +5070,7 @@ function iotEnterFs(card){
   card.addEventListener('keydown',_iotMcKey);   // เปิดใช้ Enter/Space ที่เครื่อง (a11y) เฉพาะตอนเต็มจอ
   renderHandoverPanels();                       // เติมข้อมูลต่อกะลงแผง side (local ทันที) + auto-fit ขนาด
   startHandoverSync();                          // ดึงล่าสุดจาก cloud + poll ทุก 15 วิ (ข้ามเครื่อง)
+  startIotClock();                              // นาฬิกาเรียลไทม์ (เวลาไทย) มุมขวาบน
 }
 function iotExitFs(card){
   card=card||document.getElementById('iotCard'); if(!card) return;
@@ -4973,6 +5078,7 @@ function iotExitFs(card){
   closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
   closeHoHistory();                              // ปิดป๊อปอัปต่อกะย้อนหลังถ้าเปิดค้าง
   stopHandoverSync();                            // หยุด poll ต่อกะ
+  stopIotClock();                               // หยุดนาฬิกาเรียลไทม์
   _iotMapReset(card);                            // เก็บสถานะกางผัง (มือถือ) กลับค่าเริ่มต้น
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
@@ -5007,13 +5113,32 @@ document.addEventListener('webkitfullscreenchange',()=>{
   if(card&&card.classList.contains('iot-fs')&&!document.webkitFullscreenElement) iotExitFs(card);
 });
 
+/* ── นาฬิกาดิจิทัลเรียลไทม์ (เวลาไทย, Asia/Bangkok) — เดินเฉพาะตอน IOT เต็มจอ ── */
+let _iotClockTimer=null;
+function _iotClockTick(){
+  const t=document.getElementById('iotClockTime'); if(!t) return;
+  const d=document.getElementById('iotClockDate'), now=new Date();
+  try{
+    t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+    if(d) d.textContent=new Intl.DateTimeFormat(VSM_LANG==='en'?'en-GB':'th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'2-digit',month:'short'}).format(now);
+  }catch(e){   // เบราว์เซอร์ไม่รองรับ timeZone → ใช้เวลาเครื่องแทน
+    const P2=n=>String(n).padStart(2,'0');
+    t.textContent=`${P2(now.getHours())}:${P2(now.getMinutes())}:${P2(now.getSeconds())}`;
+  }
+}
+function startIotClock(){ _iotClockTick(); if(_iotClockTimer) clearInterval(_iotClockTimer); _iotClockTimer=setInterval(_iotClockTick,1000); }
+function stopIotClock(){ if(_iotClockTimer){ clearInterval(_iotClockTimer); _iotClockTimer=null; } }
+
 /* ============================================================
    ต่อกะ (SHIFT HANDOVER) — บันทึกข้อความส่งต่อระหว่างกะ
    • 2 ประเภท: Machine / Induction
    • ข้ามเครื่อง: sync ขึ้น Worker+D1 เฉพาะต่อกะ (vsm4-handover) → ทุกอุปกรณ์เห็นตรงกัน
    • local-first: cache ใน localStorage (แผนที่ id→entry) + คิว offline (auto-flush)
    • แสดงในผัง IOT ตอน "เต็มจอ" เท่านั้น · สลับ IOT/ต่อกะ · แก้/ลบได้
-   entry = {id,type,text,byId,byName,ts,editedAt,deleted,updatedAt} ; ลบ = soft delete
+   entry = {id,type,cat,text,byId,byName,ts,editedAt,deleted,updatedAt,
+            done,doneBy,doneByName,doneAt} ; ลบ = soft delete
+   • หมวด "ข้อมูลทั่วไป" (cat=note) = checklist: 1 entry = 1 ข้อ มี checkbox
+     ให้กะถัดไปแตะติ๊กเมื่อทำแล้ว (done) — ข้อที่ยังไม่ติ๊กค้างบนบอร์ดจนกว่าจะทำ
    ============================================================ */
 const HANDOVER_API = 'https://vsm4-handover.wiphawas-sketchup.workers.dev';
 const LS_HANDOVER   = 'vsm4_handover';
@@ -5070,7 +5195,7 @@ function _hoList(type){
   return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type && _hoVsm(e)===viewVsm())
     .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
 }
-function addHandover(type, text, cat){
+function addHandover(type, text, cat, task){
   type=_hoType(type); text=String(text||'').trim(); if(!text) return null;
   const u=CURRENT_USER||null, now=new Date().toISOString();
   const entry={
@@ -5079,6 +5204,9 @@ function addHandover(type, text, cat){
     byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
     vsm:myVsm(),   // ประทับ VSM ผู้บันทึก (Worker ไม่เก็บ field นี้ — ใช้เป็น fallback ฝั่ง local เท่านั้น)
     ts:now, editedAt:null, deleted:0, updatedAt:now,
+    // task=1 = "ข้อ checklist" (สร้างจากปุ่มเพิ่มทีละข้อเท่านั้น) → มี checkbox ให้กะถัดไปติ๊ก
+    // โน้ตเก่า/โน้ตธรรมดาไม่มี task → แสดงเป็นข้อความปกติ ไม่ถูกแปลงเป็น checkbox ย้อนหลัง
+    task:task?1:0, done:0, doneBy:'', doneByName:'', doneAt:null,
   };
   _handover[entry.id]=entry; _saveHandover();
   _hoPush(entry);                                 // ดันขึ้น cloud (ล้มเหลว → เข้าคิว)
@@ -5109,7 +5237,7 @@ async function _hoFlush(){
   try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); }catch(e){}
 }
 // บวก bucket รายชั่วโมง → รายการที่พ้นช่วง "ล่าสุด" ถูกวาดย้ายไปย้อนหลังเองภายใน ≤1 ชม. (poll เทียบ sig ทุก 15 วิ)
-function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e)])))+'|'+Math.floor(Date.now()/3600000); }
+function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e),e.task?1:0,e.done?1:0])))+'|'+Math.floor(Date.now()/3600000); }
 let _hoSig='';
 async function syncHandover(){
   try{
@@ -5122,6 +5250,10 @@ async function syncHandover(){
       const le=_handover[ce.id];
       if(!le || new Date(ce.updatedAt) > new Date(le.updatedAt||0)){
         if(ce.cat===undefined && le && le.cat) ce.cat=le.cat;   // Worker เก่ายังไม่คืน cat → คงหมวดเดิมของเครื่องนี้ไว้ (กันหมวดหายก่อน redeploy)
+        if(ce.task===undefined && le && le.task) ce.task=le.task; // Worker เก่ายังไม่คืน task → คงสถานะ "ข้อ checklist" ไว้
+        if(ce.done===undefined && le && le.done){               // Worker เก่ายังไม่คืน done → คงสถานะติ๊กของเครื่องนี้ไว้
+          ce.done=le.done; ce.doneBy=le.doneBy||''; ce.doneByName=le.doneByName||''; ce.doneAt=le.doneAt||null;
+        }
         _handover[ce.id]=ce; changed=true;                       // LWW
       }
     }
@@ -5195,12 +5327,33 @@ function _hoFootHtml(e,type){
 function _hoCardHtml(e,type,newest,withCat){
   const cat=_hoCat(e), c=HO_CATS[cat];
   const tag=withCat?`<div class="ho-cat-tag ${cat}">${c.icon} ${escapeHtml(_hoCatLabel(c))}</div>`:'';
-  return `<div class="ho-card${newest?' newest':''}" role="button" tabindex="0" title="${TT('แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ','Tap to read / edit / delete')}"
+  // checkbox เฉพาะ "ข้อ checklist" (task=1 — สร้างจากปุ่มเพิ่มทีละข้อ) · โน้ตเก่า/โน้ตธรรมดาแสดงปกติ
+  const isTask=!!e.task, done=isTask&&!!e.done;
+  const chk=isTask?`<button type="button" class="ho-chk${done?' on':''}" aria-pressed="${done?'true':'false'}"
+      title="${done?TT('ทำแล้ว — แตะเพื่อยกเลิก','Done — tap to undo'):TT('ทำเสร็จแล้ว → แตะติ๊ก','Finished → tap to check')}"
+      onclick="event.stopPropagation();toggleHoDone('${e.id}')">${done?'✓':''}</button>`:'';
+  const doneMeta=done?`<div class="ho-done-meta">✅ ${TT('ทำแล้ว','done')}${(e.doneByName||e.doneBy)?' · '+escapeHtml(e.doneByName||e.doneBy):''}${e.doneAt?' · '+escapeHtml(_hoWhen(e.doneAt).ago):''}</div>`:'';
+  return `<div class="ho-card${newest?' newest':''}${done?' done':''}" role="button" tabindex="0" title="${TT('แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ','Tap to read / edit / delete')}"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
-    ${tag}<div class="ho-text">${escapeHtml(e.text)}</div>
+    ${tag}<div class="ho-row">${chk}<div class="ho-text">${escapeHtml(e.text)}</div></div>
+    ${doneMeta}
     ${_hoFootHtml(e,type)}
   </div>`;
+}
+/* ── ติ๊ก "ทำแล้ว" (checklist ข้อมูลทั่วไป) — sync ทุกเครื่องเหมือนบันทึกต่อกะปกติ ── */
+function toggleHoDone(id){
+  const e=_handover[id];
+  if(!e||e.deleted){ toast(TT('ไม่พบบันทึก','Note not found'),'red'); return; }
+  const u=CURRENT_USER||null, now=new Date().toISOString();
+  e.done=e.done?0:1;
+  e.doneBy=e.done?String((u&&u.id)||OP||''):'';
+  e.doneByName=e.done?String((u&&u.name)||''):'';
+  e.doneAt=e.done?now:null;
+  e.updatedAt=now;
+  _saveHandover(); _hoPush(e);
+  renderHandoverPanels();
+  toast(e.done?TT('ติ๊กแล้ว ✓ ทำเสร็จ','Checked ✓ done'):TT('ยกเลิกติ๊กแล้ว','Unchecked'), e.done?'green':'orange');
 }
 /* แตะการ์ด → ป๊อปอัปอ่านข้อความเต็ม + ปุ่มแก้ไข/ลบขนาดใหญ่ */
 function hoCardTap(id){
@@ -5219,9 +5372,11 @@ function hoCardTap(id){
     <div class="ho-modal-hd" style="background:${t.grad}">${t.icon} ${escapeHtml(t.label)} · ${c.icon} ${escapeHtml(_hoCatLabel(c))}</div>
     <div class="ho-modal-bd">
       <div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:11px 13px;font-size:15.5px;line-height:1.65;color:#0f172a;white-space:pre-wrap;word-break:break-word;max-height:46vh;overflow:auto">${escapeHtml(e.text)}</div>
+      ${e.task&&e.done?`<div class="ho-done-meta" style="font-size:12px">✅ ${TT('ทำแล้ว','done')}${(e.doneByName||e.doneBy)?' · '+escapeHtml(e.doneByName||e.doneBy):''}${e.doneAt?' · '+escapeHtml(_hoWhen(e.doneAt).abs):''}</div>`:''}
       ${_hoMetaHtml(e,true)}
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0;flex-wrap:wrap">
         <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">${TT('ปิด','Close')}</button>
+        ${e.task?`<button type="button" class="btn" style="${e.done?'background:#FFF7ED;color:#C2410C;border:1.5px solid #FED7AA':'background:#F3FAF7;color:#057A55;border:1.5px solid #84E1BC'}" onclick="closeHandoverAdd();toggleHoDone('${id}')">${e.done?'↩ '+TT('ยังไม่ทำ','Not done'):'✓ '+TT('ทำแล้ว','Done')}</button>`:''}
         <button type="button" class="btn" style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5" onclick="askDeleteHandover('${type}','${id}')">🗑️ ${TT('ลบ','Delete')}</button>
         <button type="button" class="btn" style="background:#1A56DB;color:#fff;border:none" onclick="editHandover('${type}','${id}')">✏️ ${TT('แก้ไข','Edit')}</button>
       </div>
@@ -5240,11 +5395,25 @@ function _hoRecentSplit(arr){
   return {recent,old};
 }
 // section เดียว: broken=เครื่องเสีย/ค้าง (โชว์ทั้งหมด — คือสถานะปัจจุบันจนกว่าจะซ่อมเสร็จ/ลบ)
-//              note=ข้อมูลทั่วไป (โชว์เฉพาะล่าสุด — ของเก่ากด 🕘 ดูย้อนหลัง)
+//              note=ข้อมูลทั่วไป (checklist) — ข้อที่ "ยังไม่ติ๊ก" ค้างบนบอร์ดเสมอจนกว่าจะทำ (กันงานตกหล่นระหว่างกะ)
+//              ข้อที่ติ๊กแล้วโชว์เฉพาะช่วงล่าสุด — ของเก่ากด 🕘 ดูย้อนหลัง
 function _hoSecHtml(type,cat,arr){
   const c=HO_CATS[cat];
-  const sp = cat==='note' ? _hoRecentSplit(arr) : {recent:arr,old:[]};
-  const shown=sp.recent.slice(0,HO_SEC_CAP), hidden=arr.length-shown.length;
+  let shown, pendingN=0;
+  if(cat==='note'){
+    // ข้อ checklist (task=1) ที่ยังไม่ติ๊ก → ปักบนสุด ค้างบนบอร์ดเสมอจนกว่าจะทำ (กันงานตกหล่นระหว่างกะ)
+    // ข้อที่ติ๊กแล้ว → โชว์ต่ออีก 24 ชม. "นับจากเวลาติ๊ก" · โน้ตธรรมดา (ไม่มี task) → ช่วงล่าสุดตามเดิม
+    const pending=arr.filter(e=>e.task&&!e.done);
+    pendingN=pending.length;
+    const cut=Date.now()-86400000;
+    const doneRecent=arr.filter(e=>e.task&&e.done&&new Date(e.doneAt||e.ts).getTime()>=cut);
+    const plainRecent=_hoRecentSplit(arr.filter(e=>!e.task)).recent;
+    const rest=[...doneRecent,...plainRecent].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+    shown=[...pending,...rest].slice(0,HO_SEC_CAP);
+  }else{
+    shown=arr.slice(0,HO_SEC_CAP);
+  }
+  const hidden=arr.length-shown.length;
   const body = shown.length
     ? shown.map((e,i)=>_hoCardHtml(e,type,i===0)).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
     : `<div class="ho-empty" role="button" tabindex="0" style="cursor:pointer" onclick="openHandoverAdd('${type}',null,'${cat}')"
@@ -5255,6 +5424,7 @@ function _hoSecHtml(type,cat,arr){
       <span class="ho-sec-ic">${c.icon}</span>
       <span class="ho-sec-ttl">${escapeHtml(_hoCatLabel(c))}</span>
       <span class="ho-sec-cnt">${hidden>0?shown.length+'/'+arr.length:arr.length}</span>
+      ${pendingN>0?`<span class="ho-sec-pend">${TT('เหลือ '+pendingN+' ข้อ',pendingN+' to do')}</span>`:''}
       ${hidden>0?`<button type="button" class="ho-sec-hist" onclick="hoHistoryPop('${type}')" title="${TT('ดูข้อมูลย้อนหลัง','View history')}" aria-label="${TT('ดูข้อมูลย้อนหลัง','View history')} ${escapeHtml(HO_TYPES[type].label)}">🕘</button>`:''}
       <button type="button" class="ho-sec-add" onclick="openHandoverAdd('${type}',null,'${cat}')" aria-label="${TT('เพิ่ม','Add')} ${escapeHtml(_hoCatLabel(c))} ${escapeHtml(HO_TYPES[type].label)}">＋</button>
     </div>
@@ -5438,12 +5608,7 @@ function openHandoverAdd(presetType, editEntry, presetCat){
         <label class="ho-lbl">${TT('หมวด — จะไปอยู่คอลัมน์ไหน','Category — which column it goes in')}</label>
         <div class="ho-seg" id="hoCatSeg">${catSeg}</div>
       </div>
-      <div>
-        <label class="ho-lbl" for="hoText">${TT('ข้อความต่อกะ — พิมพ์อะไรก็ได้','Handover message — type anything')}</label>
-        <textarea id="hoText" class="ho-ta" rows="6" placeholder="${TT('เช่น งานค้างที่ส่งต่อ / ปัญหาเครื่อง / สิ่งที่กะถัดไปต้องรู้ …','e.g. pending work / machine issues / what the next shift must know …')}"
-          onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();submitHandover()}"></textarea>
-        <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Ctrl+Enter = บันทึกเร็ว · ขึ้นบรรทัดใหม่ได้ตามปกติ','Ctrl+Enter = quick save · Enter = new line')}</div>
-      </div>
+      <div id="hoInputArea">${_hoInputHtml()}</div>
       <div class="row" style="gap:8px;justify-content:flex-end;margin:0">
         <button type="button" class="btn btn-outline" onclick="closeHandoverAdd()">${TT('ยกเลิก','Cancel')}</button>
         <button type="button" class="btn btn-green" onclick="submitHandover()">💾 ${isEdit?TT('บันทึกการแก้ไข','Save changes'):TT('บันทึกต่อกะ','Save note')}</button>
@@ -5451,20 +5616,78 @@ function openHandoverAdd(presetType, editEntry, presetCat){
     </div>
   </div>`;
   host.appendChild(ov);
-  const ta=ov.querySelector('#hoText');
-  if(ta){
-    ta.value = isEdit ? (editEntry.text||'') : (_hoDrafts[_hoDraftKey()]||'');   // เพิ่มใหม่ → โหลดร่างของช่องนี้ (ประเภท×หมวด)
-    setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },30);
-  }
+  _hoWriteInput(isEdit ? (editEntry.text||'') : (_hoDrafts[_hoDraftKey()]||''));   // เพิ่มใหม่ → โหลดร่างของช่องนี้ (ประเภท×หมวด)
+  setTimeout(()=>_hoFocusInput(true),30);
+}
+/* ── พื้นที่กรอกใน modal — "ข้อมูลทั่วไป" (โหมดเพิ่ม) = checklist builder สร้างทีละข้อ (1 ช่อง = 1 ข้อ = 1 checkbox)
+   หมวดอื่น/โหมดแก้ไข = textarea เดิม · อ่าน/เขียนผ่าน _hoReadInput/_hoWriteInput (ร่างเก็บเป็นข้อความคั่น \n) ── */
+function _hoIsChecklistInput(){ return !_hoEditId && _hoAddCat==='note'; }
+function _hoInputHtml(){
+  if(!_hoIsChecklistInput()) return `
+    <label class="ho-lbl" for="hoText">${TT('ข้อความต่อกะ — พิมพ์อะไรก็ได้','Handover message — type anything')}</label>
+    <textarea id="hoText" class="ho-ta" rows="8" placeholder="${TT('เช่น งานค้างที่ส่งต่อ / ปัญหาเครื่อง / สิ่งที่กะถัดไปต้องรู้ …','e.g. pending work / machine issues / what the next shift must know …')}"
+      onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();submitHandover()}"></textarea>
+    <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Ctrl+Enter = บันทึกเร็ว · ขึ้นบรรทัดใหม่ได้ตามปกติ','Ctrl+Enter = quick save · Enter = new line')}</div>`;
+  return `
+    <label class="ho-lbl">☑ ${TT('รายการงาน — 1 ช่อง = 1 ข้อ · กะถัดไปแตะติ๊กเมื่อทำเสร็จ','Checklist — 1 box = 1 item · next shift checks it off')}</label>
+    <div id="hoItems"></div>
+    <button type="button" class="ho-item-add" onclick="hoItemAdd()">＋ ${TT('เพิ่มข้อถัดไป','Add next item')}</button>
+    <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Enter = ข้อถัดไป · Ctrl+Enter = บันทึก','Enter = next item · Ctrl+Enter = save')}</div>`;
+}
+function _hoItemRowHtml(val){
+  return `<div class="ho-item-row"><span class="ho-item-chk">☐</span><input type="text" class="ho-item-inp" value="${escapeHtml(val||'')}"
+    placeholder="${TT('พิมพ์งานที่ต้องทำ / สิ่งที่ต้องส่งต่อ…','Type a task to hand over…')}" onkeydown="hoItemKey(event,this)">
+    <button type="button" class="ho-item-del" onclick="hoItemDel(this)" aria-label="${TT('ลบข้อนี้','Remove item')}">✕</button></div>`;
+}
+function _hoItemsSet(arr){
+  const host=document.getElementById('hoItems'); if(!host) return;
+  arr=(arr||[]).filter(s=>String(s).trim()); if(!arr.length) arr=[''];
+  host.innerHTML=arr.map(_hoItemRowHtml).join('');
+}
+function hoItemAdd(){
+  const host=document.getElementById('hoItems'); if(!host) return;
+  host.insertAdjacentHTML('beforeend',_hoItemRowHtml(''));
+  const inps=host.querySelectorAll('.ho-item-inp'); inps[inps.length-1].focus();
+}
+function hoItemDel(btn){
+  const host=document.getElementById('hoItems'); const row=btn.closest('.ho-item-row'); if(!host||!row) return;
+  if(host.querySelectorAll('.ho-item-row').length<=1){ row.querySelector('.ho-item-inp').value=''; return; }  // เหลือข้อเดียว → ล้างข้อความแทนการลบแถว
+  row.remove();
+}
+function hoItemKey(ev,inp){
+  if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter'){ ev.preventDefault(); submitHandover(); return; }
+  if(ev.key!=='Enter') return;
+  ev.preventDefault();
+  const rows=[...document.querySelectorAll('#hoItems .ho-item-inp')], i=rows.indexOf(inp);
+  if(i<rows.length-1) rows[i+1].focus();                 // มีข้อถัดไปอยู่แล้ว → ย้าย focus
+  else if(inp.value.trim()) hoItemAdd();                 // ข้อสุดท้ายมีข้อความ → เพิ่มข้อใหม่
+}
+function _hoReadInput(){
+  const ta=document.getElementById('hoText'); if(ta) return ta.value;
+  return [...document.querySelectorAll('#hoItems .ho-item-inp')].map(x=>x.value.trim()).filter(Boolean).join('\n');
+}
+function _hoWriteInput(v){
+  const ta=document.getElementById('hoText'); if(ta){ ta.value=v||''; return; }
+  _hoItemsSet((v||'').split('\n'));
+}
+function _hoFocusInput(atEnd){
+  const ta=document.getElementById('hoText');
+  if(ta){ ta.focus(); if(atEnd) ta.setSelectionRange(ta.value.length,ta.value.length); return; }
+  const inps=document.querySelectorAll('#hoItems .ho-item-inp');
+  if(inps.length) inps[inps.length-1].focus();
+}
+function _hoSwapInputArea(){
+  const host=document.getElementById('hoInputArea'); if(!host) return;
+  host.innerHTML=_hoInputHtml();
+  _hoWriteInput(_hoDrafts[_hoDraftKey()]||'');
 }
 function closeHandoverAdd(){ const o=document.getElementById('hoAddOv'); if(o) o.remove(); _hoEditId=null; _hoEditOrigType=null; }
 /* สลับภาษาตอน modal เพิ่ม/แก้ไขเปิดค้าง → เปิดใหม่เป็นภาษาใหม่ คงข้อความ/ประเภท/หมวดที่เลือกไว้
    (ป๊อปอัปอ่านเต็ม/ยืนยันลบ ใช้ id เดียวกันแต่ไม่มี textarea → ปิดเฉย ๆ แตะใหม่ได้ทันที) */
 function _hoRelangModal(){
   const ov=document.getElementById('hoAddOv'); if(!ov) return;
-  const ta=document.getElementById('hoText');
-  if(!ta){ closeHandoverAdd(); return; }
-  const val=ta.value, tp=_hoAddType, ct=_hoAddCat, editId=_hoEditId, origType=_hoEditOrigType;
+  if(!document.getElementById('hoText') && !document.getElementById('hoItems')){ closeHandoverAdd(); return; }
+  const val=_hoReadInput(), tp=_hoAddType, ct=_hoAddCat, editId=_hoEditId, origType=_hoEditOrigType;
   const drafts={..._hoDrafts};
   closeHandoverAdd();
   if(editId && _handover[editId]){
@@ -5474,16 +5697,15 @@ function _hoRelangModal(){
     openHandoverAdd(tp, null, ct);
     _hoDrafts=drafts;                      // openHandoverAdd ล้างร่างตอนเพิ่มใหม่ — คืนร่างทุกช่องที่พิมพ์ค้าง
   }
-  const t2=document.getElementById('hoText'); if(t2) t2.value=val;
+  _hoWriteInput(val);
 }
 function _hoPickType(t){
   const next=_hoType(t);
-  const ta=document.getElementById('hoText');
-  if(!_hoEditId && ta){          // โหมดเพิ่ม: เก็บร่างของช่องเดิม แล้วโหลดร่างของช่องใหม่ → ไม่ปนกัน (req #4)
-    _hoDrafts[_hoDraftKey()]=ta.value;
-    ta.value=_hoDrafts[next+'|'+_hoAddCat]||'';
-  }
-  _hoAddType=next;
+  if(!_hoEditId && next!==_hoAddType){   // โหมดเพิ่ม: เก็บร่างของช่องเดิม แล้วโหลดร่างของช่องใหม่ → ไม่ปนกัน (req #4)
+    _hoDrafts[_hoDraftKey()]=_hoReadInput();
+    _hoAddType=next;
+    _hoWriteInput(_hoDrafts[_hoDraftKey()]||'');
+  }else _hoAddType=next;
   const seg=document.getElementById('hoSeg');
   if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.t===_hoAddType));
   const hd=document.getElementById('hoModalHd');
@@ -5491,29 +5713,31 @@ function _hoPickType(t){
 }
 function _hoPickCat(c){
   const next=_hoCat(c);
-  const ta=document.getElementById('hoText');
-  if(!_hoEditId && ta){          // โหมดเพิ่ม: สลับหมวดแล้วข้อความต้องไม่ติดตามไป — เก็บร่างของหมวดเดิม โหลดร่างของหมวดใหม่
-    _hoDrafts[_hoDraftKey()]=ta.value;
-    ta.value=_hoDrafts[_hoAddType+'|'+next]||'';
-  }
-  _hoAddCat=next;
+  if(!_hoEditId && next!==_hoAddCat){    // โหมดเพิ่ม: เก็บร่างหมวดเดิม → สลับพื้นที่กรอก (checklist ⇄ textarea) → โหลดร่างหมวดใหม่
+    _hoDrafts[_hoDraftKey()]=_hoReadInput();
+    _hoAddCat=next;
+    _hoSwapInputArea();
+  }else _hoAddCat=next;
   const seg=document.getElementById('hoCatSeg');
   if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.c===_hoAddCat));
 }
 function submitHandover(){
-  const ta=document.getElementById('hoText');
-  const text=ta?ta.value.trim():'';
-  if(!text){ if(ta) ta.focus(); toast(TT('พิมพ์ข้อความก่อนบันทึก','Type a message first'),'orange'); return; }
+  const text=_hoReadInput().trim();
+  if(!text){ _hoFocusInput(); toast(TT('พิมพ์ข้อความก่อนบันทึก','Type a message first'),'orange'); return; }
   if(_hoEditId){
     updateHandover(_hoEditOrigType, _hoEditId, _hoAddType, text, _hoAddCat);
     closeHandoverAdd(); renderHandoverPanels();
     toast(TT('แก้ไขบันทึกต่อกะแล้ว','Handover note updated'),'green');
   }else{
-    addHandover(_hoAddType, text, _hoAddCat);
+    // ข้อมูลทั่วไป = checklist builder → 1 ช่อง = 1 ข้อ (task=1 มี checkbox) · เครื่องเสีย/ค้าง = 1 บันทึกเหมือนเดิม
+    const isChk=_hoAddCat==='note';
+    const items=isChk?text.split(/\n+/).map(s=>s.trim()).filter(Boolean):[text];
+    items.forEach(tx=>addHandover(_hoAddType, tx, _hoAddCat, isChk?1:0));
     _hoDrafts[_hoDraftKey()]='';                      // บันทึกแล้ว → ล้างร่างเฉพาะช่องนี้
     closeHandoverAdd(); renderHandoverPanels();      // อัปเดตแผงทันที (ถ้าเปิดเต็มจออยู่)
     const cl=_hoCatLabel(HO_CATS[_hoAddCat]), tl=HO_TYPES[_hoAddType].label;
-    toast(TT('บันทึกต่อกะ '+cl+' ('+tl+') แล้ว','Saved '+cl+' ('+tl+') note'),'green');
+    toast(isChk?TT('เพิ่ม '+items.length+' ข้อ ☑ ('+tl+') แล้ว','Added '+items.length+' checklist item(s) ('+tl+')')
+               :TT('บันทึกต่อกะ '+cl+' ('+tl+') แล้ว','Saved '+cl+' ('+tl+') note'),'green');
   }
 }
 
@@ -5694,7 +5918,26 @@ function computeWipBuckets(){
   }
   const producedKeys=new Set(Object.keys(groups));
 
-  // ---- WIP (กำลังผลิต) + แจ้งเตือนงานรอผลิตต่อ ----
+  // scrap ต่อ (valve::lot) จาก KPI/shift records — ชิ้นที่ "เสียแล้ว" ไม่นับเป็น WIP
+  const scrapByJob={};
+  for(const r of filterVsm(state.kpiRecords||[])){
+    const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
+    if(!vno) continue;
+    const s=Number(r.scrap)||0; if(!s) continue;
+    const jk=jobKey(vno,lot); scrapByJob[jk]=(scrapByJob[jk]||0)+s;
+  }
+
+  // ยอดรับเข้า WIP IN 1.5 ต่อ (valve::lot) — ใช้เป็น "ตัวอ้างอิง" ของ WIP กำลังผลิต
+  const wipInByJob={};
+  for(const e of _wipinList()){
+    const jk=jobKey(e.valve,e.lot);
+    wipInByJob[jk]=(wipInByJob[jk]||0)+(Number(e.qty)||0);
+  }
+
+  // ---- WIP (กำลังผลิต) ----
+  //  สูตรใหม่ (2026-07-09): WIP = ยอดรับเข้า WIP IN 1.5 − Scrap รวมทุก process ที่ผ่าน
+  //    → มีตัวอ้างอิงชัด (ยอดรับเข้า) · ไม่ผูกกับยอด process ท้ายสุดที่แกว่งตามการลงข้อมูล
+  //  fallback: ถ้าไม่มียอดรับเข้า WIP IN (งานเก่าก่อนมีระบบ) → ใช้ยอด furthest process − scrap แบบเดิม
   const wip={total:0,byCust:{},items:[]}; const alerts=[];
   for(const k of Object.keys(groups)){
     const g=groups[k];
@@ -5703,17 +5946,16 @@ function computeWipBuckets(){
     if(!isKnownValve(g.valve)) continue;                  // วาล์วผิด → ไม่นับ
     const pop=_wipPerProc(g.recs,g.valve);
     if(!pop.length) continue;
-    const last=pop[pop.length-1], prev=pop[pop.length-2];
+    const last=pop[pop.length-1];
     if(last.proc && last.proc===lastProcOf(g.valve)) continue;   // ถึง process สุดท้ายของวาล์ว = จบ (นับที่ผลิตเสร็จ/WIP OUT)
-    let wipQty;
-    if(pop.length===1) wipQty=last.qty;
-    else if(last.qty<prev.qty){                           // ยอดล่าสุดยังไหลไม่ครบ → ที่เหลือกำลังรอผลิตต่อ
-      wipQty=prev.qty;
-      alerts.push({valve:g.valve,lot:g.lot,waiting:prev.qty-last.qty,atProc:last.proc,fromProc:prev.proc,customer:custOf(vKey(g.valve))});
-    } else wipQty=last.qty;
+    const scr=scrapByJob[k]||0;
+    const inQty=wipInByJob[k]||0;
+    const basis=inQty>0?'wipin':'produced';              // อ้างอิงจากยอดรับเข้า · ถ้าไม่มีใช้ยอดผลิต
+    let wipQty=Math.max(0,(inQty>0?inQty:last.qty)-scr);
+    if(wipQty<=0) continue;
     const cust=custOf(vKey(g.valve));
     wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty;
-    wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date});
+    wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date,scrap:scr,wipIn:inQty,basis});
   }
 
   // ---- WIP OUT (ผ่าน FG) ---- (เก็บทุกงาน · กรองเดือนตอนแสดง)
@@ -5759,18 +6001,29 @@ function renderWipBuckets(){
   }
   renderIotWipStrip(b);
 }
+// ยอดที่ "เข้า/ออก เมื่อวาน" — WIP IN นับตาม ts ที่รับเข้า · WIP OUT นับตามวันที่ถึง FG
+function _wipInYesterday(b){
+  const y=yesterdayISO();
+  return (b.wipIn.items||[]).filter(i=>String(i.ts||'').slice(0,10)===y).reduce((s,i)=>s+(Number(i.qty)||0),0);
+}
+function _wipOutYesterday(b){
+  const y=yesterdayISO();
+  return (b.wipOut.items||[]).filter(i=>String(i.date||'').slice(0,10)===y).reduce((s,i)=>s+(Number(i.qty)||0),0);
+}
 function renderIotWipStrip(b){
   const host=$('iotWipStrip'); if(!host) return;
   b=b||getWipBuckets();
-  const chip=(cls,icon,label,val,bucket)=>`
+  const yLabel=TT('เมื่อวาน','yesterday');
+  const chip=(cls,icon,label,val,bucket,sub)=>`
     <button type="button" class="wipchip ${cls}" onclick="showWipDetail('${bucket}',true)">
       <span class="wipchip-k">${icon} ${label}</span>
       <span class="wipchip-v">${nn(val)}</span>
+      ${sub!=null?`<span class="wipchip-sub">${yLabel} ${nn(sub)}</span>`:''}
     </button>`;
   host.innerHTML =
-    chip('in','📥','WIP IN 1.5',b.wipIn.total,'in') +
+    chip('in','📥','WIP IN 1.5',b.wipIn.total,'in',_wipInYesterday(b)) +
     chip('wip','▶',TT('WIP กำลังผลิต','WIP in production'),b.wip.total,'wip') +
-    chip('out','✓',TT('WIP OUT เดือนนี้','WIP OUT this month'),_wipOutCurMonth(b),'out');
+    chip('out','✓',TT('WIP OUT เดือนนี้','WIP OUT this month'),_wipOutCurMonth(b),'out',_wipOutYesterday(b));
 }
 /* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
 function renderWipInSummary(){
@@ -5781,6 +6034,14 @@ function renderWipInSummary(){
 }
 // helper สั้น (ไม่ผูก dict) — คืนไทย/EN ตามภาษาปัจจุบัน
 function TF(th,en){ return (typeof TT==='function') ? TT(th,en) : th; }
+
+/* ── พับ/เปิดการ์ด "เข้ายอด WIP IN 1.5" (ปิดไว้เป็นค่าเริ่มต้น — เปิดเมื่อจะใช้) ── */
+function toggleWipInCard(){
+  const body=document.getElementById('wipInBody'); if(!body) return;
+  const hidden=body.classList.toggle('hide');
+  const chv=document.getElementById('wipInChevron');
+  if(chv) chv.textContent = hidden ? '▸ เปิด' : '▾ ปิด';
+}
 
 /* ── ฟอร์มเข้ายอด WIP IN 1.5 (หน้าบันทึกข้อมูล) ── */
 async function submitWipIn(){
@@ -5824,7 +6085,7 @@ function wipDetailBody(bucket){
     for(const i of filt){ if(i.started) continue; byCust[i.customer]=(byCust[i.customer]||0)+i.qty; }
     const custRows=Object.entries(byCust).sort((a,c)=>c[1]-a[1]);
     const rows=filt.slice().sort((a,c)=>String(c.ts).localeCompare(String(a.ts))).map(i=>`
-      <tr style="${i.started?'opacity:.5':''}">
+      <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started?'opacity:.5':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
         <td><b>${escapeHtml(i.valve)}</b></td>
         <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
@@ -5834,6 +6095,7 @@ function wipDetailBody(bucket){
         <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
       </tr>`).join('');
     return `
+     <div data-wipbody>
       <div class="fg-auto mb-8">
         <div class="fr" style="margin:0"><label>${TT('เดือน','Month')}</label>
           <select onchange="_wipInFilter.month=this.value;_refreshWipDetail()">
@@ -5846,9 +6108,12 @@ function wipDetailBody(bucket){
             ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
           </select></div>
       </div>
+      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" oninput="_wipFilterTable(this)" autocomplete="off"
+        style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
       <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
-        <tbody>${rows||`<tr><td colspan="7" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
+        <tbody>${rows||`<tr><td colspan="7" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>
+     </div>`;
   }
   // wip / out
   const isOut=bucket==='out';
@@ -5878,20 +6143,27 @@ function wipDetailBody(bucket){
   const byCustMap={}; for(const i of items) byCustMap[i.customer]=(byCustMap[i.customer]||0)+i.qty;
   const byCust=Object.entries(byCustMap).sort((a,c)=>c[1]-a[1]);
   const rows=items.map(i=>`
-    <tr>
+    <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}">
       <td><b>${escapeHtml(i.valve)}</b></td>
       <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
       <td>${escapeHtml(i.lot||'-')}</td>
+      ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
+      <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
       <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`).join('');
+  const _wipColspan=isOut?6:8;
   return `
+   <div data-wipbody>
     ${monthCtrl}
+    <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" oninput="_wipFilterTable(this)" autocomplete="off"
+      style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
     ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
-    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
-      <tbody>${rows||`<tr><td colspan="6" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
+      <tbody>${rows||`<tr><td colspan="${_wipColspan}" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>
+   </div>`;
 }
 function _wipTitle(bucket){ return bucket==='in'?'📥 WIP IN 1.5':bucket==='out'?('✓ WIP OUT — '+TT('ผ่าน FG','past FG')):('▶ WIP — '+TT('กำลังผลิต','in production')); }
 function showWipDetail(bucket, fromIot){
@@ -5902,6 +6174,14 @@ function showWipDetail(bucket, fromIot){
   } else {
     openModal(title, body);
   }
+}
+// กรองตาราง WIP ด้วยคำค้น Valve (ทำงานฝั่ง DOM ไม่ re-render กัน focus หลุด)
+function _wipFilterTable(inp){
+  const q=(inp.value||'').trim().toLowerCase();
+  const host=inp.closest('[data-wipbody]'); if(!host) return;
+  host.querySelectorAll('tbody tr[data-v]').forEach(tr=>{
+    tr.style.display = (!q || tr.dataset.v.indexOf(q)>=0) ? '' : 'none';
+  });
 }
 function _refreshWipDetail(){
   // วาดใหม่ภายในป๊อปอัปที่เปิดอยู่ (modal หรือ iotpop)
@@ -6336,10 +6616,7 @@ function shiftHtml(pid, si, m, opts) {
     </div>`;
   const procBlock = opts.hideProcess ?
     `<div class="muted" style="font-size:10px;margin-top:4px">⚙️ Process ใช้ตามที่ตั้งไว้ของแต่ละเครื่องอัตโนมัติ (Auto Line)</div>` :
-    `<div class="fr ac" style="margin:0"><label>Process ล่าสุด</label>
-        <input type="text" id="${sid}_p" placeholder="พิมพ์/เลือก" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" onfocus="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
-        <div class="ac-dd" id="${sid}_p_dd"></div>
-      </div>`;
+    procChipsHtml(sid);
   return `<div class="shift" id="${sid}_block">
     <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShiftP('${pid}',${si})">✕ ลบ</button>`:''}</div>
     <div class="fg">
@@ -6360,7 +6637,7 @@ function shiftHtml(pid, si, m, opts) {
       </div>
       <div class="fg">
         <div class="fr ac" style="margin:0"><label>Valve No <span style="color:var(--red)">*</span></label>
-          <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" autocomplete="off">
+          <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" onchange="renderProcChips('${sid}')" autocomplete="off">
           <div class="ac-dd" id="${sid}_v_dd"></div>
         </div>
         <div class="fr ac" style="margin:0"><label>Lot <span style="color:var(--red)">*</span></label>
@@ -6679,6 +6956,7 @@ function _showSubmitSummary(records, prodDate) {
           <span>พนักงาน: <b>${escapeHtml(rec.emp_id||'—')}</b></span>
           ${rec.valve_no ? `<span>Valve: <b>${escapeHtml(rec.valve_no)}</b></span>` : ''}
           ${rec.lot ? `<span>Lot: <b>${escapeHtml(rec.lot)}</b></span>` : ''}
+          ${(rec._linkProcs && rec._linkProcs.length) || rec.last_process ? `<span style="grid-column:1/-1">Process: <b>${escapeHtml(rec._linkProcs && rec._linkProcs.length ? rec._linkProcs.join(', ') : rec.last_process)}</b></span>` : ''}
         </div>
         ${low ? `<div style="margin-top:8px;background:#fff;border:1.5px dashed #FCA5A5;border-radius:8px;padding:8px">
           <label style="display:block;font-size:11px;font-weight:800;color:#B91C1C;margin-bottom:4px">🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)</label>
@@ -6784,6 +7062,7 @@ async function _saveKpiImpl() {
   }
 
   const records = [];
+  let kBadLot = 0, kBadProc = 0;   // นับ slot ที่ Lot/Process ไม่อยู่ในลิสต์ (บังคับเลือกจาก dropdown)
   for (const unit of units) {
     const on = document.getElementById(unit.pid + '_on');
     if (!on?.checked) continue;
@@ -6803,16 +7082,24 @@ async function _saveKpiImpl() {
       const te = $(sid+'_te')?.value || '';
       const valve = $(sid+'_v')?.value || '';
       const lot = $(sid+'_lot')?.value || '';
-      const proc = unit.isLine ? '' : ($(sid+'_p')?.value || '');   // Auto Line → Process อัตโนมัติต่อเครื่อง
+      // chips เลือกได้หลาย process (เรียงตาม flow แล้ว) → ตัวท้ายสุด = process ล่าสุดของงาน
+      const procs = unit.isLine ? [] : _procSel(sid);                // Auto Line → Process อัตโนมัติต่อเครื่อง
+      const proc  = procs.length ? procs[procs.length - 1] : '';
       const crew = unit.multiEmp ? _readCrew(sid) : _readSingleEmp(sid);
       const { wt } = calcWT(ts, te);
       if (!opr && !scrap) return;
+      // บังคับเลือกจากลิสต์ (เฉพาะเมื่อระบุวาล์ว): Lot ต้องอยู่ในระบบ · Process ทุกตัวต้องตรงเบอร์วาล์ว
+      // Auto Line → Process มาจากเครื่องอัตโนมัติ ไม่ต้องตรวจ proc
+      if (valve.trim()) {
+        if (lot.trim() && !isAllowedLot(valve, lot)) { kBadLot++; return; }
+        if (!unit.isLine && procs.some(p => !isAllowedProc(valve, p))) { kBadProc++; return; }
+      }
       if (si === 0 && ts) {
         const [h0, m0] = ts.split(':').map(Number);
         const { st, sd } = _resolveShift(prodDate, (h0 || 0) * 60 + (m0 || 0));
         mainShiftType = st; shiftDate = sd;
       }
-      slots.push({ si, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, crew });
+      slots.push({ si, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
     });
     if (!slots.length) continue;
 
@@ -6862,10 +7149,14 @@ async function _saveKpiImpl() {
           valve_no: slot.valve || '', lot: slot.lot || '', last_process: lastProc,
           valve_unknown: slot.valve ? !isKnownValve(slot.valve) : false,
           vsm: zoneVsm(unit.z),
+          _linkProcs: unit.isLine ? null : slot.procs,   // ชั่วคราว: ใช้สร้าง prod record ต่อ process แล้วลบทิ้ง (ไม่ persist)
         });
       }
     }
   }
+
+  if (kBadLot)  toast(`ข้าม ${kBadLot} รายการ — Lot ไม่อยู่ในระบบ (เลือกจากลิสต์เท่านั้น)`, 'red');
+  if (kBadProc) toast(`ข้าม ${kBadProc} รายการ — Process ไม่ตรงเบอร์วาล์ว (เลือกจากลิสต์เท่านั้น)`, 'red');
 
   if (!records.length) { toast('ไม่มีข้อมูลให้บันทึก — เปิดเครื่องและกรอก OPR ก่อน', 'orange'); return; }
 
@@ -6951,20 +7242,27 @@ async function _saveKpiImpl() {
   });
 
   // สร้าง production records ที่ link จาก KPI (ถ้ามี valve+lot)
-  const prodRecs = records.filter(r => r.valve_no && r.lot).map(r => ({
-    record_id:       'R-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-    timestamp:       now,
-    valve_no:        r.valve_no,
-    lot:             r.lot,
-    quantity:        r.opr,
-    current_process: r.last_process,
-    status:          'In Progress',
-    operator:        r.operator,
-    note:            `auto-linked KPI ${r.zone}/${r.machine_id}`,
-    zone:            r.zone,          // ให้ vsmOf สืบ VSM จาก zone ได้ (แม่นกว่า operator เมื่อ admin กรอกแทน)
-    machine_id:      r.machine_id,
-    vsm:             r.vsm || viewVsm(),
-  }));
+  // เลือกหลาย process จาก chips → 1 prod record ต่อ 1 process (เหมือนพนักงานลงทีละ process เอง — โครงข้อมูลเดิม)
+  const prodRecs = [];
+  for (const r of records) {
+    const linkProcs = (r._linkProcs && r._linkProcs.length) ? r._linkProcs : [r.last_process];
+    delete r._linkProcs;                                   // ฟิลด์ชั่วคราว — ห้ามหลุดไป state/Cloud
+    if (!r.valve_no || !r.lot) continue;
+    for (const p of linkProcs) prodRecs.push({
+      record_id:       'R-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      timestamp:       now,
+      valve_no:        r.valve_no,
+      lot:             r.lot,
+      quantity:        r.opr,
+      current_process: p,
+      status:          'In Progress',
+      operator:        r.operator,
+      note:            `auto-linked KPI ${r.zone}/${r.machine_id}`,
+      zone:            r.zone,        // ให้ vsmOf สืบ VSM จาก zone ได้ (แม่นกว่า operator เมื่อ admin กรอกแทน)
+      machine_id:      r.machine_id,
+      vsm:             r.vsm || viewVsm(),
+    });
+  }
 
   // 1) เก็บลง LocalStorage ทันที (เร็ว, ใช้งานต่อได้แม้ offline)
   state.kpiRecords = [...records, ...state.kpiRecords];
@@ -7042,10 +7340,13 @@ function acValveSearch(ev, id) {
   acDropdown(id, list, function pickValve(it, inputId) {
     document.getElementById(inputId).value = it.valveNo;
     document.getElementById(inputId + '_dd').classList.remove('open');
-    // auto fill process if there's a process input alongside
+    const sidOfValve = inputId.replace(/_v$/, '');
     const procInputId = inputId.replace('_v', '_p');
-    if (document.getElementById(procInputId)) {
-      // suggest the first process of this valve
+    if (document.getElementById(sidOfValve + '_pchips')) {
+      // ฟอร์ม KPI ใช้ process chips → วาดปุ่ม process ของวาล์วนี้ (มีตัวเดียว = เลือกให้เลย)
+      renderProcChips(sidOfValve);
+    } else if (document.getElementById(procInputId)) {
+      // ฟอร์มเก่าที่ยังเป็นช่อง process เดี่ยว → เติมตัวแรกให้เหมือนเดิม
       const v = state.valves.find(x => x.valveNo === it.valveNo);
       if (v && v.processes[0] && !document.getElementById(procInputId).value) {
         document.getElementById(procInputId).value = v.processes[0];
@@ -7086,12 +7387,17 @@ function acProcSearch(ev, id, valveInputId) {
   });
 }
 
-/* ===== Lot ผูกกับ Valve — รวบ Lot ที่เคยใช้กับวาล์วนี้ มาให้เลือก (sort) =====
-   พิมพ์ Lot อื่นได้อิสระ — แค่ช่วยให้เลือกเร็วขึ้น ===== */
+/* ===== Lot ผูกกับ Valve — เลือกได้เฉพาะ Lot ที่ลงทะเบียนใน Valve IDs (หน้าตั้งค่า)
+   + Lot ที่เคยใช้ใน records (กันงานเก่าพัง) — พิมพ์เองไม่ได้ ต้องเลือกจากลิสต์ ===== */
 function lotsForValve(valveNo) {
   const vn = (valveNo || '').trim().toLowerCase();
   if (!vn) return [];
   const set = new Set();
+  // 1) Valve IDs ที่ลงทะเบียนหน้าตั้งค่า (แหล่งหลัก)
+  for (const r of (state.ids || [])) {
+    if ((r.valve_no || '').trim().toLowerCase() === vn) { const l = (r.lot || '').trim(); if (l) set.add(l); }
+  }
+  // 2) Lot ที่เคยใช้ใน records (backward compat — งานเก่าที่ยังไม่ลงทะเบียน ID)
   const scan = arr => { for (const r of (arr || [])) {
     const rv = (r.valve_no || r.valveNo || '').trim().toLowerCase();
     if (rv === vn) { const l = (r.lot || '').trim(); if (l) set.add(l); }
@@ -7103,9 +7409,19 @@ function lotsForValve(valveNo) {
 function acLotSearch(ev, id, valveInputId) {
   const q = (ev.target.value || '').trim().toLowerCase();
   const valveNo = document.getElementById(valveInputId)?.value || '';
+  const dd = document.getElementById(id + '_dd');
   let lots = lotsForValve(valveNo);
   if (q) lots = lots.filter(l => l.toLowerCase().includes(q));
-  if (!lots.length) { document.getElementById(id + '_dd')?.classList.remove('open'); return; }
+  if (!lots.length) {
+    // ไม่มี Lot ให้เลือก → บอกสาเหตุแทนที่จะเงียบ (พิมพ์เองไม่ได้แล้ว)
+    if (dd) {
+      if (valveNo.trim()) {
+        dd.innerHTML = '<div class="ac-item" style="cursor:default;color:var(--muted)"><span class="ac-nm">ยังไม่มี Lot สำหรับวาล์วนี้ — ลงทะเบียน Valve ID ที่หน้าตั้งค่าก่อน</span></div>';
+        dd.classList.add('open');
+      } else { dd.classList.remove('open'); }
+    }
+    return;
+  }
   acDropdown(id, lots.map(l => ({ id: l, label: '' })), function pickLot(it, inputId) {
     document.getElementById(inputId).value = it.id;
     document.getElementById(inputId + '_dd').classList.remove('open');
@@ -7117,6 +7433,72 @@ function isKnownValve(vn) {
   const v = (vn || '').trim().toUpperCase();
   if (!v) return false;
   return state.valves.some(x => (x.valveNo || '').toUpperCase() === v);
+}
+
+/* ===== บังคับเลือกจาก dropdown — Process ต้องตรงเบอร์วาล์ว · Lot ต้องอยู่ในระบบ ===== */
+function allowedProcs(valveNo) {
+  const v = state.valves.find(x => vKey(x.valveNo) === vKey(valveNo));
+  return (v?.processes || []).filter(Boolean);
+}
+function isAllowedProc(valveNo, p) {
+  const P = (p || '').trim();
+  return !!P && allowedProcs(valveNo).some(x => _procCanon(x) === _procCanon(P));
+}
+function isAllowedLot(valveNo, lot) {
+  const L = (lot || '').trim();
+  return !!L && lotsForValve(valveNo).some(x => x.toLowerCase() === L.toLowerCase());
+}
+
+/* ===== PROCESS CHIPS (ฟอร์มบันทึก KPI) — โชว์ process ทั้งหมดของวาล์วเป็นปุ่มให้กดเลือกเลย
+   • กดเลือกได้หลายตัว: VSM3 ไม่จำกัด · VSM อื่น (รวม VSM4) สูงสุด 3
+   • ค่าที่เลือกเก็บใน hidden input ${sid}_p คั่นด้วย , (โค้ดเดิมที่อ่าน _p ใช้ต่อได้)
+   • เก็บเรียงตามลำดับ flow ของวาล์ว → ตัวท้ายสุด = process ล่าสุดของงาน (last_process) ===== */
+function procLimitFor(sid) { return _empVsmForInput(sid) === 'vsm3' ? Infinity : 3; }
+function _procSel(sid) {
+  const v = $(sid + '_p')?.value || '';
+  return v ? v.split(',').map(s => s.trim()).filter(Boolean) : [];
+}
+function _writeProcSel(sid, arr) { const el = $(sid + '_p'); if (el) el.value = arr.join(','); }
+function procChipsHtml(sid) {
+  const lim = procLimitFor(sid);
+  const hint = lim === Infinity ? 'กดเลือกได้หลาย Process' : `กดเลือกได้สูงสุด ${lim} Process`;
+  return `<div class="fr" style="margin:0"><label>Process ที่ทำ <span style="font-weight:600;color:var(--muted)">· ${hint}</span></label>
+    <input type="hidden" id="${sid}_p">
+    <div class="pchips" id="${sid}_pchips"><div class="pchips-hint">เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก</div></div>
+  </div>`;
+}
+function renderProcChips(sid) {
+  const host = $(sid + '_pchips'); if (!host) return;
+  const valveNo = ($(sid + '_v')?.value || '').trim();
+  if (!valveNo) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก</div>'; return; }
+  const procs = allowedProcs(valveNo);
+  if (!procs.length) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">ไม่พบ Process ของวาล์วนี้ใน Master valve — ตั้งค่าที่หน้าตั้งค่าก่อน</div>'; return; }
+  // เปลี่ยนวาล์ว → ตัดตัวเลือกที่ไม่อยู่ในวาล์วใหม่ทิ้ง · วาล์วมี process เดียว → เลือกให้อัตโนมัติ
+  let sel = _procSel(sid).filter(p => procs.some(x => _procCanon(x) === _procCanon(p)));
+  if (!sel.length && procs.length === 1) sel = [procs[0]];
+  _writeProcSel(sid, sel);
+  const selSet = new Set(sel.map(_procCanon));
+  const lim = procLimitFor(sid);
+  host.innerHTML = procs.map(p => {
+    const on = selSet.has(_procCanon(p));
+    return `<button type="button" class="pchip${on ? ' on' : ''}" aria-pressed="${on}" onclick="toggleProcChip('${sid}','${escapeHtml(p)}')">${on ? '✓ ' : ''}${escapeHtml(p)}</button>`;
+  }).join('') + (lim !== Infinity ? `<span class="pchips-cnt">${sel.length}/${lim}</span>` : '');
+}
+function toggleProcChip(sid, p) {
+  const procs = allowedProcs($(sid + '_v')?.value || '');
+  const sel = _procSel(sid);
+  const i = sel.findIndex(x => _procCanon(x) === _procCanon(p));
+  if (i >= 0) sel.splice(i, 1);
+  else {
+    const lim = procLimitFor(sid);
+    if (sel.length >= lim) { toast(`เลือกได้สูงสุด ${lim} Process`, 'orange'); return; }
+    sel.push(p);
+  }
+  const rank = new Map(procs.map((x, ix) => [_procCanon(x), ix]));   // เรียงตาม flow ของวาล์วเสมอ
+  sel.sort((a, b) => (rank.get(_procCanon(a)) ?? 999) - (rank.get(_procCanon(b)) ?? 999));
+  _writeProcSel(sid, sel);
+  _formDirty = true; _updateFabState();
+  renderProcChips(sid);
 }
 
 document.addEventListener('click', (e) => {
@@ -7150,8 +7532,8 @@ function addSlot(n = 1) {
       </div>
       <div class="fg">
         <div class="fr" style="margin:0"><label>Qty *</label><input type="number" id="${sid}_q" min="0" placeholder="0"></div>
-        <div class="fr ac" style="margin:0"><label>Process ปัจจุบัน</label>
-          <input type="text" id="${sid}_p" placeholder="เลือก process" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
+        <div class="fr ac" style="margin:0"><label>Process ปัจจุบัน *</label>
+          <input type="text" id="${sid}_p" placeholder="เลือก process" oninput="acProcSearch(event,'${sid}_p','${sid}_v')" onfocus="acProcSearch(event,'${sid}_p','${sid}_v')" autocomplete="off">
           <div class="ac-dd" id="${sid}_p_dd"></div>
         </div>
       </div>
@@ -7188,7 +7570,7 @@ async function _saveSlotsImpl() {
   const slots = document.querySelectorAll('#slots .slot');
   if (!slots.length) { toast('ยังไม่มี slot', 'orange'); return; }
   const records = [];
-  let invalid = 0;
+  let invalid = 0, badLot = 0, badProc = 0;
   const now = new Date().toISOString();
   slots.forEach((s, i) => {
     const id = s.id;
@@ -7197,7 +7579,10 @@ async function _saveSlotsImpl() {
     const q   = +($(id+'_q')?.value || 0);
     const p   = $(id+'_p')?.value.trim();
     const n   = $(id+'_n')?.value.trim();
-    if (!v || !lot || !q) { invalid++; return; }
+    if (!v || !lot || !q || !p) { invalid++; return; }
+    // บังคับเลือกจากลิสต์: Lot ต้องอยู่ในระบบ · Process ต้องตรงเบอร์วาล์ว (พิมพ์เองไม่ผ่าน)
+    if (!isAllowedLot(v, lot)) { badLot++; return; }
+    if (!isAllowedProc(v, p))  { badProc++; return; }
     records.push({
       record_id: `R-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2,6)}`,
       timestamp: now,
@@ -7207,7 +7592,9 @@ async function _saveSlotsImpl() {
       vsm: viewVsm(),
     });
   });
-  if (invalid) toast(`ข้าม ${invalid} slot ที่กรอกไม่ครบ`, 'orange');
+  if (invalid) toast(`ข้าม ${invalid} slot ที่กรอกไม่ครบ (ต้องมี Valve/Lot/Qty/Process)`, 'orange');
+  if (badLot)  toast(`ข้าม ${badLot} slot — Lot ไม่อยู่ในระบบ (เลือกจากลิสต์เท่านั้น)`, 'red');
+  if (badProc) toast(`ข้าม ${badProc} slot — Process ไม่ตรงเบอร์วาล์ว (เลือกจากลิสต์เท่านั้น)`, 'red');
   if (!records.length) return;
 
   // 1) เก็บลง LocalStorage ทันที
@@ -9205,10 +9592,46 @@ function toggleProcPill(el) {
     if (b) { b.textContent = newOrd; b.style.display = 'inline'; }
   }
 }
+const PROCS_ALL = ['AW','BLEND','BUFF','CAR','CB','CCOT','COPY','COPY CUP','COT','COT+TIP','COT1','COT2','CUP','D/B','DOUBLE','F.IND','FACE IND','FFT','FG','FH','HOD','HOD&FRG','HOD+FG',"HOD'C",'IND',"IND P'",'IND P"','IND T"','P/T','POL','PQ','QC','RADIUS','RE/R','RED','RED/F','RED/R','REDUC','ROLL','ROLL M.','SEMI','SFG','SFG*2','SRG','SRG*2','SRG*3','SRG*5','SRG*6','SSG','SSG*2','SSG*3','SSG*4','SSG*6','SSG+RED','SWIRL','T.IND','T/T','TG','TG-R','TH','TIP C"','TIP IND','TIP IND.','TIPC"','TL','TOP','TOP&HOD','TRG','TRG.','TW','UN/H','UND','UNDER','UNDER H.','VET','XRAY'];
+/* ── ลำดับ process ของ modal Valve (v3.7) — แก้ทีละตำแหน่ง: เปลี่ยนชื่อตรงช่อง (เช่น HOD → TOP&HOD) /
+   ↑↓ ย้าย / ✕ ลบ — ไม่ต้องลบทั้งหมดแล้วกดใหม่ · pill ด้านล่าง = แตะเพื่อเพิ่มต่อท้าย/เอาออก ── */
+let _mProcSeq = [];
+function _mSeqRender() {
+  const host = document.getElementById('m_seq'); if (!host) return;
+  host.innerHTML = _mProcSeq.length ? _mProcSeq.map((p, i) => {
+    const all = PROCS_ALL.includes(p) ? PROCS_ALL : [p, ...PROCS_ALL];   // process เก่านอกลิสต์ → คงให้เลือกได้
+    const opts = all.map(o => `<option value="${escapeHtml(o)}" ${o === p ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('');
+    return `<div class="mseq-row">
+      <span class="mseq-n">${i + 1}</span>
+      <select class="mseq-sel" onchange="mSeqReplace(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">${opts}</select>
+      <button type="button" class="mseq-btn" onclick="mSeqMove(${i},-1)" ${i === 0 ? 'disabled' : ''} aria-label="ย้ายขึ้น">↑</button>
+      <button type="button" class="mseq-btn" onclick="mSeqMove(${i},1)" ${i === _mProcSeq.length - 1 ? 'disabled' : ''} aria-label="ย้ายลง">↓</button>
+      <button type="button" class="mseq-btn mseq-del" onclick="mSeqDel(${i})" aria-label="ลบ">✕</button>
+    </div>`;
+  }).join('')
+    : '<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม</div>';
+  document.querySelectorAll('#m_procs .proc-pill').forEach(el =>
+    el.classList.toggle('done', _mProcSeq.includes(el.dataset.proc)));
+}
+function mSeqReplace(i, val) {
+  const dupAt = _mProcSeq.findIndex((x, ix) => ix !== i && x === val);
+  if (dupAt >= 0) { toast(`"${val}" มีอยู่แล้วที่ลำดับ ${dupAt + 1}`, 'orange'); _mSeqRender(); return; }
+  _mProcSeq[i] = val; _mSeqRender();
+}
+function mSeqMove(i, d) {
+  const j = i + d; if (j < 0 || j >= _mProcSeq.length) return;
+  [_mProcSeq[i], _mProcSeq[j]] = [_mProcSeq[j], _mProcSeq[i]];
+  _mSeqRender();
+}
+function mSeqDel(i) { _mProcSeq.splice(i, 1); _mSeqRender(); }
+function mSeqToggle(el) {
+  const p = el.dataset.proc, i = _mProcSeq.indexOf(p);
+  if (i >= 0) _mProcSeq.splice(i, 1); else _mProcSeq.push(p);
+  _mSeqRender();
+}
 function openValveModal(valveNo) {
   const v = valveNo ? state.valves.find(x => x.valveNo === valveNo) : null;
-  const PROCS_ALL = ['AW','BLEND','BUFF','CAR','CB','CCOT','COPY','COPY CUP','COT','COT+TIP','COT1','COT2','CUP','D/B','DOUBLE','F.IND','FACE IND','FFT','FG','FH','HOD','HOD&FRG','HOD+FG',"HOD'C",'IND',"IND P'",'IND P"','IND T"','P/T','POL','PQ','QC','RADIUS','RE/R','RED','RED/F','RED/R','REDUC','ROLL','ROLL M.','SEMI','SFG','SFG*2','SRG','SRG*2','SRG*3','SRG*5','SRG*6','SSG','SSG*2','SSG*3','SSG*4','SSG*6','SSG+RED','SWIRL','T.IND','T/T','TG','TG-R','TH','TIP C"','TIP IND','TIP IND.','TIPC"','TL','TOP','TOP&HOD','TRG','TRG.','TW','UN/H','UND','UNDER','UNDER H.','VET','XRAY'];
-  const selProcs = v?.processes || [];
+  _mProcSeq = (v?.processes || []).filter(Boolean).slice();
   openModal(v ? 'แก้ไข Valve' : 'เพิ่ม Valve', `
     <div class="fr"><label>Valve No</label><input type="text" id="m_v" value="${escapeHtml(v?.valveNo||'')}" ${v?'readonly':''}></div>
     <div class="fr"><label>ลูกค้า</label>
@@ -9216,11 +9639,14 @@ function openValveModal(valveNo) {
     </div>
     <div class="fr"><label>Description</label><input type="text" id="m_d" value="${escapeHtml(v?.description||'')}"></div>
     <div class="fr"><label>Process (ลำดับการผลิต)</label>
-      <div class="proc-pills" id="m_procs">${PROCS_ALL.map((p)=>{ const idx=selProcs.indexOf(p); const done=idx>=0; const ord=done?idx+1:0; const ps=p.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); return '<span class="proc-pill '+(done?'done':'')+'" data-proc="'+ps+'" '+(done?'data-order="'+ord+'"':'')+' onclick="toggleProcPill(this)">'+p+'<b class="pob" style="display:'+(done?'inline':'none')+';background:var(--green);color:#fff;border-radius:50%;min-width:14px;height:14px;padding:0 3px;font-size:9px;text-align:center;line-height:14px;margin-left:3px">'+(done?ord:'')+'</b></span>'; }).join('')}</div>
-      <div class="muted mt-8" style="font-size:11px">คลิกเลือก — <b>ตัวเลขบน pill = ลำดับการผลิต</b> กดซ้ำเพื่อยกเลิก</div>
+      <div id="m_seq"></div>
+      <div class="muted" style="font-size:11px;margin:4px 0 10px">💡 <b>เปลี่ยนชื่อ process ตรงช่องได้เลย</b> (เช่น HOD → TOP&amp;HOD) ลำดับอื่นไม่ขยับ · ↑↓ ย้ายลำดับ · ✕ ลบ</div>
+      <div class="muted" style="font-size:11px;margin-bottom:4px">เพิ่ม process — แตะเพื่อเพิ่มต่อท้าย (แตะตัวที่เลือกแล้ว = เอาออก):</div>
+      <div class="proc-pills" id="m_procs">${PROCS_ALL.map(p=>{ const inSeq=_mProcSeq.includes(p); const ps=escapeHtml(p); return '<span class="proc-pill '+(inSeq?'done':'')+'" data-proc="'+ps+'" onclick="mSeqToggle(this)">'+ps+'</span>'; }).join('')}</div>
     </div>
     <button class="btn btn-blue btn-block" onclick="saveValve('${escapeHtml(v?.valveNo||'')}')">💾 บันทึก</button>
   `);
+  _mSeqRender();
 }
 // คีย์เทียบวาล์วแบบไม่สนตัวพิมพ์ใหญ่เล็ก/ช่องว่าง (canonical = ตัวพิมพ์ใหญ่)
 function vKey(s) { return (s == null ? '' : String(s)).trim().toUpperCase(); }
@@ -9237,7 +9663,8 @@ function lotKey(s) {
 function upsertValve(entry) {
   const key = vKey(entry.valveNo);
   entry.valveNo = key;                                   // เก็บเป็นตัวพิมพ์ใหญ่เสมอ
-  entry.processes = [...new Set((entry.processes || []).filter(Boolean))]; // กัน process ซ้ำ
+  entry.processes = normalizeValveProcesses(entry.processes);   // ยุบ TOP+HOD ติดกัน → TOP&HOD
+  entry.processes = [...new Set(entry.processes.filter(Boolean))]; // กัน process ซ้ำ
   const had = state.valves.some(v => vKey(v.valveNo) === key);
   state.valves = state.valves.filter(v => vKey(v.valveNo) !== key);
   state.valves.push(entry);
@@ -9247,7 +9674,9 @@ async function saveValve(orig) {
   const valveNo  = $('m_v').value.trim();
   const customer = $('m_c').value;
   const desc     = $('m_d').value;
-  const procs    = [...$('m_procs').querySelectorAll('.proc-pill.done')].sort((a,b)=>(+(a.dataset.order||0))-(+(b.dataset.order||0))).map(el=>el.dataset.proc||el.textContent.replace(/\d+$/,'').trim());
+  // ลำดับจากตัวแก้ #m_seq (v3.7) — fallback อ่านจาก pill แบบเดิมถ้าไม่มี (กันหน้าเก่าค้าง)
+  const procs    = document.getElementById('m_seq') ? _mProcSeq.filter(Boolean).slice()
+    : [...$('m_procs').querySelectorAll('.proc-pill.done')].sort((a,b)=>(+(a.dataset.order||0))-(+(b.dataset.order||0))).map(el=>el.dataset.proc||el.textContent.replace(/\d+$/,'').trim());
   if (!valveNo) { toast('กรอก Valve No', 'orange'); return; }
   const entry = { valveNo, customer, description: desc, processes: procs, barcode_id: '' };
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
@@ -9298,6 +9727,110 @@ function exportValves() {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Valves');
   XLSX.writeFile(wb, `vsm4-valves-${todayISO()}.xlsx`);
+}
+
+/* ===== Export ยอดผลิตที่บันทึก (เฉพาะ VSM ที่ดูอยู่) — แก้ TOP/HOD ใน Excel แล้ว import กลับได้ =====
+   คอลัมน์ record_id = key สำหรับ import กลับ (ห้ามแก้/ลบ) ===== */
+function exportProdForEdit() {
+  const rows = filterVsm(state.prodRecords).map(r => ({
+    record_id:       r.record_id || r.recordId || '',
+    timestamp:       r.timestamp || '',
+    valve_no:        r.valve_no || r.valveNo || '',
+    lot:             r.lot || '',
+    quantity:        r.quantity != null ? r.quantity : '',
+    current_process: r.current_process || r.currentProcess || '',
+    status:          r.status || '',
+    operator:        r.operator || '',
+    note:            r.note || '',
+  }));
+  if (!rows.length) { toast('ไม่มียอดผลิตใน VSM นี้', 'orange'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'ProdRecords');
+  XLSX.writeFile(wb, `vsm-prod-${viewVsm()}-${todayISO()}.xlsx`);
+  toast(`Export ${rows.length} รายการ (${viewVsm().toUpperCase()})`, 'green');
+}
+
+/* ===== Import ยอดที่แก้แล้วกลับเข้าระบบ — match ด้วย record_id, อัปเดต process/lot/qty/note ===== */
+function importProdEdited(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const byId = new Map();
+    for (const rec of state.prodRecords) byId.set(String(rec.record_id || rec.recordId || ''), rec);
+    const changed = [];
+    const now = new Date().toISOString();
+    for (const row of rows) {
+      const rid = String(row.record_id || row.recordId || '').trim();
+      if (!rid || !byId.has(rid)) continue;
+      const rec = byId.get(rid);
+      let diff = false;
+      const setIf = (field, val) => {
+        if (val === undefined || val === null || val === '') return;
+        if (String(rec[field] != null ? rec[field] : '') !== String(val)) { rec[field] = val; diff = true; }
+      };
+      const newProc = String(row.current_process || '').trim();
+      setIf('current_process', newProc);
+      if (newProc && String(rec.currentProcess||'') !== newProc) { rec.currentProcess = newProc; diff = true; }
+      setIf('lot',  String(row.lot || '').trim());
+      setIf('note', String(row.note || '').trim());
+      if (row.quantity !== undefined && row.quantity !== '' && +row.quantity !== +rec.quantity) { rec.quantity = +row.quantity; diff = true; }
+      if (diff) { rec.updated_at = now; rec._unsynced = true; changed.push(rec); }
+    }
+    if (!changed.length) { toast('ไม่มีรายการที่เปลี่ยน (ตรวจ record_id ให้ตรง)', 'orange'); return; }
+    lsSave(LS.PROD_REC, state.prodRecords);
+    if (typeof render === 'function') { try { render(); } catch (e2) {} }
+    toast(`อัปเดต ${changed.length} รายการ`, 'green');
+    if (API) {
+      // /api/records/bulk = insert ล้วน (ไม่ upsert) → ต้อง delete ก่อน insert กัน record ซ้ำ (เหมือน saveProdEdit)
+      let synced = 0;
+      showBusy && showBusy('กำลัง sync ' + changed.length + ' รายการ…', true);
+      for (const rec of changed) {
+        const rid = rec.record_id || rec.recordId;
+        try {
+          await api('/api/records/delete', { body: { record_id: rid } });
+          await api('/api/records/bulk',   { body: { records: [rec] } });
+          rec._unsynced = false; synced++;
+        } catch (e2) { /* คงไว้ _unsynced → auto re-sync ภายหลัง */ }
+      }
+      hideBusy && hideBusy();
+      lsSave(LS.PROD_REC, state.prodRecords);
+      toast(synced === changed.length ? `Sync ไป Cloud สำเร็จ ${synced} รายการ` : `Sync ${synced}/${changed.length} — ที่เหลือจะ sync อัตโนมัติเมื่อเน็ตกลับมา`, synced === changed.length ? 'green' : 'orange');
+    }
+  };
+  r.readAsArrayBuffer(f);
+  ev.target.value = '';
+}
+
+/* ===== Export Valve No ที่ยังไม่มี Process (เฉพาะเบอร์ที่พบในงานของ VSM ที่ดูอยู่) =====
+   ผู้ใช้เติม Processes แล้ว import กลับผ่าน "Import Valves" / วาง Excel เดิมได้เลย ===== */
+function exportValvesNoProc() {
+  const count = {};   // valveNo(upper) → จำนวน record ที่พบ
+  const bump = arr => { for (const r of (filterVsm(arr) || [])) {
+    const vn = (r.valve_no || r.valveNo || '').trim().toUpperCase();
+    if (vn) count[vn] = (count[vn] || 0) + 1;
+  }};
+  bump(state.prodRecords); bump(state.kpiRecords);
+  const rows = [];
+  for (const vn of Object.keys(count).sort()) {
+    if (allowedProcs(vn).length) continue;   // มี process แล้ว → ข้าม
+    const v = state.valves.find(x => (x.valveNo || '').toUpperCase() === vn);
+    rows.push({
+      ValveNo: vn,
+      Customer: v?.customer || '',
+      Description: v?.description || '',
+      Processes: '',                 // ← ช่องว่างให้เติม (คั่นด้วย , เช่น SSG,TOP&HOD,VET)
+      InMaster: v ? 'yes' : 'no',    // no = ยังไม่ลงทะเบียนใน Master เลย
+      พบในงาน: count[vn],
+    });
+  }
+  if (!rows.length) { toast('ทุกเบอร์ใน VSM นี้มี Process ครบแล้ว 🎉', 'green'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'NoProcess');
+  XLSX.writeFile(wb, `vsm-valves-no-process-${viewVsm()}-${todayISO()}.xlsx`);
+  toast(`Export ${rows.length} เบอร์ที่ยังไม่มี Process`, 'green');
 }
 
 function openPasteValvesModal() {
@@ -9660,6 +10193,7 @@ function renderPostFgJobs() {
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <input type="search" id="postFgSearch" value="${escapeHtml(_postFgQuery)}" placeholder="🔎 ค้นหา Valve หรือ Lot" oninput="onPostFgSearch(this.value)" style="flex:1;min-width:160px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
       <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
+      ${allActive.length ? `<button class="btn btn-green btn-sm" onclick="finishAllPostFg()" style="white-space:nowrap">✅ จบงานทั้งหมด (${nn(allActive.length)})</button>` : ''}
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}</div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
@@ -9755,6 +10289,38 @@ async function advanceJobAt(i, dir) {
   } catch (e) {
     hideBusy();
     // ไม่อัปเดต local — สถานะคงเดิม ป้องกันเครื่องนี้เห็นไม่ตรงกับ DB/เครื่องอื่น
+    toast('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — สถานะยังไม่เปลี่ยน กรุณาลองใหม่', 'red');
+  } finally {
+    _advancingJob = false;
+  }
+}
+// จบงานหลัง FG "ทั้งหมด" ในทีเดียว → set ทุกงานค้างเป็น DONE (batch เป็น request เดียว)
+async function finishAllPostFg() {
+  if (_advancingJob) return;
+  if (!API) { toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงจบงานได้', 'orange'); return; }
+  const jobs = computePostFgJobs(_postFgRecs || state.kpiRecords || []);   // งานค้างทั้งหมด (ไม่กรองคำค้น)
+  if (!jobs.length) { toast('ไม่มีงานค้างหลัง FG', 'orange'); return; }
+  if (!(await confirmModal(`จบงานหลัง FG ทั้งหมด ${nn(jobs.length)} รายการ?\n(ทุกงานจะถูกตั้งเป็น DONE — เอากลับทีหลังได้)`))) return;
+  _advancingJob = true;
+  showBusy(`กำลังจบงานทั้งหมด ${nn(jobs.length)} รายการ…`);
+  try {
+    const doneCode = procCode('DONE');
+    const ymd = Number(todayISO().replace(/-/g, ''));
+    const body = {};
+    for (const j of jobs) {
+      const jk = jobKey(j.valve, j.lot);
+      body[JOBPROC_PREFIX  + jk] = doneCode;
+      body[JOBPROCD_PREFIX + jk] = ymd;
+      body[JOBPROCQ_PREFIX + jk] = Number(j.qty) || 0;
+    }
+    await api('/api/targets', { body });                 // เขียน DB สำเร็จก่อน (ทุกเครื่องเห็นตรงกัน)
+    state.targets = { ...state.targets, ...body };
+    lsSave(LS.TARGETS, state.targets);
+    hideBusy();
+    toast(`✅ จบงานทั้งหมด ${nn(jobs.length)} รายการแล้ว · บันทึกขึ้น Cloud`, 'green');
+    renderPostFgJobs();
+  } catch (e) {
+    hideBusy();
     toast('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — สถานะยังไม่เปลี่ยน กรุณาลองใหม่', 'red');
   } finally {
     _advancingJob = false;
