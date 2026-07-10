@@ -864,7 +864,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.8</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.9</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4384,7 +4384,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.8":"Production Record + KPI · v3.8",
+"ระบบบันทึกผลิต + KPI · v3.9":"Production Record + KPI · v3.9",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4468,7 +4468,7 @@ const I18N_X = {
 "· กดเลือกได้หลาย Process":"· tap to select multiple",
 "· กดเลือกได้สูงสุด 3 Process":"· tap to select up to 3",
 "เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก":"Select a Valve No first — its processes will appear here",
-"ไม่พบ Process ของวาล์วนี้ใน Master valve — ตั้งค่าที่หน้าตั้งค่าก่อน":"This valve has no processes in Master valve — set them in Settings first",
+"วาล์วนี้ยังไม่มี Process ใน Master valve — บันทึกได้เลย ไม่ต้องเลือก Process":"This valve has no Process in Master valve — you can save without selecting one",
 "เลือกได้สูงสุด 3 Process":"Max 3 processes",
 "กรอกข้อมูลก่อน":"Enter data first","OAE เกิน 100% — กรุณาตรวจสอบ OPR และ Target":"OAE over 100% — please check OPR and Target",
 // ── สแกนบาร์โค้ด ──
@@ -4526,6 +4526,8 @@ const I18N_X = {
 "” ซึ่งไม่มีใน process ของวาล์วนี้ — กดเลือก process ที่ถูกต้องด้านล่าง (ค่าเดิมถูกเก็บไว้ในช่องหมายเหตุแล้ว)":"” which is not in this valve's process list — pick the correct one below (the original value is kept in the note field)",
 "(เก็บค่าที่พนักงานพิมพ์ไว้แล้ว)":"(operator's original value kept)","รายการล่าสุด":"latest items",
 "จับคู่อัตโนมัติ (แก้ทีเดียวหลายตัว)":"Auto-match (fix many at once)","จับคู่อัตโนมัติ":"Auto-match","จับคู่ได้":"matched",
+"จับคู่ Process อัตโนมัติ":"Auto-match processes","แบบต้องแก้เอง":"patterns to fix manually",
+"แก้ทุก record ที่พิมพ์แบบเดียวกันของวาล์วเบอร์นั้นในคราวเดียว —":"Fixes every record of that valve typed the same way in one go —",
 "งานเก่าที่ process ไม่ตรงตัวเลือกของวาล์ว — กด":"old jobs whose process doesn't match the valve's options — tap",
 "แก้ไข Valve No ที่พิมพ์ผิด":"Fix mistyped Valve No","แก้":"Fix","ให้เป็น Valve No ที่ถูกต้อง":"to the correct Valve No",
 "ระบบจะแก้ทุก record ที่ใช้เลขนี้ ทั้งใน Local และฐานข้อมูล":"All records using this number will be fixed, in Local and the database",
@@ -4688,6 +4690,11 @@ const I18N_T = [
 ["· แสดง § รายการล่าสุด","· showing § latest"],
 ["— เหลือ § ตัวที่ต้องแก้เอง (กำกวม / พิมพ์หลายวาล์ว / ไม่มีในระบบ)","— § left to fix manually (ambiguous / multiple valves / not in system)"],
 ["ไม่พบรายการที่จับคู่อัตโนมัติได้แบบมั่นใจ§","No items could be auto-matched confidently§"],
+["— เหลือ § แบบที่ต้องแก้เอง (ไม่ใกล้เคียงตัวเลือกของวาล์ว / กำกวม)","— § left to fix manually (not close to the valve's options / ambiguous)"],
+["แบบ (§ record) · อีก","patterns (§ records) · plus"],
+["แบบ (§ record)","patterns (§ records)"],
+["✅ แก้ Process § แบบ (§ record) สำเร็จ","✅ Fixed § process patterns (§ records)"],
+["แก้ Process § แบบ (§ record) แล้ว (local)","Fixed § process patterns (§ records) (local)"],
 ["OPR: § · WT: § ชม.","OPR: § · WT: § h"],
 ["🆘 ขอความช่วยเหลือ §","🆘 Help requests §"],
 ["ดึง § รายการจาก Cloud","Fetched § items from Cloud"],
@@ -7604,12 +7611,16 @@ async function _saveKpiImpl() {
       const crew = unit.multiEmp ? _readCrew(sid) : _readSingleEmp(sid);
       const { wt } = calcWT(ts, te);
       if (!opr && !scrap) return;
-      // เมื่อระบุวาล์ว: บังคับต้องมี Process (req) · Process ทุกตัวต้องตรงเบอร์วาล์ว
+      // เมื่อระบุวาล์ว: บังคับต้องมี Process เฉพาะวาล์วที่มี Process ในมาสเตอร์ · Process ทุกตัวต้องตรงเบอร์วาล์ว
       //   Lot: พิมพ์เพิ่มเองได้ (ไม่บล็อก) — lot ที่ยังไม่ลงทะเบียนจะไปโผล่หน้า "วางแผน" ให้ admin จัดการ
       //   Auto Line → Process มาจากเครื่องอัตโนมัติ ไม่ต้องตรวจ proc
       if (valve.trim() && !unit.isLine) {
-        if (!procs.length) { kNoProc++; return; }
-        if (procs.some(p => !isAllowedProc(valve, p))) { kBadProc++; return; }
+        // เฉพาะวาล์วที่มี Process ใน Master valve → บังคับต้องเลือก Process
+        // วาล์วที่ยังไม่ได้ตั้ง Process ในมาสเตอร์ → อนุญาตให้บันทึกได้โดยไม่ต้องใส่ Process
+        if (allowedProcs(valve).length) {
+          if (!procs.length) { kNoProc++; return; }
+          if (procs.some(p => !isAllowedProc(valve, p))) { kBadProc++; return; }
+        }
       }
       if (si === 0 && ts) {
         const [h0, m0] = ts.split(':').map(Number);
@@ -8012,7 +8023,7 @@ function renderProcChips(sid) {
   const valveNo = ($(sid + '_v')?.value || '').trim();
   if (!valveNo) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก</div>'; return; }
   const procs = allowedProcs(valveNo);
-  if (!procs.length) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">ไม่พบ Process ของวาล์วนี้ใน Master valve — ตั้งค่าที่หน้าตั้งค่าก่อน</div>'; return; }
+  if (!procs.length) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">วาล์วนี้ยังไม่มี Process ใน Master valve — บันทึกได้เลย ไม่ต้องเลือก Process</div>'; return; }
   // เปลี่ยนวาล์ว → ตัดตัวเลือกที่ไม่อยู่ในวาล์วใหม่ทิ้ง · วาล์วมี process เดียว → เลือกให้อัตโนมัติ
   let sel = _procSel(sid).filter(p => procs.some(x => _procCanon(x) === _procCanon(p)));
   if (!sel.length && procs.length === 1) sel = [procs[0]];
@@ -9430,6 +9441,7 @@ function renderUnknownProcs() {
           <div style="font-size:11px;color:var(--muted)">งานเก่าที่ process ไม่ตรงตัวเลือกของวาล์ว — กด "แก้ไข" เพื่อเข้าไปเลือก process ที่ถูกต้อง${more>0?` · แสดง ${CAP} รายการล่าสุด`:''}</div>
         </div>
       </div>
+      <button class="btn btn-blue btn-block btn-sm" style="margin-bottom:10px" onclick="autoMatchUnknownProcs()">🪄 จับคู่อัตโนมัติ (แก้ทีเดียวหลายตัว)</button>
       ${list.map(u => `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FEF08A">
           <div style="min-width:0">
@@ -9441,6 +9453,149 @@ function renderUnknownProcs() {
       `).join('')}
       ${more > 0 ? `<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FEF08A">…และอีก ${more} รายการ</div>` : ''}
     </div>`;
+}
+
+/* ============================================================
+   AUTO-MATCH PROCESS — จับคู่ process ที่พนักงานพิมพ์เอง กับ process
+   ของวาล์วเบอร์นั้น (Master valve) ที่ "ใกล้เคียง" แล้วแก้ทีเดียวทุก record
+   เช่น วาล์วมี SSG,TOP&HOD,COT แต่พนักงานพิมพ์ TOP / top&hod / TOP & HOD
+   → เสนอแก้เป็น TOP&HOD ทั้งหมด (มีหน้าตรวจทานก่อนยืนยัน)
+   เรียกจาก: ปุ่มในกล่อง "Process ที่พนักงานพิมพ์เอง" (ทุกวาล์ว)
+   + อัตโนมัติหลัง admin บันทึกแก้ Process ของวาล์ว (เฉพาะวาล์วนั้น · เงียบถ้าไม่พบ)
+   ============================================================ */
+const _pmKey  = p => { const t = String(p == null ? '' : p).trim().toUpperCase(); return PROC_ALIAS[t] || t; };
+const _pmNorm = p => _pmKey(p).replace(/[^A-Z0-9ก-๙]/g, '');   // ตัดช่องว่าง/&/./+ ฯลฯ — คงตัวอักษร+ตัวเลขไว้
+// ต่างกันไม่เกิน 1 ตัวอักษร (แทน/เพิ่ม/ลบ) และจุดที่ต่างต้องไม่ใช่ตัวเลข
+// (กัน COT1↔COT2, SSG*2↔SSG*3 ซึ่งเป็นคนละ process จริง)
+function _pmOffByOne(a, b) {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  let ja = a.length - 1, jb = b.length - 1;
+  while (ja >= i && jb >= i && a[ja] === b[jb]) { ja--; jb--; }
+  if (ja - i > 0 || jb - i > 0) return false;            // ต่างกันเกิน 1 จุด
+  const chA = ja >= i ? a[i] : '', chB = jb >= i ? b[i] : '';
+  return !/[0-9]/.test(chA + chB);
+}
+// คืน process จริงของวาล์วที่ "มั่นใจ" ว่าคือตัวเดียวกับที่พิมพ์ — ไม่มั่นใจ/กำกวม → null
+function _procAutoMatch(typed, procs) {
+  const tN = _pmNorm(typed);
+  if (!tN || /[ก-๙]/.test(tN)) return null;   // มีภาษาไทย = ข้อความอื่น (เช่น "จบงาน (หลัง FG)") ไม่ใช่ชื่อ process → ไม่จับคู่
+  const cand = (procs || []).filter(Boolean);
+  // 1) เหมือนกันเมื่อตัดช่องว่าง/สัญลักษณ์ (top&hod, TOP & HOD → TOP&HOD · TRG. → TRG)
+  let hit = cand.filter(p => _pmNorm(p) === tN);
+  if (hit.length) return hit.length === 1 ? hit[0] : null;
+  // 2) เป็นส่วนหนึ่งของกันและกัน (TOP ⊂ TOP&HOD) — ยาว ≥2 · ยาวต่างกันไม่เกิน 4 · เข้าได้ตัวเดียวเท่านั้น
+  if (tN.length >= 2) {
+    hit = cand.filter(p => { const n = _pmNorm(p); return n.length >= 2 && Math.abs(n.length - tN.length) <= 4 && (n.includes(tN) || tN.includes(n)); });
+    if (hit.length) return hit.length === 1 ? hit[0] : null;
+  }
+  // 3) พิมพ์พลาด 1 ตัวอักษร (SGG → SSG) — เฉพาะยาว ≥3
+  if (tN.length >= 3) {
+    hit = cand.filter(p => { const n = _pmNorm(p); return n.length >= 3 && _pmOffByOne(tN, n); });
+    if (hit.length === 1) return hit[0];
+  }
+  return null;
+}
+let _procMatchList = [];
+function autoMatchUnknownProcs(onlyValve, silentIfNone) {
+  const only = onlyValve ? vKey(onlyValve) : null;
+  const procMap = {};                        // valveNo(UPPER) → processes ของวาล์ว
+  for (const v of state.valves) {
+    const k = vKey(v.valveNo);
+    if (k) procMap[k] = (v.processes || []).filter(Boolean);
+  }
+  const groups = {};                         // (valve, process ที่พิมพ์) → จำนวน record
+  for (const r of state.prodRecords) {
+    const vn   = (r.valve_no || r.valveNo || '').trim();
+    const proc = (r.current_process || r.currentProcess || '').trim();
+    if (!vn || !proc) continue;
+    const vk = vKey(vn);
+    if (only && vk !== only) continue;
+    const opts = procMap[vk];
+    if (!opts || !opts.length) continue;                              // วาล์วไม่รู้จัก/ยังไม่ตั้ง process → ตัดสินไม่ได้
+    if (opts.some(p => _pmKey(p) === _pmKey(proc))) continue;         // ตรงตัวเลือกอยู่แล้ว
+    const gk = vk + '||' + _pmKey(proc);
+    (groups[gk] || (groups[gk] = { valve: vn, wrong: proc, count: 0 })).count++;
+  }
+  const matched = [];
+  let unmatched = 0;
+  for (const g of Object.values(groups)) {
+    const c = _procAutoMatch(g.wrong, procMap[vKey(g.valve)]);
+    if (c) matched.push({ ...g, correct: c }); else unmatched++;
+  }
+  matched.sort((a, b) => a.valve.localeCompare(b.valve) || a.wrong.localeCompare(b.wrong));
+  _procMatchList = matched;
+  if (!matched.length) {
+    if (silentIfNone) return;
+    openModal('🪄 จับคู่ Process อัตโนมัติ', `
+      <div style="font-size:13px;line-height:1.7;margin-bottom:14px">ไม่พบรายการที่จับคู่อัตโนมัติได้แบบมั่นใจ${unmatched ? ` — เหลือ ${unmatched} แบบที่ต้องแก้เอง (ไม่ใกล้เคียงตัวเลือกของวาล์ว / กำกวม)` : ''}</div>
+      <button class="btn btn-outline btn-block" onclick="closeModal()">ปิด</button>`);
+    return;
+  }
+  const totalRec = matched.reduce((s, m) => s + m.count, 0);
+  openModal('🪄 จับคู่ Process อัตโนมัติ', `
+    <div style="background:var(--blue-light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.6">
+      จับคู่ได้ <b style="color:var(--blue)">${matched.length}</b> แบบ (${totalRec} record)${unmatched ? ` · อีก <b>${unmatched}</b> แบบต้องแก้เอง` : ''}<br>
+      <span style="color:var(--muted);font-size:11px">แก้ทุก record ที่พิมพ์แบบเดียวกันของวาล์วเบอร์นั้นในคราวเดียว — </span><span style="color:var(--muted);font-size:11px">ตรวจสอบความถูกต้อง — ติ๊กออกถ้าไม่ใช่ แล้วกดยืนยัน</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.pm-chk').forEach(c=>c.checked=true)">เลือกทั้งหมด</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.pm-chk').forEach(c=>c.checked=false)">ล้างเลือก</button>
+    </div>
+    <div style="max-height:48vh;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:4px 10px">
+      ${matched.map((m, i) => `
+        <label style="display:flex;gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;cursor:pointer">
+          <input type="checkbox" class="pm-chk" data-i="${i}" checked style="width:17px;height:17px;flex-shrink:0">
+          <span style="font-size:13px;min-width:0"><b>${escapeHtml(m.valve)}</b> · <b style="color:var(--red)">"${escapeHtml(m.wrong)}"</b> <span style="color:var(--muted)">→</span> <b style="color:var(--green)">${escapeHtml(m.correct)}</b> <span style="color:var(--muted);font-size:11px">(${m.count})</span></span>
+        </label>`).join('')}
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="applyProcAutoMatch()">✅ ยืนยันแก้ที่เลือก</button>
+    </div>`);
+}
+async function applyProcAutoMatch() {
+  const sel = [...document.querySelectorAll('.pm-chk')].filter(c => c.checked).map(c => _procMatchList[+c.dataset.i]).filter(Boolean);
+  closeModal();
+  if (!sel.length) { toast('ไม่ได้เลือกรายการ', 'orange'); return; }
+  const now = new Date().toISOString();
+  const changed = [];
+  for (const { valve, wrong, correct } of sel) {
+    const vk = vKey(valve), wk = _pmKey(wrong);
+    for (const r of state.prodRecords) {
+      const pc = (r.current_process || r.currentProcess || '').trim();
+      if (vKey((r.valve_no || r.valveNo || '').trim()) !== vk || _pmKey(pc) !== wk) continue;
+      r.current_process = correct; r.currentProcess = correct;
+      // เก็บค่าที่พนักงานพิมพ์ไว้ในหมายเหตุ (แบบเดียวกับหน้าแก้ไขรายตัว) — ค่าเดิมไม่หาย ตามรอยได้
+      if (!/พนักงานพิมพ์/.test(r.note || '')) r.note = (r.note ? r.note + ' · ' : '') + `process ที่พนักงานพิมพ์: ${pc}`;
+      r.updated_at = now; r._unsynced = true;
+      changed.push(r);
+    }
+  }
+  if (!changed.length) { toast('ไม่พบ record', 'orange'); return; }
+  lsSave(LS.PROD_REC, state.prodRecords);
+  if (API) {
+    showBusy(`กำลังแก้ 0/${changed.length} record…`, true);
+    try {
+      let done = 0;
+      // /api/records/bulk = insert ล้วน (ไม่ upsert) → ลบอันเดิมก่อนแล้วค่อย insert กัน record ซ้ำ
+      await _chunkRun(changed, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = n; busyMsg(`กำลังแก้ ${done}/${changed.length} record…`); });
+      await api('/api/records/bulk', { body: { records: changed.map(_stripUnsynced) } });
+      changed.forEach(r => { delete r._unsynced; });
+      lsSave(LS.PROD_REC, state.prodRecords);
+      hideBusy();
+      toast(`✅ แก้ Process ${sel.length} แบบ (${changed.length} record) สำเร็จ`, 'green');
+    } catch (e) {
+      hideBusy();   // _unsynced คงไว้ → ระบบส่งขึ้น Cloud ซ้ำอัตโนมัติเมื่อเน็ตกลับมา
+      toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange');
+    }
+  } else {
+    toast(`แก้ Process ${sel.length} แบบ (${changed.length} record) แล้ว (local)`, 'green');
+  }
+  renderUnknownProcs();
+  renderHome();
 }
 
 /* ===== แก้ไข Valve No ที่พิมพ์ผิด → แก้ทุก record ให้เป็นเลขที่ถูกต้อง =====
@@ -10251,7 +10406,9 @@ async function saveValve(orig) {
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
   lsSave(LS.VALVES, state.valves);
   toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
-  closeModal(); renderValveList(); renderUnknownValves();
+  closeModal(); renderValveList(); renderUnknownValves(); renderUnknownProcs();
+  // admin เพิ่งแก้/ตั้ง Process ของวาล์วนี้ → เสนอแก้ record เก่าที่พนักงานพิมพ์ process ใกล้เคียงให้เลย (เงียบถ้าไม่มี)
+  setTimeout(() => { try { autoMatchUnknownProcs(entry.valveNo, true); } catch (e) {} }, 80);
   if (API) { try { await api('/api/valves', { body: entry }); } catch (e) {} }
 }
 async function delValve(valveNo) {
