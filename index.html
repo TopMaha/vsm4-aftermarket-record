@@ -269,6 +269,10 @@ tbody tr:last-child td{border-bottom:none}
 .modal-bg{position:fixed;inset:0;background:rgba(13,17,23,.6);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
 .modal-bg.open{display:flex}
 .modal{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(13,17,23,.4);overflow:hidden}
+.modal.wide{max-width:920px}                 /* ป๊อปอัปกว้างพิเศษ เช่น รายละเอียด WIP — ช่อง/ตารางกว้างอ่านง่าย */
+.iotpop.wide{max-width:860px}
+.wip-detail-box .fg-auto>.fr,.wip-detail-box .stats-row{font-size:13px}
+.wip-detail-box table td,.wip-detail-box table th{padding:9px 11px;font-size:13px}   /* ช่อง Box ในรายละเอียด WIP ใหญ่ขึ้น */
 .modal-bg.open .modal{animation:modalIn .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 .modal-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1.5px solid var(--border)}
@@ -596,20 +600,64 @@ tbody tr:last-child td{border-bottom:none}
 #iotOaeStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .iot-fs > #iotOaeStrip:not(:empty){display:flex}
 
-/* ── แถบ WIP / WIP IN 1.5 / WIP OUT (IOT เต็มจอ) — กดดูรายละเอียดได้ ── */
-#iotWipStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.iot-fs > #iotWipStrip:not(:empty){display:flex}
-.wipchip{flex:1 1 150px;min-width:130px;display:flex;flex-direction:column;gap:2px;padding:9px 14px;cursor:pointer;
-  border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;line-height:1.15;box-shadow:0 1px 3px rgba(15,23,42,.05);
-  text-align:left;transition:transform .12s,box-shadow .12s}
-.wipchip:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(15,23,42,.14)}
-.wipchip .wipchip-k{font-size:11px;font-weight:800;letter-spacing:.2px;opacity:.85}
-.wipchip .wipchip-v{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
-/* ยอด "เมื่อวาน" ตัวเล็กใต้ยอดหลัก — โชว์เฉพาะ WIP IN 1.5 / WIP OUT (IOT เต็มจอ) */
-.wipchip .wipchip-sub{font-size:10.5px;font-weight:700;opacity:.8;font-variant-numeric:tabular-nums;white-space:nowrap}
-.wipchip.in{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:#1E3A8A;color:#fff}
-.wipchip.wip{background:linear-gradient(135deg,#C2410C,#EA580C);border-color:#C2410C;color:#fff}
-.wipchip.out{background:linear-gradient(135deg,#047857,#059669);border-color:#047857;color:#fff}
+/* ── แถบ WIP (IOT เต็มจอ) v3.8 — เหลือ 2 การ์ดกะทัดรัด (IN 1.5 / OUT) + แผง TOP ปัญหา
+   ย่อความสูงลงจากเดิม (ตัวเลขหลัก 24px→18px · การ์ดกำลังผลิตย้ายไปหน้าติดตามงาน) → คืนพื้นที่ให้ผังเครื่องจักร ── */
+#iotWipStrip{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:stretch}
+.iot-fs > #iotWipStrip{display:flex}
+#iotWipCards{display:flex;gap:8px;flex-wrap:wrap;flex:0 1 520px;min-width:0;align-items:stretch}
+#iotWipCards:empty,#iotTop5:empty{display:none}
+.wipcard{flex:1 1 215px;min-width:205px;display:flex;flex-direction:column;gap:3px;padding:6px 12px 7px;cursor:pointer;
+  border-radius:12px;border:1.5px solid #e2e8f0;color:#fff;line-height:1.12;box-shadow:0 1px 3px rgba(15,23,42,.05);
+  text-align:left;transition:transform .12s,box-shadow .12s;font-family:inherit}
+.wipcard:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.18)}
+.wipcard:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+.wipcard.in{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:#1E3A8A}
+.wipcard.out{background:linear-gradient(135deg,#047857,#059669);border-color:#047857}
+.wipcard .wipcard-k{font-size:10.5px;font-weight:800;letter-spacing:.2px;opacity:.92;white-space:nowrap}
+.wipcard .wipcard-k small{font-weight:700;opacity:.75;font-size:9.5px}
+.wipcard .wipcard-vals{display:flex;align-items:flex-end;gap:14px}
+.wipcard .wv{display:flex;flex-direction:column;min-width:0}
+.wipcard .wv b{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.3px;line-height:1.1;opacity:.92}
+.wipcard .wv.main b{font-size:18px;font-weight:900;opacity:1}
+.wipcard .wv small{font-size:9px;font-weight:700;opacity:.78;white-space:nowrap}
+/* ── แผง TOP ปัญหา — 5 เครื่อง OAE ต่ำสุดของช่วงที่เลือก (กดรายการ = ไฮไลต์เครื่องบนผัง) ── */
+#iotTop5{flex:1 1 280px;min-width:250px;display:flex;min-height:0}
+.top5-wrap{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;border:1.5px solid #FCA5A5;background:#FEF2F2;
+  border-radius:12px;padding:5px 10px 7px;min-width:0}
+.top5-hd{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;color:#B91C1C;white-space:nowrap}
+.top5-hd small{font-weight:700;color:#DC2626;opacity:.75;font-size:9.5px;overflow:hidden;text-overflow:ellipsis}
+.top5-list{display:flex;gap:5px;flex-wrap:wrap;min-width:0}
+.top5-item{display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 4px;border:1.5px solid #FCA5A5;background:#fff;
+  border-radius:999px;cursor:pointer;font-size:11.5px;font-weight:700;color:#7F1D1D;font-family:inherit;min-height:26px;
+  max-width:100%;transition:transform .12s,box-shadow .12s}
+.top5-item:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(185,28,28,.28);border-color:#DC2626}
+.top5-item:focus-visible{outline:2.5px solid #DC2626;outline-offset:1px}
+.top5-item .t5rank{width:18px;height:18px;min-width:18px;border-radius:50%;background:#DC2626;color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:900}
+.top5-item .t5mc{font-family:'Courier New',monospace;font-weight:900;color:#0f172a;font-size:12px}
+.top5-item .t5oae{color:#DC2626;font-weight:900;font-variant-numeric:tabular-nums}
+.top5-item .t5cause{color:#9A3412;font-weight:600;font-size:10.5px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top5-item .t5sos{font-size:11px;animation:sosBlink 1.1s ease-in-out infinite}
+.top5-empty{font-size:11px;font-weight:700;color:#9A3412;opacity:.75;padding:2px 0}
+/* ── ผัง: 🆘 เครื่อง SOS กระพริบ + ไฮไลต์เครื่องเมื่อกดจากรายการ TOP ปัญหา ── */
+@keyframes sosBlink{0%,100%{opacity:1}50%{opacity:.15}}
+#iotSvg .mc-sos{animation:sosBlink 1.1s ease-in-out infinite;pointer-events:none}
+@keyframes mcHl{0%,100%{opacity:1}50%{opacity:.35}}
+#iotSvg .iot-mc.hl{animation:mcHl .55s ease-in-out 4}
+#iotSvg .iot-mc.hl rect{stroke:#DC2626;stroke-width:4px}
+@media (prefers-reduced-motion:reduce){
+  #iotSvg .mc-sos,.top5-item .t5sos{animation:none}
+  #iotSvg .iot-mc.hl{animation:none}
+}
+/* ── ตัวแบ่งหน้า (pagination) ตารางรายละเอียด WIP — 15 รายการ/หน้า ── */
+.wip-pager{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.wip-pgbtn{min-width:38px;height:38px;padding:0 10px;border:1.5px solid #CBD5E1;background:#fff;border-radius:9px;
+  font-size:13px;font-weight:800;color:#334155;cursor:pointer;font-family:inherit;touch-action:manipulation}
+.wip-pgbtn:hover:not(:disabled){border-color:#1A56DB;color:#1A56DB;background:#EBF4FF}
+.wip-pgbtn.on{background:#1A56DB;border-color:#1A56DB;color:#fff}
+.wip-pgbtn:disabled{opacity:.4;cursor:default}
+.wip-pgdots{color:#94A3B8;font-weight:800;padding:0 2px}
+.wip-pginfo{font-size:11.5px;color:#64748B;font-weight:700;margin-left:4px}
 .oae-chip{flex:1 1 130px;min-width:120px;display:flex;flex-direction:column;gap:1px;padding:8px 13px;
   border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;line-height:1.12;box-shadow:0 1px 3px rgba(15,23,42,.05)}
 .oae-chip .oae-k{font-size:10.5px;font-weight:800;letter-spacing:.2px;display:flex;align-items:center;gap:5px}
@@ -702,10 +750,16 @@ tbody tr:last-child td{border-bottom:none}
   background:#f1f5f9;border-radius:999px;padding:1px 8px;margin-bottom:5px}
 .ho-cat-tag.broken{background:#FFF7ED;color:#9A3412}
 /* ── checklist "ข้อมูลทั่วไป" — checkbox ใหญ่ให้กะถัดไปแตะติ๊กเมื่อทำแล้ว (แตะง่ายบนจอสัมผัส/ทีวี) ── */
-.ho-row{display:flex;align-items:flex-start;gap:9px}
-.ho-chk{flex:0 0 auto;width:30px;height:30px;min-width:30px;margin-top:1px;border:2px solid #94a3b8;border-radius:9px;background:#fff;
-  cursor:pointer;font-size:17px;font-weight:900;line-height:1;color:#fff;display:inline-flex;align-items:center;justify-content:center;
+.ho-row{display:flex;align-items:flex-start;gap:8px}
+/* checkbox บนบอร์ด IOT — เล็กลง แค่พอเห็น/แตะได้ (ของเดิม 30px ใหญ่ไป) */
+.ho-chk{flex:0 0 auto;width:22px;height:22px;min-width:22px;margin-top:1px;border:2px solid #94a3b8;border-radius:7px;background:#fff;
+  cursor:pointer;font-size:13px;font-weight:900;line-height:1;color:#fff;display:inline-flex;align-items:center;justify-content:center;
   touch-action:manipulation;transition:background .15s,border-color .15s;padding:0}
+/* ปุ่มสลับลำดับข้อ checklist (▲▼) บนบอร์ด */
+.ho-mv{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;margin-left:auto}
+.ho-mv-b{width:24px;height:17px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;cursor:pointer;font-size:10px;line-height:1;
+  color:#64748b;display:inline-flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
+.ho-mv-b:hover{background:#EBF4FF;border-color:#1A56DB;color:#1A56DB}
 .ho-chk:hover{border-color:#0E9F6E;background:#F3FAF7}
 .ho-chk:focus-visible{outline:2px solid #1A56DB;outline-offset:1px}
 .ho-chk.on{background:#0E9F6E;border-color:#0E9F6E}
@@ -736,7 +790,7 @@ tbody tr:last-child td{border-bottom:none}
 .ho-item-chk{flex:0 0 auto;width:26px;height:26px;border:2px solid #cbd5e1;border-radius:8px;background:#f8fafc;
   display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#94a3b8}
 .ho-item-inp{flex:1;min-width:0;min-height:46px;padding:10px 13px;border:1.5px solid #cbd5e1;border-radius:10px;
-  font-family:inherit;font-size:16px;color:#0f172a;outline:none;box-sizing:border-box}
+  font-family:inherit;font-size:16px;line-height:1.5;color:#0f172a;outline:none;box-sizing:border-box;resize:vertical}
 .ho-item-inp:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
 .ho-item-del{flex:0 0 auto;width:34px;height:34px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;cursor:pointer;
   font-size:13px;line-height:1;color:#64748b;display:inline-flex;align-items:center;justify-content:center}
@@ -760,6 +814,9 @@ tbody tr:last-child td{border-bottom:none}
   .iot-fs .ho-text{font-size:16px}
   .ho-meta{font-size:12px}
   .ho-acts{display:none}                                               /* ปุ่ม ✏️🗑️ เล็กเกินบนจอสัมผัส — แตะการ์ดเปิดเมนูใหญ่แทน */
+  /* TOP ปัญหาบนมือถือ: ชิปสูง ≥44px แตะง่าย (จอสัมผัส) + จำกัดความยาวสาเหตุ */
+  .top5-item{min-height:44px;padding:6px 12px 6px 7px;font-size:12.5px}
+  .top5-item .t5cause{max-width:110px}
   /* OAE บนมือถือ: เล็กพอมองเห็น ไม่แย่งพื้นที่ต่อกะ (คงชิปแนวตั้งเดิม — แถวเดียวใช้เฉพาะจอใหญ่) */
   .iot-fs .oae-chip{flex-direction:column;align-items:stretch;padding:6px 10px}
   .iot-fs .oae-chip .oae-sub{flex:0 0 auto;text-align:left}
@@ -807,7 +864,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.7</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.8</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -886,7 +943,7 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
     <div id="iotOaeStrip" aria-label="สรุป OAE รวมและรายโซน"></div>
-    <div id="iotWipStrip" aria-label="สรุป WIP / WIP IN 1.5 / WIP OUT"></div>
+    <div id="iotWipStrip" aria-label="สรุป WIP IN 1.5 / WIP OUT + TOP ปัญหา"><div id="iotWipCards"></div><div id="iotTop5"></div></div>
     <div id="mcViewList" style="display:none"></div>
     <div id="mcViewFloor"></div>
     <!-- แผงข้อมูลต่อกะ (แสดงเฉพาะตอน IOT เต็มจอ) -->
@@ -920,7 +977,7 @@ tbody tr:last-child td{border-bottom:none}
         <input type="number" id="wipInQty" min="1" step="1" inputmode="numeric" placeholder="เช่น 1000"
           onkeydown="if(event.key==='Enter'){event.preventDefault();submitWipIn();}"></div>
     </div>
-    <button class="btn btn-blue btn-block mt-8" onclick="submitWipIn()" style="padding:11px;font-size:15px">➕ เข้ายอด WIP IN 1.5</button>
+    <button id="wipInSubmitBtn" class="btn btn-blue btn-block mt-8" onclick="submitWipIn()" style="padding:11px;font-size:15px">➕ เข้ายอด WIP IN 1.5</button>
     <div class="muted center mt-8" id="wipInSummary" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:7px;border-radius:9px"></div>
     </div>
   </div>
@@ -1046,7 +1103,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="fr"><label>ค้นหา Valve/Machine/Lot</label><input type="search" id="histSearch" oninput="histSearchInput()"></div>
     </div>
     <div class="row mt-8" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
-      <span class="muted" style="font-size:12px"><span id="histCount">0</span> รายการ</span>
+      <span class="muted" style="font-size:12px">ทั้งหมด <b id="histCount" style="color:var(--blue)">0</b> รายการ · <span id="histRange">—</span></span>
       <div class="row" style="gap:6px;flex-wrap:wrap">
         <button class="btn btn-blue btn-sm" onclick="histShowAll()" title="ลบฟิลเตอร์ทั้งหมด ดูข้อมูลย้อนหลังทั้งหมด">📚 ดูทั้งหมด</button>
         <button class="btn btn-outline btn-sm" onclick="histPullCloud()" title="ดึงข้อมูลล่าสุดจาก D1">☁️ ดึงจาก Cloud</button>
@@ -1056,10 +1113,7 @@ tbody tr:last-child td{border-bottom:none}
     <div class="tbl-wrap mt-8">
       <table id="histTable"><thead></thead><tbody></tbody></table>
     </div>
-    <div id="histMore" class="center mt-8" style="display:none">
-      <button class="btn btn-outline btn-sm" onclick="histLoadMore()">⬇️ โหลดเพิ่ม</button>
-      <div class="muted" style="font-size:11px;margin-top:4px">แสดง <span id="histShown">0</span> รายการ · อาจมีเพิ่มเติม</div>
-    </div>
+    <div id="histPager" class="row mt-8" style="justify-content:center;gap:6px;flex-wrap:wrap;display:none"></div>
   </div>
 </section>
 
@@ -1140,6 +1194,9 @@ tbody tr:last-child td{border-bottom:none}
 
   <!-- แจ้งเตือน Valve No ที่ไม่มีในฐานข้อมูล (Admin ตรวจสอบ/เพิ่มเข้าระบบ) -->
   <div id="unknownValveAlert"></div>
+
+  <!-- แจ้งเตือน Lot ยังไม่ลงทะเบียน (Admin เท่านั้น — auto-fix อักขระเพี้ยน เช่น $→S + แก้ถึงฐานข้อมูล) -->
+  <div id="unknownLotAlert"></div>
 
   <!-- แจ้งเตือน Process ที่พนักงานพิมพ์เอง (ไม่ตรงตัวเลือกของวาล์ว) — งานเก่าก่อนอัปเดต กดแก้รายตัว -->
   <div id="unknownProcAlert"></div>
@@ -2206,9 +2263,11 @@ async function api(path, opts = {}) {
   }
 }
 
-function openModal(title, html) {
+function openModal(title, html, opts) {
   $('modalTt').textContent = title;
   $('modalBd').innerHTML = html;
+  const m = $('modalBg').querySelector('.modal');
+  if (m) m.classList.toggle('wide', !!(opts && opts.wide));   // ป๊อปอัปกว้างพิเศษเมื่อ opts.wide
   $('modalBg').classList.add('open');
 }
 function closeModal() {
@@ -2724,6 +2783,202 @@ function renderPlans() {
 
   tbody.innerHTML = rows.length ? rows.map(p => planRowHtml(p)).join('')
     : '<tr><td colspan="7" class="center muted" style="padding:20px">ยังไม่มีแผนผลิต — กด <b>➕ เพิ่มแผน</b> หรือ <b>📋 วางจาก Excel</b></td></tr>';
+}
+
+/* ── สแกน Lot ที่พนักงานพิมพ์เพิ่มเอง (วาล์วรู้จัก แต่ Lot ยังไม่ลงทะเบียนใน Valve IDs) ──
+   ใช้ในแผง "Lot ยังไม่ลงทะเบียน" หน้าตั้งค่า (admin เท่านั้น) */
+function _scanPendingLots() {
+  const known = new Set(state.valves.map(v => (v.valveNo || '').toUpperCase()));
+  const seen = {};
+  const scan = arr => { for (const r of (arr || [])) {
+    const vn = (r.valve_no || r.valveNo || '').trim(), lot = (r.lot || '').trim();
+    if (!vn || !lot || !known.has(vn.toUpperCase())) continue;   // ไม่มี lot / วาล์วไม่รู้จัก (อยู่แผงวาล์วแล้ว)
+    if (isRegisteredLot(vn, lot)) continue;                      // ลงทะเบียนใน Valve IDs แล้ว
+    if (getJobProc(vn, lot) === 'DONE') continue;                // จบงานแล้ว ไม่ต้องจัดการ
+    const key = vn.toUpperCase() + '::' + lot.toLowerCase();
+    const when = r.saved_at || r.timestamp || '';
+    const c = seen[key] || { valve: vn, lot, count: 0, by: '', when: '' };
+    c.count++;
+    if (when > c.when) { c.when = when; c.by = r.operator || r.emp_id || ''; }
+    seen[key] = c;
+  }};
+  scan(state.kpiRecords); scan(state.prodRecords);
+  return Object.values(seen).sort((a, b) => (b.when || '').localeCompare(a.when || ''));
+}
+/* ═══════════════════════════════════════════════════════════════
+   Lot ยังไม่ลงทะเบียน (หน้าตั้งค่า · Admin เท่านั้น)
+   • auto-fix อักขระสแกนเพี้ยน เช่น $ → S  (2605$050262 → 2605S050262)
+   • แก้เอง / auto = แก้ถึงฐานข้อมูล (rewrite record ทุกตัว + push D1)
+   ═══════════════════════════════════════════════════════════════ */
+const _LOT_FIXMAP = { '$':'S' };   // ตัวอักษรจากบาร์โค้ด/สแกนที่มักผิด → ตัวจริง (เพิ่มได้ภายหลัง)
+function _lotNorm(s) {
+  let t = (s || '').trim().toUpperCase();
+  for (const bad in _LOT_FIXMAP) t = t.split(bad).join(_LOT_FIXMAP[bad]);
+  return t;
+}
+/* คืน "Lot ที่ควรเป็น" ถ้ามั่นใจ (ตรง registered lot หลัง normalize · หรือแค่อักขระเสียชัดเจน) — ไม่งั้น null */
+function _lotAutoFix(valve, badLot) {
+  const orig = (badLot || '').trim(); if (!orig) return null;
+  const norm = _lotNorm(orig);
+  const reg = (state.ids || [])
+    .filter(r => (r.valve_no || '').trim().toLowerCase() === (valve || '').trim().toLowerCase())
+    .map(r => (r.lot || '').trim()).filter(Boolean);
+  const hit = reg.find(l => _lotNorm(l) === norm && l !== orig);
+  if (hit) return hit;                                                     // ตรง Lot ที่ลงทะเบียนไว้ (ต่างการสะกด/อักขระ)
+  const hasGarble = Object.keys(_LOT_FIXMAP).some(bad => orig.includes(bad));
+  if (hasGarble && norm !== orig) return norm;                            // ทำความสะอาดอักขระเสีย เช่น $→S
+  return null;
+}
+/* record (kpi+prod) ที่ตรง valve+lot — ใช้ rewrite ตอนแก้ */
+function _recsWithLot(valve, lot) {
+  const vk = vKey(valve), lk = lotKey(lot);
+  const match = r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === lk;
+  return { kpi: (state.kpiRecords || []).filter(match), prod: (state.prodRecords || []).filter(match) };
+}
+/* rewrite lot ของ record ทุกตัว (valve+badLot) → newLot แล้ว push ขึ้น D1 (แก้ถึงฐานข้อมูล) */
+async function _applyLotRewrite(pairs) {   // pairs = [{valve, wrong, correct}]
+  const now = new Date().toISOString();
+  const allKpi = [], allProd = [];
+  for (const { valve, wrong, correct } of pairs) {
+    const { kpi, prod } = _recsWithLot(valve, wrong);
+    for (const r of kpi)  { r.lot = correct; r.updated_at = now; allKpi.push(r); }
+    for (const r of prod) { r.lot = correct; r.updated_at = now; allProd.push(r); }
+  }
+  lsSave(LS.KPI, state.kpiRecords);
+  lsSave(LS.PROD_REC, state.prodRecords);
+  const total = allKpi.length + allProd.length;
+  if (API && total) {
+    showBusy(`กำลังแก้ 0/${total} record…`, true);
+    try {
+      let done = 0; const tick = () => busyMsg(`กำลังแก้ ${done}/${total} record…`);
+      await _chunkRun(allKpi.filter(r => r.record_id), r => api('/api/kpi/delete', { body: { record_id: r.record_id } }).catch(() => {}), 8, n => { done = n; tick(); });
+      if (allKpi.length) await api('/api/kpi', { body: { records: allKpi } });
+      await _chunkRun(allProd, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = allKpi.length + n; tick(); });
+      if (allProd.length) await api('/api/records/bulk', { body: { records: allProd } });
+      hideBusy();
+    } catch (e) { hideBusy(); allKpi.forEach(r => r._unsynced = true); allProd.forEach(r => r._unsynced = true); toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange'); return total; }
+  }
+  return total;
+}
+/* แผง "Lot ยังไม่ลงทะเบียน" (Admin เท่านั้น) */
+function renderUnknownLots() {
+  const box = $('unknownLotAlert'); if (!box) return;
+  if (!canSeeAllVsm()) { box.innerHTML = ''; return; }         // เห็นเฉพาะ Admin (req)
+  const all = _scanPendingLots();
+  if (!all.length) { box.innerHTML = ''; return; }
+  const CAP = 40, esc = s => escapeHtml(String(s)).replace(/'/g, "\\'");
+  const list = all.slice(0, CAP), more = all.length - list.length;
+  const autoN = all.filter(u => _lotAutoFix(u.valve, u.lot)).length;
+  box.innerHTML = `
+    <div class="card" style="border:1.5px solid var(--orange-bd);background:var(--orange-bg);margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:22px;line-height:1">🏷️</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--orange)">Lot ยังไม่ลงทะเบียน (${all.length})</div>
+          <div style="font-size:11px;color:var(--muted)">พนักงานพิมพ์ Lot ที่ยังไม่มีในระบบ — แก้/ลงทะเบียนให้เรียบร้อย${more>0?` · แสดง ${CAP} รายการแรก`:''}</div>
+        </div>
+      </div>
+      ${autoN ? `<button class="btn btn-blue btn-block btn-sm" style="margin-bottom:10px" onclick="autoFixLots()">🪄 ปรับ Lot อัตโนมัติ (${autoN} รายการ เช่น $→S)</button>` : ''}
+      ${list.map(u => {
+        const sug = _lotAutoFix(u.valve, u.lot);
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FED7AA">
+          <div style="min-width:0">
+            <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(u.valve)} <span style="color:var(--blue)">/ ${escapeHtml(u.lot)}</span></div>
+            <div style="font-size:10.5px;color:var(--muted)">${u.count} record${u.by?` · โดย ${escapeHtml(u.by)}`:''}${sug?` · <span style="color:var(--green);font-weight:800">→ ${escapeHtml(sug)}</span>`:''}</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-shrink:0">
+            ${sug?`<button class="btn btn-sm" style="background:#F0FDF4;color:#15803D;border:1.5px solid #86EFAC" onclick="quickFixLot('${esc(u.valve)}','${esc(u.lot)}','${esc(sug)}')">🪄 ${escapeHtml(sug)}</button>`:''}
+            <button class="btn btn-outline btn-sm" onclick="fixUnknownLot('${esc(u.valve)}','${esc(u.lot)}')">✏️ แก้เอง</button>
+            <button class="btn btn-outline btn-sm" onclick="addLotFromPending('${esc(u.valve)}','${esc(u.lot)}')">➕ ลงทะเบียน</button>
+          </div>
+        </div>`;
+      }).join('')}
+      ${more>0?`<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FED7AA">…และอีก ${more} รายการ</div>`:''}
+    </div>`;
+}
+/* กดแก้ทีละตัวจากปุ่มแนะนำ (🪄 <sug>) — rewrite record ถึงฐานข้อมูล */
+async function quickFixLot(valve, wrong, correct) {
+  if (!(await confirmModal(`แก้ Lot  ${wrong}  →  ${correct}\nทุก record (Local + ฐานข้อมูล)?`, { danger:false, yes:'ยืนยัน' }))) return;
+  const n = await _applyLotRewrite([{ valve, wrong, correct }]);
+  toast(`✅ แก้ ${n} record → ${correct}`, 'green');
+  renderUnknownLots();
+}
+/* แก้เอง — พิมพ์ Lot ที่ถูกต้อง แล้ว rewrite ถึงฐานข้อมูล */
+function fixUnknownLot(valve, wrong) {
+  const { kpi, prod } = _recsWithLot(valve, wrong);
+  const sug = _lotAutoFix(valve, wrong) || '';
+  openModal('✏️ แก้ไข Lot ที่พิมพ์ผิด', `
+    <div style="font-size:13px;line-height:1.7;margin-bottom:12px">
+      แก้ Lot <b style="color:var(--red)">${escapeHtml(wrong)}</b> ของ <b>${escapeHtml(valve)}</b>
+      <span style="display:inline-block;background:var(--blue-light);color:var(--blue);border-radius:6px;padding:1px 7px;font-weight:800;font-size:11px">${kpi.length + prod.length} record</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">แก้ทุก record ที่ใช้ Lot นี้ ทั้งใน Local และฐานข้อมูล</div>
+    </div>
+    <input type="hidden" id="fixLotValve" value="${escapeHtml(valve)}">
+    <input type="hidden" id="fixLotWrong" value="${escapeHtml(wrong)}">
+    <div class="fr"><label>Lot ที่ถูกต้อง</label>
+      <input type="text" id="fixLotCorrect" value="${escapeHtml(sug)}" placeholder="เช่น 2605S050262" autocomplete="off" style="text-transform:uppercase"></div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="applyFixUnknownLot()">💾 บันทึกการแก้ไข</button>
+    </div>`);
+}
+async function applyFixUnknownLot() {
+  const valve = $('fixLotValve').value.trim(), wrong = $('fixLotWrong').value.trim(), correct = $('fixLotCorrect').value.trim();
+  if (!correct) { toast('กรอก Lot ที่ถูกต้อง', 'orange'); return; }
+  if (correct === wrong) { toast('Lot เหมือนเดิม', 'orange'); return; }
+  closeModal();
+  const n = await _applyLotRewrite([{ valve, wrong, correct }]);
+  toast(`✅ แก้ ${n} record → ${correct}`, 'green');
+  renderUnknownLots();
+}
+/* auto-fix ทีเดียวหลายตัว — มีหน้าตรวจทานก่อนยืนยัน (เหมือน auto-match วาล์ว) */
+let _lotFixList = [];
+function autoFixLots() {
+  const all = _scanPendingLots();
+  const matched = [];
+  for (const u of all) { const c = _lotAutoFix(u.valve, u.lot); if (c && c !== u.lot) matched.push({ valve: u.valve, wrong: u.lot, correct: c, count: u.count }); }
+  _lotFixList = matched;
+  if (!matched.length) { openModal('🪄 ปรับ Lot อัตโนมัติ', `<div style="font-size:13px;line-height:1.7;margin-bottom:14px">ไม่พบ Lot ที่ปรับอัตโนมัติได้แบบมั่นใจ</div><button class="btn btn-outline btn-block" onclick="closeModal()">ปิด</button>`); return; }
+  const totalRec = matched.reduce((s, m) => s + m.count, 0);
+  openModal('🪄 ปรับ Lot อัตโนมัติ', `
+    <div style="background:var(--blue-light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.6">
+      ปรับได้ <b style="color:var(--blue)">${matched.length}</b> Lot (${totalRec} record)<br>
+      <span style="color:var(--muted);font-size:11px">ตรวจสอบความถูกต้อง — ติ๊กออกถ้าไม่ใช่ แล้วกดยืนยัน (แก้ถึงฐานข้อมูล)</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.lf-chk').forEach(c=>c.checked=true)">เลือกทั้งหมด</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.lf-chk').forEach(c=>c.checked=false)">ล้างเลือก</button>
+    </div>
+    <div style="max-height:48vh;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:4px 10px">
+      ${matched.map((m, i) => `
+        <label style="display:flex;gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;cursor:pointer">
+          <input type="checkbox" class="lf-chk" data-i="${i}" checked style="width:17px;height:17px;flex-shrink:0">
+          <span style="font-size:13px"><span style="color:var(--muted);font-size:11px">${escapeHtml(m.valve)}</span> <b style="color:var(--red)">${escapeHtml(m.wrong)}</b> <span style="color:var(--muted)">→</span> <b style="color:var(--green)">${escapeHtml(m.correct)}</b> <span style="color:var(--muted);font-size:11px">(${m.count})</span></span>
+        </label>`).join('')}
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="applyAutoFixLots()">✅ ยืนยันแก้ที่เลือก</button>
+    </div>`);
+}
+async function applyAutoFixLots() {
+  const sel = [...document.querySelectorAll('.lf-chk')].filter(c => c.checked).map(c => _lotFixList[+c.dataset.i]).filter(Boolean);
+  closeModal();
+  if (!sel.length) { toast('ไม่ได้เลือกรายการ', 'orange'); return; }
+  const n = await _applyLotRewrite(sel);
+  toast(`✅ ปรับ ${sel.length} Lot (${n} record) สำเร็จ`, 'green');
+  renderUnknownLots();
+}
+/* ลงทะเบียน Lot ที่พนักงานเพิ่มเอง → เปิด modal เพิ่ม ID (เติม Valve/Lot ให้ admin กรอก ID Code) */
+function addLotFromPending(valve, lot) {
+  openIdModal();
+  setTimeout(() => {
+    const v = $('modIdValve'), l = $('modIdLot');
+    if (v) v.value = valve;
+    if (l) l.value = lot;
+    $('modIdCode')?.focus();
+  }, 30);
 }
 
 // ดึงจาก D1 + merge กับ local แล้ว render
@@ -4129,7 +4384,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.7":"Production Record + KPI · v3.7",
+"ระบบบันทึกผลิต + KPI · v3.8":"Production Record + KPI · v3.8",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4567,6 +4822,7 @@ function renderMachineStatusChecker(recs) {
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
     if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
+    if ($('iotTop5')) $('iotTop5').innerHTML = '';   // กัน TOP ปัญหาของ VSM อื่นค้าง (ไม่มีผัง = ไม่มีข้อมูลช่วงนี้)
     if ($('iotWipStrip')) renderIotWipStrip();
     return;
   }
@@ -4604,10 +4860,21 @@ function renderMachineStatusChecker(recs) {
   // เก็บข้อมูลรายเครื่องไว้ให้ป๊อปอัป "แตะดูที่เครื่อง" (เฉพาะตอนเต็มจอ) แสดง Valve/Lot/OPR แยกกะ + ความช่วยเหลือ
   const byMc = {};
   for (const r of filtered) { const id = r.machine_id; if (!id) continue; (byMc[id] || (byMc[id] = [])).push(r); }
-  _iotData = { active: activeMachines, oae: oaeMap, byMc, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
+
+  // TOP ปัญหา (v3.8): 5 เครื่อง OAE ต่ำสุดของช่วงวันที่ที่เลือก (เฉพาะเครื่องที่เปิด + มีเป้า)
+  // SOS = เครื่องที่มีคำขอช่วยเหลือค้าง (help ยังไม่ปิด) ในช่วงเดียวกัน — ใช้แปะ badge/🆘 บนผัง
+  const sosSet = new Set();
+  for (const r of filtered) { if (r.machine_id && _recHelpOpen(r)) sosSet.add(r.machine_id); }
+  const top5 = Object.keys(agg).filter(m => agg[m].tgt > 0)
+    .map(m => ({ id: m, oae: agg[m].opr / agg[m].tgt, sos: sosSet.has(m) }))
+    .sort((a, b) => a.oae - b.oae).slice(0, 5);
+  const topRank = {}; top5.forEach((t, i) => { topRank[t.id] = i + 1; });
+
+  _iotData = { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
 
   renderIotOaeStrip(filtered);
   renderIotWipStrip();
+  renderIotTop5();
   renderFloorPlan(activeMachines, oaeMap);
 }
 
@@ -4638,6 +4905,62 @@ function renderIotOaeStrip(filtered){
     </div>`;
   }).join('');
   host.innerHTML=html;
+}
+
+/* ── TOP ปัญหา (v3.8): 5 เครื่อง OAE ต่ำสุดของช่วงวันที่ที่เลือก — แผงรายการ + badge 1-5 บนผัง sync กัน ── */
+// สาเหตุสั้นๆ ของเครื่อง = ข้อความ "ขอความช่วยเหลือ" ล่าสุด (ที่ยังค้างมาก่อน) — ไม่มีก็เว้นว่าง
+function _mcCauseShort(id){
+  const recs=(_iotData&&_iotData.byMc&&_iotData.byMc[id])||[];
+  const hs=recs.map(r=>_recHelp(r)).filter(Boolean);
+  if(!hs.length) return '';
+  hs.sort((a,b)=>{
+    const ao=a.status!=='done'?0:1, bo=b.status!=='done'?0:1;
+    return ao-bo || String(b.at||'').localeCompare(String(a.at||''));
+  });
+  return String(hs[0].text||'').replace(/\s+/g,' ').trim();
+}
+function renderIotTop5(){
+  const host=$('iotTop5'); if(!host) return;
+  const list=(_iotData&&_iotData.top5)||[];
+  if(!list.length){ host.innerHTML=''; return; }
+  const items=list.map((t,i)=>{
+    const cause=_mcCauseShort(t.id);
+    const oaeTxt=(Math.min(t.oae,9.99)*100).toFixed(1)+'%';
+    return `<button type="button" class="top5-item" onclick="iotTop5Tap('${escapeHtml(t.id)}')"
+        title="${escapeHtml(t.id)} · OAE ${oaeTxt}${cause?' · '+escapeHtml(cause):''} — ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}"
+        aria-label="${TT('อันดับ','Rank')} ${i+1} · ${escapeHtml(t.id)} · OAE ${oaeTxt}${t.sos?' · SOS':''}">
+      <span class="t5rank">${i+1}</span>
+      <span class="t5mc">${escapeHtml(t.id)}</span>
+      <span class="t5oae">${oaeTxt}</span>
+      ${cause?`<span class="t5cause">${escapeHtml(cause)}</span>`:''}
+      ${t.sos?`<span class="t5sos" title="SOS — ${TT('มีคำขอช่วยเหลือค้าง','open help request')}">🆘</span>`:''}
+    </button>`;
+  }).join('');
+  host.innerHTML=`<div class="top5-wrap">
+    <div class="top5-hd">🔥 ${TT('TOP ปัญหา — OAE ต่ำสุด 5 เครื่อง','TOP issues — 5 lowest OAE')} <small>· ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}</small></div>
+    <div class="top5-list">${items}</div>
+  </div>`;
+}
+// กดรายการ TOP ปัญหา → เลื่อนผังไปหาเครื่อง + กะพริบไฮไลต์ (จอเล็ก: กางผังที่พับอยู่ให้ก่อน)
+function iotTop5Tap(id){
+  const card=document.getElementById('iotCard');
+  const fl=document.getElementById('mcViewFloor');
+  if(card && fl && card.classList.contains('iot-fs') && !card.classList.contains('iot-map-open')
+     && getComputedStyle(fl).display==='none'){
+    iotToggleMap();
+  }
+  setTimeout(()=>_iotFocusMc(id), 80);   // รอผังกาง/จัด layout ก่อนหนึ่งเฟรม
+}
+function _iotFocusMc(id){
+  let g=null;
+  try{ g=document.querySelector(`#iotSvg g[data-mc="${(window.CSS&&CSS.escape)?CSS.escape(id):id}"]`); }catch(e){}
+  if(!g) return;
+  try{ g.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); }catch(e){}
+  g.classList.remove('hl');
+  void g.getBoundingClientRect();               // reflow เพื่อรีสตาร์ทอนิเมชันไฮไลต์
+  g.classList.add('hl');
+  clearTimeout(_iotFocusMc._t);
+  _iotFocusMc._t=setTimeout(()=>{ g.classList.remove('hl'); }, 2400);
 }
 
 /* ============================================================
@@ -4828,7 +5151,21 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
     const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
     parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
-    const aria = active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ${TT('ปิดเครื่อง','off')}`;
+    // v3.8: เครื่อง SOS (คำขอช่วยเหลือค้าง) — วงแหวนแดงกระพริบ + 🆘 มุมซ้ายบน
+    const sos = !!(_iotData && _iotData.sos && _iotData.sos.has(id));
+    if(sos){
+      parts.push(`<rect class="mc-sos" x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" fill="none" stroke="#DC2626" stroke-width="2.5" rx="6"/>`);
+      parts.push(`<text class="mc-sos" x="${(x+1.5).toFixed(1)}" y="${(y+9.5).toFixed(1)}" font-size="9.5" aria-hidden="true">🆘</text>`);
+    }
+    // v3.8: badge เลขอันดับ TOP ปัญหา (1-5) สีแดง มุมขวาบน — ตรงกับแผงรายการ TOP ปัญหา
+    const rk = (_iotData && _iotData.topRank) ? _iotData.topRank[id] : null;
+    if(rk){
+      const bx=x+w-1.5, by=y+1.5;
+      parts.push(`<g aria-hidden="true"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`+
+        `<text x="${bx.toFixed(1)}" y="${(by+3.4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Arial,sans-serif">${rk}</text></g>`);
+    }
+    const aria = (active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ${TT('ปิดเครื่อง','off')}`)
+      + (rk?` · TOP ${rk}`:'') + (sos?' · SOS':'');
     g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
   }
 
@@ -4860,6 +5197,10 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       <span style="display:inline-flex;align-items:center;gap:4px;color:#111827">
         <span style="width:11px;height:11px;background:#000;border-radius:2px;display:inline-block"></span>${TT('ปิดเครื่อง','Off')}
       </span>
+      <span style="display:inline-flex;align-items:center;gap:4px;color:#B91C1C">
+        <span style="width:13px;height:13px;background:#DC2626;border:1.5px solid #fff;box-shadow:0 0 0 1px #DC2626;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8.5px;font-weight:900">1</span>${TT('TOP ปัญหา','TOP issue')}
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
       <span style="font-size:10px;color:#6b7280;margin-left:auto">${TT('เปิด','Running')} <b>${nOn}</b> / ${TT('รวม','total')} <b>${tot}</b> ${TT('เครื่อง','machines')}</span>
     </div>
@@ -5197,6 +5538,24 @@ function _hoList(type){
   return Object.values(_handover).filter(e=>e && !e.deleted && e.type===type && _hoVsm(e)===viewVsm())
     .sort((a,b)=> new Date(b.ts) - new Date(a.ts));
 }
+/* ── ลำดับข้อ checklist (สลับได้เอง) — seq มาก = อยู่บนสุด · ข้อเก่าที่ไม่มี seq ใช้เวลาบันทึกแทน ── */
+let _hoSeqLast=0;
+function _hoNextSeq(){ _hoSeqLast=Math.max(Date.now(),(_hoSeqLast||0)+1); return _hoSeqLast; }
+function _hoSeqOf(e){ return (e&&typeof e.seq==='number')?e.seq:new Date((e&&e.ts)||0).getTime(); }
+/* สลับลำดับข้อ checklist (▲/▼) — สลับค่า seq กับข้อข้างเคียง แล้ว sync ขึ้น cloud (LWW) */
+function hoMoveItem(id,dir){
+  const e=_handover[id]; if(!e||e.deleted) return;
+  const type=_hoType(e.type);
+  const list=_hoList(type).filter(x=>_hoCat(x)!=='broken' && x.task && !x.done)
+                          .sort((a,b)=>_hoSeqOf(b)-_hoSeqOf(a));   // เรียงตามที่แสดงบนบอร์ด
+  const i=list.findIndex(x=>x.id===id), j=i+dir;
+  if(i<0 || j<0 || j>=list.length) return;
+  const other=list[j], now=new Date().toISOString();
+  const si=_hoSeqOf(e), sj=_hoSeqOf(other);
+  e.seq=sj; other.seq=si; e.updatedAt=now; other.updatedAt=now;
+  _saveHandover(); _hoPush(e); _hoPush(other);
+  renderHandoverPanels();
+}
 function addHandover(type, text, cat, task){
   type=_hoType(type); text=String(text||'').trim(); if(!text) return null;
   const u=CURRENT_USER||null, now=new Date().toISOString();
@@ -5205,7 +5564,7 @@ function addHandover(type, text, cat, task){
     type, cat:_hoCat(cat), text,
     byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
     vsm:myVsm(),   // ประทับ VSM ผู้บันทึก (Worker ไม่เก็บ field นี้ — ใช้เป็น fallback ฝั่ง local เท่านั้น)
-    ts:now, editedAt:null, deleted:0, updatedAt:now,
+    ts:now, editedAt:null, deleted:0, updatedAt:now, seq:_hoNextSeq(),
     // task=1 = "ข้อ checklist" (สร้างจากปุ่มเพิ่มทีละข้อเท่านั้น) → มี checkbox ให้กะถัดไปติ๊ก
     // โน้ตเก่า/โน้ตธรรมดาไม่มี task → แสดงเป็นข้อความปกติ ไม่ถูกแปลงเป็น checkbox ย้อนหลัง
     task:task?1:0, done:0, doneBy:'', doneByName:'', doneAt:null,
@@ -5239,7 +5598,7 @@ async function _hoFlush(){
   try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); }catch(e){}
 }
 // บวก bucket รายชั่วโมง → รายการที่พ้นช่วง "ล่าสุด" ถูกวาดย้ายไปย้อนหลังเองภายใน ≤1 ชม. (poll เทียบ sig ทุก 15 วิ)
-function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e),e.task?1:0,e.done?1:0])))+'|'+Math.floor(Date.now()/3600000); }
+function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e),e.task?1:0,e.done?1:0,_hoSeqOf(e)])))+'|'+Math.floor(Date.now()/3600000); }
 let _hoSig='';
 async function syncHandover(){
   try{
@@ -5253,6 +5612,7 @@ async function syncHandover(){
       if(!le || new Date(ce.updatedAt) > new Date(le.updatedAt||0)){
         if(ce.cat===undefined && le && le.cat) ce.cat=le.cat;   // Worker เก่ายังไม่คืน cat → คงหมวดเดิมของเครื่องนี้ไว้ (กันหมวดหายก่อน redeploy)
         if(ce.task===undefined && le && le.task) ce.task=le.task; // Worker เก่ายังไม่คืน task → คงสถานะ "ข้อ checklist" ไว้
+        if(ce.seq===undefined && le && le.seq!==undefined) ce.seq=le.seq;   // Worker เก่ายังไม่คืน seq → คงลำดับที่สลับไว้ (กันลำดับรีเซ็ตก่อน redeploy)
         if(ce.done===undefined && le && le.done){               // Worker เก่ายังไม่คืน done → คงสถานะติ๊กของเครื่องนี้ไว้
           ce.done=le.done; ce.doneBy=le.doneBy||''; ce.doneByName=le.doneByName||''; ce.doneAt=le.doneAt||null;
         }
@@ -5326,11 +5686,15 @@ function _hoFootHtml(e,type){
 }
 // แตะการ์ดตรงไหนก็ได้ → เปิดเมนู อ่านเต็ม/แก้ไข/ลบ (req #1 — ปุ่มเล็กกดยากบนจอสัมผัส/ทีวี)
 // withCat = ติดป้ายหมวดบนการ์ด (ใช้ในป๊อปอัปย้อนหลังที่ปนทั้ง 2 หมวด)
-function _hoCardHtml(e,type,newest,withCat){
+function _hoCardHtml(e,type,newest,withCat,opts){
   const cat=_hoCat(e), c=HO_CATS[cat];
   const tag=withCat?`<div class="ho-cat-tag ${cat}">${c.icon} ${escapeHtml(_hoCatLabel(c))}</div>`:'';
   // checkbox เฉพาะ "ข้อ checklist" (task=1 — สร้างจากปุ่มเพิ่มทีละข้อ) · โน้ตเก่า/โน้ตธรรมดาแสดงปกติ
   const isTask=!!e.task, done=isTask&&!!e.done;
+  const mv=(opts&&opts.reorder)?`<div class="ho-mv">
+      <button type="button" class="ho-mv-b" title="${TT('เลื่อนขึ้น','Move up')}" aria-label="${TT('เลื่อนขึ้น','Move up')}" onclick="event.stopPropagation();hoMoveItem('${e.id}',-1)">▲</button>
+      <button type="button" class="ho-mv-b" title="${TT('เลื่อนลง','Move down')}" aria-label="${TT('เลื่อนลง','Move down')}" onclick="event.stopPropagation();hoMoveItem('${e.id}',1)">▼</button>
+    </div>`:'';
   const chk=isTask?`<button type="button" class="ho-chk${done?' on':''}" aria-pressed="${done?'true':'false'}"
       title="${done?TT('ทำแล้ว — แตะเพื่อยกเลิก','Done — tap to undo'):TT('ทำเสร็จแล้ว → แตะติ๊ก','Finished → tap to check')}"
       onclick="event.stopPropagation();toggleHoDone('${e.id}')">${done?'✓':''}</button>`:'';
@@ -5338,7 +5702,7 @@ function _hoCardHtml(e,type,newest,withCat){
   return `<div class="ho-card${newest?' newest':''}${done?' done':''}" role="button" tabindex="0" title="${TT('แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ','Tap to read / edit / delete')}"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
-    ${tag}<div class="ho-row">${chk}<div class="ho-text">${escapeHtml(e.text)}</div></div>
+    ${tag}<div class="ho-row">${chk}<div class="ho-text">${escapeHtml(e.text)}</div>${mv}</div>
     ${doneMeta}
     ${_hoFootHtml(e,type)}
   </div>`;
@@ -5401,12 +5765,13 @@ function _hoRecentSplit(arr){
 //              ข้อที่ติ๊กแล้วโชว์เฉพาะช่วงล่าสุด — ของเก่ากด 🕘 ดูย้อนหลัง
 function _hoSecHtml(type,cat,arr){
   const c=HO_CATS[cat];
-  let shown, pendingN=0;
+  let shown, pendingN=0, reorderIds=null;
   if(cat==='note'){
     // ข้อ checklist (task=1) ที่ยังไม่ติ๊ก → ปักบนสุด ค้างบนบอร์ดเสมอจนกว่าจะทำ (กันงานตกหล่นระหว่างกะ)
     // ข้อที่ติ๊กแล้ว → โชว์ต่ออีก 24 ชม. "นับจากเวลาติ๊ก" · โน้ตธรรมดา (ไม่มี task) → ช่วงล่าสุดตามเดิม
-    const pending=arr.filter(e=>e.task&&!e.done);
+    const pending=arr.filter(e=>e.task&&!e.done).sort((a,b)=>_hoSeqOf(b)-_hoSeqOf(a));   // เรียงตามลำดับที่ผู้ใช้สลับ (seq)
     pendingN=pending.length;
+    if(pending.length>1) reorderIds=new Set(pending.map(e=>e.id));   // มี ≥2 ข้อ → โชว์ปุ่มสลับลำดับ ▲▼
     const cut=Date.now()-86400000;
     const doneRecent=arr.filter(e=>e.task&&e.done&&new Date(e.doneAt||e.ts).getTime()>=cut);
     const plainRecent=_hoRecentSplit(arr.filter(e=>!e.task)).recent;
@@ -5417,7 +5782,7 @@ function _hoSecHtml(type,cat,arr){
   }
   const hidden=arr.length-shown.length;
   const body = shown.length
-    ? shown.map((e,i)=>_hoCardHtml(e,type,i===0)).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
+    ? shown.map((e,i)=>_hoCardHtml(e,type,i===0,false,{reorder:!!(reorderIds&&reorderIds.has(e.id))})).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
     : `<div class="ho-empty" role="button" tabindex="0" style="cursor:pointer" onclick="openHandoverAdd('${type}',null,'${cat}')"
         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openHandoverAdd('${type}',null,'${cat}')}">${TT('ยังไม่มี — <b>แตะที่นี่</b> หรือกด <b>＋</b> เพื่อเพิ่ม','None yet — <b>tap here</b> or press <b>＋</b> to add')}</div>`;
   const histBtn = hidden>0 ? `<button type="button" class="ho-hist-btn" onclick="hoHistoryPop('${type}')">🕘 ${TT('ดูข้อมูลย้อนหลัง '+hidden+' รายการ','View '+hidden+' older entries')}</button>` : '';
@@ -5634,11 +5999,13 @@ function _hoInputHtml(){
     <label class="ho-lbl">☑ ${TT('รายการงาน — 1 ช่อง = 1 ข้อ · กะถัดไปแตะติ๊กเมื่อทำเสร็จ','Checklist — 1 box = 1 item · next shift checks it off')}</label>
     <div id="hoItems"></div>
     <button type="button" class="ho-item-add" onclick="hoItemAdd()">＋ ${TT('เพิ่มข้อถัดไป','Add next item')}</button>
-    <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Enter = ข้อถัดไป · Ctrl+Enter = บันทึก','Enter = next item · Ctrl+Enter = save')}</div>`;
+    <div style="font-size:10.5px;color:#94a3b8;font-weight:700;margin-top:5px">💡 ${TT('Enter = ขึ้นบรรทัดใหม่ในข้อเดิม · กด ＋ เพื่อเพิ่มข้อใหม่ · Ctrl+Enter = บันทึก','Enter = new line in this item · press ＋ for a new item · Ctrl+Enter = save')}</div>`;
 }
+// 1 ช่อง = 1 ข้อ checklist (textarea → พิมพ์หลายบรรทัดได้ · Enter = ขึ้นบรรทัด ไม่สร้างข้อใหม่)
+const HO_ITEM_SEP='␞';   // ตัวคั่นข้อในร่าง (ไม่ชนกับข้อความผู้ใช้/ขึ้นบรรทัด)
 function _hoItemRowHtml(val){
-  return `<div class="ho-item-row"><span class="ho-item-chk">☐</span><input type="text" class="ho-item-inp" value="${escapeHtml(val||'')}"
-    placeholder="${TT('พิมพ์งานที่ต้องทำ / สิ่งที่ต้องส่งต่อ…','Type a task to hand over…')}" onkeydown="hoItemKey(event,this)">
+  return `<div class="ho-item-row"><span class="ho-item-chk">☐</span><textarea class="ho-item-inp" rows="1"
+    placeholder="${TT('พิมพ์งานที่ต้องทำ / สิ่งที่ต้องส่งต่อ…','Type a task to hand over…')}" onkeydown="hoItemKey(event,this)">${escapeHtml(val||'')}</textarea>
     <button type="button" class="ho-item-del" onclick="hoItemDel(this)" aria-label="${TT('ลบข้อนี้','Remove item')}">✕</button></div>`;
 }
 function _hoItemsSet(arr){
@@ -5658,19 +6025,16 @@ function hoItemDel(btn){
 }
 function hoItemKey(ev,inp){
   if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter'){ ev.preventDefault(); submitHandover(); return; }
-  if(ev.key!=='Enter') return;
-  ev.preventDefault();
-  const rows=[...document.querySelectorAll('#hoItems .ho-item-inp')], i=rows.indexOf(inp);
-  if(i<rows.length-1) rows[i+1].focus();                 // มีข้อถัดไปอยู่แล้ว → ย้าย focus
-  else if(inp.value.trim()) hoItemAdd();                 // ข้อสุดท้ายมีข้อความ → เพิ่มข้อใหม่
+  // Enter ปกติ = ขึ้นบรรทัดใหม่ในข้อเดิม (ไม่สร้าง checkbox ใหม่) — เพิ่มข้อใหม่ด้วยปุ่ม ＋ เท่านั้น
 }
 function _hoReadInput(){
   const ta=document.getElementById('hoText'); if(ta) return ta.value;
-  return [...document.querySelectorAll('#hoItems .ho-item-inp')].map(x=>x.value.trim()).filter(Boolean).join('\n');
+  // แต่ละข้ออาจมีหลายบรรทัด → คั่นข้อด้วย HO_ITEM_SEP (ไม่ใช่ \n) เพื่อไม่ให้บรรทัดในข้อเดียวถูกแตกเป็นหลายข้อ
+  return [...document.querySelectorAll('#hoItems .ho-item-inp')].map(x=>x.value.replace(/\s+$/,'')).filter(s=>s.trim()).join(HO_ITEM_SEP);
 }
 function _hoWriteInput(v){
   const ta=document.getElementById('hoText'); if(ta){ ta.value=v||''; return; }
-  _hoItemsSet((v||'').split('\n'));
+  _hoItemsSet((v||'').split(HO_ITEM_SEP));
 }
 function _hoFocusInput(atEnd){
   const ta=document.getElementById('hoText');
@@ -5733,7 +6097,8 @@ function submitHandover(){
   }else{
     // ข้อมูลทั่วไป = checklist builder → 1 ช่อง = 1 ข้อ (task=1 มี checkbox) · เครื่องเสีย/ค้าง = 1 บันทึกเหมือนเดิม
     const isChk=_hoAddCat==='note';
-    const items=isChk?text.split(/\n+/).map(s=>s.trim()).filter(Boolean):[text];
+    // checklist: คั่นข้อด้วย HO_ITEM_SEP · แต่ละข้อเก็บบรรทัดในตัวไว้ (trim แค่หัว-ท้าย)
+    const items=isChk?text.split(HO_ITEM_SEP).map(s=>s.trim()).filter(Boolean):[text];
     items.forEach(tx=>addHandover(_hoAddType, tx, _hoAddCat, isChk?1:0));
     _hoDrafts[_hoDraftKey()]='';                      // บันทึกแล้ว → ล้างร่างเฉพาะช่องนี้
     closeHandoverAdd(); renderHandoverPanels();      // อัปเดตแผงทันที (ถ้าเปิดเต็มจออยู่)
@@ -6012,20 +6377,36 @@ function _wipOutYesterday(b){
   const y=yesterdayISO();
   return (b.wipOut.items||[]).filter(i=>String(i.date||'').slice(0,10)===y).reduce((s,i)=>s+(Number(i.qty)||0),0);
 }
+// ยอดรับเข้า "รวมทั้งเดือนนี้" (นับทุกรายการที่รับเข้า ไม่หักที่เริ่มผลิตแล้ว) + ยอดออก "วันนี้"
+function _wipInCurMonth(b){
+  const m=todayISO().slice(0,7);
+  return (b.wipIn.items||[]).filter(i=>String(i.ts||'').slice(0,7)===m).reduce((s,i)=>s+(Number(i.qty)||0),0);
+}
+function _wipOutToday(b){
+  const t=todayISO();
+  return (b.wipOut.items||[]).filter(i=>String(i.date||'').slice(0,10)===t).reduce((s,i)=>s+(Number(i.qty)||0),0);
+}
+/* การ์ด WIP บน IOT (v3.8) — เหลือ 2 การ์ดกะทัดรัด: IN 1.5 / OUT · แต่ละใบโชว์ ปัจจุบัน|เมื่อวาน|รวมทั้งเดือน
+   "ปัจจุบัน" ของ IN = ยอดที่รอผลิตตอนนี้ (ตัวเลขเดิมของการ์ด) · ของ OUT = ยอดที่ผ่าน FG วันนี้ */
 function renderIotWipStrip(b){
-  const host=$('iotWipStrip'); if(!host) return;
+  const host=$('iotWipCards'); if(!host) return;
   b=b||getWipBuckets();
-  const yLabel=TT('เมื่อวาน','yesterday');
-  const chip=(cls,icon,label,val,bucket,sub)=>`
-    <button type="button" class="wipchip ${cls}" onclick="showWipDetail('${bucket}',true)">
-      <span class="wipchip-k">${icon} ${label}</span>
-      <span class="wipchip-v">${nn(val)}</span>
-      ${sub!=null?`<span class="wipchip-sub">${yLabel} ${nn(sub)}</span>`:''}
+  const L={cur:TT('ปัจจุบัน','Now'),y:TT('เมื่อวาน','Yesterday'),m:TT('รวมทั้งเดือน','Month total')};
+  const card=(cls,icon,label,hint,bucket,cur,curHint,yv,mv)=>`
+    <button type="button" class="wipcard ${cls}" onclick="showWipDetail('${bucket}',true)"
+      aria-label="${label} — ${L.cur} ${nn(cur)} · ${L.y} ${nn(yv)} · ${L.m} ${nn(mv)}">
+      <span class="wipcard-k">${icon} ${label} <small>· ${hint}</small></span>
+      <span class="wipcard-vals">
+        <span class="wv main"><b>${nn(cur)}</b><small>${L.cur}${curHint?' · '+curHint:''}</small></span>
+        <span class="wv"><b>${nn(yv)}</b><small>${L.y}</small></span>
+        <span class="wv"><b>${nn(mv)}</b><small>${L.m}</small></span>
+      </span>
     </button>`;
   host.innerHTML =
-    chip('in','📥','WIP IN 1.5',b.wipIn.total,'in',_wipInYesterday(b)) +
-    chip('wip','▶',TT('WIP กำลังผลิต','WIP in production'),b.wip.total,'wip') +
-    chip('out','✓',TT('WIP OUT เดือนนี้','WIP OUT this month'),_wipOutCurMonth(b),'out',_wipOutYesterday(b));
+    card('in','📥','WIP IN 1.5',TT('รับจาก VSM2','from VSM2'),'in',
+         b.wipIn.total,TT('รอผลิต','waiting'),_wipInYesterday(b),_wipInCurMonth(b)) +
+    card('out','✓','WIP OUT',TT('ผ่าน FG','past FG'),'out',
+         _wipOutToday(b),TT('วันนี้','today'),_wipOutYesterday(b),_wipOutCurMonth(b));
 }
 /* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
 function renderWipInSummary(){
@@ -6046,23 +6427,109 @@ function toggleWipInCard(){
 }
 
 /* ── ฟอร์มเข้ายอด WIP IN 1.5 (หน้าบันทึกข้อมูล) ── */
+let _savingWipin=false;                        // ล็อกกันกดซ้ำ (มี await confirmModal คั่น → ปุ่มยังกดได้ถ้าไม่ล็อก)
 async function submitWipIn(){
-  const vEl=$('wipInValve'), lEl=$('wipInLot'), qEl=$('wipInQty');
+  if(_savingWipin) return;                      // ①  กำลังบันทึกอยู่ → ไม่เริ่มรอบใหม่
+  const vEl=$('wipInValve'), lEl=$('wipInLot'), qEl=$('wipInQty'), btn=$('wipInSubmitBtn');
   const valve=(vEl?.value||'').trim(), lot=(lEl?.value||'').trim(), qty=Number(qEl?.value||0);
   if(!valve){ toast(TT('กรอก Valve No ก่อน','Enter Valve No first'),'orange'); vEl?.focus(); return; }
   if(!(qty>0)){ toast(TT('กรอกจำนวน (Q\'ty)','Enter quantity'),'orange'); qEl?.focus(); return; }
-  if(!isKnownValve(valve)){
-    // ใช้ confirmModal (native confirm ไม่ทำงานใน in-app browser เช่น LINE)
-    if(!(await confirmModal(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'),{danger:false}))) return;
+  _savingWipin=true; if(btn){ btn.disabled=true; btn.style.opacity='.6'; }   // ②  ปิดปุ่มระหว่างบันทึก
+  try{
+    if(!isKnownValve(valve)){
+      // ใช้ confirmModal (native confirm ไม่ทำงานใน in-app browser เช่น LINE)
+      if(!(await confirmModal(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'),{danger:false}))) return;
+    }
+    // ③  กันบันทึกเนื้อหาซ้ำ: (Valve+Lot+Qty) ชุดเดิมมีอยู่แล้ว (ไม่จำกัดเวลา) → ถามผู้ใช้ว่า
+    //     "เป็นงานชุดใหม่ใช่ไหม?" — ใช่ = บันทึกเพิ่ม (ของชุดใหม่จริง) · ไม่ใช่ = ไม่บันทึก (กันซ้ำ)
+    //     หมายเหตุ: confirmModal ทำ escapeHtml ให้แล้ว → ใช้ \n ขึ้นบรรทัด (กล่องเป็น pre-wrap) ห้ามใส่ tag
+    const dups=_wipinList().filter(e=>vKey(e.valve)===vKey(valve) && lotKey(e.lot)===lotKey(lot)
+      && Number(e.qty)===Math.round(qty));
+    if(dups.length){
+      const last=dups[0];                                  // _wipinList เรียง ts ใหม่→เก่า
+      const w=_hoWhen(last.ts);
+      const by=String(last.byName||last.byId||'').trim();
+      const line=`${valve}${lot?' / '+lot:''} · ${nn(Math.round(qty))}`;
+      const ok=await confirmModal(
+        TT(`มีรายการนี้ในระบบแล้ว ${dups.length} ครั้ง\n${line} ชิ้น\nล่าสุด: ${w.abs}${w.ago?' ('+w.ago+')':''}${by?' · โดย '+by:''}\n\nนี่เป็น "งานชุดใหม่" ที่รับเข้าเพิ่ม ใช่ไหม?`,
+           `This entry already exists ${dups.length}x\n${line} pcs\nLast: ${w.abs}${w.ago?' ('+w.ago+')':''}${by?' · by '+by:''}\n\nIs this a NEW incoming batch?`),
+        {danger:false, title:TT('⚠️ รายการซ้ำ','⚠️ Duplicate entry'),
+         yes:TT('ใช่ — บันทึกเป็นชุดใหม่','Yes — save as new batch'),
+         no:TT('ไม่ใช่ — ไม่ต้องบันทึก','No — don\'t save')});
+      if(!ok) return;
+    }
+    addWipin(valve, lot, qty);
+    if(vEl) vEl.value=''; if(lEl) lEl.value=''; if(qEl) qEl.value='';
+    vEl?.focus();
+    renderWipInSummary(); renderWipBuckets();
+    toast(TT('เข้ายอด WIP IN 1.5 แล้ว','WIP IN 1.5 saved')+` · ${escapeHtml(valve)} ${lot?('/'+escapeHtml(lot)):''} · ${nn(qty)}`,'green');
+  } finally {
+    _savingWipin=false; if(btn){ btn.disabled=false; btn.style.opacity=''; }   // คืนปุ่มเสมอ (รวมกรณียกเลิก/ error)
   }
-  addWipin(valve, lot, qty);
-  if(vEl) vEl.value=''; if(lEl) lEl.value=''; if(qEl) qEl.value='';
-  vEl?.focus();
-  renderWipInSummary(); renderWipBuckets();
-  toast(TT('เข้ายอด WIP IN 1.5 แล้ว','WIP IN 1.5 saved')+` · ${escapeHtml(valve)} ${lot?('/'+escapeHtml(lot)):''} · ${nn(qty)}`,'green');
 }
 
 /* ── ป๊อปอัปรายละเอียด 3 ถัง (กดดู Valve/ยอด/Process ล่าสุด + History) ── */
+/* ── แบ่งหน้า (v3.8): ตารางรายละเอียด WIP โชว์ครั้งละ 15 รายการ — เรนเดอร์เฉพาะหน้าที่แสดง
+   (รายการเป็นพันแถว ถ้าวาดทีเดียวหน้าเว็บช้า/ค้าง) · ใช้ทั้งป๊อปอัปหน้า IOT และหน้าติดตามงาน ── */
+const WIP_PER_PAGE=15;
+let _wipPg={q:'',page:1};                 // คำค้น + หน้าปัจจุบัน (รีเซ็ตเมื่อเปิดป๊อปอัปใหม่)
+let _wipDet=null;                         // ชุดข้อมูลตารางที่เปิดอยู่ {items,rowFn,colspan}
+function _wipPgSlice(){
+  const all=(_wipDet&&_wipDet.items)||[];
+  const q=(_wipPg.q||'').trim().toLowerCase();
+  const filt=q?all.filter(i=>String(i.valve||'').toLowerCase().indexOf(q)>=0):all;
+  const pages=Math.max(1,Math.ceil(filt.length/WIP_PER_PAGE));
+  if(_wipPg.page>pages)_wipPg.page=pages;
+  if(_wipPg.page<1)_wipPg.page=1;
+  return {filt,pages,rows:filt.slice((_wipPg.page-1)*WIP_PER_PAGE,_wipPg.page*WIP_PER_PAGE)};
+}
+function _wipRowsHtml(rows){
+  if(!_wipDet) return '';
+  return rows.length?rows.map(_wipDet.rowFn).join('')
+    :`<tr><td colspan="${_wipDet.colspan}" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`;
+}
+function _wipPagerHtml(s){
+  const total=`${nn(s.filt.length)} ${TT('รายการ','items')}`;
+  if(s.pages<=1) return `<span class="wip-pginfo">${total}</span>`;
+  const p=_wipPg.page;
+  const nums=[]; const push=n=>{ if(n>=1&&n<=s.pages&&!nums.includes(n)) nums.push(n); };
+  push(1);push(2);push(p-1);push(p);push(p+1);push(s.pages-1);push(s.pages);
+  nums.sort((a,b)=>a-b);
+  let btns='',prev=0;
+  for(const n of nums){
+    if(n-prev>1) btns+=`<span class="wip-pgdots">…</span>`;
+    btns+=`<button type="button" class="wip-pgbtn${n===p?' on':''}" onclick="_wipGoPage(this,${n})">${n}</button>`;
+    prev=n;
+  }
+  return `<button type="button" class="wip-pgbtn" ${p<=1?'disabled':''} onclick="_wipGoPage(this,${p-1})">‹ ${TT('ก่อนหน้า','Prev')}</button>
+    ${btns}
+    <button type="button" class="wip-pgbtn" ${p>=s.pages?'disabled':''} onclick="_wipGoPage(this,${p+1})">${TT('ถัดไป','Next')} ›</button>
+    <span class="wip-pginfo">${TT('หน้า','Page')} ${p}/${s.pages} · ${total}</span>`;
+}
+// วาดใหม่เฉพาะ tbody + ตัวแบ่งหน้า (ช่องค้นหาอยู่นอก ไม่ถูกแตะ → โฟกัส/คีย์บอร์ดไม่หลุด)
+function _wipRedraw(host){
+  if(!host) return;
+  const s=_wipPgSlice();
+  const tb=host.querySelector('[data-wiprows]'); if(tb) tb.innerHTML=_wipRowsHtml(s.rows);
+  const pg=host.querySelector('[data-wippager]'); if(pg) pg.innerHTML=_wipPagerHtml(s);
+  // ตารางประกอบอื่นในป๊อปอัป (เช่น แผนขาย) — กรองแบบซ่อนแถวตามคำค้นเหมือนเดิม
+  const q=(_wipPg.q||'').trim().toLowerCase();
+  host.querySelectorAll('tr[data-v]').forEach(tr=>{
+    if(tr.closest('[data-wiprows]')) return;
+    tr.style.display=(!q||tr.dataset.v.indexOf(q)>=0)?'':'none';
+  });
+}
+function _wipSearch(inp){
+  _wipPg.q=inp.value||''; _wipPg.page=1;
+  _wipRedraw(inp.closest('[data-wipbody]'));
+}
+function _wipGoPage(btn,p){
+  _wipPg.page=p;
+  const host=btn.closest('[data-wipbody]');
+  _wipRedraw(host);
+  const tw=host&&host.querySelector('.tbl-wrap');
+  if(tw&&tw.scrollIntoView){ try{ tw.scrollIntoView({block:'nearest'}); }catch(e){} }
+}
 let _wipDetailBucket='wip';
 let _wipInFilter={month:null,customer:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน
 let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
@@ -6070,6 +6537,47 @@ function _wipMonthsFromItems(items){
   const set=new Set();
   for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
   return [...set].sort().reverse();
+}
+/* ── แผนขาย (จากเมนู "วางแผน") เทียบกับยอดที่รับเข้า WIP IN 1.5 ──
+   ให้รู้ว่างานที่จะขาย "เข้ามาครบหรือยัง / ขาดรายการไหน กี่ชิ้น" */
+function _wipPlanRows(){
+  const wip=_wipinList();
+  const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve) && (lot?lotKey(e.lot)===lotKey(lot):true))
+                               .reduce((s,e)=>s+(Number(e.qty)||0),0);
+  return (state.plans||[])
+    .filter(p=>p.status==='planned'||p.status==='in_progress')
+    .map(p=>{
+      const planned=Number(p.quantity)||0, received=recvOf(p.valve_no||'', p.lot||'');
+      return { date:p.plan_date||'', valve:p.valve_no||'', lot:p.lot||'', planned, received,
+               missing:Math.max(0,planned-received), enough:planned>0&&received>=planned };
+    })
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+}
+function _wipInPlanHtml(){
+  const rows=_wipPlanRows();
+  if(!rows.length) return '';
+  const doneN=rows.filter(r=>r.enough).length, totMiss=rows.reduce((s,r)=>s+r.missing,0);
+  const allIn=totMiss===0;
+  const body=rows.map(r=>`
+    <tr data-v="${escapeHtml(String(r.valve||'').toLowerCase())}" style="${r.enough?'opacity:.6':''}">
+      <td>${escapeHtml(r.date||'-')}</td>
+      <td><b>${escapeHtml(r.valve)}</b></td>
+      <td>${escapeHtml(r.lot||'-')}</td>
+      <td class="center">${nn(r.planned)}</td>
+      <td class="center" style="color:var(--blue)">${nn(r.received)}</td>
+      <td class="center">${r.enough?`<span class="tag tag-green">✓ ${TT('ครบ','OK')}</span>`:`<span class="tag tag-red">${TT('ขาด','short')} ${nn(r.missing)}</span>`}</td>
+    </tr>`).join('');
+  return `
+   <details ${allIn?'':'open'} style="margin-bottom:10px;border:1.5px solid ${allIn?'#84E1BC':'#FCA5A5'};border-radius:11px;background:${allIn?'#F3FAF7':'#FEF2F2'};padding:8px 10px">
+     <summary style="cursor:pointer;font-weight:800;font-size:13px;color:${allIn?'#057A55':'#B91C1C'};list-style:none">
+       📋 ${TT('งานขายที่วางแผน (เทียบยอดรับเข้า)','Planned sales vs received')} —
+       ${allIn?TT('เข้าครบทุกรายการ ✓','all received ✓'):`${TT('รับครบ','complete')} ${doneN}/${rows.length} · ${TT('ยังขาดรวม','still short')} <b>${nn(totMiss)}</b> ${TT('ชิ้น','pcs')}`}
+     </summary>
+     <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr>
+       <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>Lot</th>
+       <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('สถานะ','Status')}</th>
+     </tr></thead><tbody>${body}</tbody></table></div>
+   </details>`;
 }
 function wipDetailBody(bucket){
   const b=getWipBuckets();
@@ -6086,7 +6594,9 @@ function wipDetailBody(bucket){
     const byCust={};
     for(const i of filt){ if(i.started) continue; byCust[i.customer]=(byCust[i.customer]||0)+i.qty; }
     const custRows=Object.entries(byCust).sort((a,c)=>c[1]-a[1]);
-    const rows=filt.slice().sort((a,c)=>String(c.ts).localeCompare(String(a.ts))).map(i=>`
+    // v3.8: แบ่งหน้า — เก็บรายการทั้งชุดไว้ใน _wipDet แล้ววาดเฉพาะหน้าที่แสดง (15 แถว)
+    const sorted=filt.slice().sort((a,c)=>String(c.ts).localeCompare(String(a.ts)));
+    const rowFn=i=>`
       <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started?'opacity:.5':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
         <td><b>${escapeHtml(i.valve)}</b></td>
@@ -6095,26 +6605,30 @@ function wipDetailBody(bucket){
         <td class="center"><b>${nn(i.qty)}</b></td>
         <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
         <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
-      </tr>`).join('');
+      </tr>`;
+    _wipDet={items:sorted,rowFn,colspan:7};
+    const s=_wipPgSlice();
     return `
      <div data-wipbody>
+      ${_wipInPlanHtml()}
       <div class="fg-auto mb-8">
         <div class="fr" style="margin:0"><label>${TT('เดือน','Month')}</label>
-          <select onchange="_wipInFilter.month=this.value;_refreshWipDetail()">
+          <select onchange="_wipInFilter.month=this.value;_wipPg.page=1;_refreshWipDetail()">
             <option value="">${TT('ทุกเดือน','All months')}</option>
             ${months.map(m=>`<option value="${m}" ${_wipInFilter.month===m?'selected':''}>${m}</option>`).join('')}
           </select></div>
         <div class="fr" style="margin:0"><label>${TT('ลูกค้า','Customer')}</label>
-          <select onchange="_wipInFilter.customer=this.value;_refreshWipDetail()">
+          <select onchange="_wipInFilter.customer=this.value;_wipPg.page=1;_refreshWipDetail()">
             <option value="">${TT('ทั้งหมด','All')}</option>
             ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
           </select></div>
       </div>
-      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" oninput="_wipFilterTable(this)" autocomplete="off"
+      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
         style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
       <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
-        <tbody>${rows||`<tr><td colspan="7" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>
+        <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
+      <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
      </div>`;
   }
   // wip / out
@@ -6133,7 +6647,7 @@ function wipDetailBody(bucket){
       let months=_wipMonthsFromItems(bucket2.items);
       if(!months.includes(curMonth)) months=[curMonth,...months];
       monthCtrl=`<div class="fr mb-8" style="margin:0 0 8px"><label>🔒 ${TT('เลือกเดือน (Admin)','Month (Admin)')}</label>
-        <select onchange="_wipOutMonth=this.value;_refreshWipDetail()">
+        <select onchange="_wipOutMonth=this.value;_wipPg.page=1;_refreshWipDetail()">
           ${months.map(m=>`<option value="${m}" ${eff===m?'selected':''}>${m}${m===curMonth?' · '+TT('เดือนปัจจุบัน','current'):''}</option>`).join('')}
         </select></div>`;
     } else {
@@ -6144,7 +6658,8 @@ function wipDetailBody(bucket){
   const total=items.reduce((s,i)=>s+i.qty,0);
   const byCustMap={}; for(const i of items) byCustMap[i.customer]=(byCustMap[i.customer]||0)+i.qty;
   const byCust=Object.entries(byCustMap).sort((a,c)=>c[1]-a[1]);
-  const rows=items.map(i=>`
+  // v3.8: แบ่งหน้า — วาดเฉพาะ 15 แถวของหน้าที่แสดง (รายการเยอะแล้วหน้าเว็บไม่ค้าง)
+  const rowFn=i=>`
     <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}">
       <td><b>${escapeHtml(i.valve)}</b></td>
       <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
@@ -6154,43 +6669,42 @@ function wipDetailBody(bucket){
       <td class="center"><b>${nn(i.qty)}</b></td>
       <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
-    </tr>`).join('');
+    </tr>`;
   const _wipColspan=isOut?6:8;
+  _wipDet={items,rowFn,colspan:_wipColspan};
+  const s=_wipPgSlice();
   return `
    <div data-wipbody>
     ${monthCtrl}
-    <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" oninput="_wipFilterTable(this)" autocomplete="off"
+    <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
       style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
     ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
     <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
-      <tbody>${rows||`<tr><td colspan="${_wipColspan}" class="center muted">${TT('ไม่มีข้อมูล','No data')}</td></tr>`}</tbody></table></div>
+      <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
+    <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
    </div>`;
 }
 function _wipTitle(bucket){ return bucket==='in'?'📥 WIP IN 1.5':bucket==='out'?('✓ WIP OUT — '+TT('ผ่าน FG','past FG')):('▶ WIP — '+TT('กำลังผลิต','in production')); }
 function showWipDetail(bucket, fromIot){
   _wipDetailBucket=bucket;
-  const title=_wipTitle(bucket), body=wipDetailBody(bucket);
+  _wipPg={q:'',page:1};                        // เปิดป๊อปอัปใหม่ = เริ่มหน้า 1 คำค้นว่าง
+  const title=_wipTitle(bucket), body=`<div class="wip-detail-box">${wipDetailBody(bucket)}</div>`;
   if(fromIot && document.getElementById('iotCard')?.classList.contains('iot-fs')){
-    _openIotPop(title, body);
+    _openIotPop(title, body, false, true);     // กว้างพิเศษ — ช่อง/ตารางอ่านง่าย
   } else {
-    openModal(title, body);
+    openModal(title, body, {wide:true});
   }
 }
-// กรองตาราง WIP ด้วยคำค้น Valve (ทำงานฝั่ง DOM ไม่ re-render กัน focus หลุด)
-function _wipFilterTable(inp){
-  const q=(inp.value||'').trim().toLowerCase();
-  const host=inp.closest('[data-wipbody]'); if(!host) return;
-  host.querySelectorAll('tbody tr[data-v]').forEach(tr=>{
-    tr.style.display = (!q || tr.dataset.v.indexOf(q)>=0) ? '' : 'none';
-  });
-}
 function _refreshWipDetail(){
-  // วาดใหม่ภายในป๊อปอัปที่เปิดอยู่ (modal หรือ iotpop)
+  // วาดใหม่ภายในป๊อปอัปที่เปิดอยู่ (modal หรือ iotpop) — คงคำค้น/หน้าเดิมไว้ (_wipPg)
   const iot=document.getElementById('wipIotPop');
-  const body=wipDetailBody(_wipDetailBucket);
-  if(iot){ const bd=iot.querySelector('.iotpop-bd'); if(bd) bd.innerHTML=body; }
-  else if($('modalBd')){ $('modalBd').innerHTML=body; }
+  const body=`<div class="wip-detail-box">${wipDetailBody(_wipDetailBucket)}</div>`;
+  let bd=null;
+  if(iot){ bd=iot.querySelector('.iotpop-bd'); if(bd) bd.innerHTML=body; }
+  else if($('modalBd')){ bd=$('modalBd'); bd.innerHTML=body; }
+  // ตารางแผนขาย ฯลฯ ต้องถูกกรองตามคำค้นเดิมด้วย (แถวหลักถูกกรองตอนสร้างแล้ว)
+  const wb=bd&&bd.querySelector('[data-wipbody]'); if(wb) _wipRedraw(wb);
 }
 async function onDeleteWipin(id){
   if(!(await confirmModal(TT('ลบรายการรับเข้านี้?','Delete this incoming record?')))) return;
@@ -6217,14 +6731,14 @@ function showWipHistory(valveEnc, lotEnc){
   else openModal(title, body);
 }
 // ป๊อปอัปแบบ iotpop (โชว์ได้ใน native fullscreen) — append เข้า #iotCard
-function _openIotPop(title, body, stack){
-  const card=document.getElementById('iotCard'); if(!card){ openModal(title, body); return; }
+function _openIotPop(title, body, stack, wide){
+  const card=document.getElementById('iotCard'); if(!card){ openModal(title, body, {wide}); return; }
   if(!stack){ const ex=document.getElementById('wipIotPop'); if(ex) ex.remove(); }
   const pop=document.createElement('div');
   pop.id=stack?('wipIotPop2_'+Date.now()):'wipIotPop';
   pop.className='iotpop-bg';
   pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });
-  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true">
+  pop.innerHTML=`<div class="iotpop${wide?' wide':''}" role="dialog" aria-modal="true">
     <div class="iotpop-hd" style="background:linear-gradient(135deg,#1A56DB,#1E3A8A)">
       <span style="font-size:15px;font-weight:800">${title}</span>
       <button class="iotpop-cl" onclick="this.closest('.iotpop-bg').remove()" aria-label="${TT('ปิด','Close')}">✕</button>
@@ -7064,7 +7578,7 @@ async function _saveKpiImpl() {
   }
 
   const records = [];
-  let kBadLot = 0, kBadProc = 0;   // นับ slot ที่ Lot/Process ไม่อยู่ในลิสต์ (บังคับเลือกจาก dropdown)
+  let kNoProc = 0, kBadProc = 0;   // kNoProc = ยังไม่เลือก Process (บังคับต้องมี) · kBadProc = Process ไม่ตรงเบอร์วาล์ว
   for (const unit of units) {
     const on = document.getElementById(unit.pid + '_on');
     if (!on?.checked) continue;
@@ -7090,11 +7604,12 @@ async function _saveKpiImpl() {
       const crew = unit.multiEmp ? _readCrew(sid) : _readSingleEmp(sid);
       const { wt } = calcWT(ts, te);
       if (!opr && !scrap) return;
-      // บังคับเลือกจากลิสต์ (เฉพาะเมื่อระบุวาล์ว): Lot ต้องอยู่ในระบบ · Process ทุกตัวต้องตรงเบอร์วาล์ว
-      // Auto Line → Process มาจากเครื่องอัตโนมัติ ไม่ต้องตรวจ proc
-      if (valve.trim()) {
-        if (lot.trim() && !isAllowedLot(valve, lot)) { kBadLot++; return; }
-        if (!unit.isLine && procs.some(p => !isAllowedProc(valve, p))) { kBadProc++; return; }
+      // เมื่อระบุวาล์ว: บังคับต้องมี Process (req) · Process ทุกตัวต้องตรงเบอร์วาล์ว
+      //   Lot: พิมพ์เพิ่มเองได้ (ไม่บล็อก) — lot ที่ยังไม่ลงทะเบียนจะไปโผล่หน้า "วางแผน" ให้ admin จัดการ
+      //   Auto Line → Process มาจากเครื่องอัตโนมัติ ไม่ต้องตรวจ proc
+      if (valve.trim() && !unit.isLine) {
+        if (!procs.length) { kNoProc++; return; }
+        if (procs.some(p => !isAllowedProc(valve, p))) { kBadProc++; return; }
       }
       if (si === 0 && ts) {
         const [h0, m0] = ts.split(':').map(Number);
@@ -7157,7 +7672,7 @@ async function _saveKpiImpl() {
     }
   }
 
-  if (kBadLot)  toast(`ข้าม ${kBadLot} รายการ — Lot ไม่อยู่ในระบบ (เลือกจากลิสต์เท่านั้น)`, 'red');
+  if (kNoProc)  toast(`ข้าม ${kNoProc} รายการ — ยังไม่ได้เลือก Process (ต้องเลือก Process ก่อนบันทึก)`, 'red');
   if (kBadProc) toast(`ข้าม ${kBadProc} รายการ — Process ไม่ตรงเบอร์วาล์ว (เลือกจากลิสต์เท่านั้น)`, 'red');
 
   if (!records.length) { toast('ไม่มีข้อมูลให้บันทึก — เปิดเครื่องและกรอก OPR ก่อน', 'orange'); return; }
@@ -7405,8 +7920,16 @@ function lotsForValve(valveNo) {
     if (rv === vn) { const l = (r.lot || '').trim(); if (l) set.add(l); }
   }};
   scan(state.prodRecords); scan(state.kpiRecords);
-  // Lot ที่จบงานแล้ว (ขยับเป็น DONE ในระบบหลัง FG) → ไม่ต้องเสนอใน dropdown ตอนบันทึกใหม่
-  return [...set].filter(l => getJobProc(valveNo, l) !== 'DONE').sort();
+  // Lot ที่จบงานแล้ว (ผลิตถึง Process สุดท้าย/FG → DONE) → ไม่เสนอใน dropdown ตอนบันทึกใหม่ (กันงานหา lot ไม่เจอในระยะยาว)
+  // เรียงจากมาก → น้อย (natural/ตัวเลข) เพื่อให้ lot ล่าสุดอยู่บนสุด หาเจอง่าย
+  return [...set].filter(l => getJobProc(valveNo, l) !== 'DONE')
+                 .sort((a, b) => String(b).localeCompare(String(a), undefined, { numeric: true, sensitivity: 'base' }));
+}
+/* Lot ที่ "ลงทะเบียนใน Valve IDs (หน้าตั้งค่า)" เท่านั้น — ใช้แยกว่า lot ไหนพนักงานพิมพ์เพิ่มเอง (ยังไม่ลงทะเบียน) */
+function isRegisteredLot(valveNo, lot) {
+  const vn = (valveNo || '').trim().toLowerCase(), L = (lot || '').trim().toLowerCase();
+  if (!vn || !L) return false;
+  return (state.ids || []).some(r => (r.valve_no || '').trim().toLowerCase() === vn && (r.lot || '').trim().toLowerCase() === L);
 }
 function acLotSearch(ev, id, valveInputId) {
   const q = (ev.target.value || '').trim().toLowerCase();
@@ -8011,7 +8534,7 @@ function setHistTab(t) {
   // ทำให้คำค้นเดิมกรองข้อมูลออกหมด เห็นเป็น "ไม่มีข้อมูล")
   if (prev && prev !== t && $('histSearch')) $('histSearch').value = '';
   // reset paging เมื่อสลับแท็บ
-  _histLimit = HIST_PAGE;
+  _histPage = 0;
   loadHistory();
 }
 function filterLocal(records, filt, type) {
@@ -8109,16 +8632,40 @@ function _syncProdFromApi(apiRecords, from, to) {
   lsSave(LS.PROD_REC, state.prodRecords);
 }
 
-/* ---- Paging: แสดงทีละ HIST_PAGE รายการ (เร็ว) แล้วมีปุ่ม "โหลดเพิ่ม" ----
-   render เฉพาะ _histLimit แถวแรก เพื่อไม่ให้แอพช้าเวลาข้อมูลเยอะ ---- */
-const HIST_PAGE = 100;
-let _histLimit = HIST_PAGE;
-function histLoadMore() { _histLimit += HIST_PAGE; loadHistory(true); }
-function _setHistMore(shown, hasMore) {
-  const more = $('histMore');
-  if (!more) return;
-  more.style.display = hasMore ? '' : 'none';
-  if ($('histShown')) $('histShown').textContent = nn(shown);
+/* ---- Paging: แสดง 30 รายการ/หน้า + เลขหน้าให้กดเลื่อน (DOM เบา เครื่องไม่ช้า) ----
+   ดึงจาก Cloud มาชุดใหญ่ (HIST_FETCH) แล้วแบ่งหน้าแสดงฝั่ง client ทีละ HIST_PER
+   → แสดงยอดรวมทั้งหมด + ช่วงที่แสดง ผู้ใช้จะรู้ว่ามีกี่รายการ ไม่เข้าใจผิดว่าครบแล้ว ---- */
+const HIST_PER = 30;          // แสดง 30 รายการ/หน้า
+const HIST_FETCH = 3000;      // ดึงจาก Cloud สูงสุดต่อครั้ง แล้วแบ่งหน้าฝั่ง client
+let _histPage = 0;            // หน้าปัจจุบัน (0-based)
+function histGoPage(p) {
+  _histPage = Math.max(0, p | 0);
+  loadHistory(true);
+  const t = $('pane-history'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+/* วาดแถบเลขหน้า + ช่วงที่แสดง/ยอดรวม (เรียกหลัง clamp _histPage แล้วใน render) */
+function _setHistPager(total) {
+  const pages = Math.max(1, Math.ceil(total / HIST_PER));
+  const start = total ? _histPage * HIST_PER : 0;
+  const end = Math.min(total, start + HIST_PER);
+  if ($('histCount')) $('histCount').textContent = nn(total);
+  const rng = $('histRange');
+  if (rng) rng.textContent = total ? `แสดง ${nn(start + 1)}–${nn(end)}` : '—';
+  const nav = $('histPager'); if (!nav) return;
+  if (pages <= 1) { nav.innerHTML = ''; nav.style.display = 'none'; return; }
+  nav.style.display = '';
+  const btn = (label, p, o = {}) =>
+    `<button class="btn ${o.on ? 'btn-blue' : 'btn-outline'} btn-sm" ${o.dis ? 'disabled style="opacity:.4"' : ''} onclick="histGoPage(${p})">${label}</button>`;
+  const cur = _histPage, nums = [], dots = '<span style="padding:0 4px;color:var(--muted)">…</span>';
+  const push = p => nums.push(btn(p + 1, p, { on: p === cur }));
+  const lo = Math.max(0, cur - 2), hi = Math.min(pages - 1, cur + 2);
+  if (lo > 0) { push(0); if (lo > 1) nums.push(dots); }
+  for (let p = lo; p <= hi; p++) push(p);
+  if (hi < pages - 1) { if (hi < pages - 2) nums.push(dots); push(pages - 1); }
+  nav.innerHTML =
+    btn('‹ ก่อนหน้า', cur - 1, { dis: cur === 0 }) +
+    `<span style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center">${nums.join('')}</span>` +
+    btn('ถัดไป ›', cur + 1, { dis: cur >= pages - 1 });
 }
 
 // พิมพ์ค้นหา → หน่วงสั้น ๆ ก่อนค่อยโหลด (กันยิง API ทุกตัวอักษร + กันตารางกระพริบขณะพิมพ์)
@@ -8130,7 +8677,7 @@ function histSearchInput() {
 
 let _histReq = 0;   // ลำดับคำขอ — กัน response เก่ามา render ทับของใหม่ (อาการ "ขึ้น ๆ หาย ๆ")
 async function loadHistory(keepPage = false) {
-  if (!keepPage) _histLimit = HIST_PAGE;   // เปลี่ยนฟิลเตอร์ → เริ่มนับหน้าใหม่
+  if (!keepPage) _histPage = 0;   // เปลี่ยนฟิลเตอร์ → กลับหน้าแรก
   const myReq = ++_histReq;
   const from = $('histFrom').value, to = $('histTo').value;
   const zone = $('histZone').value, q = $('histSearch').value.trim();
@@ -8141,8 +8688,8 @@ async function loadHistory(keepPage = false) {
 
   if (!API) return;   // offline → local cache คือ source, render จัดการ paging แล้ว
 
-  // ดึงเกินมา 1 รายการ (fetch-one-extra) เพื่อรู้ว่ายังมีข้อมูลต่อหรือไม่
-  const fetchLimit = _histLimit + 1;
+  // ดึงชุดใหญ่มาแบ่งหน้าฝั่ง client (DOM แสดงแค่ 30 แถว/หน้า → เครื่องไม่ช้า)
+  const fetchLimit = HIST_FETCH;
   try {
     if (state.histType === 'kpi') {
       const params = new URLSearchParams();
@@ -8192,7 +8739,7 @@ async function _autoRefreshHistory() {
       if (to)   params.set('to', to);
       if (zone) params.set('zone', zone);
       if (q)    params.set('machine', q);
-      params.set('limit', _histLimit + 1);
+      params.set('limit', HIST_FETCH);
       const res = await api('/api/kpi?' + params, { silent: true });
       if (myReq !== _histReq) return;   // มีคำขอใหม่กว่า → ทิ้งผลเก่า
       if (res?.records !== undefined) {
@@ -8204,7 +8751,7 @@ async function _autoRefreshHistory() {
       if (from) params.set('from', from + 'T00:00:00');
       if (to)   params.set('to', to);
       if (q)    params.set('valve', q);
-      params.set('limit', _histLimit + 1);
+      params.set('limit', HIST_FETCH);
       const res = await api('/api/records?' + params, { silent: true });
       if (myReq !== _histReq) return;
       if (res?.records !== undefined) {
@@ -8235,7 +8782,7 @@ function _isModalOpen() {
    ถ้าไม่เปลี่ยน จะข้ามการเขียน DOM ทิ้ง เพื่อไม่ให้ตารางกระตุก/กระพริบทุกครั้งที่ auto-refresh */
 let _histSig = '';
 function _histViewSig(view) {
-  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + _histLimit + '|' +
+  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + _histPage + '|' +
     view.map(r =>
       (r.record_id || r.recordId || '') + ':' +
       (r.updated_at || r.saved_at || r.timestamp || '') + ':' +
@@ -8283,9 +8830,11 @@ function _histActionsCell(rid, editFn, delFn) {
 function renderKpiHist(rows) {
   rows = _histSortKpi(filterVsm(rows));   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด) + เรียงคงที่
   _histKpiRows = rows;      // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
-  const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
-  $('histCount').textContent = view.length;
-  _setHistMore(view.length, rows.length > _histLimit);
+  const _pgK = Math.max(1, Math.ceil(rows.length / HIST_PER));
+  if (_histPage > _pgK - 1) _histPage = _pgK - 1;   // clamp เมื่อจำนวนหน้าลดลง
+  const _stK = _histPage * HIST_PER;
+  const view = rows.slice(_stK, _stK + HIST_PER);   // render เฉพาะหน้าปัจจุบัน (30 แถว)
+  _setHistPager(rows.length);
   const t = $('histTable');
   const tb = t.querySelector('tbody');
   // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
@@ -8312,9 +8861,11 @@ function renderProdHist(rows) {
   // ทำให้กดแก้ไขแล้วขึ้น "ไม่พบข้อมูล" — เติม record_id ให้ครบก่อน render
   rows = _histSortProd(filterVsm(rows).map(r => r.record_id ? r : { ...r, record_id: r.recordId }));
   _histProdRows = rows;     // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
-  const view = rows.slice(0, _histLimit);   // render เฉพาะหน้าปัจจุบัน (เร็ว)
-  $('histCount').textContent = view.length;
-  _setHistMore(view.length, rows.length > _histLimit);
+  const _pgP = Math.max(1, Math.ceil(rows.length / HIST_PER));
+  if (_histPage > _pgP - 1) _histPage = _pgP - 1;   // clamp เมื่อจำนวนหน้าลดลง
+  const _stP = _histPage * HIST_PER;
+  const view = rows.slice(_stP, _stP + HIST_PER);   // render เฉพาะหน้าปัจจุบัน (30 แถว)
+  _setHistPager(rows.length);
   const t = $('histTable');
   const tb = t.querySelector('tbody');
   // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
@@ -8783,6 +9334,7 @@ function renderSettings() {
   if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
   renderValveList(); renderIdList(); renderEmployeeList(); renderMachineList();
   renderUnknownValves();
+  renderUnknownLots();
   renderUnknownProcs();
   renderPostFgJobs();
   initSettingsCollapse();
