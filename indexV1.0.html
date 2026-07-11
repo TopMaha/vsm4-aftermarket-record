@@ -643,11 +643,11 @@ tbody tr:last-child td{border-bottom:none}
 @keyframes sosBlink{0%,100%{opacity:1}50%{opacity:.15}}
 #iotSvg .mc-sos{animation:sosBlink 1.1s ease-in-out infinite;pointer-events:none}
 @keyframes mcHl{0%,100%{opacity:1}50%{opacity:.35}}
-#iotSvg .iot-mc.hl{animation:mcHl .55s ease-in-out 4}
-#iotSvg .iot-mc.hl rect{stroke:#DC2626;stroke-width:4px}
+#iotSvg .iot-mc.hl,#iotSvg .iot-lb.hl{animation:mcHl .55s ease-in-out 4}
+#iotSvg .iot-mc.hl rect,#iotSvg .iot-lb.hl rect{stroke:#DC2626;stroke-width:4px}
 @media (prefers-reduced-motion:reduce){
   #iotSvg .mc-sos,.top5-item .t5sos{animation:none}
-  #iotSvg .iot-mc.hl{animation:none}
+  #iotSvg .iot-mc.hl,#iotSvg .iot-lb.hl{animation:none}
 }
 /* ── ตัวแบ่งหน้า (pagination) ตารางรายละเอียด WIP — 15 รายการ/หน้า ── */
 .wip-pager{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px;justify-content:center}
@@ -864,7 +864,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.9</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.10</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1958,6 +1958,20 @@ const VSM3_LINE_LABEL = {
   M4:'Mitsubishi 4', M1:'Mitsubishi 1',
   POL229:'Polish D-229', POL203:'Polish D-203', POL228:'Polish D-228',
 };
+// TOP ปัญหา (VSM3): จับกลุ่มไลน์ให้ตรงกับ "ป้ายไลน์สีเหลือง" บนผัง (FP3_LB)
+//   POL/TR/BUF = ป้ายเดียวรวมหลายไลน์ย่อย · ไลน์อื่นใช้ชื่อเดียวกับ key (F2,R1,…)
+const VSM3_LB_OF_LINE = {
+  POL229:'POL', POL203:'POL', POL228:'POL',
+  TRFG:'TR', TRL264:'TR', TRL265:'TR', TROTH:'TR',
+  BUF1:'BUF', BUF2:'BUF', BUF3:'BUF',
+};
+const lineLbId = lk => VSM3_LB_OF_LINE[lk] || lk;
+// map เครื่อง → ป้ายไลน์สีเหลือง (fallback เมื่อ record ไม่มี line_key)
+const VSM3_MC_LB = {};
+for (const lk in VSM3_LINES) { const _lb = lineLbId(lk); for (const id of VSM3_LINES[lk]) if (!(id in VSM3_MC_LB)) VSM3_MC_LB[id] = _lb; }
+// ชื่อเต็มของป้ายไลน์ (ใช้ใน tooltip/แผงรายการ) — POL/TR/BUF ไม่มีใน VSM3_LINE_LABEL
+const FP3_LB_NAME = { POL:'Polish', TR:'Truck', BUF:'Buff' };
+const lbFullName = lb => FP3_LB_NAME[lb] || VSM3_LINE_LABEL[lb] || lb;
 const VSM3_ZONE_LINES = {
   ZH: ['F1','F2','F3','F4','F5'],
   ZI: ['R1','R2','T3','M3','N4','BUF1','BUF2','BUF3'],
@@ -4435,7 +4449,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.9":"Production Record + KPI · v3.9",
+"ระบบบันทึกผลิต + KPI · v3.10":"Production Record + KPI · v3.10",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -4919,14 +4933,33 @@ function renderMachineStatusChecker(recs) {
   const byMc = {};
   for (const r of filtered) { const id = r.machine_id; if (!id) continue; (byMc[id] || (byMc[id] = [])).push(r); }
 
-  // TOP ปัญหา (v3.8): 5 เครื่อง OAE ต่ำสุดของช่วงวันที่ที่เลือก (เฉพาะเครื่องที่เปิด + มีเป้า)
+  // TOP ปัญหา (v3.8): 5 อันดับ OAE ต่ำสุดของช่วงวันที่ที่เลือก (เฉพาะที่เปิด + มีเป้า)
   // SOS = เครื่องที่มีคำขอช่วยเหลือค้าง (help ยังไม่ปิด) ในช่วงเดียวกัน — ใช้แปะ badge/🆘 บนผัง
   const sosSet = new Set();
   for (const r of filtered) { if (r.machine_id && _recHelpOpen(r)) sosSet.add(r.machine_id); }
-  const top5 = Object.keys(agg).filter(m => agg[m].tgt > 0)
-    .map(m => ({ id: m, oae: agg[m].opr / agg[m].tgt, sos: sosSet.has(m) }))
-    .sort((a, b) => a.oae - b.oae).slice(0, 5);
-  const topRank = {}; top5.forEach((t, i) => { topRank[t.id] = i + 1; });
+  // • VSM3 → จัดอันดับ "รายไลน์" (ค่าเฉลี่ยทั้งไลน์ = ΣOPR ÷ ΣTarget ของไลน์) แล้วโชว์ชื่อไลน์ = ป้ายเหลือง — ไม่ลงที่เครื่อง
+  // • VSM อื่น → จัดอันดับรายเครื่อง (เหมือนเดิม)
+  let top5, topRank = {};
+  if (fpv === 'vsm3') {
+    const lineAgg = {};   // lbId → {opr,tgt,mcs,sos}
+    for (const r of filtered) {
+      const lb = r.line_key ? lineLbId(r.line_key) : VSM3_MC_LB[r.machine_id];
+      if (!lb) continue;
+      const a = lineAgg[lb] || (lineAgg[lb] = { opr: 0, tgt: 0, mcs: new Set(), sos: false });
+      a.opr += (+r.opr || 0); a.tgt += (+r.target || 0);
+      if (r.machine_id) a.mcs.add(r.machine_id);
+      if (sosSet.has(r.machine_id)) a.sos = true;
+    }
+    top5 = Object.keys(lineAgg).filter(lb => lineAgg[lb].tgt > 0)
+      .map(lb => ({ id: lb, isLine: true, name: lbFullName(lb),
+        oae: lineAgg[lb].opr / lineAgg[lb].tgt, sos: lineAgg[lb].sos, mcs: [...lineAgg[lb].mcs] }))
+      .sort((a, b) => a.oae - b.oae).slice(0, 5);
+  } else {
+    top5 = Object.keys(agg).filter(m => agg[m].tgt > 0)
+      .map(m => ({ id: m, oae: agg[m].opr / agg[m].tgt, sos: sosSet.has(m) }))
+      .sort((a, b) => a.oae - b.oae).slice(0, 5);
+  }
+  top5.forEach((t, i) => { topRank[t.id] = i + 1; });
 
   _iotData = { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
 
@@ -4977,25 +5010,40 @@ function _mcCauseShort(id){
   });
   return String(hs[0].text||'').replace(/\s+/g,' ').trim();
 }
+// สาเหตุสั้นๆ ของ "ไลน์" = ข้อความขอความช่วยเหลือล่าสุดจากเครื่องใดๆ ในไลน์
+function _lineCauseShort(mcs){
+  const recs=[];
+  for(const id of (mcs||[])) for(const r of ((_iotData&&_iotData.byMc&&_iotData.byMc[id])||[])) recs.push(r);
+  const hs=recs.map(r=>_recHelp(r)).filter(Boolean);
+  if(!hs.length) return '';
+  hs.sort((a,b)=>{ const ao=a.status!=='done'?0:1, bo=b.status!=='done'?0:1; return ao-bo || String(b.at||'').localeCompare(String(a.at||'')); });
+  return String(hs[0].text||'').replace(/\s+/g,' ').trim();
+}
 function renderIotTop5(){
   const host=$('iotTop5'); if(!host) return;
   const list=(_iotData&&_iotData.top5)||[];
   if(!list.length){ host.innerHTML=''; return; }
+  const lineMode=list.some(t=>t.isLine);   // VSM3 = จัดอันดับรายไลน์
   const items=list.map((t,i)=>{
-    const cause=_mcCauseShort(t.id);
+    const cause=t.isLine?_lineCauseShort(t.mcs):_mcCauseShort(t.id);
+    const sub  =cause||(t.isLine&&t.name&&t.name!==t.id?t.name:'');   // ไม่มีสาเหตุ → โชว์ชื่อเต็มไลน์ (เช่น FORD 2)
     const oaeTxt=(Math.min(t.oae,9.99)*100).toFixed(1)+'%';
+    const nameTip=t.isLine&&t.name&&t.name!==t.id?`${t.id} — ${t.name}`:t.id;
     return `<button type="button" class="top5-item" onclick="iotTop5Tap('${escapeHtml(t.id)}')"
-        title="${escapeHtml(t.id)} · OAE ${oaeTxt}${cause?' · '+escapeHtml(cause):''} — ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}"
-        aria-label="${TT('อันดับ','Rank')} ${i+1} · ${escapeHtml(t.id)} · OAE ${oaeTxt}${t.sos?' · SOS':''}">
+        title="${escapeHtml(nameTip)} · OAE ${oaeTxt}${cause?' · '+escapeHtml(cause):''} — ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}"
+        aria-label="${TT('อันดับ','Rank')} ${i+1} · ${escapeHtml(nameTip)} · OAE ${oaeTxt}${t.sos?' · SOS':''}">
       <span class="t5rank">${i+1}</span>
       <span class="t5mc">${escapeHtml(t.id)}</span>
       <span class="t5oae">${oaeTxt}</span>
-      ${cause?`<span class="t5cause">${escapeHtml(cause)}</span>`:''}
+      ${sub?`<span class="t5cause">${escapeHtml(sub)}</span>`:''}
       ${t.sos?`<span class="t5sos" title="SOS — ${TT('มีคำขอช่วยเหลือค้าง','open help request')}">🆘</span>`:''}
     </button>`;
   }).join('');
+  const hd=lineMode
+    ? TT('TOP ปัญหา — ไลน์ OAE ต่ำสุด 5 ไลน์','TOP issues — 5 lowest-OAE lines')
+    : TT('TOP ปัญหา — OAE ต่ำสุด 5 เครื่อง','TOP issues — 5 lowest OAE');
   host.innerHTML=`<div class="top5-wrap">
-    <div class="top5-hd">🔥 ${TT('TOP ปัญหา — OAE ต่ำสุด 5 เครื่อง','TOP issues — 5 lowest OAE')} <small>· ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}</small></div>
+    <div class="top5-hd">🔥 ${hd} <small>· ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}</small></div>
     <div class="top5-list">${items}</div>
   </div>`;
 }
@@ -5011,7 +5059,8 @@ function iotTop5Tap(id){
 }
 function _iotFocusMc(id){
   let g=null;
-  try{ g=document.querySelector(`#iotSvg g[data-mc="${(window.CSS&&CSS.escape)?CSS.escape(id):id}"]`); }catch(e){}
+  const sel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
+  try{ g=document.querySelector(`#iotSvg g[data-mc="${sel}"]`)||document.querySelector(`#iotSvg g[data-lb="${sel}"]`); }catch(e){}  // เครื่อง หรือ ป้ายไลน์ (VSM3)
   if(!g) return;
   try{ g.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); }catch(e){}
   g.classList.remove('hl');
@@ -5227,11 +5276,19 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
   }
 
-  // ป้ายไลน์สีเหลือง (เฉพาะ VSM3) — POL/N3/M1/… ตามเอกสาร Layout · ไม่ใช่เครื่อง กดไม่ได้
+  // ป้ายไลน์สีเหลือง (เฉพาะ VSM3) — POL/N3/M1/… ตามเอกสาร Layout
+  //   v3.10: TOP ปัญหา VSM3 = รายไลน์ → badge อันดับ 1-5 อยู่บนป้ายเหลือง (ไม่ลงที่เครื่อง) + กดจากแผงมาชี้ตำแหน่งได้
   for(const lb of labels){
     const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
-    g.push(`<g aria-hidden="true"><rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="#111827" stroke-width="1.5" rx="4"/>`+
-      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text></g>`);
+    const rk=(_iotData&&_iotData.topRank)?_iotData.topRank[lb.id]:null;
+    const parts=[`<rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="${rk?'#DC2626':'#111827'}" stroke-width="${rk?2.5:1.5}" rx="4"/>`,
+      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text>`];
+    if(rk){
+      const bx=lb.x+lb.w-1.5, by=lb.y+1.5;
+      parts.push(`<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`+
+        `<text x="${bx.toFixed(1)}" y="${(by+3.4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Arial,sans-serif">${rk}</text>`);
+    }
+    g.push(`<g class="iot-lb" data-lb="${lb.id}"${rk?` role="img" aria-label="TOP ${rk} · ${escapeHtml(lb.id)}"`:' aria-hidden="true"'}>${parts.join('')}</g>`);
   }
 
   const svgHtml=`<svg id="iotSvg" viewBox="${VBX} ${VBY} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
@@ -7376,24 +7433,30 @@ function updShiftTotal(pid) {
   });
 }
 /* ---------------------------------------------------------------
-   nightShiftDate(prod, startMins)
-   คำนวณวันที่จริงของกะกลางคืน ตามเงื่อนไข:
-   • startMins 480–1199  (08:00–19:59) → กะกลางวัน, วันที่ = prod
-   • startMins >= 1200   (20:00–23:59) → กะกลางคืน
-       ถ้าเวลาจริงตอนนี้ 00:00–07:59 = เราอยู่เช้ามืดของวันถัดไป
-       → วันที่ผลิตจริงคือ prod - 1
-       ถ้าเวลาจริงตอนนี้ >= 20:00 = เพิ่งเริ่มกะ → วันที่ = prod
-   • startMins < 480     (00:00–07:59) → กะกลางคืนต่อจากเมื่อคืน → prod - 1
+   _resolveShift(prodDate, startMins) — ประเภทกะ + "วันทำงาน" ของ slot
+   กติกา (วันทำงาน = operational day):
+     08:00–19:59 = กะกลางวัน  → วันทำงาน = วันที่เริ่มงาน
+     20:00–23:59 = กะกลางคืน  → วันทำงาน = วันที่เริ่มงาน
+     00:00–07:59 = กะกลางคืน  → วันทำงาน = วันก่อนหน้า (หางกะดึกของเมื่อวาน)
+   • Admin ปลดล็อควันที่ → ใช้ prodDate (วันที่เลือก) ตรง ๆ ทุกกะ
+   • Auto → คำนวณจาก "เวลาที่กดบันทึกจริง (now)" — ไม่อิงค่า prod-date บนฟอร์ม
+     ❗ บั๊กเดิม (พบ 2026-07-11): เดิมคืน sd = prodDate ที่ตั้งไว้ตอนเปิดหน้า →
+       กะดึกกดบันทึก "หลัง 08:00 เช้า" prod-date เด้งเป็นวันใหม่แล้ว ทำให้ slot
+       00:00–07:59 (เช่น 03:00) ถูกบันทึกผิดเป็นวันถัดไป (+1 วัน) ·
+       และหน้าที่เปิดค้างข้ามวันก็ให้วันเก่า (−1 วัน) เช่นกัน
 --------------------------------------------------------------- */
 function _resolveShift(prodDate, startMins) {
-  // prodDate = "วันทำงาน" (operational day) ที่ระบบตั้งให้อัตโนมัติแล้ว
-  //   (_autoSetProdDate: ถ้าตอนนี้ 00:00–07:59 ถือเป็นกะกลางคืนของ "เมื่อวาน" → prodDate = เมื่อวาน)
-  // ดังนั้นทั้งกะกลางวันและกะกลางคืนของวันทำงานเดียวกัน ใช้ shift_date = prodDate เสมอ
-  //   - 08:00–19:59 = กะกลางวัน
-  //   - 20:00–23:59 และ 00:00–07:59 = กะกลางคืน (ของวันทำงานเดียวกัน)
-  // ❗ ไม่ลบวันออกอีก (เดิมลบ 1 วันทำให้ข้อมูลกะดึกไปโผล่ผิดวัน — ย้อนหลังไป 1 วัน)
   const st = (startMins >= 480 && startMins <= 1199) ? 'day' : 'night';
-  return { st, sd: prodDate };
+  const el = $('prod-date');
+  const isAuto = el ? (el.readOnly !== false) : true;
+  if (!isAuto && prodDate) return { st, sd: prodDate };   // Admin เลือกวันเอง (เก็บตกลงผิดวัน)
+  // auto: หาวันที่จริงของ "เวลาเริ่ม slot" เทียบกับเวลาปัจจุบัน ณ ตอนกดบันทึก
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const d = new Date(now); d.setHours(0, 0, 0, 0);
+  if (startMins < 480)          d.setDate(d.getDate() - 1); // 00:00–07:59 = หางกะดึกของเมื่อวานเสมอ
+  else if (startMins > nowMins) d.setDate(d.getDate() - 1); // เวลาเริ่มยังมาไม่ถึงวันนี้ (เช่น now 09:00 กรอก 20:00) → เริ่มเมื่อวาน
+  return { st, sd: `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}` };
 }
 
 /* ============================================================
@@ -7407,23 +7470,10 @@ function _resolveShift(prodDate, startMins) {
    โหมด admin (ปลดล็อควันที่): ใช้วันที่ที่แอดมินเลือกเป็น "วันทำงาน" ตรง ๆ
    ============================================================ */
 function _computeShift(tsStr) {
+  // เหลือแค่ delegate → _resolveShift (แหล่งตรรกะเดียว — เดิมมีตรรกะซ้ำ 2 ชุดแล้วชุดที่ใช้จริงผิด)
   const [h, m] = (tsStr || '').split(':').map(Number);
-  const startMins = (h || 0) * 60 + (m || 0);
-  const st = (startMins >= 480 && startMins <= 1199) ? 'day' : 'night';
   const el = $('prod-date');
-  const isAuto = el ? (el.readOnly !== false) : true;
-  if (!isAuto && el && el.value) {
-    // แอดมินกำหนดวันเอง → วันที่ของกะ = วันที่เลือก (กะดึกถือเป็นวันทำงานเดียวกัน)
-    return { st, sd: el.value };
-  }
-  // auto: หาวันที่จริงของเวลาเริ่มงานเทียบกับเวลาปัจจุบัน
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  const d = new Date(now); d.setHours(0, 0, 0, 0);
-  if (startMins > nowMins) d.setDate(d.getDate() - 1); // เวลาเริ่มยังไม่ถึงวันนี้ → เริ่มเมื่อวาน
-  if (startMins < 480)     d.setDate(d.getDate() - 1); // กะดึกช่วง 00:00–07:59 → เป็นของเมื่อวาน
-  const sd = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
-  return { st, sd };
+  return _resolveShift(el ? el.value : '', (h || 0) * 60 + (m || 0));
 }
 
 function _autoSetProdDate() {
@@ -7520,7 +7570,7 @@ function updShiftDetect() {
       const ts = card.querySelector('select[id$="_s0_ts"]')?.value;
       if (ts) {
         const [h, m] = ts.split(':').map(Number);
-        // วันที่ของกะ = วันที่ผลิต (prod-date) เสมอ — ไม่เลื่อนวันตามเวลาเริ่ม
+        // วันที่ของกะคิดจากเวลาเริ่ม slot เทียบเวลาปัจจุบัน (badge นี้ = ค่าเดียวกับที่จะถูกบันทึกจริง)
         const { st, sd } = _resolveShift(prod, (h || 0) * 60 + (m || 0));
         $('shift-detect').value = `${st === 'day' ? '☀️ กะกลางวัน' : '🌙 กะกลางคืน'} (${sd})`;
         return;
