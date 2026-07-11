@@ -1625,7 +1625,30 @@ function lsLoad(key, fallback) {
   try { const v = JSON.parse(localStorage.getItem(key)); return v === null || v === undefined ? fallback : v; }
   catch (e) { return fallback; }
 }
-function lsSave(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+/* ── Quick Win #4: lsSave coalescing ──
+   เดิม lsSave = JSON.stringify(array ทั้งก้อน) synchronous ทุกครั้ง → block main thread เมื่อข้อมูลโต
+   ใหม่: เก็บ reference ล่าสุดต่อ key แล้ว "เขียนจริง" รอบเดียว (debounce) — แต่ flush ทันทีตอนปิด/สลับแท็บ
+   กันข้อมูลหาย. state ใน memory อัปเดตทันทีเหมือนเดิม (ผู้เรียกอ่านจาก state ไม่ใช่ disk)
+   ── Quick Win #3 hook: _fvVer bump ที่นี่ = สัญญาณ "ข้อมูลเปลี่ยน" ให้ filterVsm cache invalidate ── */
+let _fvVer = 0;                       // เวอร์ชันข้อมูล — ใช้ทั้ง filterVsm memo (#3)
+const _lsDirty = {};                  // key → ค่าล่าสุดที่รอเขียนลง localStorage
+let _lsTimer = null;
+function _lsFlush() {
+  if (_lsTimer) { clearTimeout(_lsTimer); _lsTimer = null; }
+  for (const k in _lsDirty) {
+    try { localStorage.setItem(k, JSON.stringify(_lsDirty[k])); } catch (e) {}
+    delete _lsDirty[k];
+  }
+}
+function lsSave(key, val) {
+  _lsDirty[key] = val;                // อัปเดต state ใน memory เกิดที่ผู้เรียกแล้ว — ที่นี่แค่คิวเขียน disk
+  _fvVer++;                           // ข้อมูลเปลี่ยน → invalidate filterVsm cache ทันที
+  if (!_lsTimer) _lsTimer = setTimeout(_lsFlush, 500);
+}
+// flush ทันทีก่อนหน้าปิด/ซ่อน — กันข้อมูลค้างใน buffer หาย (มือถือปิดแท็บมักยิงแค่ pagehide/visibilitychange)
+window.addEventListener('pagehide', _lsFlush);
+window.addEventListener('beforeunload', _lsFlush);
+document.addEventListener('visibilitychange', () => { if (document.hidden) _lsFlush(); });
 
 let state = {
   online:    false,
@@ -1831,10 +1854,20 @@ function canSeeAllVsm(){ return !!state.adminUnlocked; }   // Admin ปลดล
 //   • Admin      = ตามปุ่มสลับ VSM (_iotVsmSel = vsm1/2/3/4) → ถูกล็อกทีละสายเช่นกัน ไม่เห็นข้อมูลปนข้าม VSM
 function viewVsm() { return canSeeAllVsm() ? (isVsmKey(_iotVsmSel) ? _iotVsmSel : DEFAULT_VSM) : myVsm(); }
 // กรอง array ของ record ให้เหลือเฉพาะ VSM ที่กำลังดูอยู่ (Admin ก็ถูกล็อกตามปุ่มสลับ ไม่เห็นรวมทุก VSM แล้ว)
+/* Quick Win #3: memoize — ผลลัพธ์ขึ้นกับ (array เดิม, viewVsm, _fvVer) เท่านั้น
+   • array ถูก reassign (mergeRecords ฯลฯ) → WeakMap entry ใหม่ (อันเก่า GC)
+   • ข้อมูลแก้ใน-place → lsSave bump _fvVer → key ไม่ตรง → คำนวณใหม่
+   • admin สลับ VSM → viewVsm เปลี่ยน → คำนวณใหม่
+   กันค้างค่าเก่าครบทุกทาง — และไม่ copy array (ประหยัด allocation) */
+const _fvCache = new WeakMap();
 function filterVsm(arr) {
   if (!Array.isArray(arr)) return arr;
   const v = viewVsm();
-  return arr.filter(r => vsmOf(r) === v);
+  const c = _fvCache.get(arr);
+  if (c && c.v === v && c.ver === _fvVer) return c.res;
+  const res = arr.filter(r => vsmOf(r) === v);
+  _fvCache.set(arr, { v, ver: _fvVer, res });
+  return res;
 }
 
 /* ============================================================
@@ -3489,6 +3522,21 @@ async function init() {
   startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (poll 15 วิ) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
 }
 
+/* ── Quick Win #2: cache /api/init (master data โหลดหนัก + เปลี่ยนน้อย) ──
+   memoize + TTL + coalesce คำขอที่ยิงพร้อมกันให้เหลือ request เดียว
+   • reload() → apiInit(0)   บังคับ fresh (แต่ยัง coalesce ถ้ามีคำขอค้าง)
+   • refreshProcOutput/pullJobProcTargets → apiInit(15000) ใช้ cache 15 วิ
+     (auto-sync 30 วิ ยังรีเฟรช targets/หน้าอื่นให้อยู่) */
+let _initCache = null, _initCacheAt = 0, _initInflight = null;
+async function apiInit(maxAgeMs = 0) {
+  if (_initCache && (Date.now() - _initCacheAt) < maxAgeMs) return _initCache;
+  if (_initInflight) return _initInflight;   // มีคำขอค้างอยู่ → ใช้ตัวเดียวกัน (ไม่ยิงซ้ำ)
+  _initInflight = api('/api/init')
+    .then(r => { _initCache = r; _initCacheAt = Date.now(); _initInflight = null; return r; })
+    .catch(e => { _initInflight = null; throw e; });
+  return _initInflight;
+}
+
 async function reload() {
   if (!API) {
     // re-render จาก LocalStorage
@@ -3498,8 +3546,8 @@ async function reload() {
     return;
   }
   try {
-    // 1) master data — รวม valve_ids
-    const res = await api('/api/init');
+    // 1) master data — รวม valve_ids  (Quick Win #2: ผ่าน apiInit เพื่อ coalesce + เก็บ cache)
+    const res = await apiInit(0);
     state.valves    = res.valves    || state.valves;
     state.machines  = res.machines  || state.machines;
     state.employees = res.employees || state.employees;
@@ -3516,8 +3564,11 @@ async function reload() {
     lsSave(LS.TARGETS,   state.targets);
     lsSave(LS.IDS,       state.ids);
     syncMcProcFromCloud(res.targets);   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store)
-    // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — ไม่บล็อก reload
-    pullIds().then(() => { renderIdList(true); }).catch(()=>{});
+    // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — Quick Win #5: เลื่อนไป idle
+    // /api/init seed ids ชุดพื้นฐานให้แล้ว (autocomplete ใช้ได้ทันที) → ชุดเต็ม 50k ดึงตอนว่าง ไม่แย่ง network ตอนเปิดแอป
+    (window.requestIdleCallback || ((cb)=>setTimeout(cb,2000)))(() => {
+      pullIds().then(() => { renderIdList(true); }).catch(()=>{});
+    });
 
     // 2) ดึง records 30 วันล่าสุด เพื่อ multi-user view
     const d = new Date(); d.setDate(d.getDate() - 30);
@@ -3716,7 +3767,7 @@ async function refreshProcOutput() {
       // ดึง records + targets (สถานะงานที่ admin ขยับ) พร้อมกัน → ทุกเครื่องเห็น process ล่าสุดตรงกัน
       const [k, init] = await Promise.all([
         api('/api/kpi?' + new URLSearchParams({ from: f, to: t })).catch(() => null),
-        api('/api/init').catch(() => null),
+        apiInit(15000).catch(() => null),   // Quick Win #2: ใช้ cache 15 วิ (ไม่ดึง master ซ้ำทุก paint)
       ]);
       if (k?.records) recs = k.records;
       if (init?.targets) {
@@ -3732,7 +3783,7 @@ async function refreshProcOutput() {
 async function pullJobProcTargets() {
   if (!API) return;
   try {
-    const init = await api('/api/init').catch(() => null);
+    const init = await apiInit(15000).catch(() => null);   // Quick Win #2: cache 15 วิ
     if (init?.targets) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }
   } catch (e) {}
 }
@@ -4256,8 +4307,8 @@ function startAutoSync() {
         if (p?.records) state.prodRecords = mergeRecords(state.prodRecords, p.records, 'recordId');
         lsSave(LS.KPI,      state.kpiRecords);
         lsSave(LS.PROD_REC, state.prodRecords);
-        if (activePane === 'pane-home') renderHome();
-        if (activePane === 'pane-prod') renderHome();
+        // auto-sync ดึง+merge เข้า state แล้ว → paint จาก state ตรง ๆ (ไม่ให้ renderHome ไปดึง API ซ้ำทุก 30 วิ)
+        if (activePane === 'pane-home' || activePane === 'pane-prod') _paintHome();
       } else if (activePane === 'pane-history') {
         _autoRefreshHistory();   // รีเฟรชเงียบ — ไม่กระตุก, re-render เฉพาะเมื่อข้อมูลเปลี่ยน
       } else if (activePane === 'pane-plan') {
@@ -6351,7 +6402,16 @@ function computeWipBuckets(){
   return {wipIn,wip,wipOut,alerts};
 }
 let _lastWipBuckets=null;
-function getWipBuckets(){ _lastWipBuckets=computeWipBuckets(); return _lastWipBuckets; }
+/* Quick Win #3: memoize — computeWipBuckets เดิมถูกเรียก 3 ครั้ง/paint (การ์ด+สรุป+dashboard)
+   คำนวณครั้งเดียวต่อ (ข้อมูล _fvVer, viewVsm) แล้วใช้ซ้ำ — ผล/ตัวเลขเท่าเดิมเป๊ะ (pure function ของ state) */
+let _wbCache=null, _wbVer=-1, _wbVsm=null;
+function getWipBuckets(){
+  const v=viewVsm();
+  if(_wbCache && _wbVer===_fvVer && _wbVsm===v){ _lastWipBuckets=_wbCache; return _wbCache; }
+  _wbCache=_lastWipBuckets=computeWipBuckets();
+  _wbVer=_fvVer; _wbVsm=v;
+  return _wbCache;
+}
 
 /* ยอด WIP OUT ของ "เดือนปัจจุบัน" (ตัวเลขบนการ์ด/ชิป — สอดคล้องกับ default ของป๊อปอัป) */
 function _wipOutCurMonth(b){
@@ -6755,7 +6815,55 @@ function _openIotPop(title, body, stack, wide){
   card.appendChild(pop);
 }
 
+/* ── Quick Win #1: Home เปิดจาก local ทันที แล้ว sync เบื้องหลัง ──
+   เดิม renderHome() await API 3-5 รอบ "คาหน้าจอ" ก่อน paint → เปิดหน้า Home ช้า
+   ใหม่: paint จาก state ทันที (sync) → ดึง API เบื้องหลัง → merge เข้า state →
+   paint ซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง (signature guard กันกระตุก/กระพริบ) */
+let _homeSyncing = false;
+function _homeSig() {
+  const today = todayISO();
+  const dFrom = $('dashFrom')?.value || today, dTo = $('dashTo')?.value || today;
+  let s = '';
+  for (const r of state.kpiRecords) {
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    if (d >= dFrom && d <= dTo) s += (r.record_id||'') + ':' + (r.saved_at||r.updated_at||'') + ':' + (r.opr??'') + '|';
+  }
+  for (const r of state.prodRecords) {
+    if ((r.timestamp||'').slice(0,10) === today) s += (r.record_id||r.recordId||'') + ':' + (r.timestamp||'') + ':' + (r.quantity??'') + '|';
+  }
+  return s;
+}
 async function renderHome() {
+  _paintHome();                       // 1) paint จาก state ทันที — ไม่รอ network
+  if (!API || _homeSyncing) return;   // offline หรือกำลัง sync อยู่ → พอแค่ paint local
+  _homeSyncing = true;
+  const before = _homeSig();
+  try {
+    const today = todayISO();
+    const dFrom = $('dashFrom')?.value || today;
+    const dTo   = $('dashTo')?.value   || today;
+    const shiftF = state.shiftFilter || 'all';
+    const kp = new URLSearchParams({ from: dFrom, to: dTo });
+    if (shiftF !== 'all') kp.set('shift', shiftF);
+    // 2) ดึงเบื้องหลัง (ไม่บล็อก paint) — dashboard range + วันนี้ (records+kpi)
+    const [kRange, p, kToday] = await Promise.all([
+      api('/api/kpi?' + kp).catch(()=>null),
+      api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
+      api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
+    ]);
+    // 3) merge เข้า state (ตัด tombstone + การันตี record_id — mergeRecords ตัวเดียวกับ auto-sync)
+    if (kRange?.records) state.kpiRecords  = mergeRecords(state.kpiRecords,  kRange.records, 'record_id');
+    if (kToday?.records) state.kpiRecords  = mergeRecords(state.kpiRecords,  kToday.records, 'record_id');
+    if (p?.records)      state.prodRecords = mergeRecords(state.prodRecords, p.records, 'recordId');
+    if (kRange?.records || kToday?.records || p?.records) {
+      lsSave(LS.KPI, state.kpiRecords);
+      lsSave(LS.PROD_REC, state.prodRecords);
+      if (_homeSig() !== before) _paintHome();   // 4) paint ซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง
+    }
+  } catch (e) { /* เงียบ — paint local ไปแล้ว */ } finally { _homeSyncing = false; }
+}
+
+function _paintHome() {
   // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
   const today = todayISO();
   const dFrom = $('dashFrom')?.value || today;
@@ -6770,46 +6878,16 @@ async function renderHome() {
     return true;
   };
   // KPI records ในช่วงที่เลือก + shift filter (กรองตาม VSM ของผู้ใช้ — สำหรับการ์ด KPI ราย Zone)
-  let kpiInRange = filterVsm(state.kpiRecords).filter(_inRange);
+  // paint จาก state เสมอ — API ถูก merge เข้า state โดย renderHome() ก่อนเรียก paint ซ้ำ
+  const kpiInRange = filterVsm(state.kpiRecords).filter(_inRange);
   // หมายเหตุ: "Output ของ Process" มีตัวเลือกช่วงเวลาแยกของตัวเอง (procFrom/procTo)
   // จัดการผ่าน refreshProcOutput() ไม่ผูกกับตัวกรองวันที่ของ Dashboard อีกต่อไป
 
-  // ถ้ามี API ลอง refresh ทับ
-  if (API) {
-    try {
-      const params = new URLSearchParams({ from: dFrom, to: dTo });
-      if (shiftF !== 'all') params.set('shift', shiftF);
-      const k = await api('/api/kpi?' + params).catch(()=>null);
-      if (k?.records) { kpiInRange = filterVsm(k.records); }
-    } catch (e) {}
-  }
-
-  // ภาพรวมวันนี้ (ติดตามงาน) — local
-  const stats = computeLocalStats();
+  // ภาพรวมวันนี้ (ติดตามงาน) — จาก state (VSM-scoped)
   const todayProds = filterVsm(state.prodRecords).filter(r => (r.timestamp||'').slice(0,10) === today);
   const todayKpis  = filterVsm(state.kpiRecords).filter(r => (r.shift_date||r.record_date||'').slice(0,10) === today);
-  let prodRes = { records: todayProds };
-  let kpiRes  = { records: todayKpis };
-  let statsRes = stats;
-  if (API) {
-    try {
-      const [p, k] = await Promise.all([
-        api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
-        api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
-      ]);
-      // กรอง tombstones + VSM ออกจาก API records
-      if (p?.records) {
-        const _fr = filterVsm(p.records.filter(r => !_deletedProdIds.has(r.record_id || r.recordId)));
-        prodRes = { ...p, records: _fr };
-      } else if (p) prodRes = p;
-      if (k?.records) {
-        const _fk = filterVsm(k.records.filter(r => !_deletedKpiIds.has(r.record_id)));
-        kpiRes = { ...k, records: _fk };
-      } else if (k) kpiRes = k;
-      // หมายเหตุ: WIP + ตารางลูกค้า ใช้ computeLocalStats() (กรองตาม VSM ที่กำลังดู + รู้จักงานจบหลัง FG)
-      // ไม่ใช้ /api/stats อีกต่อไป เพราะเป็นยอด "รวมทุก VSM" ซึ่งขัดกับมุมมองล็อกทีละสาย (Admin ก็ดูทีละ VSM)
-    } catch (e) {}
-  }
+  const prodRes = { records: todayProds };
+  const kpiRes  = { records: todayKpis };
 
   // ========== Dashboard KPI per-zone (ใช้ kpiInRange + shift filter) ==========
   const shiftLabel = shiftF === 'day' ? '☀️ กะกลางวัน' : shiftF === 'night' ? '🌙 กะกลางคืน' : '🔄 รวมทุกกะ';
