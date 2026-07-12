@@ -308,6 +308,11 @@ tbody tr:last-child td{border-bottom:none}
 .pchip:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 .pchips-hint{font-size:11px;color:var(--muted);padding:6px 2px;line-height:1.5}
 .pchips-cnt{font-size:11px;font-weight:800;color:var(--blue);background:var(--blue-light);border-radius:999px;padding:3px 9px}
+/* ── ปุ่มพิมพ์ด้วยเสียง (ใช้ในกล่องขอความช่วยเหลือ OAE ต่ำ ตอนสรุปก่อนบันทึก) ── */
+.mic-btn{flex:0 0 auto;width:46px;min-height:38px;border:1.5px solid var(--blue-soft);background:var(--blue-light);border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mic-btn:active{transform:scale(.95)}
+.mic-btn.rec{background:#fee2e2;border-color:#ef4444;animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
 /* ── ตัวแก้ลำดับ Process ใน modal Valve (v3.7) — เปลี่ยน/ย้าย/ลบทีละตำแหน่ง ไม่ต้องลบทำใหม่ ── */
 .mseq-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .mseq-n{flex:0 0 auto;min-width:26px;height:26px;border-radius:50%;background:var(--blue-light);color:var(--blue);
@@ -1505,6 +1510,7 @@ const LS = {
   PROD_REC:  'vsm4_prod_records',
   PLANS:     'vsm4_plans',
   MC_PROC:   'vsm4_machine_proc',   // map: machine_id → process (รอด cloud reload เพราะ D1 ไม่เก็บ field นี้)
+  VPROC:     'vsm4_vsm12_proc',     // Process Master เฉพาะ VSM1/VSM2 (แยกจาก valve.processes = VSM3/4) — เก็บ local กัน cloud reload ทับ
 };
 // process ของเครื่องจักร เก็บแยกจาก state.machines (กัน reload จาก Cloud ทับหาย)
 let _machineProc = JSON.parse(localStorage.getItem(LS.MC_PROC) || '{}');
@@ -1653,6 +1659,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) _lsFl
 let state = {
   online:    false,
   valves:    lsLoad(LS.VALVES,    DEFAULT_VALVES),
+  vProc:     lsLoad(LS.VPROC,     {}),   // { '<VALVEKEY>': { p1:[...], p2:[...] } } — Process Master ของ VSM1(p1)/VSM2(p2)
   machines:  lsLoad(LS.MACHINES,  DEFAULT_MACHINES),
   employees: lsLoad(LS.EMPLOYEES, DEFAULT_EMPLOYEES),
   targets:   lsLoad(LS.TARGETS,   DEFAULT_TARGETS),
@@ -6359,7 +6366,7 @@ function _wipMcProcMap(){
 }
 function _valveFlow(valve){
   const v=(state.valves||[]).find(x=>vKey(x.valveNo)===vKey(valve));
-  const procs=(v&&Array.isArray(v.processes))?v.processes.filter(Boolean):[];
+  const procs=procsOf(v);   // ตาม VSM ที่กำลังดู (VSM1/2 = ชุดของตัวเอง)
   return procs.length?procs:PROC_ORDER;
 }
 // รวม "quantity" ต่อ process ที่พนักงานลง (current_process) เรียงตาม flow ของวาล์ว — ใช้ทั้งกฎ WIP และ history
@@ -7432,6 +7439,61 @@ function updShiftTotal(pid) {
     if ($(sid + '_total')) $(sid + '_total').textContent = `OPR: ${nn(fnum($(sid+'_opr')?.value))} · WT: ${wt.toFixed(2)} ชม.`;
   });
 }
+
+/* ===== พิมพ์ด้วยเสียง (Speech-to-Text ภาษาไทย) — ช่วยพนักงานลงสาเหตุ OAE ต่ำโดยไม่ต้องพิมพ์ =====
+   ใช้ Web Speech API (Chrome/Edge/Android รองรับ · Safari/Firefox บางรุ่นไม่รองรับ → แจ้งให้พิมพ์แทน)
+   กดปุ่มไมค์ = เริ่มฟัง · กดซ้ำ/พูดจบ = หยุด · ข้อความต่อท้ายของเดิมในช่อง */
+let _voiceRec = null, _voiceTarget = null;
+async function startVoice(inputId, micId) {
+  const input = document.getElementById(inputId);
+  const mic   = document.getElementById(micId);
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('เบราว์เซอร์นี้ไม่รองรับพิมพ์ด้วยเสียง — พิมพ์เองได้เลย (แนะนำ Chrome)', 'orange'); if (input) input.focus(); return; }
+  // กดปุ่มเดิมซ้ำระหว่างอัดอยู่ = หยุด
+  if (_voiceRec && _voiceTarget === inputId) { try { _voiceRec.stop(); } catch (e) {} return; }
+  if (_voiceRec) { try { _voiceRec.stop(); } catch (e) {} }
+  // ❗ ไมค์ทำงานเฉพาะ "secure context" (https หรือ localhost) — ถ้าเปิดไฟล์ตรงๆ (file://) เบราว์เซอร์บล็อกไมค์เสมอ
+  if (location.protocol === 'file:' || window.isSecureContext === false) {
+    toast('พิมพ์ด้วยเสียงต้องเปิดผ่านลิงก์เว็บ (https) — เปิดไฟล์ตรงๆ ใช้ไมค์ไม่ได้ · พิมพ์เองได้เลย', 'orange');
+    if (input) input.focus(); return;
+  }
+  // ขอสิทธิ์ไมค์ให้ชัดเจนก่อน (เด้ง prompt ให้กด "อนุญาต") — แยกกรณี "ยังไม่กด" กับ "เคยบล็อก"
+  try {
+    if (navigator.mediaDevices?.getUserMedia) {
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      s.getTracks().forEach(t => t.stop());   // ปิดทันที — ขอแค่สิทธิ์ (SpeechRecognition จับเสียงเอง)
+    }
+  } catch (err) {
+    const denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+    toast(denied
+      ? 'ไมค์ถูกบล็อก — แตะไอคอน 🔒/ⓘ ข้างช่องที่อยู่เว็บ → ไมโครโฟน → "อนุญาต" แล้วโหลดหน้าใหม่ (มือถือ: เปิดสิทธิ์ไมค์ให้เบราว์เซอร์ในตั้งค่าเครื่องด้วย)'
+      : 'เปิดไมค์ไม่ได้ — ' + (err?.message || 'ตรวจว่ามีไมโครโฟนต่ออยู่') + ' · พิมพ์เองได้เลย', 'orange');
+    if (input) input.focus(); return;
+  }
+  const rec = new SR();
+  rec.lang = 'th-TH';
+  rec.interimResults = true;
+  rec.continuous = false;
+  const base = (input?.value || '').trim();
+  rec.onstart  = () => { if (mic) mic.classList.add('rec'); toast('🎤 พูดได้เลย…', 'blue'); };
+  rec.onresult = (e) => {
+    let txt = '';
+    for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+    if (input) { input.value = (base ? base + ' ' : '') + txt; _formDirty = true; if (typeof _updateFabState === 'function') _updateFabState(); }
+  };
+  rec.onerror = (e) => {
+    if (mic) mic.classList.remove('rec');
+    const msg = (e.error === 'not-allowed' || e.error === 'service-not-allowed')
+                 ? 'ไมค์ถูกบล็อก — แตะไอคอน 🔒/ⓘ ข้างที่อยู่เว็บ → ไมโครโฟน → "อนุญาต" แล้วโหลดหน้าใหม่'
+             : e.error === 'no-speech' ? 'ไม่ได้ยินเสียง — ลองพูดอีกครั้ง'
+             : e.error === 'audio-capture' ? 'ไม่พบไมโครโฟน — ตรวจว่าต่อไมค์อยู่'
+             : 'ใช้เสียงไม่ได้: ' + (e.error || '');
+    toast(msg, 'orange');
+  };
+  rec.onend = () => { if (mic) mic.classList.remove('rec'); _voiceRec = null; _voiceTarget = null; };
+  _voiceRec = rec; _voiceTarget = inputId;
+  try { rec.start(); } catch (e) { toast('เริ่มบันทึกเสียงไม่ได้ — ลองอีกครั้ง', 'orange'); _voiceRec = null; _voiceTarget = null; }
+}
 /* ---------------------------------------------------------------
    _resolveShift(prodDate, startMins) — ประเภทกะ + "วันทำงาน" ของ slot
    กติกา (วันทำงาน = operational day):
@@ -7610,7 +7672,10 @@ function _showSubmitSummary(records, prodDate) {
           ${(rec._linkProcs && rec._linkProcs.length) || rec.last_process ? `<span style="grid-column:1/-1">Process: <b>${escapeHtml(rec._linkProcs && rec._linkProcs.length ? rec._linkProcs.join(', ') : rec.last_process)}</b></span>` : ''}
         </div>
         ${low ? `<div style="margin-top:8px;background:#fff;border:1.5px dashed #FCA5A5;border-radius:8px;padding:8px">
-          <label style="display:block;font-size:11px;font-weight:800;color:#B91C1C;margin-bottom:4px">🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <label style="flex:1;font-size:11px;font-weight:800;color:#B91C1C;margin:0">🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)</label>
+            <button type="button" class="mic-btn" id="_help_${i}_mic" onclick="startVoice('_help_${i}','_help_${i}_mic')" title="พูดเพื่อกรอก (พิมพ์ด้วยเสียง)" aria-label="พิมพ์ด้วยเสียง">🎤</button>
+          </div>
           <textarea id="_help_${i}" rows="2" placeholder="เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ / ต้องการกำลังคนเพิ่ม" style="width:100%;padding:8px;border:1.5px solid #FCA5A5;border-radius:7px;font-family:inherit;font-size:13px;resize:vertical">${escapeHtml(existingHelp)}</textarea>
         </div>` : ''}
       </div>`;
@@ -8004,8 +8069,9 @@ function acValveSearch(ev, id) {
     } else if (document.getElementById(procInputId)) {
       // ฟอร์มเก่าที่ยังเป็นช่อง process เดี่ยว → เติมตัวแรกให้เหมือนเดิม
       const v = state.valves.find(x => x.valveNo === it.valveNo);
-      if (v && v.processes[0] && !document.getElementById(procInputId).value) {
-        document.getElementById(procInputId).value = v.processes[0];
+      const _p0 = procsOf(v)[0];   // ตาม VSM ที่กำลังดู (VSM1/2 = ชุดของตัวเอง)
+      if (_p0 && !document.getElementById(procInputId).value) {
+        document.getElementById(procInputId).value = _p0;
       }
     }
     // เปิดรายการ Lot ของวาล์วนี้ให้เลือกต่อทันที (ถ้ายังไม่ได้กรอก Lot)
@@ -8035,7 +8101,7 @@ function acProcSearch(ev, id, valveInputId) {
     }
     return;
   }
-  const procs = (v.processes || []).filter(Boolean);
+  const procs = procsOf(v);   // ตาม VSM ที่กำลังดู (VSM1/2 = ชุดของตัวเอง)
   const list = procs.filter(p => !q || p.toLowerCase().includes(q)).map(p => ({ id: p, proc: p, label: '' }));
   acDropdown(id, list, function pickProc(it, inputId) {
     document.getElementById(inputId).value = it.proc;
@@ -8114,14 +8180,47 @@ function isKnownValve(vn) {
   return state.valves.some(x => (x.valveNo || '').toUpperCase() === v);
 }
 
+/* ===== PROCESS MASTER แยกตาม VSM =====
+   • VSM3 + VSM4 = ใช้ชุดเดียวกัน → เก็บใน valve.processes (เหมือนเดิม ไม่แตะ)
+   • VSM1 = ชุดของตัวเอง → state.vProc[valveKey].p1
+   • VSM2 = ชุดของตัวเอง → state.vProc[valveKey].p2
+   procsOf/allowedProcs default vsm = viewVsm() → ทุกจุดที่เรียกอยู่แล้วถูกต้องตาม VSM ที่กำลังดู/บันทึกอัตโนมัติ */
+function vsmProcRec(valveNo) { return (state.vProc && state.vProc[vKey(valveNo)]) || null; }
+function procsOf(v, vsm) {
+  if (!v) return [];
+  vsm = vsm || viewVsm();
+  if (vsm === 'vsm1' || vsm === 'vsm2') {
+    const rec = vsmProcRec(v.valveNo);
+    const arr = rec ? (vsm === 'vsm1' ? rec.p1 : rec.p2) : null;
+    return (arr || []).filter(Boolean);
+  }
+  return (v.processes || []).filter(Boolean);   // vsm3 / vsm4 (เดิม)
+}
+// บันทึก Process Master ของ VSM1/VSM2 (เก็บ local — กัน cloud reload ทับ valve หาย)
+function setVsmProc(valveNo, p1, p2) {
+  const key = vKey(valveNo);
+  if (!state.vProc || typeof state.vProc !== 'object') state.vProc = {};
+  const clean = a => [...new Set((a || []).map(x => String(x).trim()).filter(Boolean))];
+  const rec = { p1: clean(p1), p2: clean(p2) };
+  if (!rec.p1.length && !rec.p2.length) delete state.vProc[key];
+  else state.vProc[key] = rec;
+  lsSave(LS.VPROC, state.vProc);
+}
+
 /* ===== บังคับเลือกจาก dropdown — Process ต้องตรงเบอร์วาล์ว · Lot ต้องอยู่ในระบบ ===== */
-function allowedProcs(valveNo) {
+function allowedProcs(valveNo, vsm) {
+  vsm = vsm || viewVsm();
+  if (vsm === 'vsm1' || vsm === 'vsm2') {
+    const rec = vsmProcRec(valveNo);
+    const arr = rec ? (vsm === 'vsm1' ? rec.p1 : rec.p2) : null;
+    return (arr || []).filter(Boolean);
+  }
   const v = state.valves.find(x => vKey(x.valveNo) === vKey(valveNo));
   return (v?.processes || []).filter(Boolean);
 }
-function isAllowedProc(valveNo, p) {
+function isAllowedProc(valveNo, p, vsm) {
   const P = (p || '').trim();
-  return !!P && allowedProcs(valveNo).some(x => _procCanon(x) === _procCanon(P));
+  return !!P && allowedProcs(valveNo, vsm).some(x => _procCanon(x) === _procCanon(P));
 }
 function isAllowedLot(valveNo, lot) {
   const L = (lot || '').trim();
@@ -8150,7 +8249,7 @@ function renderProcChips(sid) {
   const host = $(sid + '_pchips'); if (!host) return;
   const valveNo = ($(sid + '_v')?.value || '').trim();
   if (!valveNo) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">เลือก Valve No ก่อน — Process จะแสดงให้กดเลือก</div>'; return; }
-  const procs = allowedProcs(valveNo);
+  const procs = allowedProcs(valveNo, _empVsmForInput(sid));   // Process Master ตาม VSM ของโซนที่บันทึก (VSM1/2 แยกเฉพาะ)
   if (!procs.length) { _writeProcSel(sid, []); host.innerHTML = '<div class="pchips-hint">วาล์วนี้ยังไม่มี Process ใน Master valve — บันทึกได้เลย ไม่ต้องเลือก Process</div>'; return; }
   // เปลี่ยนวาล์ว → ตัดตัวเลือกที่ไม่อยู่ในวาล์วใหม่ทิ้ง · วาล์วมี process เดียว → เลือกให้อัตโนมัติ
   let sel = _procSel(sid).filter(p => procs.some(x => _procCanon(x) === _procCanon(p)));
@@ -8164,7 +8263,7 @@ function renderProcChips(sid) {
   }).join('') + (lim !== Infinity ? `<span class="pchips-cnt">${sel.length}/${lim}</span>` : '');
 }
 function toggleProcChip(sid, p) {
-  const procs = allowedProcs($(sid + '_v')?.value || '');
+  const procs = allowedProcs($(sid + '_v')?.value || '', _empVsmForInput(sid));
   const sel = _procSel(sid);
   const i = sel.findIndex(x => _procCanon(x) === _procCanon(p));
   if (i >= 0) sel.splice(i, 1);
@@ -8230,9 +8329,10 @@ function onValveSet(sid) {
   const v = state.valves.find(x => x.valveNo === valveNo);
   const pills = $(sid + '_pills');
   if (!v) { pills.innerHTML = ''; return; }
-  const cur = $(sid+'_p')?.value || v.processes[0];
-  pills.innerHTML = v.processes.map(p => {
-    const idx = v.processes.indexOf(p), ci = v.processes.indexOf(cur);
+  const vprocs = procsOf(v);   // ตาม VSM ที่กำลังดู (VSM1/2 = ชุดของตัวเอง)
+  const cur = $(sid+'_p')?.value || vprocs[0];
+  pills.innerHTML = vprocs.map(p => {
+    const idx = vprocs.indexOf(p), ci = vprocs.indexOf(cur);
     let cls = 'proc-pill ' + (idx < ci ? 'done' : idx === ci ? 'cur' : 'future');
     return `<span class="${cls}" onclick="$('${sid}_p').value='${escapeHtml(p)}';onValveSet('${sid}')">${escapeHtml(p)}</span>`;
   }).join('');
@@ -8413,7 +8513,7 @@ async function searchProcess() {
     //   • ช่องที่มียอด = เขียว · "ช่องแรกที่ยังไม่มียอด" ของแต่ละ lot = เหลือง (ขั้นถัดไป/ค้าง)
     //   • process ที่พนักงานพิมพ์เอง (ไม่อยู่ใน flow ของวาล์ว เช่น Remove/RES) → ยุบรวมเป็นช่อง "หมายเหตุ" ท้ายตาราง
     //   • แตะ Lot = แก้เลข lot · แตะตัวเลข = ดูเครื่อง/วันที่/ยอด · แตะหมายเหตุ = ดู+แก้ process ที่พิมพ์เอง
-    const procSeq = (valve.processes || []).map(p => _procCanon(String(p).trim())).filter(Boolean);
+    const procSeq = procsOf(valve).map(p => _procCanon(String(p).trim())).filter(Boolean);   // ตาม VSM ที่กำลังดู (VSM1/2 = ชุดของตัวเอง)
     const lotData = [];
     let hasRemark = false;
     for (const lk of lotOrder) {
@@ -9979,6 +10079,7 @@ function exportBackup() {
     version: 'vsm4-unified-v1',
     exported_at: new Date().toISOString(),
     valves:    state.valves,
+    vsm12_proc: state.vProc,   // Process Master ของ VSM1/VSM2 (แยกจาก valve.processes)
     machines:  state.machines,
     employees: state.employees,
     targets:   state.targets,
@@ -10002,6 +10103,7 @@ async function restoreBackup(ev) {
     try {
       const b = JSON.parse(e.target.result);
       if (b.valves)       { state.valves       = b.valves;       lsSave(LS.VALVES,    state.valves); }
+      if (b.vsm12_proc)   { state.vProc        = b.vsm12_proc;   lsSave(LS.VPROC,     state.vProc); }
       if (b.machines)     { state.machines     = b.machines;     lsSave(LS.MACHINES,  state.machines); }
       if (b.employees)    { state.employees    = b.employees;    lsSave(LS.EMPLOYEES, state.employees); }
       if (b.targets)      { state.targets      = b.targets;      lsSave(LS.TARGETS,   state.targets); }
@@ -10022,10 +10124,12 @@ function resetToDefaults() {
 async function _doResetToDefaults() {
   if (!(await confirmModal('⚠️ รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ — แต่ค่าที่แก้ไว้จะหายทั้งหมด', { danger: true, yes: 'รีเซ็ต' }))) return;
   state.valves    = JSON.parse(JSON.stringify(DEFAULT_VALVES));
+  state.vProc     = {};
   state.machines  = JSON.parse(JSON.stringify(DEFAULT_MACHINES));
   state.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
   state.targets   = {...DEFAULT_TARGETS};
   lsSave(LS.VALVES,    state.valves);
+  lsSave(LS.VPROC,     state.vProc);
   lsSave(LS.MACHINES,  state.machines);
   lsSave(LS.EMPLOYEES, state.employees);
   lsSave(LS.TARGETS,   state.targets);
@@ -10158,7 +10262,7 @@ function renderValveList() {
       return `<tr>
         <td><b>${escapeHtml(v.valveNo)}</b></td>
         <td><span class="tag tag-blue">${escapeHtml(v.customer)}</span></td>
-        <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span></td>
+        <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span>${(() => { const r = vsmProcRec(v.valveNo); const b = []; if (r && (r.p1 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM1</span>'); if (r && (r.p2 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM2</span>'); return b.length ? '<div style="margin-top:3px;display:flex;gap:4px">' + b.join('') + '</div>' : ''; })()}</td>
         <td class="center">${idCell}</td>
         <td><button class="btn btn-outline btn-sm" onclick="openValveModal('${escapeHtml(v.valveNo)}')">แก้</button>
             <button class="btn btn-sm" onclick="delValve('${escapeHtml(v.valveNo)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">ลบ</button></td>
@@ -10448,22 +10552,65 @@ const PROCS_ALL = ['AW','BLEND','BUFF','CAR','CB','CCOT','COPY','COPY CUP','COT'
 /* ── ลำดับ process ของ modal Valve (v3.7) — แก้ทีละตำแหน่ง: เปลี่ยนชื่อตรงช่อง (เช่น HOD → TOP&HOD) /
    ↑↓ ย้าย / ✕ ลบ — ไม่ต้องลบทั้งหมดแล้วกดใหม่ · pill ด้านล่าง = แตะเพื่อเพิ่มต่อท้าย/เอาออก ── */
 let _mProcSeq = [];
+/* ตัวแก้ Process Master รองรับ 3 ชุด: std = VSM3/4 (ใช้ร่วมกัน) · v1 = VSM1 · v2 = VSM2
+   _mProcSeq = ชุดที่กำลังแก้ (active) · _mProcStore เก็บทั้ง 3 ชุด สลับแท็บไม่หาย */
+let _mProcTab = 'std';
+let _mProcStore = { std: [], v1: [], v2: [] };
 function _mSeqRender() {
   const host = document.getElementById('m_seq'); if (!host) return;
+  const isStd = _mProcTab === 'std';
   host.innerHTML = _mProcSeq.length ? _mProcSeq.map((p, i) => {
-    const all = PROCS_ALL.includes(p) ? PROCS_ALL : [p, ...PROCS_ALL];   // process เก่านอกลิสต์ → คงให้เลือกได้
-    const opts = all.map(o => `<option value="${escapeHtml(o)}" ${o === p ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('');
+    // std = เลือกจากลิสต์มาตรฐาน (VSM3/4) · VSM1/2 = พิมพ์ชื่อเองอิสระ (process ก่อนเข้า VSM3/4 คนละชุด)
+    let ctrl;
+    if (isStd) {
+      const all = PROCS_ALL.includes(p) ? PROCS_ALL : [p, ...PROCS_ALL];   // process เก่านอกลิสต์ → คงให้เลือกได้
+      const opts = all.map(o => `<option value="${escapeHtml(o)}" ${o === p ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('');
+      ctrl = `<select class="mseq-sel" onchange="mSeqReplace(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">${opts}</select>`;
+    } else {
+      ctrl = `<input type="text" class="mseq-sel" value="${escapeHtml(p)}" onchange="mSeqSetText(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">`;
+    }
     return `<div class="mseq-row">
       <span class="mseq-n">${i + 1}</span>
-      <select class="mseq-sel" onchange="mSeqReplace(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">${opts}</select>
+      ${ctrl}
       <button type="button" class="mseq-btn" onclick="mSeqMove(${i},-1)" ${i === 0 ? 'disabled' : ''} aria-label="ย้ายขึ้น">↑</button>
       <button type="button" class="mseq-btn" onclick="mSeqMove(${i},1)" ${i === _mProcSeq.length - 1 ? 'disabled' : ''} aria-label="ย้ายลง">↓</button>
       <button type="button" class="mseq-btn mseq-del" onclick="mSeqDel(${i})" aria-label="ลบ">✕</button>
     </div>`;
   }).join('')
-    : '<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม</div>';
+    : `<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">${isStd ? 'ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม' : 'ยังไม่มี process — พิมพ์ชื่อด้านล่างแล้วกด ➕ เพิ่ม'}</div>`;
   document.querySelectorAll('#m_procs .proc-pill').forEach(el =>
     el.classList.toggle('done', _mProcSeq.includes(el.dataset.proc)));
+}
+// สลับแท็บ Process Master (std/v1/v2) — เก็บชุดที่แก้อยู่ก่อน แล้วโหลดชุดใหม่มาแก้
+function mProcSwitchTab(tab) {
+  if (tab === _mProcTab) return;
+  _mProcStore[_mProcTab] = _mProcSeq.slice();   // flush ชุดปัจจุบัน
+  _mProcTab = tab;
+  _mProcSeq = (_mProcStore[tab] || []).slice();
+  const isStd = tab === 'std';
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('m_procs', isStd); show('m_pal_hint', isStd); show('m_add_free', !isStd);
+  const hint = document.getElementById('m_tab_hint');
+  if (hint) hint.textContent = isStd
+    ? 'ชุดเดียวใช้ร่วมกัน VSM3 + VSM4 — เปลี่ยนชื่อ/↑↓/✕ ได้'
+    : `Process Master เฉพาะ ${tab === 'v1' ? 'VSM 1' : 'VSM 2'} (Process ก่อนเข้า VSM3/4) — พิมพ์ชื่อเองได้อิสระ`;
+  ['std', 'v1', 'v2'].forEach(t => { const b = document.getElementById('m_tab_' + t); if (b) { const on = t === tab; b.style.background = on ? 'var(--blue)' : '#fff'; b.style.color = on ? '#fff' : 'var(--blue)'; } });
+  _mSeqRender();
+}
+// VSM1/2: แก้ชื่อ process ในช่อง (พิมพ์อิสระ) — ว่าง = ลบแถวนั้น
+function mSeqSetText(i, val) {
+  val = (val || '').trim();
+  if (!val) { _mProcSeq.splice(i, 1); _mSeqRender(); return; }
+  const dupAt = _mProcSeq.findIndex((x, ix) => ix !== i && x.toUpperCase() === val.toUpperCase());
+  if (dupAt >= 0) { toast(`"${val}" มีอยู่แล้วที่ลำดับ ${dupAt + 1}`, 'orange'); _mSeqRender(); return; }
+  _mProcSeq[i] = val; _mSeqRender();
+}
+// VSM1/2: เพิ่ม process ต่อท้ายจากช่องพิมพ์อิสระ
+function mSeqAddFree() {
+  const el = document.getElementById('m_add_input'); if (!el) return;
+  const val = (el.value || '').trim(); if (!val) return;
+  if (_mProcSeq.some(x => x.toUpperCase() === val.toUpperCase())) { toast(`"${val}" มีอยู่แล้ว`, 'orange'); el.value = ''; return; }
+  _mProcSeq.push(val); el.value = ''; _mSeqRender(); el.focus();
 }
 function mSeqReplace(i, val) {
   const dupAt = _mProcSeq.findIndex((x, ix) => ix !== i && x === val);
@@ -10483,17 +10630,38 @@ function mSeqToggle(el) {
 }
 function openValveModal(valveNo) {
   const v = valveNo ? state.valves.find(x => x.valveNo === valveNo) : null;
-  _mProcSeq = (v?.processes || []).filter(Boolean).slice();
+  const vp = (v ? vsmProcRec(v.valveNo) : null) || {};
+  _mProcTab = 'std';
+  _mProcStore = {
+    std: (v?.processes || []).filter(Boolean).slice(),
+    v1:  (vp.p1 || []).filter(Boolean).slice(),
+    v2:  (vp.p2 || []).filter(Boolean).slice(),
+  };
+  _mProcSeq = _mProcStore.std.slice();
   openModal(v ? 'แก้ไข Valve' : 'เพิ่ม Valve', `
     <div class="fr"><label>Valve No</label><input type="text" id="m_v" value="${escapeHtml(v?.valveNo||'')}" ${v?'readonly':''}></div>
     <div class="fr"><label>ลูกค้า</label>
       <select id="m_c"><option ${v?.customer==='MSI'?'selected':''}>MSI</option><option ${v?.customer==='SWE'?'selected':''}>SWE</option><option ${v?.customer==='OES&OEM'?'selected':''}>OES&OEM</option><option ${(!v||v?.customer==='Other')?'selected':''}>Other</option></select>
     </div>
     <div class="fr"><label>Description</label><input type="text" id="m_d" value="${escapeHtml(v?.description||'')}"></div>
-    <div class="fr"><label>Process (ลำดับการผลิต)</label>
+    <div class="fr"><label>Process Master (ลำดับการผลิต)</label>
+      <div id="m_proc_tabs" style="display:flex;gap:6px;margin-bottom:8px">
+        <button type="button" class="btn btn-sm" id="m_tab_std" style="flex:1;background:var(--blue);color:#fff" onclick="mProcSwitchTab('std')">VSM 3/4</button>
+        <button type="button" class="btn btn-sm" id="m_tab_v1" style="flex:1;background:#fff;color:var(--blue)" onclick="mProcSwitchTab('v1')">VSM 1</button>
+        <button type="button" class="btn btn-sm" id="m_tab_v2" style="flex:1;background:#fff;color:var(--blue)" onclick="mProcSwitchTab('v2')">VSM 2</button>
+      </div>
+      <div id="m_tab_hint" class="muted" style="font-size:11px;margin-bottom:6px">ชุดเดียวใช้ร่วมกัน VSM3 + VSM4 — เปลี่ยนชื่อ/↑↓/✕ ได้</div>
       <div id="m_seq"></div>
-      <div class="muted" style="font-size:11px;margin:4px 0 10px">💡 <b>เปลี่ยนชื่อ process ตรงช่องได้เลย</b> (เช่น HOD → TOP&amp;HOD) ลำดับอื่นไม่ขยับ · ↑↓ ย้ายลำดับ · ✕ ลบ</div>
-      <div class="muted" style="font-size:11px;margin-bottom:4px">เพิ่ม process — แตะเพื่อเพิ่มต่อท้าย (แตะตัวที่เลือกแล้ว = เอาออก):</div>
+      <div id="m_add_free" style="display:none;margin:6px 0 10px">
+        <div style="display:flex;gap:6px">
+          <input type="text" id="m_add_input" placeholder="พิมพ์ชื่อ Process แล้วกด ➕" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();mSeqAddFree();}">
+          <button type="button" class="btn btn-blue btn-sm" onclick="mSeqAddFree()">➕ เพิ่ม</button>
+        </div>
+      </div>
+      <div id="m_pal_hint">
+        <div class="muted" style="font-size:11px;margin:4px 0 10px">💡 <b>เปลี่ยนชื่อ process ตรงช่องได้เลย</b> (เช่น HOD → TOP&amp;HOD) ลำดับอื่นไม่ขยับ · ↑↓ ย้ายลำดับ · ✕ ลบ</div>
+        <div class="muted" style="font-size:11px;margin-bottom:4px">เพิ่ม process — แตะเพื่อเพิ่มต่อท้าย (แตะตัวที่เลือกแล้ว = เอาออก):</div>
+      </div>
       <div class="proc-pills" id="m_procs">${PROCS_ALL.map(p=>{ const inSeq=_mProcSeq.includes(p); const ps=escapeHtml(p); return '<span class="proc-pill '+(inSeq?'done':'')+'" data-proc="'+ps+'" onclick="mSeqToggle(this)">'+ps+'</span>'; }).join('')}</div>
     </div>
     <button class="btn btn-blue btn-block" onclick="saveValve('${escapeHtml(v?.valveNo||'')}')">💾 บันทึก</button>
@@ -10526,12 +10694,13 @@ async function saveValve(orig) {
   const valveNo  = $('m_v').value.trim();
   const customer = $('m_c').value;
   const desc     = $('m_d').value;
-  // ลำดับจากตัวแก้ #m_seq (v3.7) — fallback อ่านจาก pill แบบเดิมถ้าไม่มี (กันหน้าเก่าค้าง)
-  const procs    = document.getElementById('m_seq') ? _mProcSeq.filter(Boolean).slice()
-    : [...$('m_procs').querySelectorAll('.proc-pill.done')].sort((a,b)=>(+(a.dataset.order||0))-(+(b.dataset.order||0))).map(el=>el.dataset.proc||el.textContent.replace(/\d+$/,'').trim());
+  // flush ชุดที่กำลังแก้กลับเข้า store ก่อน แล้วอ่านครบทั้ง 3 ชุด (std=VSM3/4 · v1=VSM1 · v2=VSM2)
+  if (document.getElementById('m_seq')) _mProcStore[_mProcTab] = _mProcSeq.filter(Boolean).slice();
+  const procs = (_mProcStore.std || []).filter(Boolean).slice();
   if (!valveNo) { toast('กรอก Valve No', 'orange'); return; }
   const entry = { valveNo, customer, description: desc, processes: procs, barcode_id: '' };
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
+  setVsmProc(valveNo, _mProcStore.v1, _mProcStore.v2);   // Process Master VSM1/VSM2 (เก็บ local แยกจาก valve)
   lsSave(LS.VALVES, state.valves);
   toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
   closeModal(); renderValveList(); renderUnknownValves(); renderUnknownProcs();
@@ -10543,6 +10712,7 @@ async function delValve(valveNo) {
   if (!(await confirmModal(`ลบ ${valveNo}?`))) return;
   state.valves = state.valves.filter(v => v.valveNo !== valveNo);
   lsSave(LS.VALVES, state.valves);
+  if (state.vProc && state.vProc[vKey(valveNo)]) { delete state.vProc[vKey(valveNo)]; lsSave(LS.VPROC, state.vProc); }   // ลบ Process Master VSM1/2 ที่ผูกกับวาล์วนี้ด้วย
   renderValveList();
   toast('ลบแล้ว', 'green');
   if (API) { try { await api('/api/valves/delete', { body: { valveNo } }); } catch (e) {} }
@@ -10853,6 +11023,7 @@ function procCode(name) {
 function buildProcVocab() {
   const set = new Set(PROC_VOCAB_FALLBACK);
   for (const v of (state.valves || [])) for (const p of (v.processes || [])) if (p) set.add(p);
+  for (const rec of Object.values(state.vProc || {})) { for (const p of (rec.p1 || [])) if (p) set.add(p); for (const p of (rec.p2 || [])) if (p) set.add(p); }
   for (const p of Object.values(_machineProc || {})) if (p) set.add(p);
   return set;
 }
