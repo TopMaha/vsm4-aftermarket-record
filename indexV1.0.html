@@ -791,13 +791,13 @@ tbody tr:last-child td{border-bottom:none}
   min-height:180px;line-height:1.6;resize:vertical;outline:none;color:#0f172a;box-sizing:border-box}
 .ho-ta:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
 /* ── checklist builder ใน modal "ข้อมูลทั่วไป" — สร้างทีละข้อตั้งแต่ต้น (1 ช่อง = 1 ข้อ = 1 checkbox) ── */
-.ho-item-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.ho-item-chk{flex:0 0 auto;width:26px;height:26px;border:2px solid #cbd5e1;border-radius:8px;background:#f8fafc;
+.ho-item-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+.ho-item-chk{flex:0 0 auto;width:26px;height:26px;margin-top:10px;border:2px solid #cbd5e1;border-radius:8px;background:#f8fafc;
   display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#94a3b8}
-.ho-item-inp{flex:1;min-width:0;min-height:46px;padding:10px 13px;border:1.5px solid #cbd5e1;border-radius:10px;
-  font-family:inherit;font-size:16px;line-height:1.5;color:#0f172a;outline:none;box-sizing:border-box;resize:vertical}
+.ho-item-inp{flex:1;min-width:0;min-height:88px;padding:12px 13px;border:1.5px solid #cbd5e1;border-radius:10px;
+  font-family:inherit;font-size:16px;line-height:1.55;color:#0f172a;outline:none;box-sizing:border-box;resize:vertical}
 .ho-item-inp:focus{border-color:#1A56DB;box-shadow:0 0 0 3px rgba(26,86,219,.12)}
-.ho-item-del{flex:0 0 auto;width:34px;height:34px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;cursor:pointer;
+.ho-item-del{flex:0 0 auto;width:34px;height:34px;margin-top:6px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;cursor:pointer;
   font-size:13px;line-height:1;color:#64748b;display:inline-flex;align-items:center;justify-content:center}
 .ho-item-del:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
 .ho-item-add{width:100%;border:1.5px dashed #16a34a;background:#F0FDF4;color:#15803D;font-weight:800;font-size:13.5px;
@@ -869,7 +869,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.10</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.12</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4456,7 +4456,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.10":"Production Record + KPI · v3.10",
+"ระบบบันทึกผลิต + KPI · v3.12":"Production Record + KPI · v3.12",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6126,7 +6126,7 @@ function _hoInputHtml(){
 // 1 ช่อง = 1 ข้อ checklist (textarea → พิมพ์หลายบรรทัดได้ · Enter = ขึ้นบรรทัด ไม่สร้างข้อใหม่)
 const HO_ITEM_SEP='␞';   // ตัวคั่นข้อในร่าง (ไม่ชนกับข้อความผู้ใช้/ขึ้นบรรทัด)
 function _hoItemRowHtml(val){
-  return `<div class="ho-item-row"><span class="ho-item-chk">☐</span><textarea class="ho-item-inp" rows="1"
+  return `<div class="ho-item-row"><span class="ho-item-chk">☐</span><textarea class="ho-item-inp" rows="3"
     placeholder="${TT('พิมพ์งานที่ต้องทำ / สิ่งที่ต้องส่งต่อ…','Type a task to hand over…')}" onkeydown="hoItemKey(event,this)">${escapeHtml(val||'')}</textarea>
     <button type="button" class="ho-item-del" onclick="hoItemDel(this)" aria-label="${TT('ลบข้อนี้','Remove item')}">✕</button></div>`;
 }
@@ -6372,20 +6372,22 @@ function _valveFlow(valve){
 // รวม "quantity" ต่อ process ที่พนักงานลง (current_process) เรียงตาม flow ของวาล์ว — ใช้ทั้งกฎ WIP และ history
 // (prodRecords ใช้ quantity + current_process · ไม่มี opr/machine_id — ตรงกับ computeLocalStats เดิม)
 function _wipPerProc(recs, valve){
-  const perProc={}, lastDate={};
+  const perProc={}, lastDate={}, mcByProc={};
   for(const r of (recs||[])){
     const proc=_procCanon((r.current_process||r.currentProcess||'').trim());
     if(!proc) continue;
     perProc[proc]=(perProc[proc]||0)+(Number(r.quantity)||0);
     const d=(r.timestamp||r.shift_date||r.record_date||'').slice(0,10);
     if(d && (!lastDate[proc] || d>lastDate[proc])) lastDate[proc]=d;
+    const mc=String(r.machine_id||r.machineId||'').trim();   // เครื่องจักรที่ผลิต (มีเฉพาะ record ที่ link จาก KPI)
+    if(mc){ (mcByProc[proc]=mcByProc[proc]||new Set()).add(mc); }
   }
   // เรียงตาม flow ของวาล์ว (process นอก flow ต่อท้ายตาม PROC_ORDER)
   const flow=_valveFlow(valve).map(_procCanon);
   const rankOf=p=>{ const i=flow.indexOf(p); return i>=0 ? i : 1000+_procRank(p); };
   return Object.keys(perProc).filter(p=>perProc[p]>0)
     .sort((a,b)=>rankOf(a)-rankOf(b))
-    .map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||''}));
+    .map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||'',machines:[...(mcByProc[p]||[])]}));
 }
 function computeWipBuckets(){
   const vMap={};
@@ -6460,7 +6462,11 @@ function computeWipBuckets(){
     const k=jobKey(e.valve,e.lot);
     const started=producedKeys.has(k)||reachedFg.has(k);
     const cust=custOf(vKey(e.valve));
-    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started});
+    // เครื่องจักรที่ผลิตงานนี้ (จาก prodRecords ที่ link จาก KPI — reuse groups ที่จัดกลุ่มไว้แล้ว)
+    let machines=[];
+    const g=groups[k];
+    if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines});
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -6662,7 +6668,7 @@ function _wipGoPage(btn,p){
   if(tw&&tw.scrollIntoView){ try{ tw.scrollIntoView({block:'nearest'}); }catch(e){} }
 }
 let _wipDetailBucket='wip';
-let _wipInFilter={month:null,customer:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน
+let _wipInFilter={month:null,customer:'',status:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน · status: ''/waiting/started
 let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
 function _wipMonthsFromItems(items){
   const set=new Set();
@@ -6716,9 +6722,12 @@ function wipDetailBody(bucket){
     const months=_wipMonthsFromItems(b.wipIn.items);
     if(_wipInFilter.month===null) _wipInFilter.month=months[0]||'';   // ครั้งแรก = เดือนล่าสุด · '' = ทุกเดือน (ผู้ใช้เลือกเอง ไม่เด้งกลับ)
     const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
+    const statusF=_wipInFilter.status||'';                         // '' = ทุกสถานะ · 'waiting' = รอผลิต · 'started' = เริ่มผลิตแล้ว
     const filt=b.wipIn.items.filter(i=>{
       if(_wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
       if(_wipInFilter.customer && i.customer!==_wipInFilter.customer) return false;
+      if(statusF==='waiting' && i.started) return false;
+      if(statusF==='started' && !i.started) return false;
       return true;
     });
     // สรุปตามลูกค้า (เฉพาะที่ยังไม่เริ่มผลิต)
@@ -6726,7 +6735,14 @@ function wipDetailBody(bucket){
     for(const i of filt){ if(i.started) continue; byCust[i.customer]=(byCust[i.customer]||0)+i.qty; }
     const custRows=Object.entries(byCust).sort((a,c)=>c[1]-a[1]);
     // v3.8: แบ่งหน้า — เก็บรายการทั้งชุดไว้ใน _wipDet แล้ววาดเฉพาะหน้าที่แสดง (15 แถว)
-    const sorted=filt.slice().sort((a,c)=>String(c.ts).localeCompare(String(a.ts)));
+    // v3.12: เรียงตาม "สถานะ" — รอผลิตขึ้นก่อน แล้วค่อยเรียงวันที่ล่าสุดในแต่ละกลุ่ม
+    const sorted=filt.slice().sort((a,c)=>{
+      if(!!a.started!==!!c.started) return a.started?1:-1;         // รอผลิต (ยังไม่ started) มาก่อน
+      return String(c.ts).localeCompare(String(a.ts));
+    });
+    const mcCell=i=>(i.machines&&i.machines.length)
+      ? i.machines.map(m=>`<span class="tag tag-blue" style="font-size:11px">🏭 ${escapeHtml(m)}</span>`).join(' ')
+      : '<span class="muted">-</span>';
     const rowFn=i=>`
       <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started?'opacity:.5':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
@@ -6734,10 +6750,11 @@ function wipDetailBody(bucket){
         <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
         <td>${escapeHtml(i.lot||'-')}</td>
         <td class="center"><b>${nn(i.qty)}</b></td>
+        <td class="center">${mcCell(i)}</td>
         <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
         <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
       </tr>`;
-    _wipDet={items:sorted,rowFn,colspan:7};
+    _wipDet={items:sorted,rowFn,colspan:8};
     const s=_wipPgSlice();
     return `
      <div data-wipbody>
@@ -6753,11 +6770,17 @@ function wipDetailBody(bucket){
             <option value="">${TT('ทั้งหมด','All')}</option>
             ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
           </select></div>
+        <div class="fr" style="margin:0"><label>${TT('สถานะ','Status')}</label>
+          <select onchange="_wipInFilter.status=this.value;_wipPg.page=1;_refreshWipDetail()">
+            <option value="" ${statusF===''?'selected':''}>${TT('ทั้งหมด','All')}</option>
+            <option value="waiting" ${statusF==='waiting'?'selected':''}>🟠 ${TT('รอผลิต','Waiting')}</option>
+            <option value="started" ${statusF==='started'?'selected':''}>🟢 ${TT('เริ่มผลิตแล้ว','Started')}</option>
+          </select></div>
       </div>
       <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
         style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
-      <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
+      <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
         <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
       <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
      </div>`;
@@ -6854,9 +6877,9 @@ function showWipHistory(valveEnc, lotEnc){
       ${received?`📥 ${TT('รับเข้า WIP IN 1.5','Received (WIP IN 1.5)')}: <b>${nn(received)}</b> ${TT('ชิ้น','pcs')}<br>`:''}
       ${fgItems.length?`✓ ${TT('ผ่าน FG แล้ว','Reached FG')}: <b>${nn(fgItems.reduce((s,i)=>s+i.qty,0))}</b> ${TT('ชิ้น','pcs')} · ${TT('อยู่ที่','now at')} ${escapeHtml(fgItems[0].cur||'FG')}`:''}
     </div>
-    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>${TT('ขั้นตอน (Process)','Process')}</th><th class="center">${TT('ยอด','Qty')}</th><th>${TT('ล่าสุด','Last')}</th></tr></thead>
-      <tbody>${pop.length?pop.map((p,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(p.proc)}</b></td><td class="center">${nn(p.qty)}</td><td>${escapeHtml(p.date||'-')}</td></tr>`).join('')
-        :`<tr><td colspan="4" class="center muted">${TT('ยังไม่มีการผลิต','No production yet')}</td></tr>`}</tbody></table></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>${TT('ขั้นตอน (Process)','Process')}</th><th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th>${TT('ล่าสุด','Last')}</th></tr></thead>
+      <tbody>${pop.length?pop.map((p,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(p.proc)}</b></td><td class="center">${nn(p.qty)}</td><td class="center">${(p.machines&&p.machines.length)?p.machines.map(m=>`<span class="tag tag-blue" style="font-size:11px">🏭 ${escapeHtml(m)}</span>`).join(' '):'<span class="muted">-</span>'}</td><td>${escapeHtml(p.date||'-')}</td></tr>`).join('')
+        :`<tr><td colspan="5" class="center muted">${TT('ยังไม่มีการผลิต','No production yet')}</td></tr>`}</tbody></table></div>`;
   const title=`🕘 ${escapeHtml(valve)}${lot?(' / '+escapeHtml(lot)):''}`;
   if(document.getElementById('iotCard')?.classList.contains('iot-fs')) _openIotPop(title, body, true);
   else openModal(title, body);
