@@ -1197,14 +1197,15 @@ tbody tr:last-child td{border-bottom:none}
   <!-- ปุ่มเลือก VSM (เฉพาะ Admin) — เลือกดู/แก้ไขข้อมูลทีละสาย จะได้ไม่งง -->
   <div id="settingsVsmBar"></div>
 
-  <!-- แจ้งเตือน Valve No ที่ไม่มีในฐานข้อมูล (Admin ตรวจสอบ/เพิ่มเข้าระบบ) -->
-  <div id="unknownValveAlert"></div>
-
-  <!-- แจ้งเตือน Lot ยังไม่ลงทะเบียน (Admin เท่านั้น — auto-fix อักขระเพี้ยน เช่น $→S + แก้ถึงฐานข้อมูล) -->
-  <div id="unknownLotAlert"></div>
-
-  <!-- แจ้งเตือน Process ที่พนักงานพิมพ์เอง (ไม่ตรงตัวเลือกของวาล์ว) — งานเก่าก่อนอัปเดต กดแก้รายตัว -->
-  <div id="unknownProcAlert"></div>
+  <!-- แจ้งเตือน Valve/Lot/Process ที่ยังไม่เข้าระบบ — พับซ่อนไว้ กดที่หัวข้อเพื่อกางดู (default ปิด) -->
+  <details id="adminAlerts" style="display:none;margin-bottom:10px">
+    <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:13.5px;color:var(--orange);background:var(--orange-bg);border:1.5px solid var(--orange-bd);border-radius:11px;padding:10px 13px;display:flex;align-items:center;gap:7px"></summary>
+    <div style="margin-top:8px">
+      <div id="unknownValveAlert"></div>
+      <div id="unknownLotAlert"></div>
+      <div id="unknownProcAlert"></div>
+    </div>
+  </details>
 
   <div class="section-title">📦 รับงานเข้า Process ถัดไป (หลัง FG)</div>
   <div class="card">
@@ -1259,6 +1260,7 @@ tbody tr:last-child td{border-bottom:none}
 
   <div class="section-title">🗂️ Master Data: Valves</div>
   <div class="card">
+    <div id="vMasterHint" class="mb-8" style="font-size:12px;color:var(--blue-dark);background:var(--blue-light);border:1px solid var(--blue-soft);padding:7px 11px;border-radius:9px"></div>
     <div class="row mb-8" style="gap:6px;flex-wrap:wrap">
       <input type="search" id="vSearch" placeholder="🔎 ค้นหา Valve" oninput="renderValveList()" style="flex:1;min-width:140px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
       <button class="btn btn-blue btn-sm" onclick="openValveModal()">➕ Valve</button>
@@ -1511,6 +1513,7 @@ const LS = {
   PLANS:     'vsm4_plans',
   MC_PROC:   'vsm4_machine_proc',   // map: machine_id → process (รอด cloud reload เพราะ D1 ไม่เก็บ field นี้)
   VPROC:     'vsm4_vsm12_proc',     // Process Master เฉพาะ VSM1/VSM2 (แยกจาก valve.processes = VSM3/4) — เก็บ local กัน cloud reload ทับ
+  VVSM:      'vsm4_valve_vsm',      // map: <VALVEKEY> → 'vsm1'|'vsm2'|'shared' — Valve Master แยก VSM1/VSM2 (VSM3+VSM4 ใช้ร่วม='shared') · เก็บ local กัน cloud reload
 };
 // process ของเครื่องจักร เก็บแยกจาก state.machines (กัน reload จาก Cloud ทับหาย)
 let _machineProc = JSON.parse(localStorage.getItem(LS.MC_PROC) || '{}');
@@ -1660,6 +1663,7 @@ let state = {
   online:    false,
   valves:    lsLoad(LS.VALVES,    DEFAULT_VALVES),
   vProc:     lsLoad(LS.VPROC,     {}),   // { '<VALVEKEY>': { p1:[...], p2:[...] } } — Process Master ของ VSM1(p1)/VSM2(p2)
+  valveVsm:  lsLoad(LS.VVSM,      {}),   // { '<VALVEKEY>': 'vsm1'|'vsm2'|'shared' } — Valve Master ของ VSM1/VSM2 แยกกัน · VSM3/4 ใช้ร่วม (shared)
   machines:  lsLoad(LS.MACHINES,  DEFAULT_MACHINES),
   employees: lsLoad(LS.EMPLOYEES, DEFAULT_EMPLOYEES),
   targets:   lsLoad(LS.TARGETS,   DEFAULT_TARGETS),
@@ -3116,7 +3120,7 @@ function filteredPlans() {
 function renderPlans() {
   // populate valve datalist
   const dl = $('valveList');
-  if (dl) dl.innerHTML = state.valves.map(v => `<option value="${escapeHtml(v.valveNo)}">${escapeHtml(v.description||'')}</option>`).join('');
+  if (dl) dl.innerHTML = state.valves.filter(v => valveInCurrentMaster(v.valveNo)).map(v => `<option value="${escapeHtml(v.valveNo)}">${escapeHtml(v.description||'')}</option>`).join('');
   const rows = filteredPlans();
   const tbody = $('planTable')?.querySelector('tbody');
   if (!tbody) return;
@@ -3210,9 +3214,9 @@ async function _applyLotRewrite(pairs) {   // pairs = [{valve, wrong, correct}]
 /* แผง "Lot ยังไม่ลงทะเบียน" (Admin เท่านั้น) */
 function renderUnknownLots() {
   const box = $('unknownLotAlert'); if (!box) return;
-  if (!canSeeAllVsm()) { box.innerHTML = ''; return; }         // เห็นเฉพาะ Admin (req)
+  if (!canSeeAllVsm()) { box.innerHTML = ''; _syncAdminAlerts(); return; }         // เห็นเฉพาะ Admin (req)
   const all = _scanPendingLots();
-  if (!all.length) { box.innerHTML = ''; return; }
+  if (!all.length) { box.innerHTML = ''; _syncAdminAlerts(); return; }
   const CAP = 40, esc = s => escapeHtml(String(s)).replace(/'/g, "\\'");
   const list = all.slice(0, CAP), more = all.length - list.length;
   const autoN = all.filter(u => _lotAutoFix(u.valve, u.lot)).length;
@@ -3243,6 +3247,7 @@ function renderUnknownLots() {
       }).join('')}
       ${more>0?`<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FED7AA">…และอีก ${more} รายการ</div>`:''}
     </div>`;
+  _syncAdminAlerts();
 }
 /* กดแก้ทีละตัวจากปุ่มแนะนำ (🪄 <sug>) — rewrite record ถึงฐานข้อมูล */
 async function quickFixLot(valve, wrong, correct) {
@@ -5187,9 +5192,10 @@ function i18nStop(){ if(_i18nMo){ _i18nMo.disconnect(); _i18nMo = null; } }
 if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }   // เปิดแอปมาเป็น EN ค้างไว้
 
 function renderMachineStatusChecker(recs) {
-  // IoT floor plan มีผังจริงของ VSM4 + VSM3 (ตามเอกสาร Layout VSM3) — VSM1/2 ยังไม่มีผัง (เพิ่มภายหลัง)
+  // IoT floor plan: ผังจริงครบทั้ง 4 สาย — VSM4 (grid) · VSM3 (Layout VSM3) · VSM1/VSM2 (IOT VSM1/IOT VSM2)
   const fpv = _fpVsm();
-  if (fpv !== 'vsm4' && fpv !== 'vsm3') {
+  const FP_HAS_PLAN = { vsm1:1, vsm2:1, vsm3:1, vsm4:1 };   // สายที่มีผังจริงแล้ว (ถ้ามีสายใหม่ยังไม่มีผัง → ขึ้น "เพิ่มภายหลัง")
+  if (!FP_HAS_PLAN[fpv]) {
     const fw = $('mcViewFloor');
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
@@ -5415,6 +5421,16 @@ const FP3_LB=[
   {id:'F3',x:293,y:754,w:38,h:31},
 ];
 
+/* ============================================================
+   VSM1 & VSM2 Factory Floor Plan — พิกัด px จริงจากเอกสาร "VSM1-2.xlsx"
+   (sheet "IOT VSM1" / "IOT VSM2" — แปลงจาก drawing shapes: EMU ÷ 9525 → px, ยึดมุมซ้ายบน = 0,0)
+   FP1_MC = เครื่องจักร 53 กล่อง (VSM1) · FP2_MC = 73 กล่อง (VSM2) — ไม่มีป้ายไลน์เหลือง
+   หมายเหตุ: ผังคือ "พื้นที่จริงทั้งหมด" (superset ของ Machine Master) — กล่องที่ยังไม่มี record จะขึ้นสีเทา = ปิด
+   C-206 มี 2 กล่องตามผังจริง (เหมือน FP3 ที่มี id ซ้ำ) — เรนเดอร์/ไฮไลต์พร้อมกันได้
+   ============================================================ */
+const FP1_MC=[{id:'H-1109',x:44,y:245,w:67,h:34},{id:'H-1114',x:0,y:553,w:110,h:52},{id:'H-1115',x:0,y:495,w:110,h:52},{id:'D-1105',x:0,y:436,w:110,h:52},{id:'H-1113',x:43,y:397,w:67,h:34},{id:'H-1112',x:43,y:359,w:67,h:34},{id:'H-1111',x:43,y:321,w:67,h:34},{id:'H-1110',x:43,y:282,w:67,h:34},{id:'G-1107',x:147,y:495,w:67,h:34},{id:'G-1104',x:147,y:457,w:67,h:34},{id:'G-1123',x:798,y:56,w:67,h:34},{id:'H-1124',x:145,y:282,w:67,h:34},{id:'F-1127',x:337,y:457,w:67,h:34},{id:'F-1126',x:259,y:417,w:67,h:34},{id:'F-1128',x:412,y:457,w:67,h:34},{id:'F-1129',x:485,y:457,w:67,h:34},{id:'F-1130',x:559,y:457,w:67,h:34},{id:'F-1131',x:633,y:457,w:67,h:34},{id:'F-1118',x:337,y:570,w:67,h:34},{id:'F-1115',x:259,y:530,w:67,h:34},{id:'F-1120',x:412,y:570,w:67,h:34},{id:'F-1121',x:485,y:570,w:67,h:34},{id:'F-1122',x:559,y:570,w:67,h:34},{id:'F-1123',x:633,y:570,w:67,h:34},{id:'F-1158',x:587,y:286,w:110,h:52},{id:'F-1140',x:794,y:555,w:110,h:52},{id:'F-1134',x:794,y:453,w:110,h:52},{id:'F-1138',x:916,y:555,w:110,h:52},{id:'F-1139',x:916,y:453,w:110,h:52},{id:'F-1132',x:794,y:284,w:67,h:52},{id:'F-1156',x:870,y:284,w:78,h:127},{id:'C-1107',x:956,y:284,w:67,h:60},{id:'C-1108',x:956,y:350,w:67,h:60},{id:'H-1117',x:144,y:173,w:261,h:45},{id:'H-1118',x:144,y:115,w:261,h:45},{id:'H-1120',x:244,y:58,w:407,h:45},{id:'H-1119',x:436,y:115,w:261,h:45},{id:'G-401',x:876,y:56,w:67,h:34},{id:'L-202',x:952,y:56,w:67,h:34},{id:'L-402',x:1028,y:56,w:67,h:34},{id:'L-401',x:1103,y:56,w:67,h:34},{id:'L-403',x:1103,y:104,w:67,h:33},{id:'L-404',x:1028,y:102,w:67,h:33},{id:'L-405',x:1103,y:148,w:67,h:33},{id:'C-1603',x:1103,y:193,w:67,h:33},{id:'C-1602',x:1103,y:237,w:67,h:33},{id:'G-1118',x:626,y:0,w:67,h:34},{id:'G-1122',x:549,y:0,w:67,h:34},{id:'D-1109',x:387,y:0,w:67,h:34},{id:'D-1112',x:246,y:0,w:67,h:34},{id:'D-1121',x:168,y:0,w:67,h:34},{id:'D-1122',x:93,y:0,w:67,h:34},{id:'D-1123',x:19,y:0,w:67,h:34}];
+const FP2_MC=[{id:'G-1110',x:250,y:742,w:69,h:34},{id:'D-1118',x:250,y:703,w:69,h:34},{id:'D-1119',x:250,y:664,w:69,h:34},{id:'D-1120',x:250,y:626,w:69,h:34},{id:'W-1136',x:250,y:584,w:69,h:34},{id:'C-204',x:250,y:542,w:69,h:34},{id:'G-2025',x:250,y:504,w:69,h:34},{id:'G-1106',x:0,y:398,w:67,h:34},{id:'F-1149',x:0,y:323,w:67,h:34},{id:'F-1148',x:0,y:248,w:67,h:34},{id:'F-1150',x:0,y:178,w:67,h:34},{id:'G-1105',x:78,y:398,w:67,h:34},{id:'Q-1108',x:78,y:323,w:67,h:34},{id:'G-1102',x:154,y:398,w:67,h:34},{id:'G-1115',x:154,y:323,w:67,h:34},{id:'F-1147',x:118,y:178,w:67,h:106},{id:'F-1142',x:194,y:178,w:67,h:106},{id:'F-1109',x:270,y:178,w:67,h:106},{id:'L-240',x:228,y:310,w:110,h:52},{id:'L-260',x:228,y:378,w:110,h:52},{id:'W-1109',x:356,y:281,w:67,h:40},{id:'W-1108',x:356,y:339,w:67,h:40},{id:'W-1139',x:430,y:281,w:67,h:40},{id:'W-1118',x:430,y:339,w:67,h:40},{id:'W-1135',x:506,y:282,w:67,h:40},{id:'W-1126',x:506,y:339,w:67,h:40},{id:'H-1123',x:431,y:390,w:67,h:40},{id:'L-1114',x:356,y:178,w:67,h:40},{id:'L-1112',x:430,y:178,w:67,h:40},{id:'L-1111',x:506,y:178,w:67,h:40},{id:'F-201',x:506,y:229,w:67,h:40},{id:'F-1157',x:658,y:222,w:67,h:106},{id:'F-1144',x:659,y:339,w:67,h:40},{id:'F-1143',x:739,y:339,w:67,h:40},{id:'W-1114',x:660,y:390,w:67,h:40},{id:'G-229',x:817,y:390,w:67,h:40},{id:'G-228',x:817,y:341,w:67,h:40},{id:'G-242',x:818,y:289,w:67,h:40},{id:'W-1121',x:891,y:390,w:67,h:40},{id:'W-1119',x:891,y:341,w:67,h:40},{id:'W-1115',x:893,y:289,w:67,h:40},{id:'W-1120',x:966,y:390,w:67,h:40},{id:'W-1117',x:966,y:341,w:67,h:40},{id:'W-1116',x:968,y:289,w:67,h:40},{id:'C-212',x:1042,y:390,w:67,h:40},{id:'C-211',x:1042,y:341,w:67,h:40},{id:'C-210',x:1044,y:289,w:67,h:40},{id:'F-1146',x:194,y:0,w:67,h:106},{id:'F-1154',x:270,y:0,w:67,h:106},{id:'W-1131',x:579,y:506,w:67,h:40},{id:'W-1127',x:579,y:552,w:67,h:40},{id:'G-2049',x:579,y:598,w:67,h:40},{id:'G-278',x:579,y:643,w:67,h:40},{id:'W-1134',x:654,y:506,w:67,h:40},{id:'W-1129',x:654,y:552,w:67,h:40},{id:'W-1130',x:654,y:598,w:67,h:40},{id:'G-2043',x:710,y:643,w:67,h:40},{id:'C-217',x:840,y:643,w:67,h:40},{id:'C-220',x:962,y:643,w:67,h:40},{id:'C-213',x:731,y:598,w:67,h:40},{id:'C-214',x:808,y:598,w:67,h:40},{id:'L-224',x:887,y:598,w:67,h:40},{id:'L-230',x:962,y:598,w:67,h:40},{id:'C-203',x:1038,y:643,w:67,h:40},{id:'L-222',x:1038,y:598,w:67,h:40},{id:'W-1124',x:731,y:552,w:67,h:40},{id:'C-209',x:888,y:552,w:67,h:40},{id:'C-206',x:962,y:552,w:67,h:40},{id:'C-215',x:1038,y:552,w:67,h:40},{id:'W-1128',x:733,y:506,w:67,h:40},{id:'C-206',x:888,y:506,w:67,h:40},{id:'C-207',x:962,y:506,w:67,h:40},{id:'C-205',x:1038,y:506,w:67,h:40}];
+
 /* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
 let _iotVsmSel='vsm4';
 try{ const _s=localStorage.getItem('vsm4_iot_vsm'); if(isVsmKey(_s)) _iotVsmSel=_s; }catch(e){}
@@ -5508,8 +5524,9 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
 
   const CX=35, CY=15;
   // แปลงเป็นกล่อง px ชุดเดียวกันทั้ง 2 ผัง — VSM4 จาก grid เดิม · VSM3 จากพิกัดเอกสาร Layout
-  const boxes = fpv==='vsm3'
-    ? FP3_MC
+  const boxes = fpv==='vsm3' ? FP3_MC
+    : fpv==='vsm1' ? FP1_MC
+    : fpv==='vsm2' ? FP2_MC
     : MC.map(m=>({id:m.id, x:m.c1*CX+2, y:m.r1*CY+2, w:(m.c2-m.c1)*CX-4, h:(m.r2-m.r1)*CY-4}));
   const labels = fpv==='vsm3' ? FP3_LB : [];
   // กรอบให้พอดีเครื่องจริง — บีบพื้นที่ว่างที่ไม่ได้ใช้ออก (req #1)
@@ -5594,7 +5611,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   const svgHtml=`<svg id="iotSvg" viewBox="${VBX} ${VBY} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
 
   // Admin: ปุ่มสลับผังทุก VSM (1/2/3/4) — ผู้ใช้ทั่วไปเห็นเฉพาะผัง VSM ตัวเอง (ไม่มีปุ่ม)
-  // VSM1/2 ยังไม่มีผังจริง → เลือกแล้วจะขึ้นข้อความ "จะเพิ่มภายหลัง"
+  // ผังจริงครบทั้ง 4 สายแล้ว (VSM1/2 = IOT VSM1/2 · VSM3 = Layout · VSM4 = grid)
   const vsmBtn = canSeeAllVsm() ? `
       <span style="display:inline-flex;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden">
         ${VSM_KEYS.map(v=>`<button type="button" onclick="iotSetVsm('${v}')" style="border:0;cursor:pointer;padding:3px 10px;font-size:10.5px;font-weight:800;${v===fpv?'background:#1A56DB;color:#fff':'background:#fff;color:#334155'}">${VSM_LABEL[v]}</button>`).join('')}
@@ -6694,11 +6711,16 @@ function computeWipBuckets(){
 
   // จัดกลุ่ม prodRecords ตาม (valve::lot)
   const groups={};
+  // เครื่องจักรที่ผลิตต่อ (valve::lot) — ใช้ร่วมทั้ง 3 ถัง (WIP/WIP OUT ก็โชว์เครื่องจักรได้ ไม่ใช่แค่ WIP IN)
+  //   KPI record มี machine_id เสมอ = แหล่งหลัก · prodRecords มีเฉพาะ record ที่ link จาก KPI (เสริม)
+  const mcByJob={};
+  const _addMc=(k,mc)=>{ mc=String(mc||'').trim(); if(mc){ (mcByJob[k]=mcByJob[k]||new Set()).add(mc); } };
   for(const r of filterVsm(state.prodRecords||[])){
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
     const k=jobKey(vno,lot);
     (groups[k]=groups[k]||{valve:vno,lot,recs:[]}).recs.push(r);
+    _addMc(k, r.machine_id||r.machineId);
   }
   const producedKeys=new Set(Object.keys(groups));
 
@@ -6707,8 +6729,10 @@ function computeWipBuckets(){
   for(const r of filterVsm(state.kpiRecords||[])){
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
+    const jk=jobKey(vno,lot);
+    _addMc(jk, r.machine_id||r.machineId);              // KPI มี machine_id เสมอ → เก็บเครื่องจักรก่อนเช็ค scrap
     const s=Number(r.scrap)||0; if(!s) continue;
-    const jk=jobKey(vno,lot); scrapByJob[jk]=(scrapByJob[jk]||0)+s;
+    scrapByJob[jk]=(scrapByJob[jk]||0)+s;
   }
 
   // ยอดรับเข้า WIP IN 1.5 ต่อ (valve::lot) — ใช้เป็น "ตัวอ้างอิง" ของ WIP กำลังผลิต
@@ -6739,14 +6763,14 @@ function computeWipBuckets(){
     if(wipQty<=0) continue;
     const cust=custOf(vKey(g.valve));
     wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty;
-    wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date,scrap:scr,wipIn:inQty,basis});
+    wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date,scrap:scr,wipIn:inQty,basis,machines:[...(mcByJob[k]||[])]});
   }
 
   // ---- WIP OUT (ผ่าน FG) ---- (เก็บทุกงาน · กรองเดือนตอนแสดง)
   const wipOut={total:0,byCust:{},items:[]};
   for(const it of fgItems){
     wipOut.total+=it.qty; wipOut.byCust[it.customer]=(wipOut.byCust[it.customer]||0)+it.qty;
-    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date||it.fgDate||''});
+    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date||it.fgDate||'',machines:[...(mcByJob[jobKey(it.valve,it.lot)]||[])]});
   }
 
   // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
@@ -7009,6 +7033,12 @@ function _wipInPlanHtml(){
      </tr></thead><tbody>${body}</tbody></table></div>
    </details>`;
 }
+// ช่อง "เครื่องจักร" ในตาราง WIP ทุกถัง (IN/กำลังผลิต/OUT) — ชิปสีน้ำเงินต่อเครื่อง · ไม่มีข้อมูล = "-"
+function _wipMcCell(machines){
+  return (machines&&machines.length)
+    ? machines.map(m=>`<span class="tag tag-blue" style="font-size:11px">🏭 ${escapeHtml(m)}</span>`).join(' ')
+    : '<span class="muted">-</span>';
+}
 function wipDetailBody(bucket){
   const b=getWipBuckets();
   if(bucket==='in'){
@@ -7033,9 +7063,6 @@ function wipDetailBody(bucket){
       if(!!a.started!==!!c.started) return a.started?1:-1;         // รอผลิต (ยังไม่ started) มาก่อน
       return String(c.ts).localeCompare(String(a.ts));
     });
-    const mcCell=i=>(i.machines&&i.machines.length)
-      ? i.machines.map(m=>`<span class="tag tag-blue" style="font-size:11px">🏭 ${escapeHtml(m)}</span>`).join(' ')
-      : '<span class="muted">-</span>';
     const rowFn=i=>`
       <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started?'opacity:.5':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
@@ -7043,7 +7070,7 @@ function wipDetailBody(bucket){
         <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
         <td>${escapeHtml(i.lot||'-')}</td>
         <td class="center"><b>${nn(i.qty)}</b></td>
-        <td class="center">${mcCell(i)}</td>
+        <td class="center">${_wipMcCell(i.machines)}</td>
         <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
         <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
       </tr>`;
@@ -7115,9 +7142,10 @@ function wipDetailBody(bucket){
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
       <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span></td>
+      <td class="center">${_wipMcCell(i.machines)}</td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
-  const _wipColspan=isOut?6:8;
+  const _wipColspan=isOut?7:9;
   _wipDet={items,rowFn,colspan:_wipColspan};
   const s=_wipPgSlice();
   return `
@@ -7127,7 +7155,7 @@ function wipDetailBody(bucket){
       style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
     ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
-    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th></tr></thead>
+    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">-</th></tr></thead>
       <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
     <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
    </div>`;
@@ -9915,7 +9943,7 @@ function renderUnknownValves() {
   scan(state.kpiRecords, 'saved_at');
   scan(state.prodRecords, 'timestamp');
   const all = Object.values(seen).sort((a, b) => (b.when || '').localeCompare(a.when || ''));
-  if (!all.length) { box.innerHTML = ''; return; }
+  if (!all.length) { box.innerHTML = ''; _syncAdminAlerts(); return; }
   const CAP = 30;
   const list = all.slice(0, CAP);
   const more = all.length - list.length;
@@ -9943,6 +9971,7 @@ function renderUnknownValves() {
       `).join('')}
       ${more > 0 ? `<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FED7AA">…และอีก ${more} รายการ</div>` : ''}
     </div>`;
+  _syncAdminAlerts();
 }
 function addValveFromUnknown(vn) {
   openValveModal();                              // โหมดเพิ่มวาล์วใหม่
@@ -9973,7 +10002,7 @@ function renderUnknownProcs() {
     rows.push({ rid: r.record_id, valve: vn, lot: r.lot || '', proc, qty: r.quantity || 0,
                 when: r.timestamp || r.saved_at || '', by: r.operator || r.emp_id || '' });
   }
-  if (!rows.length) { box.innerHTML = ''; return; }
+  if (!rows.length) { box.innerHTML = ''; _syncAdminAlerts(); return; }
   rows.sort((a, b) => (b.when || '').localeCompare(a.when || ''));
   const CAP = 50, list = rows.slice(0, CAP), more = rows.length - list.length;
   box.innerHTML = `
@@ -9997,6 +10026,7 @@ function renderUnknownProcs() {
       `).join('')}
       ${more > 0 ? `<div style="font-size:11px;color:var(--muted);padding-top:8px;border-top:1px solid #FEF08A">…และอีก ${more} รายการ</div>` : ''}
     </div>`;
+  _syncAdminAlerts();
 }
 
 /* ============================================================
@@ -10396,6 +10426,7 @@ function exportBackup() {
     exported_at: new Date().toISOString(),
     valves:    state.valves,
     vsm12_proc: state.vProc,   // Process Master ของ VSM1/VSM2 (แยกจาก valve.processes)
+    valve_vsm:  state.valveVsm, // การผูก Valve Master → VSM1/VSM2 (VSM3/4 shared)
     machines:  state.machines,
     employees: state.employees,
     targets:   state.targets,
@@ -10420,6 +10451,7 @@ async function restoreBackup(ev) {
       const b = JSON.parse(e.target.result);
       if (b.valves)       { state.valves       = b.valves;       lsSave(LS.VALVES,    state.valves); }
       if (b.vsm12_proc)   { state.vProc        = b.vsm12_proc;   lsSave(LS.VPROC,     state.vProc); }
+      if (b.valve_vsm)    { state.valveVsm     = b.valve_vsm;    lsSave(LS.VVSM,      state.valveVsm); }
       if (b.machines)     { state.machines     = b.machines;     lsSave(LS.MACHINES,  state.machines); }
       if (b.employees)    { state.employees    = b.employees;    lsSave(LS.EMPLOYEES, state.employees); }
       if (b.targets)      { state.targets      = b.targets;      lsSave(LS.TARGETS,   state.targets); }
@@ -10441,11 +10473,13 @@ async function _doResetToDefaults() {
   if (!(await confirmModal('⚠️ รีเซ็ต Master Data (Valves / Machines / Employees / Targets) เป็นค่าเริ่มต้น?\nRecords ไม่ถูกลบ — แต่ค่าที่แก้ไว้จะหายทั้งหมด', { danger: true, yes: 'รีเซ็ต' }))) return;
   state.valves    = JSON.parse(JSON.stringify(DEFAULT_VALVES));
   state.vProc     = {};
+  state.valveVsm  = {};
   state.machines  = JSON.parse(JSON.stringify(DEFAULT_MACHINES));
   state.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
   state.targets   = {...DEFAULT_TARGETS};
   lsSave(LS.VALVES,    state.valves);
   lsSave(LS.VPROC,     state.vProc);
+  lsSave(LS.VVSM,      state.valveVsm);
   lsSave(LS.MACHINES,  state.machines);
   lsSave(LS.EMPLOYEES, state.employees);
   lsSave(LS.TARGETS,   state.targets);
@@ -10560,16 +10594,84 @@ async function saveTargets() {
   toast('💾 บันทึก Targets แล้ว', 'green');
   if (API) { try { await api('/api/targets', { body: payload }); } catch (e) {} }
 }
+/* ── แบ่งหน้า 20 แถว/หน้า (Master Data: Valve / พนักงาน / เครื่องจักร) — โหลดทีละหน้า เครื่องไม่ช้า ── */
+const LIST_PAGE = 20;
+const _listPage = { valve: 0, emp: 0, mc: 0 };
+function _clampPage(which, total) {
+  const tp = Math.max(1, Math.ceil(total / LIST_PAGE));
+  if (_listPage[which] >= tp) _listPage[which] = tp - 1;
+  if (_listPage[which] < 0) _listPage[which] = 0;
+  return _listPage[which];
+}
+function _listPagerHtml(which, total, goFn) {
+  const tp = Math.max(1, Math.ceil(total / LIST_PAGE));
+  if (tp <= 1) return '';
+  const p = _listPage[which];
+  const btn = (to, label, dis) => `<button class="btn btn-outline btn-sm" ${dis ? 'disabled' : ''} onclick="${goFn}(${to})">${label}</button>`;
+  return `<div class="row" style="gap:6px;justify-content:center;align-items:center;margin-top:8px;flex-wrap:wrap">
+    ${btn(0, '«', p === 0)}${btn(p - 1, '‹ ' + TT('ก่อนหน้า', 'Prev'), p === 0)}
+    <span class="muted" style="font-size:12px;font-weight:700">${TT('หน้า', 'Page')} ${p + 1}/${tp} · ${total.toLocaleString()} ${TT('รายการ', 'items')}</span>
+    ${btn(p + 1, TT('ถัดไป', 'Next') + ' ›', p >= tp - 1)}${btn(tp - 1, '»', p >= tp - 1)}
+  </div>`;
+}
+function vGoPage(p)   { _listPage.valve = p; renderValveList(); }
+function empGoPage(p) { _listPage.emp   = p; renderEmployeeList(); }
+function mcGoPage(p)  { _listPage.mc    = p; renderMachineList(); }
+
+/* ── แผงแจ้งเตือน Admin (Valve/Lot/Process ที่ยังไม่เข้าระบบ) — ซ่อนพับไว้ กดเปิดค่อยแสดง ── */
+function _syncAdminAlerts() {
+  const wrap = $('adminAlerts'); if (!wrap) return;
+  const boxes = ['unknownValveAlert', 'unknownLotAlert', 'unknownProcAlert'].map(id => $(id));
+  let total = 0, cats = 0;
+  for (const b of boxes) { if (b && b.innerHTML.trim()) { cats++; const m = b.innerHTML.match(/\((\d+)\)/); if (m) total += (+m[1]); } }
+  if (cats === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const sum = wrap.querySelector('summary');
+  if (sum) sum.innerHTML = `⚠️ ${TT('รายการที่ต้องจัดการ', 'Items to handle')} <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:800">${total || cats}</span> <span style="font-size:11px;color:var(--muted);font-weight:600">· Valve / Lot / Process ${TT('ที่ยังไม่เข้าระบบ — กดเพื่อดู', 'not in system — tap to view')}</span>`;
+}
+
+/* ============================================================
+   Valve Master แยกตาม VSM — VSM1 / VSM2 มีชุดวาล์วของตัวเอง · VSM3+VSM4 ใช้ชุดร่วม ('shared')
+   เก็บ mapping ไว้ local (state.valveVsm) กัน cloud reload ทับ (แนวเดียวกับ vProc)
+   ============================================================ */
+function _valveMasterGroup(vsm) { return (vsm === 'vsm1' || vsm === 'vsm2') ? vsm : 'shared'; }   // VSM3/4 = shared
+// กลุ่มของวาล์ว: ถ้าเคยผูกไว้แล้วใช้ค่านั้น · ถ้ายัง (ข้อมูลเก่า) เดาจาก Process Master (p1→VSM1 · p2→VSM2 · ไม่มี→shared)
+function _valveGroupsOf(valveNo) {
+  const key = vKey(valveNo);
+  const ex = (state.valveVsm || {})[key];
+  if (ex === 'vsm1' || ex === 'vsm2' || ex === 'shared') return [ex];
+  const rec = (state.vProc || {})[key]; const g = [];
+  if (rec && (rec.p1 || []).length) g.push('vsm1');
+  if (rec && (rec.p2 || []).length) g.push('vsm2');
+  return g.length ? g : ['shared'];
+}
+function valveInCurrentMaster(valveNo) { return _valveGroupsOf(valveNo).includes(_valveMasterGroup(viewVsm())); }
+// ผูกวาล์วเข้า Valve Master ของ VSM ที่กำลังดู (เรียกทุกครั้งที่เพิ่ม/แก้/นำเข้า valve)
+function _tagValveVsm(valveNo) {
+  const g = _valveMasterGroup(viewVsm());
+  if (!state.valveVsm || typeof state.valveVsm !== 'object') state.valveVsm = {};
+  state.valveVsm[vKey(valveNo)] = g;
+  lsSave(LS.VVSM, state.valveVsm);
+}
+
 function renderValveList() {
   const q = ($('vSearch').value || '').toLowerCase();
+  const grp = _valveMasterGroup(viewVsm());
+  const inMaster = state.valves.filter(v => valveInCurrentMaster(v.valveNo));   // เฉพาะวาล์วของ VSM ที่กำลังดู
+  const hint = $('vMasterHint');
+  if (hint) hint.innerHTML = grp === 'shared'
+    ? `📦 ${TT('Valve Master รวม','Shared Valve Master')} · <b>VSM3 + VSM4</b> ${TT('ใช้ร่วมกัน','shared')} · <b>${inMaster.length}</b> ${TT('วาล์ว','valves')}`
+    : `🔒 ${TT('Valve Master เฉพาะ','Valve Master for')} <b>${VSM_LABEL[grp] || grp}</b> · <b>${inMaster.length}</b> ${TT('วาล์ว','valves')}`;
   // นับจำนวน ID ต่อ valve
   const idCounts = {};
   for (const r of state.ids || []) {
     const v = String(r.valve_no || '').trim();
     if (v) idCounts[v] = (idCounts[v] || 0) + 1;
   }
-  const rows = state.valves
-    .filter(v => !q || v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q))
+  const filtered = inMaster
+    .filter(v => !q || v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q));
+  const _vpage = _clampPage('valve', filtered.length);
+  const rows = filtered.slice(_vpage * LIST_PAGE, (_vpage + 1) * LIST_PAGE)
     .map(v => {
       const n = idCounts[v.valveNo] || 0;
       const idCell = n > 0
@@ -10584,7 +10686,8 @@ function renderValveList() {
             <button class="btn btn-sm" onclick="delValve('${escapeHtml(v.valveNo)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">ลบ</button></td>
       </tr>`;
     }).join('');
-  $('vTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="5" class="center muted">ไม่มีข้อมูล</td></tr>';
+  $('vTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="5" class="center muted">${q ? TT('ไม่พบวาล์วที่ค้นหา','No valve matches') : (grp==='shared' ? TT('ยังไม่มีข้อมูล','No data') : TT('ยังไม่มีวาล์วใน VSM นี้ — กด ➕ Valve เพื่อเพิ่ม','No valves for this VSM yet — tap ➕ Valve to add'))}</td></tr>`;
+  if ($('vPagination')) $('vPagination').innerHTML = _listPagerHtml('valve', filtered.length, 'vGoPage');
 }
 
 function filterIdsByValve(valveNo) {
@@ -11004,6 +11107,7 @@ function upsertValve(entry) {
   const had = state.valves.some(v => vKey(v.valveNo) === key);
   state.valves = state.valves.filter(v => vKey(v.valveNo) !== key);
   state.valves.push(entry);
+  _tagValveVsm(key);                                     // ผูกเข้า Valve Master ของ VSM ที่กำลังดู (VSM1/2 แยก · VSM3/4 ร่วม)
   return had;
 }
 async function saveValve(orig) {
@@ -11029,6 +11133,7 @@ async function delValve(valveNo) {
   state.valves = state.valves.filter(v => v.valveNo !== valveNo);
   lsSave(LS.VALVES, state.valves);
   if (state.vProc && state.vProc[vKey(valveNo)]) { delete state.vProc[vKey(valveNo)]; lsSave(LS.VPROC, state.vProc); }   // ลบ Process Master VSM1/2 ที่ผูกกับวาล์วนี้ด้วย
+  if (state.valveVsm && state.valveVsm[vKey(valveNo)]) { delete state.valveVsm[vKey(valveNo)]; lsSave(LS.VVSM, state.valveVsm); }   // ลบการผูก Valve Master VSM ด้วย
   renderValveList();
   toast('ลบแล้ว', 'green');
   if (API) { try { await api('/api/valves/delete', { body: { valveNo } }); } catch (e) {} }
@@ -11263,8 +11368,11 @@ function renderEmployeeList() {
   const vsmSelect = (e) => `<select onchange="setEmployeeVsm('${escapeHtml(e.id)}',this.value)" style="border:1px solid var(--blue-soft);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;background:#fff">${
     VSM_LIST.map(v => `<option value="${v.key}"${(e.vsm||DEFAULT_VSM)===v.key?' selected':''}>${v.label}</option>`).join('')
   }</select>`;
-  const rows = list.map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td>${vsmSelect(e)}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
+  const _epage = _clampPage('emp', list.length);
+  const rows = list.slice(_epage * LIST_PAGE, (_epage + 1) * LIST_PAGE)
+    .map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td>${vsmSelect(e)}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
   $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
+  if ($('empPagination')) $('empPagination').innerHTML = _listPagerHtml('emp', list.length, 'empGoPage');
 }
 async function setEmployeeVsm(id, vsm) {
   const e = state.employees.find(x => x.id === id);
@@ -11730,8 +11838,11 @@ function renderMachineList() {
   const th = (key, label) => `<th onclick="sortMachines('${key}')" style="cursor:pointer;user-select:none;white-space:nowrap" title="กดเพื่อเรียง">${label}${arrow(key)}</th>`;
   const thead = $('mcTable').querySelector('thead');
   if (thead) thead.innerHTML = `<tr>${th('id','รหัส')}${th('target','Target')}${th('man_std','Man_STD')}${th('process','Process')}<th>จัดการ</th></tr>`;
-  const rows = list.map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
+  const _mpage = _clampPage('mc', list.length);
+  const rows = list.slice(_mpage * LIST_PAGE, (_mpage + 1) * LIST_PAGE)
+    .map(m => `<tr style="cursor:pointer" onclick="editMachine('${z}','${escapeHtml(m.id)}')" title="กดเพื่อแก้ไข"><td><b>${escapeHtml(m.id)}</b></td><td>${nn(m.target)}</td><td>${m.man_std}</td><td><span class="tag tag-blue">${escapeHtml(mcProcess(m))}</span></td><td class="center" style="white-space:nowrap"><button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="event.stopPropagation();editMachine('${z}','${escapeHtml(m.id)}')">✏️ แก้ไข</button> <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 8px" onclick="event.stopPropagation();delMachine('${z}','${escapeHtml(m.id)}')">🗑️</button></td></tr>`).join('');
   $('mcTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="5" class="center muted">${q?'ไม่พบเครื่องที่ค้นหา':'ไม่มีข้อมูล'}</td></tr>`;
+  if ($('mcPagination')) $('mcPagination').innerHTML = _listPagerHtml('mc', list.length, 'mcGoPage');
 }
 function editMachine(zone, id) {
   const m = (state.machines[zone]||[]).find(x => x.id === id);
