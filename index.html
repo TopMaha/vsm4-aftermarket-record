@@ -869,7 +869,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.14</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.15</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4808,7 +4808,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.14":"Production Record + KPI · v3.14",
+"ระบบบันทึกผลิต + KPI · v3.15":"Production Record + KPI · v3.15",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6999,8 +6999,21 @@ function renderWipinMissing(){
         🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length}</span>
         <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ SSG แล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู</span>
       </summary>
+      <button type="button" class="btn btn-blue btn-block" style="margin-top:8px;padding:10px;font-size:14px"
+        onclick="wipinAddAllMissing()">➕ ลงบันทึก WIP IN ทั้งหมด (${items.length} รายการ)</button>
       <div style="margin-top:6px">${rows}${items.length>40?`<div class="muted" style="font-size:11px;padding:6px 0">… +${items.length-40} รายการ</div>`:''}</div>
     </details>`;
+}
+/* ปุ่มเดียวลงบันทึกรับเข้าย้อนหลังทุกรายการที่ค้าง (ยอดตามที่ผลิตที่ SSG ของแต่ละ Valve/Lot) */
+async function wipinAddAllMissing(){
+  const items=_wipinMissingItems();
+  if(!items.length){ toast('ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
+  const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
+  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น`).join('\n');
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
+  for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)');
+  renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
+  toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว ${items.length} รายการ · รวม ${nn(total)} ชิ้น`,'green');
 }
 async function wipinQuickAdd(valveEnc,lotEnc,qty){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
