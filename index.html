@@ -836,6 +836,31 @@ tbody tr:last-child td{border-bottom:none}
   .iot-fs.iot-map-open > #mcViewFloor{display:flex}
 }
 @media (prefers-reduced-motion:reduce){.ho-modal,.ho-modal-bg{animation:none}}
+/* ===== IOT รวม 4 VSM (เปิดด้วยรหัสพิเศษ) ===== */
+#iotAllOv{position:fixed;inset:0;z-index:1600;background:#eef2f7;display:flex;flex-direction:column}
+#iotAllHead{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff}
+#iotAllHead .ia-title{font-size:15px;font-weight:900;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
+#iotAllHead .ia-info{font-size:11px;font-weight:700;opacity:.85}
+#iotAllBody{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:clamp(270px,var(--iotall-split,33%),72%) 12px minmax(0,1fr)}
+#iotAllKpi{overflow-y:auto;min-width:0;padding:10px 4px 16px 10px}
+#iotAllSplit{cursor:col-resize;display:flex;align-items:center;justify-content:center;position:relative}
+#iotAllSplit::before{content:'';width:4px;height:100%;border-radius:99px;background:#cbd5e1;transition:background .15s}
+#iotAllSplit:hover::before,#iotAllSplit.drag::before{background:#64748b}
+#iotAllMapWrap{min-width:0;min-height:0;display:flex;flex-direction:column;padding:10px 10px 10px 0}
+#iotAllVp{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid #cbd5e1;border-radius:10px;background:#e5e7eb;position:relative}
+#iotAllVp svg{display:block}
+.ia-mc{cursor:pointer}
+.ia-mc:hover,.ia-mc:focus-visible{filter:brightness(1.06) drop-shadow(0 0 3px rgba(15,23,42,.5))}
+.ia-vsmcard{cursor:pointer;position:relative;transition:transform .12s;margin-bottom:6px}
+.ia-vsmcard:hover{transform:translateY(-2px)}
+.ia-vhead{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900;color:#1E3A8A;margin:2px 2px 4px;flex-wrap:wrap}
+@media (max-width:860px){
+  #iotAllBody{display:flex;flex-direction:column;overflow-y:auto}
+  #iotAllSplit{display:none}
+  #iotAllKpi{overflow:visible;flex:0 0 auto;padding:10px}
+  #iotAllMapWrap{flex:0 0 auto;padding:0 10px 14px}
+  #iotAllVp{height:62vh}
+}
 </style>
 </head>
 <body>
@@ -869,7 +894,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.15</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.16</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -942,6 +967,7 @@ tbody tr:last-child td{border-bottom:none}
           <button onclick="iotZoomBtn(0)"  title="รีเซ็ต" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
           <button onclick="iotZoomBtn(1)"  title="ขยาย" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         </span>
+        <button id="iotAllBtn" onclick="iotAllOpen()" title="IOT รวมทุก VSM (ต้องใช้รหัสพิเศษ)" aria-label="IOT รวมทุก VSM" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #7C3AED;background:#F5F3FF;color:#6D28D9;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">🌐 รวม 4 VSM</button>
         <button id="hoAddBtn" onclick="openHandoverAdd()" title="เพิ่มบันทึกต่อกะ" aria-label="เพิ่มบันทึกต่อกะ" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #0E9F6E;background:#F3FAF7;color:#057A55;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">📝 ต่อกะ</button>
         <button id="iotFsBtn" onclick="iotFullscreen()" title="เต็มจอ" style="width:30px;height:30px;border-radius:7px;border:1.5px solid #1A56DB;background:#EBF4FF;color:#1A56DB;font-size:15px;cursor:pointer;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center">⛶</button>
       </div>
@@ -4808,7 +4834,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.15":"Production Record + KPI · v3.15",
+"ระบบบันทึกผลิต + KPI · v3.16":"Production Record + KPI · v3.16",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -5485,31 +5511,16 @@ const FP3_LB=[
 const FP1_MC=[{id:'H-1109',x:44,y:245,w:67,h:34},{id:'H-1114',x:0,y:553,w:110,h:52},{id:'H-1115',x:0,y:495,w:110,h:52},{id:'D-1105',x:0,y:436,w:110,h:52},{id:'H-1113',x:43,y:397,w:67,h:34},{id:'H-1112',x:43,y:359,w:67,h:34},{id:'H-1111',x:43,y:321,w:67,h:34},{id:'H-1110',x:43,y:282,w:67,h:34},{id:'G-1107',x:147,y:495,w:67,h:34},{id:'G-1104',x:147,y:457,w:67,h:34},{id:'G-1123',x:798,y:56,w:67,h:34},{id:'H-1124',x:145,y:282,w:67,h:34},{id:'F-1127',x:337,y:457,w:67,h:34},{id:'F-1126',x:259,y:417,w:67,h:34},{id:'F-1128',x:412,y:457,w:67,h:34},{id:'F-1129',x:485,y:457,w:67,h:34},{id:'F-1130',x:559,y:457,w:67,h:34},{id:'F-1131',x:633,y:457,w:67,h:34},{id:'F-1118',x:337,y:570,w:67,h:34},{id:'F-1115',x:259,y:530,w:67,h:34},{id:'F-1120',x:412,y:570,w:67,h:34},{id:'F-1121',x:485,y:570,w:67,h:34},{id:'F-1122',x:559,y:570,w:67,h:34},{id:'F-1123',x:633,y:570,w:67,h:34},{id:'F-1158',x:587,y:286,w:110,h:52},{id:'F-1140',x:794,y:555,w:110,h:52},{id:'F-1134',x:794,y:453,w:110,h:52},{id:'F-1138',x:916,y:555,w:110,h:52},{id:'F-1139',x:916,y:453,w:110,h:52},{id:'F-1132',x:794,y:284,w:67,h:52},{id:'F-1156',x:870,y:284,w:78,h:127},{id:'C-1107',x:956,y:284,w:67,h:60},{id:'C-1108',x:956,y:350,w:67,h:60},{id:'H-1117',x:144,y:173,w:261,h:45},{id:'H-1118',x:144,y:115,w:261,h:45},{id:'H-1120',x:244,y:58,w:407,h:45},{id:'H-1119',x:436,y:115,w:261,h:45},{id:'G-401',x:876,y:56,w:67,h:34},{id:'L-202',x:952,y:56,w:67,h:34},{id:'L-402',x:1028,y:56,w:67,h:34},{id:'L-401',x:1103,y:56,w:67,h:34},{id:'L-403',x:1103,y:104,w:67,h:33},{id:'L-404',x:1028,y:102,w:67,h:33},{id:'L-405',x:1103,y:148,w:67,h:33},{id:'C-1603',x:1103,y:193,w:67,h:33},{id:'C-1602',x:1103,y:237,w:67,h:33},{id:'G-1118',x:626,y:0,w:67,h:34},{id:'G-1122',x:549,y:0,w:67,h:34},{id:'D-1109',x:387,y:0,w:67,h:34},{id:'D-1112',x:246,y:0,w:67,h:34},{id:'D-1121',x:168,y:0,w:67,h:34},{id:'D-1122',x:93,y:0,w:67,h:34},{id:'D-1123',x:19,y:0,w:67,h:34}];
 const FP2_MC=[{id:'G-1110',x:250,y:742,w:69,h:34},{id:'D-1118',x:250,y:703,w:69,h:34},{id:'D-1119',x:250,y:664,w:69,h:34},{id:'D-1120',x:250,y:626,w:69,h:34},{id:'W-1136',x:250,y:584,w:69,h:34},{id:'C-204',x:250,y:542,w:69,h:34},{id:'G-2025',x:250,y:504,w:69,h:34},{id:'G-1106',x:0,y:398,w:67,h:34},{id:'F-1149',x:0,y:323,w:67,h:34},{id:'F-1148',x:0,y:248,w:67,h:34},{id:'F-1150',x:0,y:178,w:67,h:34},{id:'G-1105',x:78,y:398,w:67,h:34},{id:'Q-1108',x:78,y:323,w:67,h:34},{id:'G-1102',x:154,y:398,w:67,h:34},{id:'G-1115',x:154,y:323,w:67,h:34},{id:'F-1147',x:118,y:178,w:67,h:106},{id:'F-1142',x:194,y:178,w:67,h:106},{id:'F-1109',x:270,y:178,w:67,h:106},{id:'L-240',x:228,y:310,w:110,h:52},{id:'L-260',x:228,y:378,w:110,h:52},{id:'W-1109',x:356,y:281,w:67,h:40},{id:'W-1108',x:356,y:339,w:67,h:40},{id:'W-1139',x:430,y:281,w:67,h:40},{id:'W-1118',x:430,y:339,w:67,h:40},{id:'W-1135',x:506,y:282,w:67,h:40},{id:'W-1126',x:506,y:339,w:67,h:40},{id:'H-1123',x:431,y:390,w:67,h:40},{id:'L-1114',x:356,y:178,w:67,h:40},{id:'L-1112',x:430,y:178,w:67,h:40},{id:'L-1111',x:506,y:178,w:67,h:40},{id:'F-201',x:506,y:229,w:67,h:40},{id:'F-1157',x:658,y:222,w:67,h:106},{id:'F-1144',x:659,y:339,w:67,h:40},{id:'F-1143',x:739,y:339,w:67,h:40},{id:'W-1114',x:660,y:390,w:67,h:40},{id:'G-229',x:817,y:390,w:67,h:40},{id:'G-228',x:817,y:341,w:67,h:40},{id:'G-242',x:818,y:289,w:67,h:40},{id:'W-1121',x:891,y:390,w:67,h:40},{id:'W-1119',x:891,y:341,w:67,h:40},{id:'W-1115',x:893,y:289,w:67,h:40},{id:'W-1120',x:966,y:390,w:67,h:40},{id:'W-1117',x:966,y:341,w:67,h:40},{id:'W-1116',x:968,y:289,w:67,h:40},{id:'C-212',x:1042,y:390,w:67,h:40},{id:'C-211',x:1042,y:341,w:67,h:40},{id:'C-210',x:1044,y:289,w:67,h:40},{id:'F-1146',x:194,y:0,w:67,h:106},{id:'F-1154',x:270,y:0,w:67,h:106},{id:'W-1131',x:579,y:506,w:67,h:40},{id:'W-1127',x:579,y:552,w:67,h:40},{id:'G-2049',x:579,y:598,w:67,h:40},{id:'G-278',x:579,y:643,w:67,h:40},{id:'W-1134',x:654,y:506,w:67,h:40},{id:'W-1129',x:654,y:552,w:67,h:40},{id:'W-1130',x:654,y:598,w:67,h:40},{id:'G-2043',x:710,y:643,w:67,h:40},{id:'C-217',x:840,y:643,w:67,h:40},{id:'C-220',x:962,y:643,w:67,h:40},{id:'C-213',x:731,y:598,w:67,h:40},{id:'C-214',x:808,y:598,w:67,h:40},{id:'L-224',x:887,y:598,w:67,h:40},{id:'L-230',x:962,y:598,w:67,h:40},{id:'C-203',x:1038,y:643,w:67,h:40},{id:'L-222',x:1038,y:598,w:67,h:40},{id:'W-1124',x:731,y:552,w:67,h:40},{id:'C-209',x:888,y:552,w:67,h:40},{id:'C-206',x:962,y:552,w:67,h:40},{id:'C-215',x:1038,y:552,w:67,h:40},{id:'W-1128',x:733,y:506,w:67,h:40},{id:'C-206',x:888,y:506,w:67,h:40},{id:'C-207',x:962,y:506,w:67,h:40},{id:'C-205',x:1038,y:506,w:67,h:40}];
 
-/* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
-let _iotVsmSel='vsm4';
-try{ const _s=localStorage.getItem('vsm4_iot_vsm'); if(isVsmKey(_s)) _iotVsmSel=_s; }catch(e){}
-function _fpVsm(){ return viewVsm(); }   // ผังโรงงาน = VSM ที่กำลังดู (แหล่งเดียวกับทั้งแอป)
-// Admin เลือกดู VSM ไหนก็ได้ (vsm1/2/3/4) — ล็อกทีละสาย ไม่ปนข้อมูลข้าม VSM
-function iotSetVsm(v){
-  _iotVsmSel = isVsmKey(v) ? v : DEFAULT_VSM;
-  try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
-  // Admin สลับ VSM → ล็อกทั้งแอปตามสายที่เลือก (ประวัติ/Dashboard/KPI/ต่อกะ/ฟอร์มบันทึก/รายชื่อพนักงาน) ไม่ใช่แค่ผัง
-  if (typeof updateVsmHeader === 'function') updateVsmHeader();   // หัวแอป + ป้าย VSM เปลี่ยนตามสายที่เลือก
-  if (typeof refreshVsmViews === 'function') refreshVsmViews();
-  else renderMachineStatusChecker();
-}
 
-/* VSM4 Factory Floor Plan — Zone positions match physical layout images
-   LEFT = Zone 3 (Orange border) = Ford6 & Perkins
-   MIDDLE = Zone 2 (Blue border) = Induction
-   RIGHT = Zone 1 (Purple border) = Aftermarket
-*/
-function renderFloorPlan(activeMachines, oaeMap={}) {
-  const wrap = $('mcViewFloor');
-  if (!wrap) return;
-  const fpv = _fpVsm();
-
-  const MC = [
+/* ============================================================
+   IOT รวม 4 VSM — ผังรวมทุกสายจากเอกสาร "IOT รวม KPI รวม.xlsx" (Sheet1, cell-anchor → px)
+   FPA_MC = เครื่อง VSM1(53)+VSM2(73)+VSM3(126) รวม 252 กล่อง (v:1/2/3)
+   FPA_LB = ป้ายไลน์เหลือง VSM3 (19) · FPA_V4RECT = กรอบพื้นที่ VSM4 มุมขวาล่าง (ผัง VSM4 = FP4_MC ย่อส่วนลงกรอบนี้)
+   FP4_MC = grid VSM4 (r/c × CX35/CY15) — ย้ายมาจากใน renderFloorPlan เพื่อใช้ร่วมกัน
+   หน้าเปิดด้วยรหัสพิเศษ IOT_ALL_CODE เท่านั้น (ล็อกทุกคน)
+   ============================================================ */
+const IOT_ALL_CODE='57050465';
+const FP4_MC=[
     {id:'G-1109',r1:2, c1:0, r2:4, c2:2},
     {id:'G-241', r1:5, c1:0, r2:7, c2:1},
     {id:'G-1114',r1:5, c1:1, r2:7, c2:3},
@@ -5574,7 +5585,291 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     {id:'G-2097',r1:30,c1:14,r2:32,c2:15},
     {id:'G-2076',r1:33,c1:12,r2:36,c2:13},
     {id:'G-277', r1:33,c1:14,r2:36,c2:15},
-  ];
+];
+const FPA_MC=[
+  {id:'D-1123',x:853,y:0,w:67,h:33,v:1},
+  {id:'D-1122',x:927,y:0,w:67,h:33,v:1},
+  {id:'D-1121',x:1002,y:0,w:67,h:33,v:1},
+  {id:'D-1112',x:1079,y:0,w:67,h:33,v:1},
+  {id:'D-1109',x:1220,y:0,w:67,h:33,v:1},
+  {id:'G-1122',x:1382,y:0,w:67,h:33,v:1},
+  {id:'G-1118',x:1459,y:0,w:67,h:33,v:1},
+  {id:'H-1120',x:1078,y:57,w:405,h:45,v:1},
+  {id:'G-1123',x:1623,y:80,w:67,h:34,v:1},
+  {id:'G-401',x:1701,y:80,w:67,h:34,v:1},
+  {id:'L-202',x:1776,y:80,w:67,h:34,v:1},
+  {id:'L-402',x:1851,y:80,w:67,h:34,v:1},
+  {id:'L-401',x:1926,y:80,w:67,h:34,v:1},
+  {id:'H-1118',x:978,y:114,w:260,h:45,v:1},
+  {id:'H-1119',x:1270,y:114,w:260,h:45,v:1},
+  {id:'L-404',x:1851,y:126,w:67,h:33,v:1},
+  {id:'L-403',x:1926,y:128,w:67,h:33,v:1},
+  {id:'H-1117',x:978,y:171,w:260,h:45,v:1},
+  {id:'L-405',x:1926,y:172,w:67,h:32,v:1},
+  {id:'C-1603',x:1926,y:216,w:67,h:33,v:1},
+  {id:'H-1109',x:878,y:228,w:67,h:33,v:1},
+  {id:'C-1602',x:1926,y:260,w:67,h:33,v:1},
+  {id:'H-1110',x:878,y:265,w:67,h:33,v:1},
+  {id:'H-1124',x:979,y:265,w:67,h:33,v:1},
+  {id:'F-1132',x:1626,y:267,w:67,h:51,v:1},
+  {id:'F-1156',x:1701,y:267,w:78,h:126,v:1},
+  {id:'C-1107',x:1787,y:267,w:67,h:59,v:1},
+  {id:'F-1158',x:1420,y:268,w:110,h:51,v:1},
+  {id:'H-1111',x:878,y:303,w:67,h:33,v:1},
+  {id:'C-1108',x:1787,y:332,w:67,h:59,v:1},
+  {id:'H-1112',x:878,y:341,w:67,h:33,v:1},
+  {id:'H-1113',x:878,y:378,w:67,h:33,v:1},
+  {id:'F-1126',x:1093,y:398,w:67,h:33,v:1},
+  {id:'D-1105',x:834,y:417,w:110,h:51,v:1},
+  {id:'F-1134',x:1626,y:434,w:110,h:51,v:1},
+  {id:'F-1139',x:1748,y:434,w:110,h:51,v:1},
+  {id:'G-1104',x:981,y:438,w:67,h:33,v:1},
+  {id:'F-1127',x:1170,y:438,w:67,h:33,v:1},
+  {id:'F-1128',x:1245,y:438,w:67,h:33,v:1},
+  {id:'F-1129',x:1318,y:438,w:67,h:33,v:1},
+  {id:'F-1130',x:1392,y:438,w:67,h:33,v:1},
+  {id:'F-1131',x:1465,y:438,w:67,h:33,v:1},
+  {id:'H-1115',x:834,y:476,w:110,h:51,v:1},
+  {id:'G-1107',x:981,y:476,w:67,h:33,v:1},
+  {id:'F-1115',x:1093,y:510,w:67,h:33,v:1},
+  {id:'H-1114',x:834,y:533,w:110,h:51,v:1},
+  {id:'F-1140',x:1626,y:536,w:110,h:51,v:1},
+  {id:'F-1138',x:1748,y:536,w:110,h:51,v:1},
+  {id:'F-1118',x:1170,y:550,w:67,h:33,v:1},
+  {id:'F-1120',x:1245,y:550,w:67,h:33,v:1},
+  {id:'F-1121',x:1318,y:550,w:67,h:33,v:1},
+  {id:'F-1122',x:1392,y:550,w:67,h:33,v:1},
+  {id:'F-1123',x:1465,y:550,w:67,h:33,v:1},
+  {id:'F-1146',x:1012,y:572,w:67,h:106,v:2},
+  {id:'F-1154',x:1088,y:572,w:67,h:106,v:2},
+  {id:'F-1150',x:813,y:718,w:67,h:34,v:2},
+  {id:'F-1147',x:930,y:718,w:67,h:107,v:2},
+  {id:'F-1142',x:1007,y:718,w:67,h:107,v:2},
+  {id:'F-1109',x:1083,y:718,w:67,h:107,v:2},
+  {id:'L-1114',x:1169,y:718,w:67,h:40,v:2},
+  {id:'L-1112',x:1243,y:718,w:67,h:40,v:2},
+  {id:'L-1111',x:1318,y:718,w:67,h:40,v:2},
+  {id:'F-1157',x:1471,y:762,w:67,h:107,v:2},
+  {id:'F-201',x:1318,y:769,w:67,h:40,v:2},
+  {id:'F-1148',x:813,y:788,w:67,h:34,v:2},
+  {id:'W-1109',x:1169,y:821,w:67,h:40,v:2},
+  {id:'W-1139',x:1243,y:821,w:67,h:40,v:2},
+  {id:'W-1135',x:1318,y:823,w:67,h:40,v:2},
+  {id:'G-242',x:1631,y:829,w:67,h:40,v:2},
+  {id:'W-1115',x:1706,y:829,w:67,h:40,v:2},
+  {id:'W-1116',x:1781,y:829,w:67,h:40,v:2},
+  {id:'C-210',x:1857,y:829,w:67,h:40,v:2},
+  {id:'L-240',x:1041,y:850,w:110,h:52,v:2},
+  {id:'F-1149',x:813,y:864,w:67,h:33,v:2},
+  {id:'Q-1108',x:891,y:864,w:67,h:33,v:2},
+  {id:'G-1115',x:967,y:864,w:67,h:33,v:2},
+  {id:'W-1108',x:1169,y:880,w:67,h:40,v:2},
+  {id:'W-1118',x:1243,y:880,w:67,h:40,v:2},
+  {id:'W-1126',x:1318,y:880,w:67,h:40,v:2},
+  {id:'F-1144',x:1472,y:880,w:67,h:40,v:2},
+  {id:'F-1143',x:1552,y:880,w:67,h:40,v:2},
+  {id:'G-228',x:1630,y:881,w:67,h:40,v:2},
+  {id:'W-1119',x:1704,y:881,w:67,h:40,v:2},
+  {id:'W-1117',x:1779,y:881,w:67,h:40,v:2},
+  {id:'C-211',x:1855,y:881,w:67,h:40,v:2},
+  {id:'L-260',x:1041,y:919,w:110,h:52,v:2},
+  {id:'H-1123',x:1244,y:930,w:67,h:40,v:2},
+  {id:'W-1114',x:1473,y:930,w:67,h:40,v:2},
+  {id:'G-229',x:1630,y:930,w:67,h:40,v:2},
+  {id:'W-1121',x:1704,y:930,w:67,h:40,v:2},
+  {id:'W-1120',x:1779,y:930,w:67,h:40,v:2},
+  {id:'C-212',x:1855,y:930,w:67,h:40,v:2},
+  {id:'G-1106',x:813,y:939,w:67,h:33,v:2},
+  {id:'G-1105',x:891,y:939,w:67,h:33,v:2},
+  {id:'G-1102',x:967,y:939,w:67,h:33,v:2},
+  {id:'G-2025',x:1068,y:1023,w:69,h:34,v:2},
+  {id:'W-1131',x:1396,y:1025,w:67,h:40,v:2},
+  {id:'W-1134',x:1472,y:1025,w:67,h:40,v:2},
+  {id:'W-1128',x:1550,y:1025,w:67,h:40,v:2},
+  {id:'C-206',x:1705,y:1025,w:67,h:40,v:2},
+  {id:'C-207',x:1780,y:1025,w:67,h:40,v:2},
+  {id:'C-205',x:1855,y:1025,w:67,h:40,v:2},
+  {id:'C-204',x:1068,y:1062,w:69,h:34,v:2},
+  {id:'W-1127',x:1396,y:1072,w:67,h:40,v:2},
+  {id:'W-1129',x:1472,y:1072,w:67,h:40,v:2},
+  {id:'W-1124',x:1548,y:1072,w:67,h:40,v:2},
+  {id:'C-209',x:1705,y:1072,w:67,h:40,v:2},
+  {id:'C-206',x:1780,y:1072,w:67,h:40,v:2},
+  {id:'C-215',x:1855,y:1072,w:67,h:40,v:2},
+  {id:'W-1136',x:1068,y:1103,w:69,h:34,v:2},
+  {id:'G-2049',x:1396,y:1118,w:67,h:39,v:2},
+  {id:'W-1130',x:1472,y:1118,w:67,h:39,v:2},
+  {id:'C-213',x:1548,y:1118,w:67,h:39,v:2},
+  {id:'C-214',x:1625,y:1118,w:67,h:39,v:2},
+  {id:'L-224',x:1704,y:1118,w:67,h:39,v:2},
+  {id:'L-230',x:1779,y:1118,w:67,h:39,v:2},
+  {id:'L-222',x:1856,y:1118,w:67,h:39,v:2},
+  {id:'D-1120',x:1068,y:1145,w:69,h:34,v:2},
+  {id:'G-278',x:1396,y:1163,w:67,h:40,v:2},
+  {id:'G-2043',x:1527,y:1163,w:67,h:40,v:2},
+  {id:'C-217',x:1657,y:1163,w:67,h:40,v:2},
+  {id:'C-220',x:1779,y:1163,w:67,h:40,v:2},
+  {id:'C-203',x:1855,y:1163,w:67,h:40,v:2},
+  {id:'D-1119',x:1068,y:1183,w:69,h:34,v:2},
+  {id:'D-1118',x:1068,y:1223,w:69,h:34,v:2},
+  {id:'G-1110',x:1068,y:1261,w:69,h:34,v:2},
+  {id:'D-203',x:324,y:133,w:40,h:59,v:3},
+  {id:'D-229',x:367,y:133,w:40,h:59,v:3},
+  {id:'D-228',x:410,y:133,w:40,h:59,v:3},
+  {id:'G-2078',x:210,y:200,w:45,h:50,v:3},
+  {id:'G-268',x:216,y:274,w:43,h:42,v:3},
+  {id:'G-2071',x:329,y:291,w:45,h:50,v:3},
+  {id:'G-291',x:377,y:291,w:45,h:50,v:3},
+  {id:'G-2024',x:425,y:291,w:45,h:50,v:3},
+  {id:'G-2011',x:474,y:291,w:45,h:50,v:3},
+  {id:'G-239',x:523,y:292,w:45,h:50,v:3},
+  {id:'L-258',x:572,y:292,w:45,h:50,v:3},
+  {id:'G-2026',x:621,y:292,w:45,h:50,v:3},
+  {id:'G-224',x:0,y:300,w:42,h:42,v:3},
+  {id:'L-241',x:44,y:300,w:42,h:42,v:3},
+  {id:'L-242',x:88,y:301,w:40,h:42,v:3},
+  {id:'G-244',x:172,y:301,w:40,h:42,v:3},
+  {id:'G-234',x:130,y:301,w:40,h:42,v:3},
+  {id:'G-2006',x:365,y:346,w:45,h:50,v:3},
+  {id:'G-2018',x:413,y:346,w:45,h:50,v:3},
+  {id:'G-2017',x:461,y:346,w:45,h:50,v:3},
+  {id:'G-2086',x:510,y:346,w:45,h:50,v:3},
+  {id:'G-236',x:560,y:347,w:45,h:50,v:3},
+  {id:'L-252',x:608,y:347,w:45,h:50,v:3},
+  {id:'G-2015',x:657,y:347,w:45,h:50,v:3},
+  {id:'G-2084',x:0,y:355,w:45,h:50,v:3},
+  {id:'G-2018',x:48,y:355,w:45,h:50,v:3},
+  {id:'G-2016',x:96,y:355,w:45,h:50,v:3},
+  {id:'G-2087',x:145,y:355,w:45,h:50,v:3},
+  {id:'G-2088',x:194,y:355,w:45,h:50,v:3},
+  {id:'G-2089',x:243,y:355,w:45,h:50,v:3},
+  {id:'G-275',x:407,y:406,w:45,h:50,v:3},
+  {id:'G-282',x:455,y:406,w:45,h:50,v:3},
+  {id:'G-230',x:504,y:406,w:45,h:50,v:3},
+  {id:'G-260',x:553,y:406,w:45,h:50,v:3},
+  {id:'L-249',x:602,y:406,w:45,h:50,v:3},
+  {id:'G-281',x:650,y:406,w:45,h:50,v:3},
+  {id:'L-264',x:0,y:411,w:45,h:50,v:3},
+  {id:'G-238',x:48,y:411,w:45,h:50,v:3},
+  {id:'G-1111',x:96,y:411,w:45,h:50,v:3},
+  {id:'G-245',x:145,y:411,w:45,h:50,v:3},
+  {id:'G-2045',x:194,y:411,w:45,h:50,v:3},
+  {id:'G-2020',x:243,y:411,w:45,h:50,v:3},
+  {id:'G-274',x:407,y:460,w:45,h:50,v:3},
+  {id:'G-256',x:455,y:460,w:45,h:50,v:3},
+  {id:'G-249',x:504,y:460,w:45,h:50,v:3},
+  {id:'G-259',x:553,y:461,w:45,h:50,v:3},
+  {id:'L-250',x:602,y:461,w:45,h:50,v:3},
+  {id:'G-2070',x:650,y:461,w:45,h:50,v:3},
+  {id:'L-265',x:0,y:465,w:45,h:50,v:3},
+  {id:'G-2091',x:48,y:465,w:45,h:50,v:3},
+  {id:'G-1119',x:96,y:465,w:45,h:50,v:3},
+  {id:'L-244',x:145,y:465,w:45,h:50,v:3},
+  {id:'L-245',x:194,y:465,w:45,h:50,v:3},
+  {id:'G-2092',x:243,y:465,w:45,h:50,v:3},
+  {id:'G-2055',x:553,y:513,w:45,h:50,v:3},
+  {id:'G-231',x:7,y:534,w:45,h:50,v:3},
+  {id:'G-233',x:55,y:534,w:45,h:50,v:3},
+  {id:'G-225',x:141,y:534,w:45,h:50,v:3},
+  {id:'G-280',x:190,y:534,w:45,h:50,v:3},
+  {id:'G-2064',x:253,y:534,w:45,h:50,v:3},
+  {id:'G-2041',x:302,y:534,w:45,h:50,v:3},
+  {id:'G-265',x:397,y:596,w:45,h:50,v:3},
+  {id:'G-269',x:445,y:596,w:45,h:50,v:3},
+  {id:'G-263',x:494,y:596,w:45,h:50,v:3},
+  {id:'G-2070',x:544,y:597,w:45,h:50,v:3},
+  {id:'G-2093',x:592,y:597,w:45,h:50,v:3},
+  {id:'L-251',x:641,y:597,w:45,h:50,v:3},
+  {id:'G-257',x:0,y:601,w:45,h:50,v:3},
+  {id:'L-257',x:48,y:601,w:45,h:50,v:3},
+  {id:'G-2059',x:96,y:601,w:45,h:50,v:3},
+  {id:'G-2060',x:145,y:601,w:45,h:50,v:3},
+  {id:'G-2061',x:194,y:602,w:45,h:50,v:3},
+  {id:'G-2082',x:243,y:602,w:45,h:50,v:3},
+  {id:'G-264',x:367,y:656,w:45,h:50,v:3},
+  {id:'G-266',x:415,y:656,w:45,h:50,v:3},
+  {id:'G-258',x:463,y:656,w:45,h:50,v:3},
+  {id:'G-272',x:512,y:656,w:45,h:50,v:3},
+  {id:'G-271',x:561,y:657,w:45,h:50,v:3},
+  {id:'L-246',x:610,y:657,w:45,h:50,v:3},
+  {id:'G-2067',x:658,y:657,w:45,h:50,v:3},
+  {id:'G-2068',x:0,y:659,w:45,h:50,v:3},
+  {id:'G-2040',x:48,y:659,w:45,h:50,v:3},
+  {id:'G-2079',x:96,y:659,w:45,h:50,v:3},
+  {id:'G-2031',x:145,y:659,w:45,h:50,v:3},
+  {id:'G-2001',x:194,y:660,w:45,h:50,v:3},
+  {id:'G-2081',x:243,y:660,w:45,h:50,v:3},
+  {id:'G-274',x:292,y:660,w:45,h:50,v:3},
+  {id:'G-1112',x:47,y:723,w:62,h:29,v:3},
+  {id:'G-2042',x:0,y:728,w:45,h:50,v:3},
+  {id:'G-261',x:111,y:728,w:45,h:50,v:3},
+  {id:'G-2090',x:160,y:729,w:45,h:50,v:3},
+  {id:'G-279',x:209,y:729,w:45,h:50,v:3},
+  {id:'G-2021',x:257,y:729,w:45,h:50,v:3},
+  {id:'G-2014',x:359,y:731,w:45,h:50,v:3},
+  {id:'G-2013',x:407,y:731,w:45,h:50,v:3},
+  {id:'G-2012',x:455,y:731,w:45,h:50,v:3},
+  {id:'G-2069',x:504,y:731,w:45,h:50,v:3},
+  {id:'G-2085',x:553,y:732,w:45,h:50,v:3},
+  {id:'G-2009',x:602,y:732,w:45,h:50,v:3},
+  {id:'G-2063',x:650,y:732,w:45,h:50,v:3},
+  {id:'G-2036',x:47,y:754,w:62,h:29,v:3},
+  {id:'G-2007',x:0,y:798,w:45,h:50,v:3},
+  {id:'G-293',x:48,y:798,w:45,h:50,v:3},
+  {id:'G-2005',x:96,y:798,w:45,h:50,v:3},
+  {id:'G-2004',x:145,y:798,w:45,h:50,v:3},
+  {id:'G-2003',x:194,y:799,w:45,h:50,v:3},
+  {id:'G-2002',x:243,y:799,w:45,h:50,v:3},
+  {id:'G-2066',x:292,y:799,w:45,h:50,v:3},
+  {id:'G-286',x:407,y:800,w:45,h:50,v:3},
+  {id:'G-292',x:455,y:800,w:45,h:50,v:3},
+  {id:'G-288',x:503,y:800,w:45,h:50,v:3},
+  {id:'G-285',x:551,y:800,w:45,h:50,v:3},
+  {id:'G-252',x:601,y:801,w:45,h:50,v:3},
+  {id:'G-290',x:649,y:801,w:45,h:50,v:3},
+  {id:'G-287',x:405,y:858,w:45,h:50,v:3},
+  {id:'G-2096',x:453,y:858,w:45,h:50,v:3},
+  {id:'G-289',x:501,y:858,w:45,h:50,v:3},
+  {id:'G-284',x:550,y:858,w:45,h:50,v:3},
+  {id:'G-283',x:599,y:859,w:45,h:50,v:3},
+  {id:'G-2019',x:648,y:859,w:45,h:50,v:3},
+  {id:'G-299',x:0,y:862,w:45,h:50,v:3},
+  {id:'G-298',x:48,y:862,w:45,h:50,v:3},
+  {id:'G-297',x:96,y:862,w:45,h:50,v:3},
+  {id:'G-296',x:145,y:862,w:45,h:50,v:3},
+  {id:'G-295',x:194,y:863,w:45,h:50,v:3},
+  {id:'G-294',x:243,y:863,w:45,h:50,v:3},
+];
+const FPA_LB=[
+  {id:'POL',x:279,y:131,w:42,h:31},{id:'N3',x:287,y:302,w:38,h:31},{id:'M1',x:219,y:317,w:38,h:31},{id:'N1',x:325,y:355,w:38,h:31},{id:'M4',x:281,y:368,w:38,h:31},{id:'I2',x:367,y:417,w:38,h:31},{id:'TR',x:292,y:445,w:38,h:31},{id:'I1',x:365,y:466,w:38,h:31},{id:'BUF',x:351,y:550,w:41,h:31},{id:'R2',x:356,y:607,w:38,h:31},{id:'T3',x:292,y:612,w:38,h:31},{id:'M3',x:292,y:646,w:38,h:31},{id:'R1',x:343,y:649,w:38,h:31},{id:'F5',x:357,y:712,w:38,h:31},{id:'N4',x:295,y:715,w:38,h:31},{id:'F2',x:379,y:793,w:38,h:31},{id:'F4',x:330,y:822,w:38,h:31},{id:'F1',x:363,y:866,w:38,h:31},{id:'F3',x:293,y:875,w:38,h:31},
+];
+const FPA_V4RECT={x:876,y:954,w:880,h:701};
+
+/* ผังที่กำลังแสดง: ผู้ใช้ทั่วไป = ผังของ VSM ตัวเอง · Admin สลับ VSM4/VSM3 ได้ (จำค่าไว้ข้ามครั้ง) */
+let _iotVsmSel='vsm4';
+try{ const _s=localStorage.getItem('vsm4_iot_vsm'); if(isVsmKey(_s)) _iotVsmSel=_s; }catch(e){}
+function _fpVsm(){ return viewVsm(); }   // ผังโรงงาน = VSM ที่กำลังดู (แหล่งเดียวกับทั้งแอป)
+// Admin เลือกดู VSM ไหนก็ได้ (vsm1/2/3/4) — ล็อกทีละสาย ไม่ปนข้อมูลข้าม VSM
+function iotSetVsm(v){
+  _iotVsmSel = isVsmKey(v) ? v : DEFAULT_VSM;
+  try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
+  // Admin สลับ VSM → ล็อกทั้งแอปตามสายที่เลือก (ประวัติ/Dashboard/KPI/ต่อกะ/ฟอร์มบันทึก/รายชื่อพนักงาน) ไม่ใช่แค่ผัง
+  if (typeof updateVsmHeader === 'function') updateVsmHeader();   // หัวแอป + ป้าย VSM เปลี่ยนตามสายที่เลือก
+  if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  else renderMachineStatusChecker();
+}
+
+/* VSM4 Factory Floor Plan — Zone positions match physical layout images
+   LEFT = Zone 3 (Orange border) = Ford6 & Perkins
+   MIDDLE = Zone 2 (Blue border) = Induction
+   RIGHT = Zone 1 (Purple border) = Aftermarket
+*/
+function renderFloorPlan(activeMachines, oaeMap={}) {
+  const wrap = $('mcViewFloor');
+  if (!wrap) return;
+  const fpv = _fpVsm();
+
+  const MC = FP4_MC;   // VSM4 grid — ย้ายเป็น const FP4_MC ระดับบน (ใช้ร่วมกับผังรวม 4 VSM)
 
   const CX=35, CY=15;
   // แปลงเป็นกล่อง px ชุดเดียวกันทั้ง 2 ผัง — VSM4 จาก grid เดิม · VSM3 จากพิกัดเอกสาร Layout
@@ -5937,6 +6232,362 @@ document.addEventListener('fullscreenchange',()=>{
   const card=document.getElementById('iotCard');
   if(card&&card.classList.contains('iot-fs')&&!document.fullscreenElement) iotExitFs(card);
 });
+
+/* ============================================================
+   IOT รวม 4 VSM — หน้าเต็มจอ: ผังรวมทุกสาย (FPA_MC + FP4_MC ย่อลง FPA_V4RECT) + การ์ด KPI ทั้ง 4 VSM
+   · ล็อกด้วยรหัสพิเศษ IOT_ALL_CODE (ทุกคนต้องกรอก — จำเฉพาะรอบเปิดแอปนี้)
+   · ลากเส้นแบ่งปรับขนาด KPI ⇄ ผังได้ (จำค่าไว้) · กดเครื่อง/การ์ดเพื่อดูรายละเอียด
+   · ข้อมูลใช้ช่วงวันที่+กะเดียวกับ Dashboard (dashFrom/dashTo/shiftFilter) แต่ไม่กรอง VSM
+   ============================================================ */
+let _iotAllUnlocked=false, _iotAllD=null, _iotAllScale=null, _iotAllTimer=null, _fpaV4Cache=null, _iotAllSyncing=false;
+const _IA_VSM_META={
+  vsm1:{tint:'#DBEAFE',line:'#1D4ED8',label:'VSM 1'},
+  vsm2:{tint:'#CCFBF1',line:'#0F766E',label:'VSM 2'},
+  vsm3:{tint:'#FEF3C7',line:'#B45309',label:'VSM 3'},
+  vsm4:{tint:'#E9D5FF',line:'#7C3AED',label:'VSM 4'},
+};
+
+function iotAllOpen(){
+  if(_iotAllUnlocked){ _iotAllShow(); return; }
+  // กล่องกรอกรหัสพิเศษ — แนบกับ fullscreenElement ถ้ากำลังเต็มจออยู่ (แนบ body จะมองไม่เห็น)
+  const host=document.fullscreenElement||document.body;
+  const old=document.getElementById('iotAllPw'); if(old) old.remove();
+  const d=document.createElement('div');
+  d.id='iotAllPw';
+  d.style.cssText='position:fixed;inset:0;z-index:1700;background:rgba(13,17,23,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+  d.addEventListener('click',e=>{ if(e.target===d) d.remove(); });
+  d.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.35)" role="dialog" aria-modal="true">
+    <div style="font-size:15px;font-weight:900;color:#0f172a;display:flex;align-items:center;gap:8px;margin-bottom:4px">🔐 ${TT('IOT รวมทุก VSM','All-VSM IOT')}</div>
+    <div style="font-size:11.5px;color:#64748b;font-weight:600;margin-bottom:10px">${TT('หน้านี้ล็อกไว้ — กรอกรหัสพิเศษเพื่อเปิด','This page is locked — enter the special code to open')}</div>
+    <input type="password" id="iotAllPwIn" inputmode="numeric" autocomplete="off" placeholder="${TT('รหัสพิเศษ','Special code')}"
+      style="width:100%;padding:12px 14px;border:2px solid #C7D2FE;border-radius:10px;font-size:18px;letter-spacing:3px;outline:none;text-align:center"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();_iotAllSubmitPw();}else if(event.key==='Escape'){event.preventDefault();document.getElementById('iotAllPw').remove();}">
+    <div id="iotAllPwErr" style="color:#DC2626;font-size:12px;font-weight:700;min-height:16px;margin-top:6px"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-green" style="flex:1" onclick="_iotAllSubmitPw()">🔓 ${TT('เปิด','Open')}</button>
+      <button class="btn btn-outline" onclick="document.getElementById('iotAllPw').remove()">${TT('ยกเลิก','Cancel')}</button>
+    </div>
+  </div>`;
+  host.appendChild(d);
+  setTimeout(()=>{ const el=document.getElementById('iotAllPwIn'); if(el) el.focus(); },60);
+}
+function _iotAllSubmitPw(){
+  const el=document.getElementById('iotAllPwIn');
+  if((el?el.value:'')!==IOT_ALL_CODE){
+    const e=document.getElementById('iotAllPwErr'); if(e) e.textContent='❌ '+TT('รหัสไม่ถูกต้อง','Wrong code');
+    if(el){ el.value=''; el.focus(); }
+    return;
+  }
+  const d=document.getElementById('iotAllPw'); if(d) d.remove();
+  _iotAllUnlocked=true;   // จำเฉพาะรอบเปิดแอปนี้ — โหลดหน้าใหม่ต้องกรอกอีกครั้ง
+  _iotAllShow();
+}
+
+function _iotAllShow(){
+  const card=document.getElementById('iotCard');
+  if(card&&card.classList.contains('iot-fs')) iotExitFs(card);   // ออกจากเต็มจอ IOT เดิมก่อน กัน native fullscreen ซ้อนกัน
+  if(document.getElementById('iotAllOv')) return;
+  const ov=document.createElement('div');
+  ov.id='iotAllOv';
+  try{ const s=+localStorage.getItem('vsm4_iotall_split'); if(s>=20&&s<=72) ov.style.setProperty('--iotall-split',s+'%'); }catch(e){}
+  ov.innerHTML=`
+    <div id="iotAllHead">
+      <span class="ia-title">🏭 ${TT('IOT รวมทุก VSM','All-VSM IOT')}<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:999px">VSM 1·2·3·4</span></span>
+      <span class="ia-info" id="iotAllInfo"></span>
+      <span style="margin-left:auto;display:flex;gap:4px;align-items:center">
+        <button onclick="iotAllZoom(-1)" title="${TT('ย่อ','Zoom out')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;font-weight:700;line-height:1">−</button>
+        <button onclick="iotAllZoom(0)" title="${TT('พอดีจอ','Fit')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
+        <button onclick="iotAllZoom(1)" title="${TT('ขยาย','Zoom in')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;font-weight:700;line-height:1">+</button>
+        <button onclick="iotAllClose()" title="${TT('ปิด','Close')}" style="height:30px;padding:0 12px;border-radius:7px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.16);color:#fff;font-size:13px;cursor:pointer;font-weight:900">✕ ${TT('ปิด','Close')}</button>
+      </span>
+      <span style="flex-basis:100%;display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;font-weight:700;opacity:.95">
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#16a34a;border-radius:2px"></span>OAE ≥75%</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ea580c;border-radius:2px"></span>OAE &lt;75%</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></span>${TT('ปิดเครื่อง','Off')}</span>
+        <span>🆘 SOS</span>
+        <span>👆 ${TT('กดที่เครื่อง/การ์ด VSM เพื่อดูรายละเอียด','Tap a machine / VSM card for details')}</span>
+      </span>
+    </div>
+    <div id="iotAllBody">
+      <div id="iotAllKpi"></div>
+      <div id="iotAllSplit" role="separator" aria-orientation="vertical" title="${TT('ลากปรับขนาด KPI ⇄ ผัง · ดับเบิลคลิก = ค่าเริ่มต้น','Drag to resize KPI ⇄ map · double-click = reset')}"></div>
+      <div id="iotAllMapWrap"><div id="iotAllVp"></div></div>
+    </div>`;
+  document.body.appendChild(ov);
+  document.documentElement.style.overflow='hidden';
+  _iotAllScale=null;                        // คำนวณ fit-to-screen ใหม่ตอนวาดครั้งแรก
+  _iotAllRender(false);
+  _iotAllSplitInit(ov);
+  document.addEventListener('keydown',_iotAllKey,true);
+  const rq=ov.requestFullscreen||ov.webkitRequestFullscreen;
+  if(rq){ try{ const p=rq.call(ov); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  _iotAllTimer=setInterval(async()=>{ await _iotAllSync(); if(document.getElementById('iotAllOv')) _iotAllRender(true); },60000);
+  _iotAllSync().then(()=>{ if(document.getElementById('iotAllOv')) _iotAllRender(true); });   // ดึงข้อมูลสดทันทีตอนเปิด
+}
+function iotAllClose(){
+  const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  if(_iotAllTimer){ clearInterval(_iotAllTimer); _iotAllTimer=null; }
+  document.removeEventListener('keydown',_iotAllKey,true);
+  if(ov._iaClean){ for(const f of ov._iaClean){ try{f();}catch(e){} } }
+  if(document.fullscreenElement===ov&&document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+  ov.remove();
+  document.documentElement.style.overflow='';
+}
+function _iotAllKey(e){
+  if(e.key!=='Escape') return;
+  const pw=document.getElementById('iotAllPw'); if(pw){ e.preventDefault(); pw.remove(); return; }
+  const pop=document.getElementById('iotAllPop'); if(pop){ e.preventDefault(); pop.remove(); return; }
+  e.preventDefault(); iotAllClose();
+}
+
+/* ---- ข้อมูล: แยกราย VSM จาก state.kpiRecords (ช่วงวันที่+กะเดียวกับ Dashboard · ไม่กรอง VSM) ---- */
+function _iotAllData(){
+  const today=todayISO();
+  const dFrom=$('dashFrom')?.value||today, dTo=$('dashTo')?.value||dFrom;
+  const shiftF=state.shiftFilter||'all';
+  const per={};
+  for(const v of VSM_KEYS) per[v]={recs:[],active:new Set(),agg:{},oae:{},byMc:{},sos:new Set()};
+  for(const r of state.kpiRecords){
+    const d=(r.shift_date||r.record_date||'').slice(0,10);
+    if(d<dFrom||d>dTo) continue;
+    if(shiftF!=='all'&&r.shift_type!==shiftF) continue;
+    const P=per[vsmOf(r)]; if(!P) continue;
+    P.recs.push(r);
+    const m=r.machine_id; if(!m) continue;
+    P.active.add(m);
+    (P.byMc[m]||(P.byMc[m]=[])).push(r);
+    const a=P.agg[m]||(P.agg[m]={opr:0,tgt:0});
+    a.opr+=(+r.opr||0); a.tgt+=(+r.target||0);
+    if(_recHelpOpen(r)) P.sos.add(m);
+  }
+  for(const v of VSM_KEYS){ const P=per[v]; for(const m in P.agg) P.oae[m]=P.agg[m].tgt>0?P.agg[m].opr/P.agg[m].tgt:0; }
+  const shiftLabel=shiftF==='all'?'🔄 '+TT('รวมทุกกะ','All shifts'):shiftF==='day'?'☀️ '+TT('กะกลางวัน','Day shift'):'🌙 '+TT('กะกลางคืน','Night shift');
+  return {per,dFrom,dTo,shiftF,rangeLabel:`${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}`};
+}
+async function _iotAllSync(){
+  if(!API||_iotAllSyncing) return;
+  _iotAllSyncing=true;
+  try{
+    const today=todayISO();
+    const dFrom=$('dashFrom')?.value||today, dTo=$('dashTo')?.value||dFrom;
+    const k=await api('/api/kpi?'+new URLSearchParams({from:dFrom,to:dTo})).catch(()=>null);
+    if(k?.records){ state.kpiRecords=mergeRecords(state.kpiRecords,k.records,'record_id'); lsSave(LS.KPI,state.kpiRecords); }
+  }catch(e){} finally{ _iotAllSyncing=false; }
+}
+
+function _iotAllRender(keepScroll){
+  const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  _iotAllD=_iotAllData();
+  _iotAllRenderKpi();
+  _iotAllRenderMap(keepScroll);
+}
+
+/* ---- แผง KPI ซ้าย: การ์ดสรุปทั้ง 4 VSM (กดเปิดรายละเอียด กะ/Zone) ---- */
+function _iotAllRenderKpi(){
+  const host=document.getElementById('iotAllKpi'); if(!host) return;
+  host.innerHTML=VSM_KEYS.map(v=>{
+    const P=_iotAllD.per[v], mt=_IA_VSM_META[v];
+    const sos=P.recs.filter(r=>_recHelpOpen(r)).length;
+    return `<div class="ia-vsmcard" onclick="iotAllVsmPop('${v}')">
+      <div class="ia-vhead"><span style="background:${mt.line};color:#fff;font-size:10.5px;padding:2px 9px;border-radius:999px">${mt.label}</span>
+        ${(VSM_LABEL[v]||'').replace(/\s+/g,'')!==mt.label.replace(/\s+/g,'')?`<span>${escapeHtml(VSM_LABEL[v]||v)}</span>`:''}
+        ${sos?`<span style="background:#DC2626;color:#fff;font-size:10px;padding:2px 8px;border-radius:999px">🆘 ${sos}</span>`:''}
+        <span style="margin-left:auto;font-size:10.5px;color:#64748b;font-weight:700">${TT('กดดูรายละเอียด','tap for details')} →</span>
+      </div>
+      ${zoneKpiCard('ALL', `${TT('รวมทุก Zone','All zones')} · ${mt.label}`, P.recs, true)}
+    </div>`;
+  }).join('');
+}
+function iotAllVsmPop(v){
+  const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  const P=_iotAllD&&_iotAllD.per[v]; if(!P) return;
+  const old=document.getElementById('iotAllPop'); if(old) old.remove();
+  const mt=_IA_VSM_META[v];
+  const day=P.recs.filter(r=>r.shift_type==='day'), night=P.recs.filter(r=>r.shift_type==='night');
+  const zones=zonesForVsm(v);
+  const zoneHtml=zones.map(z=>{
+    const zr=P.recs.filter(r=>r.zone===z);
+    return zr.length?zoneKpiCard(z, ZONE_LABEL[z]||z, zr):'';
+  }).join('');
+  const pop=document.createElement('div');
+  pop.id='iotAllPop'; pop.className='iotpop-bg';
+  pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });
+  pop.innerHTML=`<div class="iotpop wide" role="dialog" aria-modal="true" style="max-width:640px">
+    <div class="iotpop-hd" style="background:linear-gradient(135deg,${mt.line},#0f172a)">
+      <span style="font-size:15px;font-weight:900">${mt.label}${(VSM_LABEL[v]||'').replace(/\s+/g,'')!==mt.label.replace(/\s+/g,'')?' — '+escapeHtml(VSM_LABEL[v]):''}</span>
+      <span style="background:rgba(255,255,255,.2);font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">${P.recs.length} record</span>
+      <button class="iotpop-cl" onclick="this.closest('.iotpop-bg').remove()" aria-label="${TT('ปิด','Close')}">✕</button>
+    </div>
+    <div class="iotpop-bd">
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px">📅 ${escapeHtml(_iotAllD.rangeLabel)}</div>
+      ${zoneKpiInner(P.recs)}
+      <div style="margin-top:12px"><div style="font-size:12px;font-weight:900;color:#78350F;margin-bottom:5px">☀️ ${TT('เฉพาะกะกลางวัน','Day shift only')}</div>${zoneKpiInner(day)}</div>
+      <div style="margin-top:12px"><div style="font-size:12px;font-weight:900;color:#312E81;margin-bottom:5px">🌙 ${TT('เฉพาะกะกลางคืน','Night shift only')}</div>${zoneKpiInner(night)}</div>
+      ${zoneHtml?`<div style="margin-top:14px;border-top:1px dashed #e2e8f0;padding-top:10px"><div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:6px">📍 ${TT('ราย Zone','By zone')}</div>${zoneHtml}</div>`:''}
+    </div>
+  </div>`;
+  ov.appendChild(pop);
+}
+
+/* ---- ผังรวม: FPA_MC (VSM1/2/3) + FP4_MC ย่อส่วนลงกรอบ FPA_V4RECT ---- */
+function _iotAllBoxes(){
+  if(!_fpaV4Cache){
+    const R=FPA_V4RECT,CX=35,CY=15;
+    let mc=0,mr=0;
+    for(const m of FP4_MC){ if(m.c2>mc)mc=m.c2; if(m.r2>mr)mr=m.r2; }
+    const sx=R.w/(mc*CX), sy=R.h/(mr*CY);
+    _fpaV4Cache=FP4_MC.map(m=>({id:m.id,x:R.x+(m.c1*CX+2)*sx,y:R.y+(m.r1*CY+2)*sy,w:((m.c2-m.c1)*CX-4)*sx,h:((m.r2-m.r1)*CY-4)*sy,v:4}));
+  }
+  return FPA_MC.concat(_fpaV4Cache);
+}
+function _iotAllRenderMap(keepScroll){
+  const vp=document.getElementById('iotAllVp'); if(!vp) return;
+  const sl=keepScroll?vp.scrollLeft:0, st=keepScroll?vp.scrollTop:0;
+  const boxes=_iotAllBoxes();
+  let maxX=0,maxY=0;
+  for(const b of boxes){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
+  for(const b of FPA_LB){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
+  const W=maxX, H=maxY, D=_iotAllD;
+  // กรอบพื้นสี + ชื่อสายของแต่ละ VSM (คำนวณ bbox ต่อสาย) — pointer-events:none ให้กดทะลุถึงเครื่องได้
+  const gb={};
+  for(const b of boxes){ const k='vsm'+b.v; const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]); if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h; }
+  const out=[`<rect x="-14" y="-14" width="${(W+28).toFixed(0)}" height="${(H+28).toFixed(0)}" fill="#e5e7eb"/>`];
+  let nOn=0;
+  for(const v of VSM_KEYS){
+    const g=gb[v]; if(!g) continue;
+    const mt=_IA_VSM_META[v], p=6;
+    out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${(g[2]-g[0]+p*2).toFixed(1)}" height="${(g[3]-g[1]+p*2).toFixed(1)}" fill="${mt.tint}" fill-opacity="0.5" stroke="${mt.line}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 5" rx="10"/>`+
+      `<text x="${(g[0]).toFixed(1)}" y="${(g[1]+16).toFixed(1)}" font-size="17" font-weight="900" fill="${mt.line}" font-family="Arial,sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4">${mt.label}</text></g>`);
+  }
+  for(const b of boxes){
+    const v='vsm'+b.v, P=D.per[v];
+    const active=P.active.has(b.id);
+    const oae=P.oae[b.id]||0;
+    if(active) nOn++;
+    let border,fill,tc,sw;
+    if(!active){ border='#475569'; fill='#cbd5e1'; tc='#334155'; sw=1; }
+    else if(oae>=0.75){ border='#16a34a'; fill='#dcfce7'; tc='#14532d'; sw=2; }
+    else { border='#ea580c'; fill='#ffedd5'; tc='#7c2d12'; sw=2; }
+    const x=+b.x.toFixed(1),y=+b.y.toFixed(1),w=+b.w.toFixed(1),h=+b.h.toFixed(1);
+    const parts=[`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${sw}" rx="3"/>`];
+    const fs=Math.max(4.5,Math.min(w/(b.id.length*0.62),h*0.52,10));
+    parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${tc}" font-family="'Courier New',monospace">${b.id}</text>`);
+    if(P.sos.has(b.id)){
+      parts.push(`<rect class="mc-sos" x="${(x-2.5).toFixed(1)}" y="${(y-2.5).toFixed(1)}" width="${(w+5).toFixed(1)}" height="${(h+5).toFixed(1)}" fill="none" stroke="#DC2626" stroke-width="2.5" rx="5"/>`);
+      parts.push(`<text class="mc-sos" x="${(x+1).toFixed(1)}" y="${(y+9).toFixed(1)}" font-size="9" aria-hidden="true">🆘</text>`);
+    }
+    const aria=(active?`${b.id} OAE ${Math.round(oae*100)}%`:`${b.id} ${TT('ปิดเครื่อง','off')}`)+` · ${_IA_VSM_META[v].label}`;
+    out.push(`<g class="ia-mc" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}">${parts.join('')}</g>`);
+  }
+  for(const lb of FPA_LB){
+    const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
+    out.push(`<g aria-hidden="true"><rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="#111827" stroke-width="1.5" rx="4"/><text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text></g>`);
+  }
+  if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
+  vp.innerHTML=`<svg id="iotAllSvg" viewBox="-14 -14 ${(W+28).toFixed(0)} ${(H+28).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="width:${Math.round((W+28)*_iotAllScale)}px;height:auto">${out.join('')}</svg>`;
+  vp.scrollLeft=sl; vp.scrollTop=st;
+  const info=document.getElementById('iotAllInfo');
+  if(info){
+    const tot=VSM_KEYS.reduce((s,v)=>s+D.per[v].recs.length,0);
+    info.textContent=`📅 ${D.rangeLabel} · ${tot} record · ${TT('เปิด','Running')} ${nOn}/${boxes.length} ${TT('เครื่อง','machines')}`;
+  }
+}
+function _iotAllFitScale(vp,W,H){
+  const cw=vp.clientWidth||800, ch=vp.clientHeight||600;
+  _iotAllScale=Math.max(0.15,Math.min((cw-6)/(W+28),(ch-6)/(H+28),2));
+}
+function iotAllZoom(dir){
+  const vp=document.getElementById('iotAllVp'); if(!vp) return;
+  if(dir===0) _iotAllScale=null;                                    // ⊙ = fit ใหม่
+  else _iotAllScale=Math.min(3,Math.max(0.15,(_iotAllScale||1)+dir*0.15));
+  _iotAllRenderMap(true);
+}
+
+/* ---- ป๊อปอัปรายละเอียดเครื่อง (โครงเดียวกับ iotShowMcPop แต่อ่านข้อมูลราย VSM ของหน้ารวม) ---- */
+function iotAllMcTap(v,id){
+  const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  const P=_iotAllD&&_iotAllD.per[v]; if(!P) return;
+  const old=document.getElementById('iotAllPop'); if(old) old.remove();
+  const recs=P.byMc[id]||[];
+  const active=P.active.has(id);
+  const oae=P.oae[id]||0;
+  const status=active?(oae>=0.75?'good':'warn'):'off';
+  const shifts={day:[],night:[]}; let tot=0;
+  for(const r of recs){
+    const st=r.shift_type==='night'?'night':'day';
+    const opr=Number(r.opr)||0; tot+=opr;
+    shifts[st].push({valve:(r.valve_no||r.valveNo||'').trim()||TT('(ไม่ระบุวาล์ว)','(no valve)'),lot:(r.lot||'').trim(),opr,date:(r.shift_date||r.record_date||'').slice(0,10)});
+  }
+  shifts.day.sort((a,b)=>b.opr-a.opr); shifts.night.sort((a,b)=>b.opr-a.opr);
+  const valves=new Set(recs.map(r=>(r.valve_no||r.valveNo||'').trim()).filter(Boolean)).size;
+  const helps=recs.map(r=>({h:_recHelp(r),r})).filter(x=>x.h);
+  const det={active,oae,status,shifts,tot,valves,helps};
+  const mt=_IA_VSM_META[v];
+  const theme = status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:TT('ทำงาน','Running')}
+              : status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:TT('ต้องช่วยเหลือ','Needs help')}
+              : {bg:'linear-gradient(135deg,#475569,#334155)',pill:'#e2e8f0',pt:'#1e293b',label:TT('ปิดเครื่อง','Off')};
+  let body;
+  if(!active){
+    body=`<div style="text-align:center;padding:24px 8px;color:#64748b"><div style="font-size:34px;margin-bottom:6px">🌙</div>
+      <div style="font-size:13px;font-weight:700">${TT('ปิดเครื่อง — ไม่มีงานในช่วงที่เลือก','Off — no jobs in selected period')}</div>
+      <div style="font-size:11px;margin-top:5px">${escapeHtml(_iotAllD.rangeLabel)}</div></div>`;
+  } else {
+    const noRows=!det.shifts.day.length&&!det.shifts.night.length;
+    body=`<div style="display:flex;gap:8px;margin-bottom:13px">
+        ${_iotStat('OAE',(oae*100).toFixed(0)+'%',status==='warn'?'#ea580c':'#16a34a')}
+        ${_iotStat(TT('OPR รวม','Total OPR'),tot.toLocaleString(),'#1A56DB')}
+        ${_iotStat(TT('วาล์ว','Valves'),valves+TT(' ชนิด',' types'),'#7c3aed')}
+      </div>
+      ${_iotShiftSec(TT('กะกลางวัน','Day shift'),'☀️',det.shifts.day)}
+      ${_iotShiftSec(TT('กะกลางคืน','Night shift'),'🌙',det.shifts.night)}
+      ${noRows?`<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">${TT('ไม่มีรายละเอียดงาน','No job details')}</div>`:''}
+      ${_iotHelpBlock(det)}`;
+  }
+  const pop=document.createElement('div');
+  pop.id='iotAllPop'; pop.className='iotpop-bg';
+  pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });
+  pop.innerHTML=`<div class="iotpop" role="dialog" aria-modal="true" aria-label="${TT('รายละเอียดเครื่อง','Machine details')} ${escapeHtml(id)}">
+    <div class="iotpop-hd" style="background:${theme.bg}">
+      <span style="font-family:'Courier New',monospace;font-size:17px;font-weight:800;letter-spacing:.5px">${escapeHtml(id)}</span>
+      <span style="background:rgba(255,255,255,.25);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px">${mt.label}</span>
+      <span style="background:${theme.pill};color:${theme.pt};font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">${theme.label}</span>
+      <button class="iotpop-cl" onclick="this.closest('.iotpop-bg').remove()" aria-label="${TT('ปิด','Close')}">✕</button>
+    </div>
+    <div class="iotpop-bd">${body}</div>
+  </div>`;
+  ov.appendChild(pop);
+}
+
+/* ---- เส้นแบ่งลากปรับขนาด KPI ⇄ ผัง (จำค่าใน localStorage · ดับเบิลคลิก = ค่าเริ่มต้น) ---- */
+function _iotAllSplitInit(ov){
+  const sp=document.getElementById('iotAllSplit'); if(!sp) return;
+  let drag=false;
+  const move=e=>{
+    if(!drag) return;
+    const x=(e.touches?e.touches[0].clientX:e.clientX);
+    const body=document.getElementById('iotAllBody'); if(!body) return;
+    const r=body.getBoundingClientRect();
+    let pct=(x-r.left)/r.width*100;
+    pct=Math.max(20,Math.min(72,pct));
+    ov.style.setProperty('--iotall-split',pct.toFixed(1)+'%');
+    try{ localStorage.setItem('vsm4_iotall_split',pct.toFixed(1)); }catch(err){}
+  };
+  const up=()=>{ if(drag){ drag=false; sp.classList.remove('drag'); } };
+  sp.addEventListener('mousedown',e=>{ e.preventDefault(); drag=true; sp.classList.add('drag'); });
+  sp.addEventListener('touchstart',()=>{ drag=true; sp.classList.add('drag'); },{passive:true});
+  window.addEventListener('mousemove',move);
+  window.addEventListener('touchmove',move,{passive:true});
+  window.addEventListener('mouseup',up);
+  window.addEventListener('touchend',up);
+  sp.addEventListener('dblclick',()=>{ ov.style.removeProperty('--iotall-split'); try{ localStorage.removeItem('vsm4_iotall_split'); }catch(err){} });
+  // เก็บ listener ระดับ window ไว้ถอนตอนปิดหน้า (กัน listener ค้างสะสม)
+  ov._iaClean=[
+    ()=>window.removeEventListener('mousemove',move),
+    ()=>window.removeEventListener('touchmove',move),
+    ()=>window.removeEventListener('mouseup',up),
+    ()=>window.removeEventListener('touchend',up),
+  ];
+}
 document.addEventListener('webkitfullscreenchange',()=>{
   const card=document.getElementById('iotCard');
   if(card&&card.classList.contains('iot-fs')&&!document.webkitFullscreenElement) iotExitFs(card);
