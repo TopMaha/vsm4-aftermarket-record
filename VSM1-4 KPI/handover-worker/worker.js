@@ -56,14 +56,23 @@ async function ensure(env) {
   try { await env.DB.prepare('ALTER TABLE handover ADD COLUMN done_by TEXT').run(); } catch (e) {}
   try { await env.DB.prepare('ALTER TABLE handover ADD COLUMN done_by_name TEXT').run(); } catch (e) {}
   try { await env.DB.prepare('ALTER TABLE handover ADD COLUMN done_at TEXT').run(); } catch (e) {}
+  // v3.14 (2026-07-16): แยกบอร์ดต่อกะตาม VSM เด็ดขาด (บั๊ก: VSM1 ลงต่อกะไปโผล่ VSM4)
+  //   เดิม Worker ไม่เก็บ vsm → ทุกเครื่องเดาจากรหัสพนักงาน (byId) → คนที่ไม่อยู่ในแผนที่ตกไป vsm4
+  try { await env.DB.prepare('ALTER TABLE handover ADD COLUMN vsm TEXT').run(); } catch (e) {}
+  // seq = ลำดับข้อ checklist ที่ผู้ใช้สลับเอง — เดิมไม่เก็บ ลำดับรีเซ็ตข้ามเครื่อง
+  try { await env.DB.prepare('ALTER TABLE handover ADD COLUMN seq INTEGER').run(); } catch (e) {}
   await env.DB.prepare(SCHEMA_WIPIN).run();
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_wipin_updated ON wipin(updated_at)').run(); } catch (e) {}
+  // note = เหตุผลที่บันทึกรับเข้าเกินแผน/ซ้ำ (P1-18)
+  try { await env.DB.prepare('ALTER TABLE wipin ADD COLUMN note TEXT').run(); } catch (e) {}
   _ready = true;
 }
 
 const rowToEntry = (r) => ({
   id: r.id, type: r.type, cat: r.cat === 'broken' ? 'broken' : 'note', text: r.text,
   byId: r.by_id || '', byName: r.by_name || '',
+  vsm: r.vsm || '',
+  seq: (r.seq === null || r.seq === undefined) ? undefined : Number(r.seq),
   ts: r.ts, editedAt: r.edited_at || null,
   task: r.task ? 1 : 0,
   done: r.done ? 1 : 0, doneBy: r.done_by || '', doneByName: r.done_by_name || '', doneAt: r.done_at || null,
@@ -79,6 +88,8 @@ function normEntry(b) {
     text: String(b.text == null ? '' : b.text).slice(0, 4000),
     byId: String(b.byId || '').slice(0, 80),
     byName: String(b.byName || '').slice(0, 120),
+    vsm: String(b.vsm || '').slice(0, 16),
+    seq: (b.seq === null || b.seq === undefined || isNaN(Number(b.seq))) ? null : Number(b.seq),
     ts: String(b.ts || now),
     editedAt: b.editedAt ? String(b.editedAt) : null,
     task: b.task ? 1 : 0,
@@ -91,21 +102,23 @@ function normEntry(b) {
   };
 }
 // upsert ที่เขียนทับเฉพาะเมื่อ payload ใหม่กว่า (LWW) — retry/บันทึกซ้ำไม่ทำให้ค่าเก่าทับใหม่
-const UPSERT = `INSERT INTO handover (id,type,cat,text,by_id,by_name,ts,edited_at,task,done,done_by,done_by_name,done_at,deleted,updated_at)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+const UPSERT = `INSERT INTO handover (id,type,cat,text,by_id,by_name,vsm,seq,ts,edited_at,task,done,done_by,done_by_name,done_at,deleted,updated_at)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON CONFLICT(id) DO UPDATE SET
     type=excluded.type, cat=excluded.cat, text=excluded.text, by_id=excluded.by_id, by_name=excluded.by_name,
+    vsm=CASE WHEN excluded.vsm<>'' THEN excluded.vsm ELSE handover.vsm END,
+    seq=COALESCE(excluded.seq, handover.seq),
     ts=excluded.ts, edited_at=excluded.edited_at,
     task=excluded.task, done=excluded.done, done_by=excluded.done_by, done_by_name=excluded.done_by_name, done_at=excluded.done_at,
     deleted=excluded.deleted, updated_at=excluded.updated_at
   WHERE excluded.updated_at >= handover.updated_at`;
-const hoBind = (stmt, e) => stmt.bind(e.id, e.type, e.cat, e.text, e.byId, e.byName, e.ts, e.editedAt,
+const hoBind = (stmt, e) => stmt.bind(e.id, e.type, e.cat, e.text, e.byId, e.byName, e.vsm, e.seq, e.ts, e.editedAt,
   e.task, e.done, e.doneBy, e.doneByName, e.doneAt, e.deleted, e.updatedAt);
 
 // ── WIP IN 1.5 helpers (pattern เดียวกับ handover: LWW upsert + soft delete) ──
 const wipinRowToEntry = (r) => ({
   id: r.id, vsm: r.vsm || '', valve: r.valve || '', lot: r.lot || '', qty: Number(r.qty) || 0,
-  byId: r.by_id || '', byName: r.by_name || '',
+  byId: r.by_id || '', byName: r.by_name || '', note: r.note || '',
   ts: r.ts, deleted: r.deleted ? 1 : 0, updatedAt: r.updated_at,
 });
 function normWipin(b) {
@@ -119,19 +132,20 @@ function normWipin(b) {
     qty: Math.max(0, Math.round(Number(b.qty) || 0)),
     byId: String(b.byId || '').slice(0, 80),
     byName: String(b.byName || '').slice(0, 120),
+    note: String(b.note == null ? '' : b.note).slice(0, 500),
     ts: String(b.ts || now),
     deleted: b.deleted ? 1 : 0,
     updatedAt: String(b.updatedAt || now),
   };
 }
-const UPSERT_WIPIN = `INSERT INTO wipin (id,vsm,valve,lot,qty,by_id,by_name,ts,deleted,updated_at)
-  VALUES (?,?,?,?,?,?,?,?,?,?)
+const UPSERT_WIPIN = `INSERT INTO wipin (id,vsm,valve,lot,qty,by_id,by_name,note,ts,deleted,updated_at)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?)
   ON CONFLICT(id) DO UPDATE SET
     vsm=excluded.vsm, valve=excluded.valve, lot=excluded.lot, qty=excluded.qty,
-    by_id=excluded.by_id, by_name=excluded.by_name, ts=excluded.ts,
+    by_id=excluded.by_id, by_name=excluded.by_name, note=excluded.note, ts=excluded.ts,
     deleted=excluded.deleted, updated_at=excluded.updated_at
   WHERE excluded.updated_at >= wipin.updated_at`;
-const wipinBind = (stmt, e) => stmt.bind(e.id, e.vsm, e.valve, e.lot, e.qty, e.byId, e.byName, e.ts, e.deleted, e.updatedAt);
+const wipinBind = (stmt, e) => stmt.bind(e.id, e.vsm, e.valve, e.lot, e.qty, e.byId, e.byName, e.note, e.ts, e.deleted, e.updatedAt);
 
 export default {
   async fetch(req, env) {
@@ -144,7 +158,7 @@ export default {
 
       if (req.method === 'GET' && (p === '/' || p === '/list')) {
         const since = url.searchParams.get('since');
-        let q = 'SELECT id,type,cat,text,by_id,by_name,ts,edited_at,task,done,done_by,done_by_name,done_at,deleted,updated_at FROM handover';
+        let q = 'SELECT id,type,cat,text,by_id,by_name,vsm,seq,ts,edited_at,task,done,done_by,done_by_name,done_at,deleted,updated_at FROM handover';
         const binds = [];
         if (since) { q += ' WHERE updated_at > ?'; binds.push(since); }
         q += ' ORDER BY ts DESC LIMIT 1000';
@@ -171,7 +185,7 @@ export default {
       // ── WIP IN 1.5 endpoints ──
       if (req.method === 'GET' && p === '/wipin/list') {
         const since = url.searchParams.get('since');
-        let q = 'SELECT id,vsm,valve,lot,qty,by_id,by_name,ts,deleted,updated_at FROM wipin';
+        let q = 'SELECT id,vsm,valve,lot,qty,by_id,by_name,note,ts,deleted,updated_at FROM wipin';
         const binds = [];
         if (since) { q += ' WHERE updated_at > ?'; binds.push(since); }
         q += ' ORDER BY ts DESC LIMIT 5000';

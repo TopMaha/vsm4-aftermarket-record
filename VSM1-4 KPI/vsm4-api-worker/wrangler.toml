@@ -1,0 +1,17 @@
+# vsm4-api — Unified backend ของ VSM1-4 KPI (ดาวน์โหลด source จาก Cloudflare 2026-07-16
+# แล้วแก้: idempotent insert ตาม record_id + คอลัมน์ machine_id/zone/vsm ใน production_records)
+# deploy:  npx wrangler deploy   (ต้อง copy index.html ล่าสุดจาก repo root มาไว้โฟลเดอร์นี้ก่อน
+#          เพราะ Worker เสิร์ฟหน้าแอปที่ root ด้วย — ดู build-deploy.ps1)
+name = "vsm4-api"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kpi-vsm4-db"
+database_id = "00e2e19b-977c-48bc-b9cc-57604b6c6f09"
+
+# ให้ import './index.html' ได้ (โมดูลข้อความ — เหมือนที่ deploy ไว้เดิม)
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]

@@ -1,0 +1,4 @@
+# index.html ถูก copy มาจาก repo root ตอน deploy (build-deploy.ps1) — ไม่เก็บซ้ำใน git
+index.html
+.wrangler/
+node_modules/
