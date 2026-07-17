@@ -894,7 +894,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.16</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.17</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4834,7 +4834,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.16":"Production Record + KPI · v3.16",
+"ระบบบันทึกผลิต + KPI · v3.17":"Production Record + KPI · v3.17",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6382,19 +6382,31 @@ function _iotAllRender(keepScroll){
   _iotAllRenderMap(keepScroll);
 }
 
-/* ---- แผง KPI ซ้าย: การ์ดสรุปทั้ง 4 VSM (กดเปิดรายละเอียด กะ/Zone) ---- */
+/* ---- แผง KPI ซ้าย: การ์ดสรุป + การ์ด KPI ราย Zone ของทั้ง 4 VSM (กดการ์ดสรุปเปิดรายละเอียดกะ) ---- */
 function _iotAllRenderKpi(){
   const host=document.getElementById('iotAllKpi'); if(!host) return;
   host.innerHTML=VSM_KEYS.map(v=>{
     const P=_iotAllD.per[v], mt=_IA_VSM_META[v];
     const sos=P.recs.filter(r=>_recHelpOpen(r)).length;
-    return `<div class="ia-vsmcard" onclick="iotAllVsmPop('${v}')">
-      <div class="ia-vhead"><span style="background:${mt.line};color:#fff;font-size:10.5px;padding:2px 9px;border-radius:999px">${mt.label}</span>
-        ${(VSM_LABEL[v]||'').replace(/\s+/g,'')!==mt.label.replace(/\s+/g,'')?`<span>${escapeHtml(VSM_LABEL[v]||v)}</span>`:''}
-        ${sos?`<span style="background:#DC2626;color:#fff;font-size:10px;padding:2px 8px;border-radius:999px">🆘 ${sos}</span>`:''}
-        <span style="margin-left:auto;font-size:10.5px;color:#64748b;font-weight:700">${TT('กดดูรายละเอียด','tap for details')} →</span>
+    // การ์ดราย Zone ใต้การ์ดสรุป — โซนของสายนั้นเสมอ + โซนอื่นที่มีข้อมูลจริงในช่วง (กติกาเดียวกับ Dashboard)
+    const zoneSet=[...zonesForVsm(v)];
+    for(const r of P.recs){ if(r.zone&&!zoneSet.includes(r.zone)) zoneSet.push(r.zone); }
+    const zoneHtml=zoneSet.map(z=>{
+      const zr=P.recs.filter(r=>r.zone===z);
+      const openHelp=zr.filter(r=>_recHelpOpen(r)).length;
+      const badge=openHelp?`<span style="position:absolute;top:8px;right:10px;z-index:2;background:#DC2626;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;box-shadow:0 2px 6px rgba(220,38,38,.4)">🆘 ${openHelp}</span>`:'';
+      return `<div style="position:relative">${badge}${zoneKpiCard(z, ZONE_LABEL[z]||z, zr)}</div>`;
+    }).join('');
+    return `<div style="margin-bottom:16px">
+      <div class="ia-vsmcard" onclick="iotAllVsmPop('${v}')">
+        <div class="ia-vhead"><span style="background:${mt.line};color:#fff;font-size:10.5px;padding:2px 9px;border-radius:999px">${mt.label}</span>
+          ${(VSM_LABEL[v]||'').replace(/\s+/g,'')!==mt.label.replace(/\s+/g,'')?`<span>${escapeHtml(VSM_LABEL[v]||v)}</span>`:''}
+          ${sos?`<span style="background:#DC2626;color:#fff;font-size:10px;padding:2px 8px;border-radius:999px">🆘 ${sos}</span>`:''}
+          <span style="margin-left:auto;font-size:10.5px;color:#64748b;font-weight:700">${TT('กดดูรายละเอียด','tap for details')} →</span>
+        </div>
+        ${zoneKpiCard('ALL', `${TT('รวมทุก Zone','All zones')} · ${mt.label}`, P.recs, true)}
       </div>
-      ${zoneKpiCard('ALL', `${TT('รวมทุก Zone','All zones')} · ${mt.label}`, P.recs, true)}
+      ${zoneHtml}
     </div>`;
   }).join('');
 }
