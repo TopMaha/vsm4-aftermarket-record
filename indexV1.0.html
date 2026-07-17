@@ -923,7 +923,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.19</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.20</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3326,6 +3326,7 @@ function renderUnknownLots() {
         </div>
       </div>
       ${autoN ? `<button class="btn btn-blue btn-block btn-sm" style="margin-bottom:10px" onclick="autoFixLots()">🪄 ปรับ Lot อัตโนมัติ (${autoN} รายการ เช่น $→S)</button>` : ''}
+      <button class="btn btn-green btn-block btn-sm" style="margin-bottom:10px" onclick="registerAllPendingLots()">➕ ลงทะเบียนทั้งหมด (${all.length} รายการ · ออก ID ให้อัตโนมัติ)</button>
       ${list.map(u => {
         const sug = _lotAutoFix(u.valve, u.lot);
         return `
@@ -3427,6 +3428,64 @@ function addLotFromPending(valve, lot) {
     if (l) l.value = lot;
     $('modIdCode')?.focus();
   }, 30);
+}
+/* ── ลงทะเบียน Lot ที่ค้างทั้งหมดในคลิกเดียว (ปุ่มในแผง "Lot ยังไม่ลงทะเบียน") ──
+   ไม่รู้บาร์โค้ดจริง → ออก ID Code อัตโนมัติ A000001… + note กำกับ · แก้/ลบทีหลังได้ในตาราง Valve IDs
+   รายการที่มีคำแนะนำแก้ Lot (🪄 เช่น $→S) ไม่ถูกติ๊กไว้ — ควรแก้ให้ถูกก่อน ไม่ใช่ลงทะเบียนตัวสะกดผิด */
+let _regAllList = [];
+function registerAllPendingLots() {
+  const all = _scanPendingLots();
+  if (!all.length) { toast('ไม่มีรายการค้าง', 'orange'); renderUnknownLots(); return; }
+  _regAllList = all;
+  openModal('➕ ลงทะเบียน Lot ทั้งหมด', `
+    <div style="background:var(--blue-light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.6">
+      ลงทะเบียน <b style="color:var(--blue)">${all.length}</b> Lot เข้า Valve IDs — ระบบออก ID Code ให้อัตโนมัติ (A000001…)<br>
+      <span style="color:var(--muted);font-size:11px">ใช้แทนบาร์โค้ดจริงไปก่อน แก้/ลบทีหลังได้ในตาราง Valve IDs · รายการ ⚠️ น่าจะพิมพ์ผิด ไม่ถูกติ๊กไว้ — ควรกดแก้ Lot ก่อน</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.rl-chk').forEach(c=>c.checked=true)">เลือกทั้งหมด</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.rl-chk').forEach(c=>c.checked=false)">ล้างเลือก</button>
+    </div>
+    <div style="max-height:48vh;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:4px 10px">
+      ${all.map((u, i) => {
+        const sug = _lotAutoFix(u.valve, u.lot);
+        return `
+        <label style="display:flex;gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;cursor:pointer">
+          <input type="checkbox" class="rl-chk" data-i="${i}" ${sug ? '' : 'checked'} style="width:17px;height:17px;flex-shrink:0">
+          <span style="font-size:13px;min-width:0"><span style="color:var(--muted);font-size:11px">${escapeHtml(u.valve)}</span> <b style="color:var(--blue)">${escapeHtml(u.lot)}</b> <span style="color:var(--muted);font-size:11px">(${u.count} record)</span>${sug ? ` <span style="color:var(--orange);font-size:11px;font-weight:800">⚠️ น่าจะพิมพ์ผิด → ${escapeHtml(sug)}</span>` : ''}</span>
+        </label>`;
+      }).join('')}
+    </div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="applyRegisterAllLots()">✅ ลงทะเบียนที่เลือก</button>
+    </div>`);
+}
+/* ID Code อัตโนมัติตัวถัดไป — A + เลขรัน 6 หลัก ข้ามตัวที่มีแล้ว (ตัวอักษรนำหน้า กันชนกับบาร์โค้ดจริงที่เป็นตัวเลขล้วน) */
+function _nextAutoIdCode(used) {
+  let n = 1;
+  while (used.has('A' + String(n).padStart(6, '0'))) n++;
+  const code = 'A' + String(n).padStart(6, '0');
+  used.add(code);
+  return code;
+}
+async function applyRegisterAllLots() {
+  const sel = [...document.querySelectorAll('.rl-chk')].filter(c => c.checked).map(c => _regAllList[+c.dataset.i]).filter(Boolean);
+  closeModal();
+  if (!sel.length) { toast('ไม่ได้เลือกรายการ', 'orange'); return; }
+  const used = new Set((state.ids || []).map(r => String(r.id_code || '').trim()));
+  const rows = sel.map(u => ({ id_code: _nextAutoIdCode(used), valve_no: u.valve, lot: u.lot, note: 'ลงทะเบียนอัตโนมัติจากแผง "Lot ยังไม่ลงทะเบียน"' }));
+  state.ids = [...rows, ...(state.ids || [])];
+  lsSave(LS.IDS, state.ids);
+  renderIdList(); renderValveList(); renderUnknownLots();
+  if (API && rows.length) {
+    showBusy(`กำลังลงทะเบียน 0/${rows.length}…`, true);
+    let fail = 0;
+    try { await _chunkRun(rows, r => api('/api/ids', { body: r }).catch(() => { fail++; }), 8, n => busyMsg(`กำลังลงทะเบียน ${n}/${rows.length}…`)); } catch (e) {}
+    hideBusy();
+    if (fail) { toast(`ลงทะเบียน Local ครบ ${rows.length} Lot — แต่ขึ้น Cloud ไม่สำเร็จ ${fail} รายการ`, 'orange'); return; }
+  }
+  toast(`✅ ลงทะเบียนแล้ว ${rows.length} Lot (ID อัตโนมัติ)`, 'green');
 }
 
 // ดึงจาก D1 + merge กับ local แล้ว render
@@ -4863,7 +4922,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.19":"Production Record + KPI · v3.19",
+"ระบบบันทึกผลิต + KPI · v3.20":"Production Record + KPI · v3.20",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7429,18 +7488,20 @@ async function _wipinFlush(){
   if(!entries.length){ _wipinPending.clear(); _saveWipinPending(); return; }
   try{ await wipinApi('/wipin/bulk',{body:{entries}}); _wipinPending.clear(); _saveWipinPending(); }catch(e){}
 }
-// เพิ่มงานรับเข้า 1 รายการ (valve, lot, qty[, note]) — ประทับ VSM/ผู้บันทึกจาก Lock-in
+// เพิ่มงานรับเข้า 1 รายการ (valve, lot, qty[, note[, prodDate]]) — ประทับ VSM/ผู้บันทึกจาก Lock-in
 // note = เหตุผล กรณีบันทึกซ้ำ/เกินแผน (P1-18) — Worker เก็บลงคอลัมน์ note
-function addWipin(valve, lot, qty, note){
+// prodDate (YYYY-MM-DD, ไม่บังคับ) = วันที่ผลิตที่ SSG — ใช้ตอนลงย้อนหลังอัตโนมัติ ให้ยอดตกวันผลิตจริง ไม่ใช่วันที่กด
+function addWipin(valve, lot, qty, note, prodDate){
   valve=vKey(valve); lot=String(lot||'').trim(); qty=Math.max(0,Math.round(Number(qty)||0));
   if(!valve || !qty) return null;
   const u=CURRENT_USER||null, now=new Date().toISOString();
+  const ts=/^\d{4}-\d{2}-\d{2}$/.test(String(prodDate||''))?prodDate+'T00:00:00.000Z':now;
   const entry={
     id:'wi_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
     vsm:myVsm(), valve, lot, qty,
     byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
     note:String(note||'').trim(),
-    ts:now, deleted:0, updatedAt:now,
+    ts, deleted:0, updatedAt:now,
   };
   _wipin[entry.id]=entry; _saveWipin();
   _wipinPush(entry);
@@ -7709,7 +7770,8 @@ function _wipinMissingItems(){
     if(inKeys.has(k)) continue;
     const cur=seen.get(k)||{valve:vno,lot,qty:0,last:''};
     cur.qty+=Number(r.quantity)||0;
-    const d=String(r.timestamp||'').slice(0,10); if(d>cur.last) cur.last=d;
+    // วันที่ผลิตจริง (วันกะ) — ใช้เป็นวันที่ลงบันทึก WIP IN ตอนกดอัตโนมัติ ไม่ใช่วันที่กดปุ่ม
+    const d=String(r.shift_date||r.record_date||r.timestamp||'').slice(0,10); if(d>cur.last) cur.last=d;
     seen.set(k,cur);
   }
   return [...seen.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last)));
@@ -7722,10 +7784,10 @@ function renderWipinMissing(){
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #FDE68A">
       <div style="flex:1;min-width:0">
         <b style="color:var(--blue)">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
-        <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · ล่าสุด ${escapeHtml(it.last||'-')}</div>
+        <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · วันที่ผลิต ${escapeHtml(it.last||'-')}</div>
       </div>
       <button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
-        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty})">➕ ลงบันทึก WIP IN</button>
+        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.last||''}')">➕ ลงบันทึก WIP IN</button>
     </div>`).join('');
   box.innerHTML=`
     <details style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
@@ -7743,16 +7805,16 @@ async function wipinAddAllMissing(){
   const items=_wipinMissingItems();
   if(!items.length){ toast('ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
   const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
-  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น`).join('\n');
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
-  for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)');
+  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น · ${it.last||'-'}`).join('\n');
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่ผลิตที่ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
+  for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',it.last);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว ${items.length} รายการ · รวม ${nn(total)} ชิ้น`,'green');
 }
-async function wipinQuickAdd(valveEnc,lotEnc,qty){
+async function wipinQuickAdd(valveEnc,lotEnc,qty,prodDate){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ SSG)`,{danger:false,yes:'ลงบันทึก'}))) return;
-  addWipin(valve,lot,qty,'ลงย้อนหลังจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)');
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ SSG)\n📅 ลงเป็นวันที่ผลิต ${prodDate||'-'} (ไม่ใช่วันที่กด)`,{danger:false,yes:'ลงบันทึก'}))) return;
+  addWipin(valve,lot,qty,'ลงย้อนหลังจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',prodDate);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว — ${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น`,'green');
 }
