@@ -352,6 +352,18 @@ tbody tr:last-child td{border-bottom:none}
 .pf-cell.pf-remark{background:#FEF3C7;color:#92400E;font-weight:700;font-size:11px;text-align:left;max-width:230px;white-space:normal;line-height:1.4}
 .pf-lg-remark{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
 .pf-lg-remark::before{background:#F59E0B}
+/* ===== ค้นหาหลาย Valve พร้อมกัน (วางจาก Excel) — ชิปสถานะ Process: เขียว=มียอด เหลือง=ขั้นถัดไป/ค้าง ขาว=ยังไม่ถึง ===== */
+.spm-v{border:1.5px solid var(--border);border-radius:11px;padding:8px 11px;margin-bottom:8px;background:var(--card)}
+.spm-vh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;margin-bottom:2px}
+.spm-lot{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-top:1px dashed #EDF1F7}
+.spm-lotno{font-size:11.5px;font-weight:800;color:var(--blue-dark);min-width:92px;padding-top:4px;word-break:break-all}
+.spm-chips{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.spm-chip{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);color:var(--muted2);user-select:none;-webkit-tap-highlight-color:rgba(37,99,235,.25)}
+.spm-chip.spm-g{background:#BBF7D0;border-color:#4ADE80;color:#065F46;cursor:pointer}
+.spm-chip.spm-g:hover{outline:2px solid var(--blue);outline-offset:-1px}
+.spm-chip.spm-y{background:#FDE047;border-color:#FACC15;color:#854D0E}
+.spm-chip.spm-r{background:#FEF3C7;border-color:#FCD34D;color:#92400E;cursor:pointer}
+.spm-chip.spm-r:hover{outline:2px solid var(--blue);outline-offset:-1px}
 
 /* ===== UTIL ===== */
 .row{display:flex;align-items:center;gap:8px}
@@ -860,6 +872,17 @@ tbody tr:last-child td{border-bottom:none}
 #iotAllKpi details.ia-zones>summary:hover{background:#DBEAFE}
 #iotAllKpi details.ia-zones>summary .ia-zarrow{margin-left:auto;transition:transform .15s}
 #iotAllKpi details.ia-zones[open]>summary .ia-zarrow{transform:rotate(180deg)}
+/* คอมแพ็กต์แผง KPI ซ้าย — เป้าหมาย: การ์ดสรุปทั้ง 4 VSM เห็นครบในจอเดียวไม่ต้องเลื่อนขึ้นลง
+   (ถ้ายังเกินจอ _iotAllFitKpi จะย่อทั้งแผงด้วย zoom อัตโนมัติ) */
+#iotAllKpi .zkpi-card{padding:8px 10px;margin-bottom:5px;border-radius:11px}
+#iotAllKpi .zkpi-h{font-size:12px;margin-bottom:5px;gap:7px}
+#iotAllKpi .zkpi-h .zn{width:20px;height:20px;font-size:11px;border-radius:6px}
+#iotAllKpi .zkpi-grid{gap:4px}
+#iotAllKpi .zkpi-box{padding:4px 3px;border-radius:7px}
+#iotAllKpi .zkpi-v{font-size:14px;margin:1px 0}
+#iotAllKpi .zkpi-bar{display:none}
+#iotAllKpi .zkpi-card .row{margin-top:3px!important;font-size:10px!important}
+#iotAllKpi details.ia-zones>summary{padding:5px 9px;font-size:11px}
 @media (max-width:860px){
   #iotAllBody{display:flex;flex-direction:column;overflow-y:auto}
   #iotAllSplit{display:none}
@@ -900,7 +923,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.18</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.19</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1119,7 +1142,7 @@ tbody tr:last-child td{border-bottom:none}
     <div class="fg">
       <div class="fr ac">
         <label>Valve No</label>
-        <input type="search" id="searchValve" placeholder="เช่น VF1349M0 (พิมพ์บางส่วนได้)" oninput="acProcValveSearch(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();searchProcess();}" autocomplete="off">
+        <input type="search" id="searchValve" placeholder="เช่น VF1349M0 · วางหลาย Valve จาก Excel ได้เลย" oninput="acProcValveSearch(event)" onpaste="spmHandlePaste(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();searchProcess();}" autocomplete="off">
         <div class="ac-dd" id="searchValve_dd"></div>
       </div>
       <div class="fr" style="display:flex;align-items:flex-end">
@@ -4840,7 +4863,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.18":"Production Record + KPI · v3.18",
+"ระบบบันทึกผลิต + KPI · v3.19":"Production Record + KPI · v3.19",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6246,6 +6269,7 @@ document.addEventListener('fullscreenchange',()=>{
    · ข้อมูลใช้ช่วงวันที่+กะเดียวกับ Dashboard (dashFrom/dashTo/shiftFilter) แต่ไม่กรอง VSM
    ============================================================ */
 let _iotAllUnlocked=false, _iotAllD=null, _iotAllScale=null, _iotAllTimer=null, _fpaV4Cache=null, _iotAllSyncing=false;
+let _iotAllWH=null, _iotAllRefitRaf=0;   // ขนาดผังล่าสุด (viewBox units) — ใช้ refit ตอนลากเส้นแบ่ง/ย่อขยายจอ
 const _IA_VSM_META={
   vsm1:{tint:'#DBEAFE',line:'#1D4ED8',label:'VSM 1'},
   vsm2:{tint:'#CCFBF1',line:'#0F766E',label:'VSM 2'},
@@ -6324,6 +6348,13 @@ function _iotAllShow(){
   _iotAllScale=null;                        // คำนวณ fit-to-screen ใหม่ตอนวาดครั้งแรก
   _iotAllRender(false);
   _iotAllSplitInit(ov);
+  // ย่อขยายหน้าต่าง / เข้า-ออก fullscreen → ผังและแผง KPI ปรับขนาดให้พอดีจอใหม่อัตโนมัติ
+  window.addEventListener('resize',_iotAllQueueRefit);
+  document.addEventListener('fullscreenchange',_iotAllQueueRefit);
+  ov._iaClean.push(
+    ()=>window.removeEventListener('resize',_iotAllQueueRefit),
+    ()=>document.removeEventListener('fullscreenchange',_iotAllQueueRefit),
+  );
   document.addEventListener('keydown',_iotAllKey,true);
   const rq=ov.requestFullscreen||ov.webkitRequestFullscreen;
   if(rq){ try{ const p=rq.call(ov); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
@@ -6415,7 +6446,7 @@ function _iotAllRenderKpi(){
         </div>
         ${zoneKpiCard('ALL', `${TT('รวมทุก Zone','All zones')} · ${mt.label}`, P.recs, true)}
       </div>
-      <details class="ia-zones" data-v="${v}"${openSet.has(v)?' open':''}>
+      <details class="ia-zones" data-v="${v}" ontoggle="_iotAllFitKpi()"${openSet.has(v)?' open':''}>
         <summary>📍 ${TT('KPI ราย Zone','KPI by zone')} · ${zoneSet.length} Zone${zoneWithData?` (${TT('มีข้อมูล','with data')} ${zoneWithData})`:''}
           ${sos?`<span style="background:#DC2626;color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:999px">🆘 ${sos}</span>`:''}
           <span class="ia-zarrow">▾</span></summary>
@@ -6423,6 +6454,7 @@ function _iotAllRenderKpi(){
       </details>
     </div>`;
   }).join('');
+  _iotAllFitKpi();   // ย่อให้พอดีจอทุกครั้งที่วาดใหม่ (refresh 60 วิ ก็คงพอดีเสมอ)
 }
 function iotAllVsmPop(v){
   const ov=document.getElementById('iotAllOv'); if(!ov) return;
@@ -6474,6 +6506,7 @@ function _iotAllRenderMap(keepScroll){
   for(const b of boxes){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
   for(const b of FPA_LB){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
   const W=maxX, H=maxY, D=_iotAllD;
+  _iotAllWH={W,H};   // เก็บไว้ให้ _iotAllRefit ใช้ตอนลากเส้นแบ่ง/ย่อขยายจอ
   // กรอบพื้นสี + ชื่อสายของแต่ละ VSM (คำนวณ bbox ต่อสาย) — pointer-events:none ให้กดทะลุถึงเครื่องได้
   const gb={};
   for(const b of boxes){ const k='vsm'+b.v; const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]); if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h; }
@@ -6521,6 +6554,29 @@ function _iotAllRenderMap(keepScroll){
 function _iotAllFitScale(vp,W,H){
   const cw=vp.clientWidth||800, ch=vp.clientHeight||600;
   _iotAllScale=Math.max(0.15,Math.min((cw-6)/(W+28),(ch-6)/(H+28),2));
+}
+/* refit ผัง + แผง KPI ตามขนาดพื้นที่จริง — เรียกตอนลากเส้นแบ่ง KPI ⇄ ผัง / ย่อขยายหน้าต่าง / เข้า-ออก fullscreen
+   (เดิมคำนวณ fit ครั้งเดียวตอนเปิด → ลากเส้นแบ่งแล้วผังไม่ย่อขยายตาม ต้องกดซูมเอง) */
+function _iotAllRefit(){
+  const vp=document.getElementById('iotAllVp'), svg=document.getElementById('iotAllSvg');
+  if(vp&&svg&&_iotAllWH){
+    _iotAllFitScale(vp,_iotAllWH.W,_iotAllWH.H);
+    svg.style.width=Math.round((_iotAllWH.W+28)*_iotAllScale)+'px';
+  }
+  _iotAllFitKpi();
+}
+function _iotAllQueueRefit(){
+  if(_iotAllRefitRaf) return;
+  _iotAllRefitRaf=requestAnimationFrame(()=>{ _iotAllRefitRaf=0; _iotAllRefit(); });
+}
+/* ย่อแผง KPI อัตโนมัติให้การ์ดสรุปทั้ง 4 VSM พอดีความสูงจอ (ไม่ต้องเลื่อนขึ้นลง)
+   ใช้ zoom เพราะคลิก/ตำแหน่ง hit-test ยังถูกต้อง — ข้ามเมื่อผู้ใช้กางราย Zone อยู่ (ตั้งใจดูรายละเอียด เลื่อนได้ปกติ) */
+function _iotAllFitKpi(){
+  const host=document.getElementById('iotAllKpi'); if(!host) return;
+  if(host.querySelector('details.ia-zones[open]')) return;   // กางราย Zone อยู่ → คงขนาดเดิม
+  host.style.zoom='';
+  const need=host.scrollHeight, have=host.clientHeight;
+  if(need>have+4&&have>0) host.style.zoom=Math.max(0.55,have/need).toFixed(3);
 }
 function iotAllZoom(dir){
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
@@ -6597,6 +6653,7 @@ function _iotAllSplitInit(ov){
     pct=Math.max(20,Math.min(72,pct));
     ov.style.setProperty('--iotall-split',pct.toFixed(1)+'%');
     try{ localStorage.setItem('vsm4_iotall_split',pct.toFixed(1)); }catch(err){}
+    _iotAllQueueRefit();   // ผัง+KPI ย่อขยายตามพื้นที่ใหม่ทันทีระหว่างลาก
   };
   const up=()=>{ if(drag){ drag=false; sp.classList.remove('drag'); } };
   sp.addEventListener('mousedown',e=>{ e.preventDefault(); drag=true; sp.classList.add('drag'); });
@@ -6605,7 +6662,7 @@ function _iotAllSplitInit(ov){
   window.addEventListener('touchmove',move,{passive:true});
   window.addEventListener('mouseup',up);
   window.addEventListener('touchend',up);
-  sp.addEventListener('dblclick',()=>{ ov.style.removeProperty('--iotall-split'); try{ localStorage.removeItem('vsm4_iotall_split'); }catch(err){} });
+  sp.addEventListener('dblclick',()=>{ ov.style.removeProperty('--iotall-split'); try{ localStorage.removeItem('vsm4_iotall_split'); }catch(err){} _iotAllQueueRefit(); });
   // เก็บ listener ระดับ window ไว้ถอนตอนปิดหน้า (กัน listener ค้างสะสม)
   ov._iaClean=[
     ()=>window.removeEventListener('mousemove',move),
@@ -9810,6 +9867,7 @@ function acProcValveSearch(ev) {
   const dd = $('searchValve_dd');
   if (!dd) return;
   if (!q) { dd.classList.remove('open'); return; }
+  if (/\s/.test(q)) { dd.classList.remove('open'); return; }   // หลาย Valve คั่นช่องว่าง → ไม่ต้อง autocomplete
   const seen = new Set();
   const list = [];
   for (const v of state.valves) {                         // 1) จาก Master valve
@@ -9862,6 +9920,8 @@ async function searchProcess() {
   const q = $('searchValve').value.trim();
   if (!q) return;
   $('searchValve_dd')?.classList.remove('open');   // ปิด dropdown ที่อาจค้างอยู่
+  const _toks = _spmParseValves(q);
+  if (_toks.length > 1) return searchProcessMulti(_toks);   // หลาย Valve (วางจาก Excel) → โหมดสรุปสถานะสี
   try {
     let valve = state.valves.find(v => (v.valveNo || '').toLowerCase() === q.toLowerCase());
     // ดึง records จาก LocalStorage หรือ API ถ้าออนไลน์
@@ -10002,6 +10062,127 @@ async function searchProcess() {
   } catch (e) {
     toast('ค้นหาไม่สำเร็จ: ' + e.message, 'red');
   }
+}
+
+/* ============================================================
+   ค้นหาหลาย Valve พร้อมกัน — วาง (copy) จาก Excel ได้เลย (คั่นด้วยขึ้นบรรทัด/แท็บ/ช่องว่าง/คอมมา)
+   แสดงเฉพาะ "สถานะสี" ของแต่ละ Process: เขียว=มียอดแล้ว เหลือง=ขั้นถัดไป/ค้าง ขาว=ยังไม่ถึง
+   จำนวน/เครื่อง/วันที่ → กดชื่อ Process สีเขียวค่อยเปิดรายละเอียด (ใช้ modal เดิมของโหมดเดี่ยว)
+   ============================================================ */
+let _spmData = null;   // ผลค้นหาหลาย Valve ล่าสุด — ให้ปุ่มกดชิปอ้างถึงด้วย index
+function _spmParseValves(raw) {
+  return [...new Set(String(raw || '').split(/[\s,;]+/).map(s => s.trim().toUpperCase()).filter(Boolean))];
+}
+// วางข้อความหลายบรรทัด/หลายช่องจาก Excel ลง input บรรทัดเดียว — normalize เป็นคั่นช่องว่างแล้วค้นหาเลย
+function spmHandlePaste(ev) {
+  const txt = (ev.clipboardData || window.clipboardData)?.getData('text') || '';
+  if (!/[\r\n\t]/.test(txt)) return;               // บรรทัดเดียวปกติ → ปล่อยให้วางเอง
+  ev.preventDefault();
+  const toks = _spmParseValves(txt);
+  ev.target.value = toks.join(' ');
+  if (toks.length) searchProcess();
+}
+async function searchProcessMulti(toks) {
+  const MAX = 100;
+  if (toks.length > MAX) { toast(`ค้นหาได้สูงสุด ${MAX} Valve ต่อครั้ง — ตัดเหลือ ${MAX} แรก`, 'orange'); toks = toks.slice(0, MAX); }
+  const box = $('searchResult');
+  box.innerHTML = `<div class="muted center" style="padding:14px">⏳ กำลังค้นหา ${toks.length} Valve…</div>`;
+  try {
+    if (API) { try { await pullJobProcTargets(); } catch (e) {} }   // สถานะจบงาน/หลัง FG ล่าสุด
+    const out = [];
+    for (let i = 0; i < toks.length; i += 10) {      // ทีละ 10 — กันยิง API พร้อมกันเป็นร้อย
+      await Promise.all(toks.slice(i, i + 10).map(async vno => {
+        let recs = filterVsm(state.prodRecords)
+          .filter(r => ((r.valve_no || r.valveNo || '').trim().toLowerCase()) === vno.toLowerCase())
+          .map(r => ({ ...r, valveNo: r.valve_no || r.valveNo, currentProcess: r.current_process || r.currentProcess }));
+        if (API) {
+          try {
+            const rRes = await api(`/api/records?valve=${encodeURIComponent(vno)}`);
+            if (rRes.records?.length) recs = _mergeProdFreshest(filterVsm(rRes.records), recs);
+          } catch (e) { /* fallback local */ }
+        }
+        recs = recs.map(r => ({ ...r, record_id: r.record_id || r.recordId, valveNo: r.valveNo || r.valve_no, currentProcess: r.currentProcess || r.current_process }));
+        out.push(_spmBuildValve(vno, recs));
+      }));
+    }
+    out.sort((a, b) => toks.indexOf(a.vno) - toks.indexOf(b.vno));   // คงลำดับตามที่ผู้ใช้วาง
+    _spmData = out;
+    box.innerHTML = _spmRender(out);
+  } catch (e) { toast('ค้นหาไม่สำเร็จ: ' + e.message, 'red'); }
+}
+// สรุปข้อมูล 1 Valve: ลำดับ Process ของวาล์ว + ยอดต่อ (lot, process) — กติกาเดียวกับโหมดเดี่ยว
+function _spmBuildValve(vno, recs) {
+  let valve = state.valves.find(v => (v.valveNo || '').toLowerCase() === vno.toLowerCase());
+  if (!valve) {
+    const procs = [...new Set(recs.map(r => _procCanon(((r.currentProcess || '') + '').trim())).filter(Boolean))]
+      .sort((a, b) => _procRank(a) - _procRank(b));
+    valve = recs.length ? { valveNo: vno, customer: 'ไม่มีใน Master', description: '', processes: procs } : null;
+  }
+  if (!valve) return { vno, valve: null, procSeq: [], lots: [], recs: [] };
+  const procSeq = procsOf(valve).map(p => _procCanon(String(p).trim())).filter(Boolean);
+  const byLotProc = {}, lotMeta = {};
+  for (const r of recs) {
+    const lk = lotKey(r.lot) || '(no lot)';
+    const proc = _procCanon(((r.currentProcess || '') + '').trim() || '-');
+    const g = byLotProc[lk + '::' + proc] || (byLotProc[lk + '::' + proc] = { lk, proc, qty: 0 });
+    g.qty += Number(r.quantity) || 0;
+    const lm = lotMeta[lk] || (lotMeta[lk] = { ts: r.timestamp, lot: r.lot });
+    if (new Date(r.timestamp) > new Date(lm.ts)) { lm.ts = r.timestamp; lm.lot = r.lot || lm.lot; }
+  }
+  const lots = Object.keys(lotMeta)
+    .sort((a, b) => new Date(lotMeta[b].ts) - new Date(lotMeta[a].ts))
+    .map(lk => {
+      const qtyByProc = {}, offByProc = {};
+      for (const key in byLotProc) {
+        const g = byLotProc[key]; if (g.lk !== lk) continue;
+        if (procSeq.includes(g.proc)) qtyByProc[g.proc] = (qtyByProc[g.proc] || 0) + g.qty;
+        else if (g.qty > 0)           offByProc[g.proc] = (offByProc[g.proc] || 0) + g.qty;
+      }
+      return { lk, lot: lotMeta[lk].lot || '-', qtyByProc, offByProc };
+    });
+  return { vno, valve, procSeq, lots, recs };
+}
+function _spmRender(out) {
+  const found = out.filter(V => V.valve).length;
+  const blocks = out.map((V, vi) => {
+    if (!V.valve) return `<div class="spm-v"><div class="spm-vh"><b>${escapeHtml(V.vno)}</b><span class="tag tag-red">ไม่พบข้อมูล</span></div></div>`;
+    const rows = V.lots.length ? V.lots.map((L, li) => {
+      let nextIdx = -1;
+      for (let i = 0; i < V.procSeq.length; i++) { if (!(L.qtyByProc[V.procSeq[i]] > 0)) { nextIdx = i; break; } }
+      const isDone = getJobProc(V.vno, L.lot) === 'DONE';
+      const chips = V.procSeq.map((p, ci) => {
+        const q = L.qtyByProc[p] || 0;
+        if (q > 0)                return `<span class="spm-chip spm-g" onclick="spmDetail(${vi},${li},${ci})" title="แตะดูจำนวน/เครื่อง/วันที่">${escapeHtml(p)}</span>`;
+        if (p === 'QC' && isDone) return `<span class="spm-chip spm-g" style="cursor:default" title="จบงานแล้ว — QC อัตโนมัติ">✓ ${escapeHtml(p)}</span>`;
+        if (ci === nextIdx)       return `<span class="spm-chip spm-y">${escapeHtml(p)}</span>`;
+        return `<span class="spm-chip spm-w">${escapeHtml(p)}</span>`;
+      }).join('');
+      const offChip = Object.keys(L.offByProc || {}).length
+        ? `<span class="spm-chip spm-r" onclick="spmRemark(${vi},${li})" title="process ที่พนักงานพิมพ์เอง — แตะดู/แก้">📝 หมายเหตุ</span>` : '';
+      return `<div class="spm-lot"><span class="spm-lotno">${escapeHtml(L.lot)}</span><span class="spm-chips">${chips}${offChip}</span></div>`;
+    }).join('') : `<div class="muted" style="font-size:11px;padding:2px 0 4px">ยังไม่มี Production records</div>`;
+    return `<div class="spm-v">
+      <div class="spm-vh"><b style="color:var(--blue)">${escapeHtml(V.vno)}</b><span class="muted" style="font-size:11px">${escapeHtml(V.valve.customer || '')}</span></div>
+      ${rows}</div>`;
+  }).join('');
+  return `<div class="card" style="margin-bottom:0">
+    <div class="card-title"><span class="ci">📋</span>ผลค้นหา ${out.length} Valve <span class="muted" style="font-size:11px;font-weight:600">· พบข้อมูล ${found}</span></div>
+    <div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span><span class="pf-lg" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">ยังไม่ถึง</span></div>
+    <div class="muted" style="font-size:11px;margin:2px 0 8px">💡 แตะชื่อ Process <b style="color:#065F46">สีเขียว</b> เพื่อดูจำนวน/เครื่อง/วันที่ · ค้นหา Valve เดียวจะเห็นตารางแบบละเอียดเหมือนเดิม</div>
+    ${blocks}</div>`;
+}
+// แตะชิปเขียว → เปิดรายละเอียด (จำนวน/เครื่อง/วันที่/พนักงาน + ปุ่ม ✏️) — ใช้ modal เดิมของโหมดเดี่ยว
+function spmDetail(vi, li, ci) {
+  const V = _spmData?.[vi]; if (!V) return;
+  const L = V.lots[li], proc = V.procSeq[ci]; if (!L || !proc) return;
+  _spRecords = V.recs; _spValve = V.valve;   // ให้ _spShowRecords + ปุ่มแก้ไขใช้ชุดข้อมูลของวาล์วนี้
+  _spShowRecords(L.lk, [proc], `${V.vno} · ${L.lot} · ${proc}`, false);
+}
+function spmRemark(vi, li) {
+  const V = _spmData?.[vi]; if (!V) return;
+  const L = V.lots[li]; const offKeys = Object.keys(L?.offByProc || {}); if (!offKeys.length) return;
+  _spRecords = V.recs; _spValve = V.valve;
+  _spShowRecords(L.lk, offKeys, `${V.vno} · ${L.lot} · หมายเหตุ`, true);
 }
 
 /* ============================================================
@@ -10595,6 +10776,9 @@ async function exportHistory() {
       ? filterLocal(state.kpiRecords, filt, 'kpi')
       : filterLocal(state.prodRecords, filt, 'prod').map(r => ({ ...r, valveNo: r.valve_no||r.valveNo, currentProcess: r.current_process||r.currentProcess }));
   }
+  // FIX (2026-07-17): export ต้องเห็นเท่ากับที่ตาราง "ประวัติ" แสดง — กรองเฉพาะ VSM ที่กำลังดูอยู่
+  // (เดิม API คืนทุก VSM ปนกัน → Excel มี ZJ/ZK ของ VSM1/2 โผล่ตอนดู VSM4)
+  rows = filterVsm(rows);
   if (!rows.length) { toast('ไม่มีข้อมูลให้ export', 'orange'); return; }
   const data = isKpi
     ? rows.map(r => {
