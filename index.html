@@ -923,7 +923,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.22</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.23</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4922,7 +4922,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.22":"Production Record + KPI · v3.22",
+"ระบบบันทึกผลิต + KPI · v3.23":"Production Record + KPI · v3.23",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7741,9 +7741,11 @@ function renderIotWipStrip(b){
     _byGrp[custGroup(i.customer)] = (_byGrp[custGroup(i.customer)]||0) + (Number(i.qty)||0);
   }
   // flex-basis:100% → ชิปกลุ่มลูกค้าขึ้นแถวเต็มของตัวเอง ใต้การ์ดทั้งสอง (ไม่แทรกกลางการ์ด)
+  // P2-23: ชิปกดได้ → ป๊อปอัปรายการ Valve ที่รับเข้าแล้วเดือนนี้ + ยังขาดจ่ายเทียบแผนขาย ของกลุ่มนั้น
   const grpChips = `<div class="iot-cust-strip" style="flex:1 1 100%;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
     <span style="font-size:10px;font-weight:800;color:var(--muted)">📥 ${TT('รับเข้าเดือนนี้','In this month')}:</span>
-    ${Object.entries(_byGrp).map(([g,q])=>`<span class="tag tag-blue" style="font-size:10.5px;padding:2px 8px" title="${TT('ยอดรับเข้าเดือนนี้','received this month')} — ${escapeHtml(g)}">${escapeHtml(g)}: <b>${nn(q)}</b></span>`).join('')}
+    ${Object.entries(_byGrp).map(([g,q])=>`<button type="button" class="tag tag-blue" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit" title="${TT('กดดูรายการ Valve ที่รับเข้า/ยังขาด','tap: received / missing valve list')} — ${escapeHtml(g)}" onclick="showCustInMonth('${encodeURIComponent(g)}')">${escapeHtml(g)}: <b>${nn(q)}</b> ›</button>`).join('')}
+    <span style="font-size:9.5px;color:var(--muted)">${TT('กดที่กลุ่มเพื่อดูรายการ','tap a group for details')}</span>
   </div>`;
   host.innerHTML =
     card('in','📥','WIP IN 1.5',TT('รับจาก VSM2','from VSM2'),'in',
@@ -7751,6 +7753,77 @@ function renderIotWipStrip(b){
     card('out','✓','WIP OUT',TT('ผ่าน FG','past FG'),'out',
          _wipOutToday(b),TT('วันนี้','today'),_wipOutYesterday(b),_wipOutCurMonth(b)) +
     grpChips;   // P2-22: ยอดรับเข้าแยก 4 กลุ่มลูกค้า
+}
+/* ═══ P2-23: ป๊อปอัปรายการรับเข้าเดือนนี้ ราย "กลุ่มลูกค้า" (กดจากชิปใต้การ์ด IN บนหน้า IOT) ═══
+   ① รับเข้าแล้ว = รายการ WIP IN 1.5 ของเดือนนี้ รวมยอดต่อ Valve No (นับ "เบอร์" = จำนวน Valve ไม่ซ้ำ)
+   ② ยังขาดจ่าย = แผนขายที่ยัง active (planned/in_progress) ของกลุ่มนั้น ที่รับเข้ายังไม่ครบ (_wipPlanRows) */
+function showCustInMonth(grp){
+  grp=decodeURIComponent(grp||'');
+  const m=todayISO().slice(0,7);
+  const b=getWipBuckets();
+  // ── ① รับเข้าเดือนนี้ของกลุ่มนี้ — รวมยอดต่อ Valve (customer ใน items เป็นกลุ่ม 4 กลุ่มอยู่แล้ว)
+  const recvRows=(b.wipIn.items||[]).filter(i=>String(i.ts||'').slice(0,7)===m && i.customer===grp);
+  const byValve={};
+  for(const i of recvRows){
+    const k=vKey(i.valve);
+    const cur=byValve[k]||{valve:i.valve,qty:0,lots:new Set(),n:0};
+    cur.qty+=Number(i.qty)||0; cur.n++;
+    if(i.lot) cur.lots.add(i.lot);
+    byValve[k]=cur;
+  }
+  const recv=Object.values(byValve).sort((a,c)=>c.qty-a.qty);
+  const recvQty=recv.reduce((s,r)=>s+r.qty,0);
+  // ── ② ยังขาดจ่าย — แผนขาย active ของกลุ่มนี้ที่รับเข้ายังไม่ครบ
+  const miss=_wipPlanRows().filter(r=>r.customer===grp && !r.enough)
+    .sort((a,c)=>c.missing-a.missing);
+  const missValves=new Set(miss.map(r=>vKey(r.valve))).size;
+  const missQty=miss.reduce((s,r)=>s+r.missing,0);
+  const recvTbl = recv.length ? `
+    <div class="tbl-wrap"><table><thead><tr>
+      <th>Valve No</th><th class="center">${TT('ครั้งที่รับ','Times')}</th><th>Lot</th><th class="center">${TT('รวมชิ้น','Total pcs')}</th>
+    </tr></thead><tbody>
+      ${recv.map(r=>{
+        const lots=[...r.lots];
+        return `<tr>
+          <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
+          <td class="center">${nn(r.n)}</td>
+          <td style="font-size:11px">${lots.length?escapeHtml(lots.slice(0,3).join(', '))+(lots.length>3?` <span class="muted">+${lots.length-3}</span>`:''):'-'}</td>
+          <td class="center"><b>${nn(r.qty)}</b></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table></div>` :
+    `<div class="muted" style="font-size:12px;padding:6px 0">${TT('เดือนนี้ยังไม่มีรายการรับเข้าของกลุ่มนี้','No intake this month for this group')}</div>`;
+  const missTbl = miss.length ? `
+    <div class="tbl-wrap"><table><thead><tr>
+      <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve No</th><th>Lot</th>
+      <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('ยังขาด','Missing')}</th>
+    </tr></thead><tbody>
+      ${miss.map(r=>`<tr>
+        <td>${escapeHtml(r.date||'-')}</td>
+        <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
+        <td style="font-size:11px">${escapeHtml(r.lot||'-')}</td>
+        <td class="center">${nn(r.planned)}</td>
+        <td class="center" style="color:var(--blue)">${nn(r.received)}</td>
+        <td class="center"><b style="color:#DC2626">${nn(r.missing)}</b></td>
+      </tr>`).join('')}
+    </tbody></table></div>` :
+    `<div class="muted" style="font-size:12px;padding:6px 0">✓ ${TT('ไม่มีแผนขายที่ยังรับเข้าไม่ครบของกลุ่มนี้','No active plan is short for this group')}</div>`;
+  const body=`<div class="wip-detail-box">
+    <div class="row mb-8" style="gap:6px;flex-wrap:wrap">
+      <span class="tag tag-blue" style="font-size:12px">📥 ${TT('รับเข้าแล้ว','Received')}: <b>${nn(recv.length)}</b> ${TT('เบอร์','valves')} · <b>${nn(recvQty)}</b> ${TT('ชิ้น','pcs')}</span>
+      <span class="tag ${miss.length?'tag-red':'tag-green'}" style="font-size:12px">${miss.length?`⏳ ${TT('ยังขาดจ่าย','Still missing')}: <b>${nn(missValves)}</b> ${TT('เบอร์','valves')} · <b>${nn(missQty)}</b> ${TT('ชิ้น','pcs')}`:`✓ ${TT('แผนขายเข้าครบ','Plans all received')}`}</span>
+    </div>
+    <div style="font-weight:800;font-size:13px;margin:10px 0 6px">📥 ${TT('รับเข้าแล้วเดือนนี้','Received this month')} (${m})</div>
+    ${recvTbl}
+    <div style="font-weight:800;font-size:13px;margin:14px 0 6px">⏳ ${TT('ยังขาดจ่าย — เทียบแผนขายที่ยังไม่ปิด','Still missing vs open sales plans')}</div>
+    ${missTbl}
+  </div>`;
+  const title=`📥 ${TT('รับเข้าเดือนนี้','In this month')} — ${escapeHtml(grp)}`;
+  if(document.getElementById('iotCard')?.classList.contains('iot-fs')){
+    _openIotPop(title, body, false, true);
+  } else {
+    openModal(title, body, {wide:true});
+  }
 }
 /* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
 function renderWipInSummary(){
