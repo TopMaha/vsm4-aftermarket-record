@@ -923,7 +923,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.21</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.22</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4922,7 +4922,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.21":"Production Record + KPI · v3.21",
+"ระบบบันทึกผลิต + KPI · v3.22":"Production Record + KPI · v3.22",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6329,11 +6329,15 @@ document.addEventListener('fullscreenchange',()=>{
    ============================================================ */
 let _iotAllUnlocked=false, _iotAllD=null, _iotAllScale=null, _iotAllTimer=null, _fpaV4Cache=null, _iotAllSyncing=false;
 let _iotAllWH=null, _iotAllRefitRaf=0;   // ขนาดผังล่าสุด (viewBox units) — ใช้ refit ตอนลากเส้นแบ่ง/ย่อขยายจอ
+/* สีพื้นกรอบราย VSM ในผังรวม — ต้อง "ไม่ชนกับ" สีชิปเครื่องที่ทับด้านบน
+   (OAE ดี=เขียว #dcfce7 · OAE ต่ำ=ส้ม #ffedd5 · ปิด=เทา #cbd5e1)
+   เดิม VSM2 เขียวมิ้นต์→กลืนกับชิปเขียว, VSM3 เหลืองอำพัน→กลืนกับชิปส้ม → มองไม่ชัด
+   ย้ายไปโทน "เย็น + ชมพู" (น้ำเงิน/คราม/ชมพู/ม่วง) แยกจากเขียว-ส้มของ OAE ชัดเจน */
 const _IA_VSM_META={
-  vsm1:{tint:'#DBEAFE',line:'#1D4ED8',label:'VSM 1'},
-  vsm2:{tint:'#CCFBF1',line:'#0F766E',label:'VSM 2'},
-  vsm3:{tint:'#FEF3C7',line:'#B45309',label:'VSM 3'},
-  vsm4:{tint:'#E9D5FF',line:'#7C3AED',label:'VSM 4'},
+  vsm1:{tint:'#DBEAFE',line:'#1D4ED8',label:'VSM 1'},  // น้ำเงิน (เดิม)
+  vsm2:{tint:'#E0E7FF',line:'#4338CA',label:'VSM 2'},  // คราม (เดิมมิ้นต์ชนเขียว)
+  vsm3:{tint:'#FCE7F3',line:'#BE185D',label:'VSM 3'},  // ชมพู (เดิมอำพันชนส้ม)
+  vsm4:{tint:'#E9D5FF',line:'#7C3AED',label:'VSM 4'},  // ม่วง (เดิม)
 };
 
 function iotAllOpen(){
@@ -6574,8 +6578,11 @@ function _iotAllRenderMap(keepScroll){
   for(const v of VSM_KEYS){
     const g=gb[v]; if(!g) continue;
     const mt=_IA_VSM_META[v], p=6;
-    out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${(g[2]-g[0]+p*2).toFixed(1)}" height="${(g[3]-g[1]+p*2).toFixed(1)}" fill="${mt.tint}" fill-opacity="0.5" stroke="${mt.line}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 5" rx="10"/>`+
-      `<text x="${(g[0]).toFixed(1)}" y="${(g[1]+16).toFixed(1)}" font-size="17" font-weight="900" fill="${mt.line}" font-family="Arial,sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4">${mt.label}</text></g>`);
+    const bw=(g[2]-g[0]+p*2), bh=(g[3]-g[1]+p*2), lbw=mt.label.length*10.5+18;
+    out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${mt.tint}" fill-opacity="0.38" stroke="${mt.line}" stroke-opacity="0.8" stroke-width="2.5" stroke-dasharray="8 5" rx="12"/>`+
+      // ป้ายชื่อ VSM เป็น "ป้ายเม็ดยา" สีเข้มตัวอักษรขาว — อ่านง่ายกว่าตัวหนังสือลอยเดิม และไม่ปนกับชิปเครื่อง
+      `<rect x="${(g[0]-p+4).toFixed(1)}" y="${(g[1]-p+4).toFixed(1)}" width="${lbw.toFixed(1)}" height="22" rx="11" fill="${mt.line}"/>`+
+      `<text x="${(g[0]-p+4+lbw/2).toFixed(1)}" y="${(g[1]-p+19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="900" fill="#ffffff" font-family="Arial,sans-serif" letter-spacing="0.3">${mt.label}</text></g>`);
   }
   for(const b of boxes){
     const v='vsm'+b.v, P=D.per[v];
