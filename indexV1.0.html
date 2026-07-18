@@ -923,7 +923,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.20</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.21</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4922,7 +4922,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.20":"Production Record + KPI · v3.20",
+"ระบบบันทึกผลิต + KPI · v3.21":"Production Record + KPI · v3.21",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7768,13 +7768,15 @@ function _wipinMissingItems(){
     if(!vno) continue;
     const k=jobKey(vno,lot);
     if(inKeys.has(k)) continue;
-    const cur=seen.get(k)||{valve:vno,lot,qty:0,last:''};
+    const cur=seen.get(k)||{valve:vno,lot,qty:0,first:''};
     cur.qty+=Number(r.quantity)||0;
-    // วันที่ผลิตจริง (วันกะ) — ใช้เป็นวันที่ลงบันทึก WIP IN ตอนกดอัตโนมัติ ไม่ใช่วันที่กดปุ่ม
-    const d=String(r.shift_date||r.record_date||r.timestamp||'').slice(0,10); if(d>cur.last) cur.last=d;
+    // วันเริ่มทำ SSG (วันแรกที่มี record) — ใช้เป็นวันที่ลงบันทึก WIP IN ตอนกดอัตโนมัติ
+    // ไม่ใช่วันที่กดปุ่ม และไม่ใช่วันล่าสุด — เพื่อให้รู้ว่างานเข้ามาเดือนไหนจริง
+    const d=String(r.shift_date||r.record_date||r.timestamp||'').slice(0,10);
+    if(d && (!cur.first || d<cur.first)) cur.first=d;
     seen.set(k,cur);
   }
-  return [...seen.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last)));
+  return [...seen.values()].sort((a,b)=>String(b.first).localeCompare(String(a.first)));
 }
 function renderWipinMissing(){
   const box=$('wipinMissing'); if(!box) return;
@@ -7784,10 +7786,10 @@ function renderWipinMissing(){
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #FDE68A">
       <div style="flex:1;min-width:0">
         <b style="color:var(--blue)">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
-        <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · วันที่ผลิต ${escapeHtml(it.last||'-')}</div>
+        <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ SSG ${escapeHtml(it.first||'-')}</div>
       </div>
       <button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
-        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.last||''}')">➕ ลงบันทึก WIP IN</button>
+        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}')">➕ ลงบันทึก WIP IN</button>
     </div>`).join('');
   box.innerHTML=`
     <details style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
@@ -7805,15 +7807,15 @@ async function wipinAddAllMissing(){
   const items=_wipinMissingItems();
   if(!items.length){ toast('ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
   const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
-  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น · ${it.last||'-'}`).join('\n');
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่ผลิตที่ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
-  for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',it.last);
+  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น · ${it.first||'-'}`).join('\n');
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่เริ่มทำ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
+  for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',it.first);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว ${items.length} รายการ · รวม ${nn(total)} ชิ้น`,'green');
 }
 async function wipinQuickAdd(valveEnc,lotEnc,qty,prodDate){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ SSG)\n📅 ลงเป็นวันที่ผลิต ${prodDate||'-'} (ไม่ใช่วันที่กด)`,{danger:false,yes:'ลงบันทึก'}))) return;
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ SSG)\n📅 ลงเป็นวันที่เริ่มทำ SSG ${prodDate||'-'} (ไม่ใช่วันที่กด)`,{danger:false,yes:'ลงบันทึก'}))) return;
   addWipin(valve,lot,qty,'ลงย้อนหลังจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',prodDate);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว — ${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น`,'green');
