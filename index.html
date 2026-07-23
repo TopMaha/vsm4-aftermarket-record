@@ -1762,11 +1762,11 @@ function normalizeAllValves(){
 
 const DEFAULT_TARGETS = {
   // flat (legacy/fallback)
-  oae:0.75, dle:0.85, pplh:350, pdac:0.9, scrap:0.0012,
+  oae:0.75, dle:0.85, pplh:350, pdac:0.883, scrap:0.0012,
   // per-zone (Zone 1 AFTERMARKET / Zone 2 INDUCTION / Zone 3 FORD6 & PERKINS)
-  'zone1.oae':0.75, 'zone1.dle':0.85, 'zone1.pdac':0.9, 'zone1.scrap':0.0012, 'zone1.pplh':300,
-  'zone2.oae':0.75, 'zone2.dle':0.85, 'zone2.pdac':0.9, 'zone2.scrap':0.0012, 'zone2.pplh':400,
-  'zone3.oae':0.75, 'zone3.dle':0.85, 'zone3.pdac':0.9, 'zone3.scrap':0.0012, 'zone3.pplh':300,
+  'zone1.oae':0.75, 'zone1.dle':0.85, 'zone1.pdac':0.883, 'zone1.scrap':0.0012, 'zone1.pplh':300,
+  'zone2.oae':0.75, 'zone2.dle':0.85, 'zone2.pdac':0.883, 'zone2.scrap':0.0012, 'zone2.pplh':400,
+  'zone3.oae':0.75, 'zone3.dle':0.85, 'zone3.pdac':0.883, 'zone3.scrap':0.0012, 'zone3.pplh':300,
 };
 
 /* loader: ดึงจาก LocalStorage ก่อน ถ้าไม่มีใช้ default */
@@ -4067,6 +4067,7 @@ async function init() {
 
   // ถ้ามี API URL ก็ลอง sync เพิ่ม (ไม่บล็อก UI)
   if (API) { reload(); startAutoSync(); }
+  else migratePdacTarget();   // โหมด local ไม่เรียก reload() → migrate เป้า PDAC ที่นี่
   startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (poll 15 วิ) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
 }
 
@@ -4085,9 +4086,30 @@ async function apiInit(maxAgeMs = 0) {
   return _initInflight;
 }
 
+/* ── One-time migration: เป้า PDAC 0.9 → 0.883 (เกณฑ์ใหม่ 88.3%) ──
+   เดิม default = 0.9 → ผู้ใช้เก่ามีค่า 0.9 ค้างใน localStorage/cloud
+   ดันเป็น 0.883 ครั้งเดียว (flag กันซ้ำ) เฉพาะค่าที่ยังเป็น 0.9 เป๊ะ
+   → ไม่ทับค่าที่ผู้ใช้ตั้งเองในอนาคต · รันหลัง cloud sync เพื่อเห็นค่าจริง */
+const PDAC_TGT_MIGRATED = 'fv_pdac_tgt_0883';
+function migratePdacTarget() {
+  if (localStorage.getItem(PDAC_TGT_MIGRATED)) return;
+  const t = state.targets || {};
+  const changed = {};
+  for (const k of ['pdac', 'zone1.pdac', 'zone2.pdac', 'zone3.pdac']) {
+    if (Math.abs(Number(t[k]) - 0.9) < 1e-9) changed[k] = 0.883;
+  }
+  if (Object.keys(changed).length) {
+    state.targets = { ...state.targets, ...changed };
+    lsSave(LS.TARGETS, state.targets);
+    if (API) api('/api/targets', { body: changed }).catch(()=>{});
+  }
+  localStorage.setItem(PDAC_TGT_MIGRATED, '1');
+}
+
 async function reload() {
   if (!API) {
     // re-render จาก LocalStorage
+    migratePdacTarget();
     setConnBadge('local');
     renderHome(); renderZone(); renderSettings();
     toast('ใช้ข้อมูลใน LocalStorage (โหมด Local)', 'green');
@@ -4112,6 +4134,7 @@ async function reload() {
     lsSave(LS.TARGETS,   state.targets);
     lsSave(LS.IDS,       state.ids);
     syncMcProcFromCloud(res.targets);   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store)
+    migratePdacTarget();                 // เป้า PDAC 0.9 → 0.883 ครั้งเดียว (หลังได้ค่าจริงจาก cloud)
     // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — Quick Win #5: เลื่อนไป idle
     // /api/init seed ids ชุดพื้นฐานให้แล้ว (autocomplete ใช้ได้ทันที) → ชุดเต็ม 50k ดึงตอนว่าง ไม่แย่ง network ตอนเปิดแอป
     (window.requestIdleCallback || ((cb)=>setTimeout(cb,2000)))(() => {
@@ -4470,7 +4493,7 @@ function zoneTargetsObj(zoneKey) {
 
 /* ============================================================
    PDAC HELPER — คำนวณ PDAC แบบ count(pass)/total ตามสูตรที่ถูกต้อง
-   pass = เครื่องที่มี record อย่างน้อย 1 record ที่ pdac_val >= 0.9
+   pass = เครื่องที่มี record อย่างน้อย 1 record ที่ pdac_val >= 0.883
    total = จำนวนเครื่องทั้งหมดใน zone (จาก state.machines)
    ============================================================ */
 function calcZonePdac(krecs, zoneKey) {
@@ -4490,8 +4513,8 @@ function calcZonePdac(krecs, zoneKey) {
   for (const [mcId, recs] of Object.entries(byMc)) {
     // คำนวณ PDAC per machine = OPR / (Target * 0.85)
     // ใช้ pdac_val ที่บันทึกไว้แล้ว (คำนวณตอน save)
-    // ผ่านถ้า pdac_val >= 0.9 (90%)
-    const hasPassed = recs.some(r => (r.pdac_val || 0) >= 0.9 || r.pdac_pass === 'PASS');
+    // ผ่านถ้า pdac_val >= 0.883 (88.3%)
+    const hasPassed = recs.some(r => (r.pdac_val || 0) >= 0.883 || r.pdac_pass === 'PASS');
     if (hasPassed) passing++;
   }
 
@@ -9883,7 +9906,7 @@ async function _saveKpiImpl() {
         const oprPdac = sTarget * 0.85;
         const pdac    = oprPdac > 0 ? sOpr / oprPdac : 0;
         const scrapRate = (sOpr + sScrap) > 0 ? sScrap / (sOpr + sScrap) : 0;
-        const pdacPass  = pdac >= 0.9 ? 'PASS' : 'FAIL';
+        const pdacPass  = pdac >= 0.883 ? 'PASS' : 'FAIL';
         const shiftEntry = { si: slot.si, opr:sOpr, scrap:sScrap, target:sTarget, ct:sCT, ts:sTs, te:sTe, wt:sWT,
           emp: empIdPrimary, valve: slot.valve, lot: slot.lot, proc: lastProc };
         records.push({
