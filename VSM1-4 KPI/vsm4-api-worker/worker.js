@@ -131,7 +131,8 @@ export default {
       if (path === '/api/employees/delete' && m === 'POST') return ok(await deleteEmployee(env, await readJson(request)));
 
       // kpi
-      if (path === '/api/kpi'        && m === 'GET')  return ok({ records: await getKpiRecords(env, url.searchParams) });
+      if (path === '/api/kpi'          && m === 'GET')  return ok({ records: await getKpiRecords(env, url.searchParams) });
+      if (path === '/api/kpi/produced' && m === 'GET')  return ok({ pairs: await getProducedJobs(env) });
       if (path === '/api/kpi'        && m === 'POST') return ok(await addKpiRecords(env, await readJson(request)));
       if (path === '/api/kpi/update' && m === 'POST') return ok(await updateKpiRecord(env, await readJson(request)));
       if (path === '/api/kpi/delete' && m === 'POST') return ok(await deleteKpiRecords(env, await readJson(request)));
@@ -492,10 +493,25 @@ async function getKpiRecords(env, params) {
   if (params.get('status') === 'fail') conds.push("pdac_pass = 'FAIL'");
 
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
-  const limit = Math.min(parseInt(params.get('limit') || '500', 10), 5000);
+  // ❗เดิม: default 500 / max 5000 + ORDER BY saved_at DESC → query ตามช่วงวันกว้างถูกตัดเหลือ
+  //   "500 แถวล่าสุด" (≈1.5 วันสุดท้าย) เงียบ ๆ → ยอดรวมราย process / dashboard ต่ำกว่าจริง ~20-25 เท่า
+  // ใหม่: ถ้ามีช่วง from+to → คืน "ครบทั้งช่วง" (default = เพดานสูง) · ไม่มีช่วง (ดึงล่าสุด) → คง 500 ตามเดิม
+  const KPI_MAX = 50000;
+  const hasRange = params.get('from') && params.get('to');
+  const dflt = hasRange ? KPI_MAX : 500;
+  const limit = Math.min(parseInt(params.get('limit') || String(dflt), 10), KPI_MAX);
   const sql = `SELECT * FROM kpi_records ${where} ORDER BY saved_at DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
   return results || [];
+}
+
+// เซ็ต (valve_no, lot) ที่ "เคยผลิตแล้ว" ทั้งหมด (distinct · ทุกช่วงเวลา) — payload เบา (2 คอลัมน์)
+// ใช้ฝั่ง client เช็คว่างาน WIP IN เริ่มผลิตหรือยัง โดยไม่ต้องโหลด record เต็มย้อนหลังหลายเดือน
+// (เดิม client อ่านจาก cache ที่ถูกตัดเหลือ ~5000 แถวล่าสุด → งานเก่าหา record ไม่เจอ ค้างเป็น "รอผลิต")
+async function getProducedJobs(env) {
+  const sql = `SELECT DISTINCT valve_no, lot FROM kpi_records WHERE valve_no IS NOT NULL AND valve_no <> ''`;
+  const { results } = await env.DB.prepare(sql).all();
+  return (results || []).map(r => [r.valve_no, r.lot || '']);
 }
 
 async function addKpiRecords(env, body) {

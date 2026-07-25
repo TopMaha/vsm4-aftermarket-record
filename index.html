@@ -997,7 +997,7 @@ tbody tr:last-child td{border-bottom:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.25</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.27</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4350,7 +4350,7 @@ async function refreshProcOutput() {
     try {
       // ดึง records + targets (สถานะงานที่ admin ขยับ) พร้อมกัน → ทุกเครื่องเห็น process ล่าสุดตรงกัน
       const [k, init] = await Promise.all([
-        api('/api/kpi?' + new URLSearchParams({ from: f, to: t })).catch(() => null),
+        api('/api/kpi?' + new URLSearchParams({ from: f, to: t, limit: '50000' })).catch(() => null),  // limit สูง = คืนครบทั้งช่วง (เดิมไม่ส่ง → cap 500 → ยอด process ต่ำกว่าจริง)
         apiInit(15000).catch(() => null),   // Quick Win #2: ใช้ cache 15 วิ (ไม่ดึง master ซ้ำทุก paint)
       ]);
       if (k?.records) recs = k.records;
@@ -4761,6 +4761,7 @@ async function showZoneDetail(zone) {
     try {
       const params = new URLSearchParams({ from: dFrom, to: dTo, zone });
       if (shiftF !== 'all') params.set('shift', shiftF);
+      params.set('limit', '50000');   // คืนครบทั้งช่วง (เดิมไม่ส่ง → cap 500 → ยอดต่ำกว่าจริง)
       const r = await api('/api/kpi?' + params).catch(()=>null);
       if (r?.records) records = filterVsm(r.records);
     } catch (e) {}
@@ -4884,7 +4885,7 @@ function startAutoSync() {
         const dFrom = $('dashFrom')?.value || today;
         const dTo   = $('dashTo')?.value   || today;
         const [k, p] = await Promise.all([
-          api(`/api/kpi?from=${dFrom}&to=${dTo}`).catch(()=>null),
+          api(`/api/kpi?from=${dFrom}&to=${dTo}&limit=50000`).catch(()=>null),
           api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
         ]);
         if (k?.records) state.kpiRecords  = mergeRecords(state.kpiRecords,  k.records, 'record_id');
@@ -5019,7 +5020,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.25":"Production Record + KPI · v3.25",
+"ระบบบันทึกผลิต + KPI · v3.27":"Production Record + KPI · v3.27",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6579,7 +6580,7 @@ async function _iotAllSync(){
   try{
     const today=todayISO();
     const dFrom=$('dashFrom')?.value||today, dTo=$('dashTo')?.value||dFrom;
-    const k=await api('/api/kpi?'+new URLSearchParams({from:dFrom,to:dTo})).catch(()=>null);
+    const k=await api('/api/kpi?'+new URLSearchParams({from:dFrom,to:dTo,limit:'50000'})).catch(()=>null);
     if(k?.records){ state.kpiRecords=mergeRecords(state.kpiRecords,k.records,'record_id'); lsSave(LS.KPI,state.kpiRecords); }
   }catch(e){} finally{ _iotAllSyncing=false; }
 }
@@ -7829,9 +7830,35 @@ async function syncWipin(){
     if(_wipinSigNow()!==_wipinSig){ renderWipBuckets(); renderWipInSummary(); }
   }catch(e){ /* offline → ใช้ local ต่อได้ */ }
 }
-let _wipinPoll=null;
-function startWipinSync(){ syncWipin(); if(_wipinPoll) clearInterval(_wipinPoll); _wipinPoll=setInterval(syncWipin,15000); }
+let _wipinPoll=null, _prodSetTick=0;
+function startWipinSync(){
+  syncWipin(); refreshProducedSet();
+  if(_wipinPoll) clearInterval(_wipinPoll);
+  // produced-set หนักกว่า wipin (distinct ทั้งตาราง) → รีเฟรชทุก 60 วิ (ทุก 4 รอบ) ก็พอ
+  _wipinPoll=setInterval(()=>{ syncWipin(); if((++_prodSetTick%4)===0) refreshProducedSet(); },15000);
+}
 function stopWipinSync(){ if(_wipinPoll){ clearInterval(_wipinPoll); _wipinPoll=null; } }
+
+// เซ็ต (valve::lot) + เบอร์วาล์วที่ "เคยผลิตแล้ว" ทั้งหมดจาก Cloud (ทุกช่วงเวลา) — payload เบา
+// แก้บั๊ก WIP IN 1.5 ค้าง "รอผลิต": เดิมเช็คจาก cache (~5000 แถวล่าสุด ≈14 วัน) → งานที่ผลิตเกิน
+//   ช่วง cache หา record ไม่เจอ ค้างเป็นรอผลิตตลอด (พบงานย้อนถึง พ.ค. ค้างอยู่) → ยอดพองเกินจริง
+let _producedJobs=new Set(), _producedValveSet=new Set(), _producedSig='';
+async function refreshProducedSet(){
+  if(!API) return;
+  try{
+    const r=await api('/api/kpi/produced').catch(()=>null);
+    if(!r || !Array.isArray(r.pairs)) return;
+    const jobs=new Set(), valves=new Set();
+    for(const pair of r.pairs){ const v=pair&&pair[0]; if(!v) continue; jobs.add(jobKey(v, pair[1]||'')); valves.add(vKey(v)); }
+    _producedJobs=jobs; _producedValveSet=valves;
+    const sig=jobs.size+'/'+valves.size;
+    if(sig!==_producedSig){   // ชุดเปลี่ยน → repaint WIP ให้ยอดตรงทันที (ไม่ต้องรอ interaction)
+      _producedSig=sig;
+      if(typeof renderWipBuckets==='function')   try{ renderWipBuckets(); }catch(e){}
+      if(typeof renderWipInSummary==='function') try{ renderWipInSummary(); }catch(e){}
+    }
+  }catch(e){}
+}
 
 /* ── หัวใจ: จัดงานเป็น 3 ถัง (VSM-scoped) ────────────────────────────────
    WIP OUT = ทุกงานที่ถึง FG แล้ว (computePostFgAll)
@@ -7892,9 +7919,13 @@ function computeWipBuckets(){
     _addMc(k, r.machine_id||r.machineId);
   }
   const producedKeys=new Set(Object.keys(groups));
+  // + เติมงานที่ "เคยผลิตแล้ว" ครบทุกช่วงเวลาจาก Cloud (_producedJobs) — กันงานเก่าที่หลุดช่วง cache
+  //   ค้างเป็น "รอผลิต" ตลอด (cache มีแค่ ~14 วันล่าสุด · งานผลิตก่อนหน้านั้นหา record ไม่เจอ)
+  for(const jk of _producedJobs) producedKeys.add(jk);
   // เผื่อรายการ WIP IN ที่ลง "ไม่มี Lot" — เก็บระดับเบอร์วาล์วไว้ด้วย (มีการผลิตเบอร์นี้แล้ว = ถือว่าเริ่มผลิต)
   //   กันเคสค้างเป็น "รอผลิต" ตลอด เพราะยอดผลิตจริงมี Lot แต่รายการรับเข้าไม่มี → jobKey ไม่ตรงกันตลอดกาล
   const producedValves=new Set([...producedKeys].map(k=>k.slice(0,k.indexOf('::'))));
+  for(const vk of _producedValveSet) producedValves.add(vk);
   const fgValves=new Set([...reachedFg].map(k=>k.slice(0,k.indexOf('::'))));
 
   // scrap ต่อ (valve::lot) จาก KPI/shift records — ชิ้นที่ "เสียแล้ว" ไม่นับเป็น WIP
@@ -8898,13 +8929,13 @@ async function renderHome() {
     const dFrom = $('dashFrom')?.value || today;
     const dTo   = $('dashTo')?.value   || today;
     const shiftF = state.shiftFilter || 'all';
-    const kp = new URLSearchParams({ from: dFrom, to: dTo });
+    const kp = new URLSearchParams({ from: dFrom, to: dTo, limit: '50000' });
     if (shiftF !== 'all') kp.set('shift', shiftF);
     // 2) ดึงเบื้องหลัง (ไม่บล็อก paint) — dashboard range + วันนี้ (records+kpi)
     const [kRange, p, kToday] = await Promise.all([
       api('/api/kpi?' + kp).catch(()=>null),
       api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
-      api(`/api/kpi?from=${today}&to=${today}`).catch(()=>null),
+      api(`/api/kpi?from=${today}&to=${today}&limit=50000`).catch(()=>null),
     ]);
     // 3) merge เข้า state (ตัด tombstone + การันตี record_id — mergeRecords ตัวเดียวกับ auto-sync)
     if (kRange?.records) state.kpiRecords  = mergeRecords(state.kpiRecords,  kRange.records, 'record_id');
