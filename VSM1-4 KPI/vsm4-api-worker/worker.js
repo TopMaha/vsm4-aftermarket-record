@@ -75,11 +75,30 @@ async function readJson(request) {
   }
 }
 
+// เสิร์ฟผลลัพธ์ผ่าน edge cache (caches.default) TTL วินาที — ลดภาระ D1 เมื่อหลายเครื่อง poll พร้อมกัน
+// key ยึดจาก origin + tag (ไม่พึ่ง query) · cache พลาด/ใช้ไม่ได้ → fallback สร้างผลสดเสมอ (ไม่พัง endpoint)
+async function servedCached(ctx, url, tag, ttlSec, build) {
+  try {
+    const cache = caches.default;
+    const key = new Request(`${url.origin}/__cache/${tag}`);
+    const hit = await cache.match(key);
+    if (hit) return hit;
+    const resp = await build();
+    const out = new Response(resp.body, resp);
+    out.headers.set('Cache-Control', `public, max-age=${ttlSec}`);
+    if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(key, out.clone()));
+    else await cache.put(key, out.clone());
+    return out;
+  } catch (e) {
+    return await build();
+  }
+}
+
 // ============================================================
 // MAIN ROUTER
 // ============================================================
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url  = new URL(request.url);
@@ -132,7 +151,9 @@ export default {
 
       // kpi
       if (path === '/api/kpi'          && m === 'GET')  return ok({ records: await getKpiRecords(env, url.searchParams) });
-      if (path === '/api/kpi/produced' && m === 'GET')  return ok({ pairs: await getProducedJobs(env) });
+      // produced set = full-table DISTINCT scan · หลายเครื่อง poll ทุก 60 วิ → cache ที่ edge 60 วิ กันสแกน D1 ซ้ำ
+      if (path === '/api/kpi/produced' && m === 'GET')  return await servedCached(ctx, url, 'produced-v1', 60,
+                                                                async () => ok({ pairs: await getProducedJobs(env) }));
       if (path === '/api/kpi'        && m === 'POST') return ok(await addKpiRecords(env, await readJson(request)));
       if (path === '/api/kpi/update' && m === 'POST') return ok(await updateKpiRecord(env, await readJson(request)));
       if (path === '/api/kpi/delete' && m === 'POST') return ok(await deleteKpiRecords(env, await readJson(request)));
@@ -284,7 +305,11 @@ async function getRecords(env, params) {
   if (params.get('proc'))   { conds.push('current_process = ?'); args.push(params.get('proc')); }
   if (params.get('status')) { conds.push('status = ?');          args.push(params.get('status')); }
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
-  const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 5000);
+  // เช่นเดียวกับ /api/kpi: ถ้ามีช่วง from+to → คืนครบทั้งช่วง (เดิม cap 1000/5000 ตัดงานเก่าทิ้ง)
+  const RECS_MAX = 50000;
+  const hasRange = params.get('from') && params.get('to');
+  const dflt = hasRange ? RECS_MAX : 1000;
+  const limit = Math.min(parseInt(params.get('limit') || String(dflt), 10), RECS_MAX);
   const sql = `SELECT * FROM production_records ${where} ORDER BY timestamp DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
   return (results || []).map(rowToRecord);
