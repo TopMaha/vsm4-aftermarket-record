@@ -1044,7 +1044,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.32</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.33</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5431,7 +5431,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.32":"Production Record + KPI · v3.32",
+"ระบบบันทึกผลิต + KPI · v3.33":"Production Record + KPI · v3.33",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11632,7 +11632,7 @@ async function searchProcess() {
         const done = ovp === 'DONE';
         const oq = getJobProcQty(ld.valveNo, ld.lot);
         const od = getJobProcDate(ld.valveNo, ld.lot);
-        postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${PROC_DEPT[ovp] ? ' · ' + PROC_DEPT[ovp] : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
+        postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${procDept(ovp) ? ' · ' + procDept(ovp) : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
       }
       return `<tr><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}</td>${tds}${remarkTd}</tr>`;
     }).join('');
@@ -14637,6 +14637,13 @@ function syncMcProcFromCloud(targets) {
 const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];   // fallback เมื่อหา process ของวาล์วไม่เจอ
 const NO_VALVE = '(ไม่ระบุวาล์ว)';   // ป้ายเดียวกับ "Output ของ Process" — ยอดที่ลงโดยไม่ระบุเบอร์วาล์ว
 const PROC_DEPT    = { 'FG':'VSM4', 'P/T':'PC', 'POL':'VSM4', 'QC':'QC', 'DONE':'จบงาน' };
+// FG/POL ทำกันเองในสาย → ป้ายแผนกต้องเป็น "สายที่กำลังดู" ไม่ใช่ VSM4 ตายตัว
+//   (กล่องงานหลัง FG แยกตาม VSM แล้ว — ดู VSM3 อยู่แต่ขึ้น "FG · VSM4" จะสับสน)
+//   ส่วน P/T = PC และ QC = QC เป็นแผนกอื่นจริง ๆ คงไว้เหมือนเดิม
+function procDept(p) {
+  if (p === 'FG' || p === 'POL') return VSM_LABEL[viewVsm()] || PROC_DEPT[p];
+  return PROC_DEPT[p];
+}
 // ลำดับ process หลัง FG "ของวาล์วเบอร์นี้" — ตาม Master valve (processes ของวาล์ว) ไม่ใช่สูตรตายตัว
 // เช่น VV7242M1 = FG → QC เลย (ข้าม P/T, POL) · ตัดเอาตั้งแต่ FG เป็นต้นไป + DONE ปิดท้าย
 function postFgFlowFor(valve) {
@@ -14741,18 +14748,49 @@ function computePostFgJobs(recs) {
   // กล่องจัดการงานหลัง FG = เฉพาะวาล์วที่มีใน Master (วาล์วผิด → ไปแก้ที่กล่อง Unknown ก่อน)
   return computePostFgAll(recs).filter(j => !j.unknown && j.cur !== 'DONE').sort((a, b) => b.qty - a.qty);
 }
+/* targets store เก็บงานที่จบแล้วเป็น jobproc.<VALVE::LOT> — "ไม่มี VSM" อยู่ในคีย์
+   จึงต้องสืบสายจาก record ของงานนั้นเพื่อแยกสายให้เหมือนทุกที่ในแอป
+   ★ ยึด "สายที่งานนั้นผ่าน FG" (record ที่เครื่องตั้ง process = FG) ไม่ใช่ record ใดก็ได้:
+     valve+lot เดียวกันวิ่งข้ามสายได้ — ยึด record ใดก็ได้จะกำกวม 145 งาน (โชว์ซ้ำ 2 สาย
+     ทำให้ผลรวมทุกสาย 760 > ของจริง 589) · ยึดจาก FG แล้วชี้สายเดียวชัดเจน 581/589 งาน
+   • เหลือ 2 งานที่ผ่าน FG ทั้งสองสาย → ยึด "FG ล่าสุด" (กฎเดียว เดาไม่ได้ ไม่นับซ้ำ)
+   • อีก 6 งานเก่าที่ไม่มี record เลย → ยกให้สายหลัก (DEFAULT_VSM) เพื่อให้ยังเห็นอยู่
+     ไม่หายไปเฉย ๆ และไม่โผล่ซ้ำทุกสาย                                                    */
+let _jobOwnerCache = null, _jobOwnerVer = -1, _jobOwnerSrc = null;
+function _jobVsmOwner() {
+  const src = _postFgRecs || _wipKpiSrc();
+  if (_jobOwnerCache && _jobOwnerVer === _fvVer && _jobOwnerSrc === src) return _jobOwnerCache;
+  const mcProc = {};
+  for (const z of Object.keys(state.machines || {}))
+    for (const m of (state.machines[z] || [])) mcProc[m.id] = mcProcess(m);
+  const owner = {}, best = {};
+  for (const r of (src || [])) {
+    if ((mcProc[r.machine_id] || 'SSG') !== 'FG') continue;
+    const v = (r.valve_no || r.valveNo || '').trim();
+    if (!v) continue;
+    const jk = jobKey(v, r.lot || '');
+    const d = (r.shift_date || r.record_date || '') + (r.saved_at || '');
+    if (!(jk in owner) || d > best[jk]) { owner[jk] = vsmOf(r); best[jk] = d; }
+  }
+  _jobOwnerCache = owner; _jobOwnerVer = _fvVer; _jobOwnerSrc = src;
+  return owner;
+}
 // งานที่ "จบแล้ว" — อ่านจาก targets store ล้วน (qty+วันที่เก็บไว้แล้ว) ไม่ต้องพึ่ง KPI ย้อนหลัง
 // → นับเข้า "ผลิตเสร็จ" ได้แม้ KPI ของงานนั้นอยู่นอกช่วง 30 วันที่โหลดมา
+// ★ 2026-07-30: กรองให้เหลือเฉพาะสายที่กำลังดู (เดิมคืนงานของทุกสายรวมกัน → "ผลิตเสร็จ"
+//   และกล่องงานหลัง FG เห็นงานข้ามสาย) · สืบ VSM ไม่ได้ → คงไว้ ดีกว่าซ่อนข้อมูลหาย
 function computeDoneFromStore() {
   const vCust = {};
   for (const v of (state.valves || [])) vCust[vKey(v.valveNo)] = custGroup(v.customer);   // 4 กลุ่มลูกค้า (P2-21)
   const T = state.targets || {};
   const doneCode = procCode('DONE');
+  const owner = _jobVsmOwner(), me = viewVsm();
   const out = [];
   for (const k in T) {
     if (!k.startsWith(JOBPROC_PREFIX)) continue;
     if (Number(T[k]) !== doneCode) continue;
     const jk = k.slice(JOBPROC_PREFIX.length);              // VALVE::LOT (normalize แล้ว)
+    if ((owner[jk] || DEFAULT_VSM) !== me) continue;        // เป็นของสายอื่น → ข้าม (แต่ละงานโผล่สายเดียว)
     const sep = jk.indexOf('::');
     const valve = sep >= 0 ? jk.slice(0, sep) : jk;
     const lot   = sep >= 0 ? jk.slice(sep + 2) : '';
@@ -14765,6 +14803,11 @@ function computeDoneFromStore() {
   }
   return out;
 }
+/* ── กล่องงานหลัง FG = เฉพาะ VSM ที่กำลังดู (2026-07-30) ────────────────────
+   เดิมกล่องนี้แสดงงานของทุกสายรวมกัน (ต่างจากทุกที่ในแอปที่ล็อกทีละสาย)
+   → ดู VSM1/VSM2 ก็เห็นงานของ VSM3/VSM4 · ปุ่ม "จบงานทั้งหมด" ก็จบข้ามสายให้ด้วย
+   ตอนนี้ยึดกฎเดียวกับที่อื่น: filterVsm (zone → VSM) */
+function _postFgSrc(){ return filterVsm(_postFgRecs || _wipKpiSrc()); }
 let _postFgDoneList = [];
 let _postFgQuery = '';          // คำค้น valve/lot ในกล่องรับงานหลัง FG
 let _postFgAutoLoaded = false;  // โหลดงานค้าง "ทั้งหมด" อัตโนมัติแล้วหรือยัง (ครั้งเดียวต่อ session)
@@ -14775,8 +14818,8 @@ function renderPostFgJobs() {
   // ครั้งแรกที่เปิดหน้าตั้งค่า + ออนไลน์ → ดึงงานค้าง "ทั้งหมด" (ไม่จำกัด 30 วัน) อัตโนมัติแบบเงียบ
   // เพื่อให้เห็น "ทั้งหมดที่ค้างอยู่" โดยไม่ต้องกดปุ่มเอง
   if (API && !_postFgAutoLoaded && !_postFgRecs) { _postFgAutoLoaded = true; refreshPostFgFromCloud(true); return; }
-  const allActive = computePostFgJobs(_postFgRecs || state.kpiRecords || []);
-  const allDone   = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const allActive = computePostFgJobs(_postFgSrc());                    // เฉพาะสายที่กำลังดู
+  const allDone   = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));   // แยกสายให้แล้วในตัวฟังก์ชัน
   // ค้นหา valve หรือ lot (ค้นทั้งงานค้างและงานที่จบแล้ว) — สะดวกหาวาล์วที่จะกด process ถัดไป
   const q = _postFgQuery.trim().toLowerCase();
   const match = j => !q || (j.valve || '').toLowerCase().includes(q) || (j.lot || '').toLowerCase().includes(q);
@@ -14791,13 +14834,14 @@ function renderPostFgJobs() {
       <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
       ${allActive.length ? `<button class="btn btn-green btn-sm" onclick="finishAllPostFg()" style="white-space:nowrap">✅ จบงานทั้งหมด (${nn(allActive.length)})</button>` : ''}
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}</div>`;
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}
+      · <span class="tag tag-blue" style="font-size:10.5px">🔒 เฉพาะ ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}</span></div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
     const flow = postFgFlowFor(j.valve);              // ลำดับเฉพาะของวาล์วเบอร์นี้
     let idx    = flow.indexOf(j.cur);
     if (idx < 0) idx = 0;                             // สถานะเดิม (legacy) ไม่อยู่ในลำดับ → เริ่มที่ FG
     const next = flow[idx + 1] || 'DONE';
-    const nextLabel = next === 'DONE' ? '✅ จบงาน' : `→ ${next}${PROC_DEPT[next] ? ' (' + PROC_DEPT[next] + ')' : ''}`;
+    const nextLabel = next === 'DONE' ? '✅ จบงาน' : `→ ${next}${procDept(next) ? ' (' + procDept(next) + ')' : ''}`;
     const canBack = idx > 0;
     return `<div style="border:1.5px solid var(--blue-soft);border-radius:10px;padding:9px 11px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px">
@@ -14805,7 +14849,7 @@ function renderPostFgJobs() {
           <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(j.valve || '(ไม่ระบุวาล์ว)')}</div>
           <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(j.lot || '-')} · ${nn(j.qty)} ชิ้น</div>
         </div>
-        <span class="tag tag-orange" style="white-space:nowrap">${escapeHtml(j.cur)}${PROC_DEPT[j.cur] ? ' · ' + PROC_DEPT[j.cur] : ''}</span>
+        <span class="tag tag-orange" style="white-space:nowrap">${escapeHtml(j.cur)}${procDept(j.cur) ? ' · ' + procDept(j.cur) : ''}</span>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
         ${canBack ? `<button class="btn btn-outline btn-sm" onclick="advanceJobAt(${i},-1)" title="ถอยกลับ 1 ขั้น">↩︎ ถอย</button>` : ''}
@@ -14880,7 +14924,7 @@ async function advanceJobAt(i, dir) {
     hideBusy();
     toast(to === 'DONE'
       ? `✅ ${j.valve} Lot ${j.lot} — จบงานแล้ว · บันทึกขึ้น Cloud (ทุกเครื่องเห็นตรงกัน)`
-      : `${j.valve} → ${to} (${PROC_DEPT[to] || ''}) · บันทึกขึ้น Cloud แล้ว`, 'green');
+      : `${j.valve} → ${to} (${procDept(to) || ''}) · บันทึกขึ้น Cloud แล้ว`, 'green');
     renderPostFgJobs();
   } catch (e) {
     hideBusy();
@@ -14894,9 +14938,11 @@ async function advanceJobAt(i, dir) {
 async function finishAllPostFg() {
   if (_advancingJob) return;
   if (!API) { toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงจบงานได้', 'orange'); return; }
-  const jobs = computePostFgJobs(_postFgRecs || state.kpiRecords || []);   // งานค้างทั้งหมด (ไม่กรองคำค้น)
-  if (!jobs.length) { toast('ไม่มีงานค้างหลัง FG', 'orange'); return; }
-  if (!(await confirmModal(`จบงานหลัง FG ทั้งหมด ${nn(jobs.length)} รายการ?\n(ทุกงานจะถูกตั้งเป็น DONE — เอากลับทีหลังได้)`))) return;
+  // ★ เฉพาะสายที่กำลังดูเท่านั้น — เดิมจบข้ามสายให้ด้วย (admin ดู VSM4 แล้วกด → งาน VSM3 จบไปเงียบ ๆ)
+  const jobs = computePostFgJobs(_postFgSrc());   // งานค้างของสายนี้ (ไม่กรองคำค้น)
+  const _vl = VSM_LABEL[viewVsm()] || viewVsm();
+  if (!jobs.length) { toast(`ไม่มีงานค้างหลัง FG ของ ${_vl}`, 'orange'); return; }
+  if (!(await confirmModal(`จบงานหลัง FG ทั้งหมด ${nn(jobs.length)} รายการ\nของ ${_vl} เท่านั้น?\n(ทุกงานจะถูกตั้งเป็น DONE — เอากลับทีหลังได้)`))) return;
   _advancingJob = true;
   showBusy(`กำลังจบงานทั้งหมด ${nn(jobs.length)} รายการ…`);
   try {
