@@ -699,6 +699,14 @@ tr.hv-detail.hv-done>td{opacity:.55}
   #iotSvg .mc-sos,.top5-item .t5sos{animation:none}
   #iotSvg .iot-mc.hl,#iotSvg .iot-lb.hl{animation:none}
 }
+/* ══ v3.30 — ปุ่มสลับป้าย "เบอร์ในกล่อง" บนแถบผังเครื่องจักร ══
+   (v3.30.3 ตัด 🎨 แถบสีเบอร์วาล์ว + 📋 กระดานงาน ออก — ไม่ได้ใช้ · CSS ของทั้งสองถูกลบทิ้งด้วย) */
+.jb-tgls{display:inline-flex;gap:4px}
+.jb-tgl{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 9px;border:1.5px solid #CBD5E1;background:#fff;
+  border-radius:999px;font-size:10.5px;font-weight:800;color:#64748B;cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap}
+.jb-tgl:hover{border-color:#1A56DB;color:#1A56DB}
+.jb-tgl.on{background:#1A56DB;border-color:#1A56DB;color:#fff}
+.jb-tgl:focus-visible{outline:2.5px solid #93C5FD;outline-offset:1px}
 /* ── ตัวแบ่งหน้า (pagination) ตารางรายละเอียด WIP — 15 รายการ/หน้า ── */
 .wip-pager{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .wip-pgbtn{min-width:38px;height:38px;padding:0 10px;border:1.5px solid #CBD5E1;background:#fff;border-radius:9px;
@@ -886,6 +894,12 @@ tr.hv-detail.hv-done>td{opacity:.55}
 #iotAllHead{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff}
 #iotAllHead .ia-title{font-size:15px;font-weight:900;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
 #iotAllHead .ia-info{font-size:11px;font-weight:700;opacity:.85}
+/* v3.30 — ปุ่มสลับป้าย Valve/Lot บนผังรวม 4 VSM (อยู่ในแถบหัวสีเข้ม) */
+#iotAllHead .ia-lbltgl{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:#fff;font-size:10.5px;font-weight:800;
+  cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap}
+#iotAllHead .ia-lbltgl:hover{background:rgba(255,255,255,.24)}
+#iotAllHead .ia-lbltgl.on{background:#fff;color:#0F172A;border-color:#fff}
 /* 2 คอลัมน์: [ตาราง KPI รายชั่วโมง (แทนการ์ดสรุปเดิม) | เส้นแบ่งลาก | ผังเครื่องจักร]
    เส้นแบ่งลากปรับ "ข้อมูล ⇄ ผัง" (--iotall-mapw = ความกว้างผังจากขวา) · ตารางยืดตามพื้นที่เหลือ */
 #iotAllBody{flex:1 1 auto;min-height:0;display:grid;
@@ -1030,7 +1044,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.29</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.30</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5392,7 +5406,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.29":"Production Record + KPI · v3.29",
+"ระบบบันทึกผลิต + KPI · v3.30":"Production Record + KPI · v3.30",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -6417,6 +6431,164 @@ function iotSetVsm(v){
   else renderMachineStatusChecker();
 }
 
+/* ============================================================
+   v3.30 — IOT "งานที่กำลังผลิต" (LIVE JOB VIEW)
+   เป้าหมาย: มองปราดเดียวรู้ว่า "เครื่องไหน / สายไหน กำลังผลิต Valve No + Lot อะไร" — ไม่ต้องคลิกทีละเครื่อง
+
+   v3.30.1 — ยกเครื่องใหม่หลังลองใช้จริง: "ตัวเลขมั่วไปหมด"
+   บทเรียน: กล่องเครื่องบนผังเล็กมาก (เตี้ยสุด 26px) — ยัด รหัสเครื่อง+Valve+Lot ลงไป 3 บรรทัด
+   ทำให้ตัวหนังสือจิ๋วเท่ากันหมด แยกไม่ออกว่าเลขไหนคืออะไร ผังที่เคยสะอาดกลายเป็นตัวเลขเต็มไปหมด
+
+   v3.30.3 — ตัดของที่ไม่จำเป็นออก เหลือสิ่งเดียวที่ต้องการจริง
+   ตัดทิ้ง: 🎨 แถบสีเบอร์วาล์ว · 📋 กระดานงาน (Job Board) — ไม่ได้ใช้ รกจอเปล่า ๆ
+   เหลือ: ป้าย "รหัสเครื่อง + Valve No" ในกล่องเครื่อง — เปิดเป็นค่าเริ่มต้น
+          และ **ขึ้นเหมือนกันทุกกล่องที่เดินเครื่องอยู่** (ขนาด/การตัดคำเดียวกันทั้งผัง — ดู _jobFitPlan)
+   ============================================================ */
+let _iotJobLbl = true;     // 🏷️ ป้าย Valve บนกล่องเครื่อง (ขนาดเดียวกันทุกกล่อง — ดู _jobFitPlan)
+try {
+  // ล้างค่าที่ค้างจากรุ่นทดลองก่อนหน้า ครั้งเดียว — ให้ทุกเครื่องเริ่มที่ค่าเดียวกัน (ป้ายเปิด)
+  if (localStorage.getItem('fv_iot_lbl_v3') !== '1') {
+    localStorage.removeItem('vsm4_iot_joblbl');
+    localStorage.setItem('fv_iot_lbl_v3', '1');
+  }
+  localStorage.removeItem('vsm4_iot_jobdot');     // v3.30.3 เลิกใช้ — เก็บกวาดค่าเก่าทิ้ง
+  localStorage.removeItem('vsm4_iot_jobboard');
+  const _s = localStorage.getItem('vsm4_iot_joblbl'); if (_s != null) _iotJobLbl = _s === '1';
+} catch(e) {}
+/* สีตัวหนังสือ Valve บนกล่อง — สีเดียวทั้งผัง (เดิมเคยไล่สีตามเบอร์ v3.30 แต่ทำให้ผังลายตา จึงตัดออก)
+   เครื่องที่เดินอยู่แต่ record ยังไม่ระบุเบอร์ = เทาจาง ให้เห็นว่าข้อมูลขาด (ไม่ใช่ไม่มีป้าย) */
+const JOB_TX = '#0F172A', JOB_TX_NONE = '#94A3B8';
+
+/* งานทั้งหมดของเครื่องหนึ่งในช่วงที่เลือก → [{valve,lot,opr,n,rank,date}] เรียง "ล่าสุดก่อน"
+   ล่าสุด = วันกะ + เวลาสิ้นสุดของ record (ใช้ _iahRecTimes ตัวเดียวกับแผง KPI รายชั่วโมง — รองรับกะข้ามเที่ยงคืน)
+   → รายการแรก = "งานที่กำลังผลิตอยู่" ที่เอาไปแสดงบนกล่องเครื่อง */
+function _mcJobList(recs) {
+  const map = new Map();
+  for (const r of (recs || [])) {
+    const valve = String(r.valve_no || r.valveNo || '').trim();
+    const lot   = String(r.lot || '').trim();
+    if (!valve && !lot) continue;
+    const key = valve + ' ' + lot;
+    let j = map.get(key);
+    if (!j) { j = { valve, lot, opr:0, n:0, rank:-1, date:'' }; map.set(key, j); }
+    j.opr += (+r.opr || 0); j.n++;
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    let rank = d ? (Date.parse(d + 'T00:00:00') || 0) : 0;
+    const t = _iahRecTimes(r);
+    if (t.e != null) { let e = t.e; if (t.s != null && e <= t.s) e += 1440; rank += e * 60000; }
+    if (rank > j.rank) { j.rank = rank; j.date = d; }
+  }
+  return [...map.values()].sort((a,b) => (b.rank - a.rank) || (b.opr - a.opr));
+}
+
+/* ── ตัวช่วยจัดตัวหนังสือให้พอดีกล่อง SVG (ฟอนต์ monospace ≈ 0.60 × font-size ต่อตัวอักษร) ── */
+function _fitFs(txt, w, maxFs, minFs, pad) {
+  const n = Math.max(1, String(txt == null ? '' : txt).length);
+  return Math.max(minFs, Math.min(maxFs, (w - (pad == null ? 3 : pad)) / (n * 0.60)));
+}
+/* mid=true → ตัดตรงกลาง "24560…1180" เก็บทั้งหัวและท้ายไว้
+   (เบอร์วาล์วมักต่างกันที่ "ตัวท้าย" — ตัดท้ายทิ้งแบบเดิมจะแยกไม่ออกว่าเบอร์ไหน) */
+function _fitTxt(txt, w, fs, pad, mid) {
+  const s = String(txt == null ? '' : txt);
+  const max = Math.floor((w - (pad == null ? 3 : pad)) / (fs * 0.60));
+  if (max >= s.length) return s;
+  if (max <= 1) return s.slice(0, 1);
+  if (!mid || max < 5) return s.slice(0, max - 1) + '…';
+  const head = Math.ceil((max - 1) / 2), tail = max - 1 - head;
+  return s.slice(0, head) + '…' + s.slice(s.length - tail);
+}
+
+/* แบ่งเบอร์วาล์วเป็น 2 บรรทัด — ตัดที่ '-' ที่ใกล้กึ่งกลางที่สุด (คงขีดไว้ท้ายบรรทัดแรก)
+   ไม่มีขีด = แบ่งครึ่งตรง ๆ · ใช้กติกาเดียวกันทุกกล่อง → ป้ายหน้าตาเหมือนกันหมด */
+function _splitValve(s) {
+  s = String(s == null ? '' : s);
+  if (s.length < 6) return [s, ''];
+  const mid = s.length / 2;
+  let at = -1, best = 1e9;
+  for (let i = 0; i < s.length - 1; i++) {
+    if (s[i] !== '-' && s[i] !== '/' && s[i] !== ' ') continue;
+    const d = Math.abs(i + 1 - mid);
+    if (d < best) { best = d; at = i + 1; }
+  }
+  if (at < 0) at = Math.ceil(s.length / 2);
+  return [s.slice(0, at), s.slice(at)];
+}
+
+/* ── v3.30.2 — "ทุกกล่องต้องเหมือนกัน" ──────────────────────────────
+   ปัญหาที่เจอ: เดิมกำหนดเกณฑ์ "กล่องใหญ่พอถึงจะใส่ป้าย" + ฟอนต์คิดแยกทีละกล่อง
+   → บางเครื่องมีเบอร์ บางเครื่องไม่มี · ตัวหนังสือใหญ่ไม่เท่ากัน ดูแล้วสับสนว่าทำไมไม่เหมือนกัน
+   แก้: คำนวณ "ขนาดเดียว" จากกล่องที่คับที่สุดของผังนั้น แล้วใช้กับ **ทุกกล่องที่มีงาน** เหมือนกันหมด
+
+   ── v3.30.4 — "ตัวเล็กจนอ่านไม่ออก" ──────────────────────────────
+   ปัญหา: ผังถูกย่อให้พอดีกรอบ (VSM1 ย่อเหลือ 0.61 เท่า) แต่เดิมคิดฟอนต์ในหน่วย viewBox
+   → หน้าจอจริงเหลือ 4-6px อ่านไม่ออก · ยิ่งเบอร์ยาว (10-11 ตัว) ยิ่งถูกบีบให้เล็กลงอีก
+   แก้ 2 อย่าง:
+     1) รับ k = อัตราส่วน viewBox→pixel จริง แล้วเล็ง "ขนาดบนจอ" ให้ถึง TARGET_PX
+     2) เบอร์ยาวไม่ต้องบีบฟอนต์ — **ขึ้นบรรทัดที่ 2** (24560- / 1180) ตัวโตขึ้นเกือบเท่าตัวและยังเห็นครบ
+   เลือก 1 หรือ 2 บรรทัดให้ทั้งผังเหมือนกัน (ไม่ใช่แล้วแต่กล่อง)
+   คืน {fsId, fsV, gap, vRows} · ไม่มีเครื่องเดินเลย = null */
+function _jobFitPlan(boxes, jobMap, k) {
+  const list = (boxes || []).filter(b => jobMap[b.id]);
+  if (!list.length) return null;
+  const K = k > 0 ? k : 1;                 // viewBox 1 หน่วย = K พิกเซลบนจอ
+  const TARGET_PX = 9;                     // ขนาดที่ "อ่านออกจริง" บนจอ Production
+  let minW = Infinity, minH = Infinity, idLen = 1, vLen = 1, pLen = 1;
+  for (const b of list) {
+    if (b.w < minW) minW = b.w;
+    if (b.h < minH) minH = b.h;
+    idLen = Math.max(idLen, String(b.id).length);
+    const v = String(jobMap[b.id].cur.valve || '—');
+    vLen = Math.max(vLen, v.length);
+    const p = _splitValve(v);
+    pLen = Math.max(pLen, p[0].length, p[1].length);
+  }
+  const gap = 0.8, CAP = 16, R_ID = 0.82;            // รหัสเครื่อง = 0.82 เท่าของเบอร์เสมอ
+  const fitW = len => (minW - 2.5) / (len * 0.60);   // ฟอนต์ใหญ่สุดที่ความกว้างรับได้
+  // เพดานจาก "ความสูง" ของกล่องเตี้ยสุด — คิดจากพื้นที่จริงที่ต้องใช้ ไม่ใช่เปอร์เซ็นต์มั่ว ๆ
+  const hCapA = (minH - 1 - gap) / (1 + R_ID);                 // 2 บรรทัด: id + เบอร์
+  const hCapB = (minH - 1 - gap * 1.4) / (2 + R_ID);           // 3 บรรทัด: id + เบอร์ท่อนบน/ล่าง
+  const fsA = Math.min(fitW(vLen), CAP, hCapA);
+  const fsB = Math.min(fitW(pLen), CAP, hCapB);
+  // เลือกแบ่ง 2 บรรทัด เมื่อทำให้ตัวโตขึ้นจริง (≥12%) และบรรทัดเดียวยังไม่ถึงขนาดที่อ่านออกบนจอ
+  const vRows = (vLen >= 6 && fsB > fsA * 1.12 && fsA * K < TARGET_PX) ? 2 : 1;
+  const fsV = Math.max(3.5, vRows === 2 ? fsB : fsA);
+  const fsId = Math.max(3, Math.min(fitW(idLen), 9, fsV * R_ID));
+  return { fsId, fsV, gap, vRows, minH, minW };
+}
+
+/* วาดป้าย "งานที่กำลังผลิต" ในกล่องเครื่องบนผัง (ใช้ร่วมกันทั้งผังราย VSM และผังรวม 4 VSM)
+   คืน { body, tookId } — tookId=true เมื่อวาดรหัสเครื่องเองแล้ว · false = ผู้เรียกวาดรหัสเครื่องกลางกล่องแบบเดิม
+   fit = ผลจาก _jobFitPlan ของผังนั้น → ทุกกล่องบนผังเดียวกันได้ขนาด/จำนวนบรรทัดเหมือนกันหมด */
+function _mcJobSvg(x, y, w, h, job, id, idColor, fit) {
+  if (!job || !_iotJobLbl || !fit) return { body:'', tookId:false };
+
+  const valve = job.valve || '—';
+  const vColor = job.valve ? JOB_TX : JOB_TX_NONE;
+  const fsId = fit.fsId, fsV = fit.fsV, gap = fit.gap, vRows = fit.vRows;
+  const vLines = vRows === 2 ? _splitValve(valve).filter(s => s !== '') : [valve];
+  // ความสูงบล็อก "จองตาม vRows ของทั้งผัง" เสมอ — เบอร์สั้นที่ใช้บรรทัดเดียวจะถูกจัดกึ่งกลางในพื้นที่เดียวกัน
+  // → ป้ายทุกกล่องอยู่ตำแหน่งเดียวกัน ไม่มีอันลอยขึ้นอันลอยลง (นี่คือที่มาของ "บางอันไม่เหมือนกัน")
+  const blockH = fsId + gap + fsV * vRows + (vRows > 1 ? gap * 0.4 : 0);
+  const usedH  = fsId + gap + fsV * vLines.length + (vLines.length > 1 ? gap * 0.4 : 0);
+  let ty = y + Math.max(0, (h - blockH) / 2) + (blockH - usedH) / 2;
+  // เกินกล่องเมื่อไหร่ค่อยตัด (ปกติ _jobFitPlan คุมไว้แล้ว) — ตัดตรงกลางเก็บทั้งหัวและท้าย
+  const cut = (s, fs) => {
+    s = String(s == null ? '' : s);
+    const max = Math.floor((w - 2) / (fs * 0.60));
+    if (max >= s.length) return s;
+    if (max <= 1) return s.slice(0, 1);
+    if (max < 5) return s.slice(0, max - 1) + '…';
+    const head = Math.ceil((max - 1) / 2);
+    return s.slice(0, head) + '…' + s.slice(s.length - (max - 1 - head));
+  };
+  const T = (txt, cy, fs, col, weight) =>
+    `<text x="${(x + w/2).toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="${weight}" fill="${col}" font-family="'Courier New',monospace" pointer-events="none">${escapeHtml(cut(txt, fs))}</text>`;
+  const out = [T(id, ty + fsId * 0.82, fsId, idColor, 700)];
+  ty += fsId + gap;
+  for (const ln of vLines) { out.push(T(ln, ty + fsV * 0.82, fsV, vColor, 900)); ty += fsV + gap * 0.4; }
+  return { body: out.join(''), tookId: true };
+}
+
 /* VSM4 Factory Floor Plan — Zone positions match physical layout images
    LEFT = Zone 3 (Orange border) = Ford6 & Perkins
    MIDDLE = Zone 2 (Blue border) = Induction
@@ -6445,6 +6617,39 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   const W=maxX-minX+PAD*2, H=maxY-minY+PAD*2;
   const tot=boxes.length;
   const nOn=boxes.filter(m=>activeMachines.has(m.id)).length;
+
+  // v3.30: งานที่กำลังผลิตของแต่ละเครื่อง (คำนวณครั้งเดียวต่อการวาด) — ใช้ทั้งบนผังและกระดานงาน
+  // v3.30.2: "เครื่องที่เดินอยู่" ต้องได้ชั้นข้อมูลเหมือนกันทุกตัว — ถ้า record ไม่ได้ระบุเบอร์วาล์ว
+  //          ก็ยังใส่รายการว่าง (โชว์แถบเทา + '—') ไม่ปล่อยให้บางเครื่องมี บางเครื่องไม่มี
+  const jobMap={};
+  const _byMc=(_iotData&&_iotData.byMc)||{};
+  for(const mc of boxes){
+    if(jobMap[mc.id]) continue;                       // ผังบางสายมีกล่อง id ซ้ำ (C-206) — คำนวณครั้งเดียวพอ
+    const list=_mcJobList(_byMc[mc.id]);
+    if(list.length) jobMap[mc.id]={cur:list[0],n:list.length,list};
+    else if(activeMachines.has(mc.id)) jobMap[mc.id]={cur:{valve:'',lot:'',opr:0},n:1,list:[],noValve:true};
+  }
+  // ขนาดป้ายชุดเดียวใช้ทั้งผัง → ทุกกล่องหน้าตาเหมือนกัน (ดู _jobFitPlan)
+  // k = viewBox 1 หน่วยกินพื้นที่จริงกี่พิกเซล — SVG กว้าง 100% ของกรอบ แล้วคูณด้วยระดับซูมปัจจุบัน
+  //     (ผัง VSM1 กว้าง ~1000 หน่วยแต่กรอบกว้าง ~600px → k≈0.6 · ไม่ชดเชยตรงนี้ ตัวหนังสือจะเล็กจนอ่านไม่ออก)
+  const _fw=(wrap.clientWidth||wrap.getBoundingClientRect().width||W);
+  const _base=_fw/W;
+  // v3.30.4: ผังบางสายพอย่อลงให้พอดีกรอบแล้ว กล่องจริงเหลือสูงแค่ ~20px — ใส่รหัสเครื่อง+เบอร์ให้อ่านออกไม่ได้เลย
+  //   → ขยายซูมเริ่มต้นจนตัวเบอร์บนจอถึง ~9px (ขนาดที่อ่านออกจริง) แล้วเลื่อนดูในกรอบเอา
+  //   คิดวนซ้ำเพราะพอขยายแล้วผังอาจสลับจากเบอร์ 2 บรรทัดเป็นบรรทัดเดียว (ขนาดเปลี่ยน)
+  //   ผู้ใช้กด +/− เองเมื่อไหร่ก็หยุดปรับให้ · กด ⊙ = กลับมาให้ปรับอัตโนมัติอีกครั้ง
+  if(!_iotUserZoom) _iotScale=1;              // ปิดป้าย = ไม่ต้องขยาย กลับมาพอดีกรอบเหมือนเดิม
+  let jobFit=_jobFitPlan(boxes,jobMap,_base*(_iotScale||1));
+  if(_iotJobLbl && !_iotUserZoom && jobFit && _base>0){
+    for(let i=0;i<3;i++){
+      const px=jobFit.fsV*_base*_iotScale;
+      if(px>=8.8) break;
+      const want=Math.min(2.2,Math.max(1,+(_iotScale*8.8/px).toFixed(2)));
+      if(Math.abs(want-_iotScale)<0.02) break;
+      _iotScale=want;
+      jobFit=_jobFitPlan(boxes,jobMap,_base*_iotScale);
+    }
+  }
 
   let g=[];
   g.push(`<defs>
@@ -6480,8 +6685,15 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       parts.push(`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${border}" stroke-width="3" rx="5" filter="url(#gGlow)" class="mcOn" opacity="0.7"/>`);
     }
     parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${strokeW}" rx="3"/>`);
-    const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
-    parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
+    // v3.30: ป้ายงานที่กำลังผลิต — รหัสเครื่อง + Valve No ในกล่อง (ขนาดเดียวกันทุกกล่องที่เดินเครื่อง)
+    //        ปิดสวิตช์ 🏷️ → tookId=false แล้ววาดรหัสเครื่องกลางกล่องแบบเดิมทุกประการ
+    const job=jobMap[id];
+    const jl=_mcJobSvg(x,y,w,h,job&&job.cur,id,textColor,jobFit);
+    if(jl.tookId){ parts.push(jl.body); }
+    else{
+      const fs=Math.max(5,Math.min(w/(id.length*0.62),h*0.52,10));
+      parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${textColor}" font-family="'Courier New',monospace">${id}</text>`);
+    }
     // v3.8: เครื่อง SOS (คำขอช่วยเหลือค้าง) — วงแหวนแดงกระพริบ + 🆘 มุมซ้ายบน
     const sos = !!(_iotData && _iotData.sos && _iotData.sos.has(id));
     if(sos){
@@ -6495,9 +6707,14 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       parts.push(`<g aria-hidden="true"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`+
         `<text x="${bx.toFixed(1)}" y="${(by+3.4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Arial,sans-serif">${rk}</text></g>`);
     }
+    const jobTxt = !job ? ''
+      : job.noValve ? TT('ยังไม่ได้ระบุเบอร์วาล์วใน record','No valve no. recorded')
+      : `Valve ${job.cur.valve||'-'}${job.cur.lot?' · Lot '+job.cur.lot:''}${job.n>1?` · +${job.n-1} ${TT('งาน','jobs')}`:''}`;
     const aria = (active ? `${id} OAE ${Math.round(oaeVal*100)}%` : `${id} ${TT('ปิดเครื่อง','off')}`)
-      + (rk?` · TOP ${rk}`:'') + (sos?' · SOS':'');
-    g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')">${parts.join('')}</g>`);
+      + (jobTxt?` · ${escapeHtml(jobTxt)}`:'') + (rk?` · TOP ${rk}`:'') + (sos?' · SOS':'');
+    // title = เอาเมาส์ชี้ก็เห็นงานเต็ม ๆ โดยไม่ต้องคลิก (ชื่อ Valve/Lot ยาวที่ถูกย่อในกล่อง)
+    const tip = escapeHtml(`${id}${jobTxt?' — '+jobTxt:''}${active?` · OAE ${Math.round(oaeVal*100)}%`:` · ${TT('ปิดเครื่อง','off')}`}`);
+    g.push(`<g class="iot-mc" data-mc="${id}" role="button" tabindex="0" aria-label="${aria}" onclick="iotMcTap('${id}')"><title>${tip}</title>${parts.join('')}</g>`);
   }
 
   // ป้ายไลน์สีเหลือง (เฉพาะ VSM3) — POL/N3/M1/… ตามเอกสาร Layout
@@ -6541,6 +6758,10 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       </span>
       <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
+      <span class="jb-tgls">
+        <button type="button" class="jb-tgl${_iotJobLbl?' on':''}" onclick="iotToggleJobLbl()" aria-pressed="${_iotJobLbl}"
+          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
+      </span>
       <span style="font-size:10px;color:#6b7280;margin-left:auto">${TT('เปิด','Running')} <b>${nOn}</b> / ${TT('รวม','total')} <b>${tot}</b> ${TT('เครื่อง','machines')}</span>
     </div>
     <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
@@ -6550,6 +6771,15 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
     </div>`;
   _applyIotZoom();
 }
+
+/* ── v3.30 ปุ่มสลับป้ายในกล่อง — วาดผังใหม่ทันที (ไม่ยิง API ใหม่ ใช้ _iotData ที่มีอยู่) ── */
+function iotToggleJobLbl(){
+  _iotJobLbl=!_iotJobLbl;
+  try{ localStorage.setItem('vsm4_iot_joblbl',_iotJobLbl?'1':'0'); }catch(e){}
+  if(_iotData) renderFloorPlan(_iotData.active,_iotData.oae);
+  if(document.getElementById('iotAllOv')) _iotAllRenderMap(true);
+}
+
 
 let _iotScale=1.0;
 let _iotData=null;
@@ -6566,9 +6796,16 @@ function _applyIotZoom(){
     vp.style.height=Math.round(renderedH*_iotScale+4)+'px';
   }
 }
+/* ผู้ใช้กด +/− เอง = หยุดปรับซูมอัตโนมัติ (เคารพค่าที่เขาตั้ง) · กด ⊙ = คืนค่าให้ปรับอัตโนมัติอีกครั้ง */
+let _iotUserZoom=false;
 function iotZoomBtn(dir){
-  if(dir===0)_iotScale=1.0;
-  else _iotScale=Math.min(2.5,Math.max(0.3,_iotScale+dir*0.2));
+  if(dir===0){
+    _iotUserZoom=false; _iotScale=1.0;
+    if(_iotData){ renderFloorPlan(_iotData.active,_iotData.oae); return; }   // วาดใหม่เพื่อคิดซูมอัตโนมัติ
+  } else {
+    _iotUserZoom=true;
+    _iotScale=Math.min(2.5,Math.max(0.3,_iotScale+dir*0.2));
+  }
   _applyIotZoom();
 }
 
@@ -6881,6 +7118,8 @@ function _iotAllShow(){
         <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></span>${TT('ปิดเครื่อง','Off')}</span>
         <span>🆘 SOS</span>
         <span>👆 ${TT('กดที่เครื่อง/การ์ด VSM เพื่อดูรายละเอียด','Tap a machine / VSM card for details')}</span>
+        <button type="button" id="iotAllLblBtn" class="ia-lbltgl${_iotJobLbl?' on':''}" onclick="iotAllToggleLbl()" aria-pressed="${_iotJobLbl}"
+          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่ · ชี้ที่เครื่องเพื่อดู Valve/Lot เต็ม','Print the valve no. inside every running machine box · hover a machine for full Valve/Lot')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
       </span>
     </div>
     <div id="iotAllBody">
@@ -7421,6 +7660,23 @@ function _iotAllRenderMap(keepScroll){
   for(const b of boxes){ const k='vsm'+b.v; const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]); if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h; }
   const out=[`<rect x="-14" y="-14" width="${(W+28).toFixed(0)}" height="${(H+28).toFixed(0)}" fill="#e5e7eb"/>`];
   let nOn=0;
+  // v3.30: งานที่กำลังผลิตของแต่ละเครื่อง แยกราย VSM (คำนวณครั้งเดียวต่อการวาด)
+  // v3.30.2: เครื่องที่เดินอยู่แต่ไม่ได้ระบุเบอร์ ก็ใส่รายการว่างไว้ → ทุกเครื่องที่เดินมีชั้นข้อมูลเหมือนกัน
+  const jobs={}, jobAll={};
+  for(const v of VSM_KEYS){
+    const P=D.per[v]; if(!P) continue;
+    const m=jobs[v]={};
+    for(const id of P.active){
+      const l=_mcJobList(P.byMc[id]);
+      m[id]=l.length?{cur:l[0],n:l.length}:{cur:{valve:'',lot:'',opr:0},n:1,noValve:true};
+      if(!jobAll[id]) jobAll[id]=m[id];
+    }
+  }
+  // ขนาดป้ายชุดเดียวใช้ทั้งผังรวม → ทุกกล่องทั้ง 4 สายหน้าตาเหมือนกัน
+  // ผังรวมเรนเดอร์ที่ (W+28)×_iotAllScale พิกเซล บน viewBox กว้าง (W+28) → k = _iotAllScale ตรง ๆ
+  // ต้อง fit ก่อนคิดขนาดป้าย (วาดครั้งแรก _iotAllScale ยังเป็น null → ไม่งั้นคิดจาก k=1 แล้วป้ายเล็กเกิน)
+  if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
+  const jobFit=_jobFitPlan(boxes,jobAll,_iotAllScale||1);
   for(const v of VSM_KEYS){
     const g=gb[v]; if(!g) continue;
     const mt=_IA_VSM_META[v], p=6;
@@ -7441,14 +7697,23 @@ function _iotAllRenderMap(keepScroll){
     else { border='#ea580c'; fill='#ffedd5'; tc='#7c2d12'; sw=2; }
     const x=+b.x.toFixed(1),y=+b.y.toFixed(1),w=+b.w.toFixed(1),h=+b.h.toFixed(1);
     const parts=[`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${border}" stroke-width="${sw}" rx="3"/>`];
-    const fs=Math.max(4.5,Math.min(w/(b.id.length*0.62),h*0.52,10));
-    parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${tc}" font-family="'Courier New',monospace">${b.id}</text>`);
+    // v3.30: ป้ายงานที่กำลังผลิต (รหัสเครื่อง + Valve No) — ชุดเดียวกับผังราย VSM
+    const jl=_mcJobSvg(x,y,w,h,jobs[v]&&jobs[v][b.id]&&jobs[v][b.id].cur,b.id,tc,jobFit);
+    if(jl.tookId) parts.push(jl.body);
+    else{
+      const fs=Math.max(4.5,Math.min(w/(b.id.length*0.62),h*0.52,10));
+      parts.push(`<text x="${(x+w/2).toFixed(1)}" y="${(y+h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="${tc}" font-family="'Courier New',monospace">${b.id}</text>`);
+    }
     if(P.sos.has(b.id)){
       parts.push(`<rect class="mc-sos" x="${(x-2.5).toFixed(1)}" y="${(y-2.5).toFixed(1)}" width="${(w+5).toFixed(1)}" height="${(h+5).toFixed(1)}" fill="none" stroke="#DC2626" stroke-width="2.5" rx="5"/>`);
       parts.push(`<text class="mc-sos" x="${(x+1).toFixed(1)}" y="${(y+9).toFixed(1)}" font-size="9" aria-hidden="true">🆘</text>`);
     }
-    const aria=(active?`${b.id} OAE ${Math.round(oae*100)}%`:`${b.id} ${TT('ปิดเครื่อง','off')}`)+` · ${_IA_VSM_META[v].label}`;
-    out.push(`<g class="ia-mc" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}">${parts.join('')}</g>`);
+    const jb=jobs[v]&&jobs[v][b.id];
+    const jobTxt=!jb?'' : jb.noValve?TT('ยังไม่ได้ระบุเบอร์วาล์วใน record','No valve no. recorded')
+      : `Valve ${jb.cur.valve||'-'}${jb.cur.lot?' · Lot '+jb.cur.lot:''}${jb.n>1?` · +${jb.n-1}`:''}`;
+    const aria=(active?`${b.id} OAE ${Math.round(oae*100)}%`:`${b.id} ${TT('ปิดเครื่อง','off')}`)+(jobTxt?` · ${escapeHtml(jobTxt)}`:'')+` · ${_IA_VSM_META[v].label}`;
+    const tip=escapeHtml(`${b.id}${jobTxt?' — '+jobTxt:''}${active?` · OAE ${Math.round(oae*100)}%`:` · ${TT('ปิดเครื่อง','off')}`} · ${_IA_VSM_META[v].label}`);
+    out.push(`<g class="ia-mc" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}"><title>${tip}</title>${parts.join('')}</g>`);
   }
   for(const lb of FPA_LB){
     const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
@@ -7489,6 +7754,14 @@ function _iotAllFitKpi(){
   host.style.zoom='';
   const need=host.scrollHeight, have=host.clientHeight;
   if(need>have+4&&have>0) host.style.zoom=Math.max(0.55,have/need).toFixed(3);
+}
+/* สลับป้าย Valve No บนผังรวม 4 VSM — ใช้ค่าเดียวกับผังราย VSM (จำใน localStorage ตัวเดียวกัน) */
+function iotAllToggleLbl(){
+  _iotJobLbl=!_iotJobLbl;
+  try{ localStorage.setItem('vsm4_iot_joblbl',_iotJobLbl?'1':'0'); }catch(e){}
+  const b=document.getElementById('iotAllLblBtn');
+  if(b){ b.classList.toggle('on',_iotJobLbl); b.setAttribute('aria-pressed',String(_iotJobLbl)); }
+  _iotAllRenderMap(true);
 }
 function iotAllZoom(dir){
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
