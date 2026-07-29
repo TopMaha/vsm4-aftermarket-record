@@ -1044,7 +1044,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.30</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.32</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1212,7 +1212,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
     <div class="muted" style="font-size:11px;margin:-4px 0 8px">WIP IN 1.5 = งานรับเข้ารอผลิต · WIP = กำลังผลิต · WIP OUT = ผ่าน FG แล้ว — กดการ์ดเพื่อดู Valve / ยอด / Process / ประวัติ</div>
     <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
       <div class="stat click" style="background:var(--blue-light);border-color:var(--blue-soft)" onclick="showWipDetail('in')"><div class="v" style="color:var(--blue)" id="wbIn">0</div><div class="l">📥 WIP IN 1.5</div></div>
-      <div class="stat orange click" onclick="showWipDetail('wip')"><div class="v" id="wbWip">0</div><div class="l">▶ WIP กำลังผลิต</div></div>
+      <div class="stat orange click" onclick="showWipDetail('wip')"><div class="v" id="wbWip">0</div><div class="l" id="wbWipL">▶ WIP กำลังผลิต</div></div>
       <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l">✓ WIP OUT เดือนนี้ (ผ่าน FG)</div></div>
     </div>
     <div id="wbAlerts"></div>
@@ -4598,7 +4598,13 @@ async function refreshProcOutput() {
         api('/api/kpi?' + new URLSearchParams({ from: f, to: t, limit: '50000' })).catch(() => null),  // limit สูง = คืนครบทั้งช่วง (เดิมไม่ส่ง → cap 500 → ยอด process ต่ำกว่าจริง)
         apiInit(15000).catch(() => null),   // Quick Win #2: ใช้ cache 15 วิ (ไม่ดึง master ซ้ำทุก paint)
       ]);
-      if (k?.records) recs = k.records;
+      if (k?.records) {
+        recs = k.records;
+        // ★ 2026-07-29: ยัดกลับเข้า state ด้วย (Cloud = ความจริงของช่วงนี้) — เดิมใช้แล้วทิ้ง
+        //   ทำให้การ์ด "WIP OUT / ผ่าน FG" ที่คิดจาก state.kpiRecords ใช้ "ชุดข้อมูลเดียวกัน" ทันที
+        //   → แก้อาการ "แก้ไข/ลบข้อมูลแล้ว การ์ดหนึ่งอัปเดต อีกการ์ดยังใช้ของเดิม"
+        _syncKpiFromApi(k.records, f, t);
+      }
       if (init?.targets) {
         state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets);
         syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → กัน machine ที่ตั้งค่าจากเครื่องอื่นตกไป SSG
@@ -4607,6 +4613,8 @@ async function refreshProcOutput() {
   }
   // ★ แสดงเฉพาะ VSM ที่ผู้ใช้สังกัด (Admin = ตามสายที่เลือก) — ไม่ปนข้ามสายอีกต่อไป
   renderProcOutput(filterVsm(recs));
+  // ข้อมูลชุดใหม่เข้า state แล้ว → วาดการ์ด 3 ถังซ้ำ ให้ WIP OUT ขยับพร้อมกันในรอบเดียว (ไม่ต้องรอ poll)
+  if (typeof renderWipBuckets === 'function') { try { renderWipBuckets(); } catch (e) {} }
 }
 // ดึง targets (รวมสถานะงานหลัง FG) ล่าสุดจาก Cloud → ใช้ก่อนแสดงผลที่ต้องเห็นตรงกันทุกเครื่อง
 async function pullJobProcTargets() {
@@ -4625,6 +4633,23 @@ function procSelectAll(on) {
   else _lastProcOut.forEach(o => _procHidden.add(o.proc));
   renderProcTableUI();
 }
+/* ── ยามเฝ้ายอด FG (2026-07-29) ────────────────────────────────────────────
+   ยอด FG ต้องเท่ากัน 2 ที่เสมอ: การ์ด "Output ของ Process → FG" กับ "WIP OUT (ผ่าน FG)" ช่วงเดียวกัน
+   ทั้งคู่คิดจาก Σ OPR ของ record ที่เครื่องตั้ง process = FG ในช่วงนั้น → ต่างกัน = มีบั๊ก/ข้อมูลเพี้ยน
+   โชว์ ✓ เมื่อตรง · ⚠ พร้อมส่วนต่างเมื่อไม่ตรง — จะได้เห็นทันทีตั้งแต่วันแรก ไม่ต้องรอจับได้เอง */
+function _fgReconcileHtml(f, t) {
+  try {
+    if (!f || !t || typeof getWipBuckets !== 'function') return '';
+    const fgRow = _lastProcOut.find(o => o.proc === 'FG');
+    const fgProc = Math.round(+(fgRow && fgRow.opr) || 0);
+    const fgWipOut = Math.round(_wipOutRange(getWipBuckets(), f, t) || 0);
+    const diff = fgWipOut - fgProc;
+    if (!fgProc && !fgWipOut) return '';
+    return diff === 0
+      ? ` · <span style="color:#047857;font-weight:700" title="ยอด FG ตรงกับการ์ด WIP OUT (ผ่าน FG) ช่วงเดียวกัน">✓ FG ${nn(fgProc)} ตรงกับ WIP OUT</span>`
+      : ` · <span style="color:#B91C1C;font-weight:800" title="FG ที่นี่ ${nn(fgProc)} · WIP OUT ${nn(fgWipOut)} — ต้องเท่ากัน กดรีเฟรชหรือแจ้งผู้ดูแล">⚠ FG ไม่ตรงกับ WIP OUT (${diff > 0 ? '+' : ''}${nn(diff)})</span>`;
+  } catch (e) { return ''; }
+}
 function renderProcTableUI() {
   // บอกช่วงวันที่ + สรุปยอดของข้อมูล (ตามตัวกรองที่เลือกในหน้านี้)
   const note = $('procRangeNote');
@@ -4635,7 +4660,7 @@ function renderProcTableUI() {
     const totOpr = shownNow.reduce((s, o) => s + (+o.opr || 0), 0);
     const rangeTxt = (f && f === t) ? fmt(f) : `${fmt(f)} – ${fmt(t)}`;
     note.innerHTML = (f || t)
-      ? `📅 ${rangeTxt} · รวม OPR <b>${nn(totOpr)}</b> ชิ้น · ${shownNow.length} process`
+      ? `📅 ${rangeTxt} · รวม OPR <b>${nn(totOpr)}</b> ชิ้น · ${shownNow.length} process${_fgReconcileHtml(f, t)}`
       : '';
   }
   const bar = $('procFilterBar');
@@ -5406,7 +5431,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.30":"Production Record + KPI · v3.30",
+"ระบบบันทึกผลิต + KPI · v3.32":"Production Record + KPI · v3.32",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -8659,9 +8684,20 @@ async function syncWipin(){
 let _wipinPoll=null, _prodSetTick=0;
 function startWipinSync(){
   syncWipin(); refreshProducedSet();
+  // ยอด "ผ่าน FG เดือนนี้" ต้องคิดจากข้อมูลครบทั้งเดือนและเป็นของล่าสุดเสมอ
+  ensureFgMonthLoaded(true).then(ch=>{ if(ch){ renderWipBuckets(); if(typeof refreshProcOutput==='function') refreshProcOutput(); } }).catch(()=>{});
+  // WIP/WIP IN = สถานะปัจจุบัน → ต้องมองงานทุกล็อตที่ยังไม่จบ (ไม่ใช่แค่ที่อยู่ใน cache)
+  ensureAllJobsLoaded(true).then(ch=>{ if(ch){ renderWipBuckets(); renderWipInSummary(); } }).catch(()=>{});
   if(_wipinPoll) clearInterval(_wipinPoll);
   // produced-set หนักกว่า wipin (distinct ทั้งตาราง) → รีเฟรชทุก 60 วิ (ทุก 4 รอบ) ก็พอ
-  _wipinPoll=setInterval(()=>{ syncWipin(); if((++_prodSetTick%4)===0) refreshProducedSet(); },15000);
+  _wipinPoll=setInterval(()=>{
+    syncWipin();
+    if((++_prodSetTick%4)===0){
+      refreshProducedSet();
+      ensureFgMonthLoaded().then(ch=>{ if(ch) renderWipBuckets(); }).catch(()=>{});
+      ensureAllJobsLoaded().then(ch=>{ if(ch){ renderWipBuckets(); renderWipInSummary(); } }).catch(()=>{});   // TTL 10 นาที กันยิงถี่
+    }
+  },15000);
 }
 function stopWipinSync(){ if(_wipinPoll){ clearInterval(_wipinPoll); _wipinPoll=null; } }
 
@@ -8685,6 +8721,64 @@ async function refreshProducedSet(){
     }
   }catch(e){}
 }
+
+/* ── ครอบคลุม "ทั้งเดือนปัจจุบัน" เสมอ + ให้ Cloud เป็นแหล่งความจริง ───────────
+   ปัญหาเดิม: ยอด WIP OUT/ผ่าน FG คิดจาก state.kpiRecords ที่โหลดมา 30 วันตอนเปิดแอป
+   แล้วถูก merge เพิ่มเรื่อย ๆ ตามช่วงวันที่ที่ผู้ใช้เปิดดู (merge = เพิ่มอย่างเดียว ไม่เคยตัดออก)
+     • เปิดดูย้อนหลังเดือนก่อน → record เดือนก่อนค้างใน cache → ยอด "เดือนนี้" เพี้ยน
+     • record ที่ถูก "แก้ไข/ลบ" จากเครื่องอื่น → เครื่องนี้ยังถือของเก่าไว้คำนวณต่อ
+   แก้: ดึงช่วง 1 → วันนี้ (ทุกกะ ทุกโซน) มา แล้วใช้ _syncKpiFromApi = Cloud ชนะภายในช่วงนี้
+        (record ที่ยังไม่ขึ้น Cloud _unsynced ยังถูกเก็บไว้) → ทุกเครื่องเห็นยอดเดือนนี้ตรงกันเสมอ */
+let _fgMonthAt=0, _fgMonthKey='';
+async function ensureFgMonthLoaded(force){
+  if(!API) return false;
+  const t=todayISO(), key=t.slice(0,7), from=key+'-01';
+  if(!force && key===_fgMonthKey && (Date.now()-_fgMonthAt)<60000) return false;   // กันยิงถี่ (1 ครั้ง/นาที)
+  try{
+    const k=await api('/api/kpi?'+new URLSearchParams({from, to:t, limit:'50000'}));
+    if(!k||!Array.isArray(k.records)) return false;
+    _fgMonthKey=key; _fgMonthAt=Date.now();
+    const before=state.kpiRecords.length;
+    _syncKpiFromApi(k.records, from, t);          // Cloud = source of truth สำหรับเดือนนี้
+    return state.kpiRecords.length!==before;
+  }catch(e){ return false; }                       // offline → ใช้ local ต่อได้ (ยิงใหม่รอบหน้า)
+}
+
+/* ── ข้อมูล "ครบทุกช่วง" สำหรับคิด 3 ถัง WIP (2026-07-29) ───────────────────
+   WIP / WIP IN เป็น "สถานะปัจจุบัน" ไม่ใช่ยอดตามช่วงเวลา → ต้องมองงานทุกล็อตที่ยังไม่จบ
+   เดิมคิดจาก state.kpiRecords/prodRecords ที่โหลดมาแค่ 30 วัน → ตัวเลขขยับตามว่าเครื่องนั้น
+   บังเอิญมีข้อมูลย้อนหลังแค่ไหน (วัดจริง: WIP = 502,077 / 749,013 / 1,163,120 แล้วแต่ cache)
+   ข้อมูลทั้งระบบมีแค่ ~9,400 KPI + ~9,000 prod (≈1.2 MB บีบอัด) → โหลดครบได้สบาย
+   เก็บใน memory ล้วน ไม่ลง localStorage (ก้อนดิบ ~14 MB เกินโควตา) */
+let _allKpi = null, _allProd = null, _allAt = 0, _allBusy = false;
+const ALLJOBS_TTL = 600000;   // 10 นาที — WIP ไม่ต้องสด ๆ ทุกวินาที (WIP OUT มี ensureFgMonthLoaded ดูแลรายเดือนอยู่แล้ว)
+async function ensureAllJobsLoaded(force){
+  if (!API || _allBusy) return false;
+  if (!force && _allKpi && (Date.now() - _allAt) < ALLJOBS_TTL) return false;
+  _allBusy = true;
+  try {
+    const t = todayISO();
+    const [k, p] = await Promise.all([
+      api('/api/kpi?from=2020-01-01&to=' + t + '&limit=100000', { silent:true }),
+      api('/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000', { silent:true }),
+    ]);
+    if (!k?.records || !p?.records) return false;
+    _allKpi  = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
+    _allProd = p.records
+      .map(r => ({ ...r, record_id:r.record_id||r.recordId, valve_no:r.valveNo||r.valve_no, current_process:r.currentProcess||r.current_process }))
+      .filter(r => !_deletedProdIds.has(r.record_id));
+    _allAt = Date.now();
+    _wbCache = null;                 // ข้อมูลชุดใหม่ → บังคับคิด 3 ถังใหม่
+    _postFgRecs = _allKpi;           // กล่องงานหลัง FG ใช้ชุดเดียวกัน (ไม่ต้องดึงซ้ำอีก 10 MB)
+    return true;
+  } catch (e) { return false; }      // offline → ใช้ cache ไปก่อน
+  finally { _allBusy = false; }
+}
+// ชุดข้อมูลที่ใช้คิด 3 ถัง — ครบทุกช่วงถ้าโหลดเสร็จแล้ว · ระหว่างรอโหลดใช้ cache ไปก่อน
+function _wipKpiSrc()  { return _allKpi  || state.kpiRecords  || []; }
+function _wipProdSrc() { return _allProd || state.prodRecords || []; }
+// โหลดครบแล้วหรือยัง — ใช้บอกผู้ใช้ว่าตัวเลขที่เห็นเป็นของชั่วคราว
+function _wipDataComplete(){ return !!_allKpi; }
 
 /* ── หัวใจ: จัดงานเป็น 3 ถัง (VSM-scoped) ────────────────────────────────
    WIP OUT = ทุกงานที่ถึง FG แล้ว (computePostFgAll)
@@ -8728,7 +8822,9 @@ function computeWipBuckets(){
   const lastProcOf=v=>{ const f=_valveFlow(v).map(_procCanon); return f[f.length-1]||''; };
 
   // งานที่ถึง FG แล้ว (VSM-scoped) = WIP OUT
-  const fgItems=computePostFgAll(filterVsm(state.kpiRecords||[]));
+  // ★ ใช้ข้อมูล "ครบทุกช่วง" (_wipKpiSrc) ไม่ใช่ cache 30 วัน — ไม่งั้นงานที่ถึง FG ไปนานแล้ว
+  //   แต่หลุดช่วง cache จะถูกนับเป็น "กำลังผลิต" ค้างตลอดไป และตัวเลขขยับตามเครื่องที่เปิดดู
+  const fgItems=computePostFgAll(filterVsm(_wipKpiSrc()));
   const reachedFg=new Set(fgItems.map(it=>jobKey(it.valve,it.lot)));
 
   // จัดกลุ่ม prodRecords ตาม (valve::lot)
@@ -8737,7 +8833,7 @@ function computeWipBuckets(){
   //   KPI record มี machine_id เสมอ = แหล่งหลัก · prodRecords มีเฉพาะ record ที่ link จาก KPI (เสริม)
   const mcByJob={};
   const _addMc=(k,mc)=>{ mc=String(mc||'').trim(); if(mc){ (mcByJob[k]=mcByJob[k]||new Set()).add(mc); } };
-  for(const r of filterVsm(state.prodRecords||[])){
+  for(const r of filterVsm(_wipProdSrc())){
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
     const k=jobKey(vno,lot);
@@ -8756,7 +8852,7 @@ function computeWipBuckets(){
 
   // scrap ต่อ (valve::lot) จาก KPI/shift records — ชิ้นที่ "เสียแล้ว" ไม่นับเป็น WIP
   const scrapByJob={};
-  for(const r of filterVsm(state.kpiRecords||[])){
+  for(const r of filterVsm(_wipKpiSrc())){
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
     const jk=jobKey(vno,lot);
@@ -8796,11 +8892,15 @@ function computeWipBuckets(){
     wip.items.push({valve:g.valve,lot:g.lot,qty:wipQty,curProc:last.proc,customer:cust,date:last.date,scrap:scr,wipIn:inQty,basis,machines:[...(mcByJob[k]||[])]});
   }
 
-  // ---- WIP OUT (ผ่าน FG) ---- (เก็บทุกงาน · กรองเดือนตอนแสดง)
+  // ---- WIP OUT (ผ่าน FG) ---- (เก็บทุกงาน · ตัดยอดตามวันตอนแสดง)
+  //  date = วันที่ "ผ่าน FG จริง" (fgDate) — ไม่ใช่วันที่ admin กดขยับงาน (จะทำให้ยอดตกผิดเดือน)
+  //  fgByDate = ยอดแยกรายวัน → รวมช่วงไหนก็ตรงกับ Output ของ Process ช่วงเดียวกัน
   const wipOut={total:0,byCust:{},items:[]};
   for(const it of fgItems){
     wipOut.total+=it.qty; wipOut.byCust[it.customer]=(wipOut.byCust[it.customer]||0)+it.qty;
-    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,date:it.date||it.fgDate||'',machines:[...(mcByJob[jobKey(it.valve,it.lot)]||[])]});
+    wipOut.items.push({valve:it.valve,lot:it.lot,qty:it.qty,curProc:it.cur,customer:it.customer,
+      date:it.fgDate||it.date||'', moveDate:it.date||'', fgByDate:it.fgByDate||{}, unknown:!!it.unknown,
+      machines:[...(mcByJob[jobKey(it.valve,it.lot)]||[])]});
   }
 
   // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
@@ -8834,16 +8934,33 @@ function getWipBuckets(){
   return _wbCache;
 }
 
+/* ── ยอด WIP OUT ตามช่วงวันที่ "ผ่าน FG จริง" ─────────────────────────────
+   แหล่งเดียวของทุกตัวเลข WIP OUT (วันนี้ / เมื่อวาน / เดือนนี้ / ป๊อปอัป)
+   ตัดยอดจาก fgByDate รายวัน → ผลรวมช่วงใดก็เท่ากับ Σ OPR ที่ process FG ช่วงเดียวกันเป๊ะ
+   (เดิม: เหมายอดทั้งล็อตลงเดือนเดียว + วันที่ว่างถือเป็นเดือนปัจจุบัน → ยอดเกินจริงและแกว่งตาม cache) */
+function _wipOutRange(b, from, to){
+  let s=0;
+  for(const i of (b.wipOut.items||[])){
+    const m=i.fgByDate||{};
+    for(const d in m){ if(d>=from && d<=to) s+=Number(m[d])||0; }
+  }
+  return s;
+}
 /* ยอด WIP OUT ของ "เดือนปัจจุบัน" (ตัวเลขบนการ์ด/ชิป — สอดคล้องกับ default ของป๊อปอัป) */
 function _wipOutCurMonth(b){
-  const cm=todayISO().slice(0,7);
-  return (b.wipOut.items||[]).filter(i=>(((i.date||'').slice(0,7))||cm)===cm).reduce((s,i)=>s+i.qty,0);
+  const t=todayISO();
+  return _wipOutRange(b, t.slice(0,7)+'-01', t);
 }
 /* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
 function renderWipBuckets(){
   const b=getWipBuckets();
   const set=(id,v)=>{ const el=$(id); if(el) el.textContent=nn(v); };
   set('wbIn', b.wipIn.total); set('wbWip', b.wip.total); set('wbOut', _wipOutCurMonth(b));
+  // ระหว่างที่ยังโหลดข้อมูลครบไม่เสร็จ ตัวเลข WIP/WIP IN ยังไม่ครบ → บอกให้รู้ ไม่ให้เข้าใจผิดว่านี่คือยอดจริง
+  const wl=$('wbWipL');
+  if(wl) wl.innerHTML = _wipDataComplete()
+    ? '▶ WIP กำลังผลิต'
+    : '▶ WIP กำลังผลิต <span style="color:#B45309" title="'+TT('กำลังโหลดข้อมูลย้อนหลังให้ครบ — ยอดอาจยังไม่ครบ','loading full history — figure may be incomplete')+'">⏳</span>';
   // แถบแจ้งเตือน "งานรอผลิตต่อ"
   const al=$('wbAlerts');
   if(al){
@@ -8863,7 +8980,7 @@ function _wipInYesterday(b){
 }
 function _wipOutYesterday(b){
   const y=yesterdayISO();
-  return (b.wipOut.items||[]).filter(i=>String(i.date||'').slice(0,10)===y).reduce((s,i)=>s+(Number(i.qty)||0),0);
+  return _wipOutRange(b,y,y);
 }
 // ยอดรับเข้า "รวมทั้งเดือนนี้" (นับทุกรายการที่รับเข้า ไม่หักที่เริ่มผลิตแล้ว) + ยอดออก "วันนี้"
 function _wipInCurMonth(b){
@@ -8872,7 +8989,7 @@ function _wipInCurMonth(b){
 }
 function _wipOutToday(b){
   const t=todayISO();
-  return (b.wipOut.items||[]).filter(i=>String(i.date||'').slice(0,10)===t).reduce((s,i)=>s+(Number(i.qty)||0),0);
+  return _wipOutRange(b,t,t);
 }
 /* การ์ด WIP บน IOT (v3.8) — เหลือ 2 การ์ดกะทัดรัด: IN 1.5 / OUT · แต่ละใบโชว์ ปัจจุบัน|เมื่อวาน|รวมทั้งเดือน
    "ปัจจุบัน" ของ IN = ยอดที่รอผลิตตอนนี้ (ตัวเลขเดิมของการ์ด) · ของ OUT = ยอดที่ผ่าน FG วันนี้ */
@@ -9571,13 +9688,16 @@ function wipDetailBody(bucket){
   let monthCtrl='';
   if(isOut){
     // WIP OUT: กรองตามเดือน · default = เดือนปัจจุบัน · เปลี่ยนเดือนได้เฉพาะ Admin (ผู้ใช้ทั่วไปเห็นเดือนปัจจุบัน)
+    // ★ ตัดยอดตาม "วันที่ผ่าน FG จริง" รายวัน (fgByDate): ล็อตที่ผ่าน FG คร่อม 2 เดือน จะโชว์เฉพาะส่วนของเดือนนั้น
+    //   → ผลรวมในป๊อปอัป = ตัวเลขบนการ์ด = ยอด FG ใน "Output ของ Process" ช่วงเดียวกัน
     const curMonth=todayISO().slice(0,7);
     const eff=_wipOutMonth||curMonth;
-    const monthOf=i=>(((i.date||'').slice(0,7))||curMonth);
-    items=items.filter(i=>monthOf(i)===eff);
+    const monthQty=i=>{ let s=0; const m=i.fgByDate||{}; for(const d in m) if(d.slice(0,7)===eff) s+=Number(m[d])||0; return s; };
+    items=items.map(i=>({...i,qty:monthQty(i)})).filter(i=>i.qty>0);
     const isAdmin=(typeof canSeeAllVsm==='function' && canSeeAllVsm());
     if(isAdmin){
-      let months=_wipMonthsFromItems(bucket2.items);
+      // เดือนที่เลือกได้ = เดือนที่ "มีการผ่าน FG จริง" (จาก fgByDate) ไม่ใช่วันที่ admin กดขยับ
+      let months=[...new Set(bucket2.items.flatMap(i=>Object.keys(i.fgByDate||{}).map(d=>d.slice(0,7))))].sort().reverse();
       if(!months.includes(curMonth)) months=[curMonth,...months];
       monthCtrl=`<div class="fr mb-8" style="margin:0 0 8px"><label>🔒 ${TT('เลือกเดือน (Admin)','Month (Admin)')}</label>
         <select onchange="_wipOutMonth=this.value;_wipPg.page=1;_refreshWipDetail()">
@@ -9594,7 +9714,7 @@ function wipDetailBody(bucket){
   // v3.8: แบ่งหน้า — วาดเฉพาะ 15 แถวของหน้าที่แสดง (รายการเยอะแล้วหน้าเว็บไม่ค้าง)
   const rowFn=i=>`
     <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}">
-      <td><b>${escapeHtml(i.valve)}</b></td>
+      <td><b>${escapeHtml(i.valve)}</b>${i.unknown?` <span class="tag tag-red" style="font-size:10px" title="${TT('ไม่มีเบอร์นี้ใน Master Valve — ยอดยังนับให้ แต่ควรไปแก้ที่กล่อง Unknown','not in Master Valve — counted, but fix it in the Unknown box')}">⚠</span>`:''}</td>
       <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
       <td>${escapeHtml(i.lot||'-')}</td>
       ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
@@ -9696,7 +9816,7 @@ function showWipHistory(valveEnc, lotEnc){
   const recs=filterVsm(state.prodRecords||[]).filter(r=>vKey(r.valve_no||r.valveNo)===vKey(valve) && lotKey(r.lot)===lotKey(lot));
   const pop=_wipPerProc(recs, valve);
   const received=_wipinList().filter(e=>vKey(e.valve)===vKey(valve)&&lotKey(e.lot)===lotKey(lot)).reduce((s,e)=>s+e.qty,0);
-  const fgItems=computePostFgAll(filterVsm(state.kpiRecords||[])).filter(it=>vKey(it.valve)===vKey(valve)&&lotKey(it.lot)===lotKey(lot));
+  const fgItems=computePostFgAll(filterVsm(_wipKpiSrc())).filter(it=>vKey(it.valve)===vKey(valve)&&lotKey(it.lot)===lotKey(lot));
   const body=`
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
       ${received?`📥 ${TT('รับเข้า WIP IN 1.5','Received (WIP IN 1.5)')}: <b>${nn(received)}</b> ${TT('ชิ้น','pcs')}<br>`:''}
@@ -14515,6 +14635,7 @@ function syncMcProcFromCloud(targets) {
    (แต่ "Output ของ Process" ยังนับยอดผลิตที่ process ของเครื่องตามจริง — ไม่หาย)
    ============================================================ */
 const POST_FG_FLOW = ['FG', 'P/T', 'POL', 'QC', 'DONE'];   // fallback เมื่อหา process ของวาล์วไม่เจอ
+const NO_VALVE = '(ไม่ระบุวาล์ว)';   // ป้ายเดียวกับ "Output ของ Process" — ยอดที่ลงโดยไม่ระบุเบอร์วาล์ว
 const PROC_DEPT    = { 'FG':'VSM4', 'P/T':'PC', 'POL':'VSM4', 'QC':'QC', 'DONE':'จบงาน' };
 // ลำดับ process หลัง FG "ของวาล์วเบอร์นี้" — ตาม Master valve (processes ของวาล์ว) ไม่ใช่สูตรตายตัว
 // เช่น VV7242M1 = FG → QC เลย (ข้าม P/T, POL) · ตัดเอาตั้งแต่ FG เป็นต้นไป + DONE ปิดท้าย
@@ -14573,10 +14694,10 @@ function computePostFgAll(recs) {
   const vCust = {};
   for (const v of (state.valves || [])) vCust[vKey(v.valveNo)] = custGroup(v.customer);   // 4 กลุ่มลูกค้า (P2-21)
   const groups = {};
+  // record ที่ไม่ได้ระบุเบอร์วาล์ว → รวมไว้ใต้ชื่อเดียวกับ "Output ของ Process" (เดิมทิ้งทั้งก้อน = ยอดผ่าน FG หายเงียบ)
   for (const r of (recs || [])) {
-    const vno = (r.valve_no || r.valveNo || '').trim();
+    const vno = (r.valve_no || r.valveNo || '').trim() || NO_VALVE;
     const lot = (r.lot || '').trim();
-    if (!vno && !lot) continue;
     (groups[vKey(vno) + '::' + lotKey(lot)] = groups[vKey(vno) + '::' + lotKey(lot)] || []).push(r);
   }
   const dKey = r => (r.shift_date || r.record_date || '') + (r.shift_type === 'night' ? '1' : '0') + (r.saved_at || '');
@@ -14585,9 +14706,12 @@ function computePostFgAll(recs) {
     const g = groups[key];
     let latest = g[0];
     for (const r of g) if (dKey(r) > dKey(latest)) latest = r;   // ใช้แค่หา valve/lot ตัวแทน
-    const vno = (latest.valve_no || latest.valveNo || '').trim();
+    const vno = (latest.valve_no || latest.valveNo || '').trim() || NO_VALVE;
     const lot = (latest.lot || '').trim();
-    if (!vno || !isKnownValve(vno)) continue;       // เฉพาะวาล์วที่มีในระบบจริง (วาล์วผิด → ไปจัดการที่กล่อง Unknown)
+    // วาล์วที่ไม่มีใน Master (หรือไม่ระบุเบอร์) → ติดธง unknown แทนการทิ้ง
+    //   กล่องจัดการหลัง FG ยังกรองออก (computePostFgJobs) แต่ WIP OUT ต้องนับให้ครบ
+    //   ไม่งั้นยอด "ผ่าน FG" หายเงียบ ๆ → ไม่ตรงกับ Output ของ Process
+    const unknown = (vno === NO_VALVE) || !isKnownValve(vno);
     const ov  = getJobProc(vno, lot);
     // "ถึง FG แล้ว" = มี record ที่เครื่องตั้ง process=FG อย่างน้อย 1 รายการ (ไม่ใช่ดูแค่ record ล่าสุดตามวันที่)
     //   เดิมดู process ของ record ล่าสุดเท่านั้น → ถ้าพนักงานลง process อื่นทีหลัง งานที่ถึง FG แล้วจะหลุดออกจากระบบหลัง FG
@@ -14596,16 +14720,26 @@ function computePostFgAll(recs) {
     const cur = ov || 'FG';                          // ตำแหน่งเริ่มต้นในสายหลัง FG = FG
     // ยอดงาน = OPR รวมที่ FG (ยกยอดตามไปขั้นถัดไป)
     const qty = fgRecs.reduce((s, r) => s + (Number(r.opr) || 0), 0);
-    // วันที่ "ถึง FG" = วันล่าสุดของ record ที่ FG (ใช้กรองเดือนใน WIP OUT) — fallback วันที่ admin ขยับ
+    // ★ 2026-07-29: แยกยอด FG ราย "วันที่ผลิตจริง" (fgByDate) — หัวใจของการทำให้ยอดตรงกัน
+    //   งานหนึ่งล็อตมักผ่าน FG หลายวัน/คร่อมเดือน. เดิมเก็บแค่ "วันเดียว" แล้วเหมายอดทั้งล็อตลงเดือนนั้น
+    //   → ชิ้นที่ผ่าน FG เดือนก่อน ถูกนับเป็นเดือนนี้ (WIP OUT เกินจริง ไม่ตรงกับ Output ของ Process)
+    //   ตอนนี้ตัดยอดตามวันจริง → รวมช่วงไหนก็เท่ากับผลรวม OPR ที่ process FG ช่วงเดียวกันเป๊ะ
+    const fgByDate = {};
     let fgDate = '';
-    for (const r of fgRecs) { const d = (r.shift_date || r.record_date || (r.timestamp || '').slice(0, 10) || ''); if (d > fgDate) fgDate = d; }
-    out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot), fgDate });
+    for (const r of fgRecs) {
+      const d = (r.shift_date || r.record_date || (r.timestamp || '').slice(0, 10) || '');
+      if (!d) continue;
+      fgByDate[d] = (fgByDate[d] || 0) + (Number(r.opr) || 0);
+      if (d > fgDate) fgDate = d;
+    }
+    out.push({ valve: vno, lot, qty, cur, customer: vCust[vKey(vno)] || 'Other', date: getJobProcDate(vno, lot), fgDate, fgByDate, unknown });
   }
   return out;
 }
 // งานที่ยังไม่จบ (อยู่ใน FG/P/T/POL/QC) — สำหรับกล่องจัดการ
 function computePostFgJobs(recs) {
-  return computePostFgAll(recs).filter(j => j.cur !== 'DONE').sort((a, b) => b.qty - a.qty);
+  // กล่องจัดการงานหลัง FG = เฉพาะวาล์วที่มีใน Master (วาล์วผิด → ไปแก้ที่กล่อง Unknown ก่อน)
+  return computePostFgAll(recs).filter(j => !j.unknown && j.cur !== 'DONE').sort((a, b) => b.qty - a.qty);
 }
 // งานที่ "จบแล้ว" — อ่านจาก targets store ล้วน (qty+วันที่เก็บไว้แล้ว) ไม่ต้องพึ่ง KPI ย้อนหลัง
 // → นับเข้า "ผลิตเสร็จ" ได้แม้ KPI ของงานนั้นอยู่นอกช่วง 30 วันที่โหลดมา
@@ -14797,8 +14931,12 @@ async function refreshPostFgFromCloud(silent) {
       state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets);
       syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → คิดงานหลัง FG ให้ตรง
     }
-    const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=20000').catch(() => null);
-    _postFgRecs = k?.records || state.kpiRecords || [];
+    // โหลดชุดครบทุกช่วงไว้แล้ว (หน้าติดตามงาน) → ใช้ซ้ำ ไม่ต้องดึงก้อน ~10 MB อีกรอบ
+    if (_allKpi) { _postFgRecs = _allKpi; }
+    else {
+      const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=100000').catch(() => null);
+      _postFgRecs = k?.records || state.kpiRecords || [];
+    }
   } catch (e) { _postFgRecs = state.kpiRecords || []; }
   if (!silent) hideBusy();
   renderPostFgJobs();
