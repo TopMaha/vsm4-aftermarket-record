@@ -1044,7 +1044,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.33</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.35</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1533,10 +1533,13 @@ tr.hv-detail.hv-done>td{opacity:.55}
       <div class="fr" style="margin:0"><label>รหัส</label><input type="text" id="newEmpId" placeholder="เช่น L-9999"></div>
       <div class="fr" style="margin:0"><label>ชื่อ</label><input type="text" id="newEmpName" placeholder="ชื่อ-นามสกุล"></div>
       <div class="fr" style="margin:0"><label>VSM</label>
+        <!-- ค่าต้องเป็นคีย์จริง (vsm1/vsm2/vsm3/vsm4) — เดิมมี "vsm12" ซึ่งไม่ใช่คีย์ที่ระบบรู้จัก
+             → คนที่เพิ่มด้วยตัวเลือกนั้นถูกจัดเป็น VSM4 · ค่าเริ่มต้นตั้งจาก renderEmployeeList() = สายที่กำลังดู -->
         <select id="newEmpVsm">
-          <option value="vsm12">VSM 1-2</option>
+          <option value="vsm1">VSM 1</option>
+          <option value="vsm2">VSM 2</option>
           <option value="vsm3">VSM 3</option>
-          <option value="vsm4" selected>VSM 4</option>
+          <option value="vsm4">VSM 4</option>
         </select>
       </div>
     </div>
@@ -1544,10 +1547,12 @@ tr.hv-detail.hv-done>td{opacity:.55}
     <div class="muted mb-8" style="font-size:12px">รวม <span id="empCount">0</span> คน · กรอง:
       <select id="empVsmFilter" onchange="_listPage.emp=0;renderEmployeeList()" style="border:1px solid var(--blue-soft);border-radius:6px;padding:2px 6px;font-size:12px">
         <option value="">ทุก VSM</option>
-        <option value="vsm12">VSM 1-2</option>
+        <option value="vsm1">VSM 1</option>
+        <option value="vsm2">VSM 2</option>
         <option value="vsm3">VSM 3</option>
         <option value="vsm4">VSM 4</option>
       </select>
+      <span id="empVsmTally" class="muted" style="font-size:11px;margin-left:6px"></span>
     </div>
     <div class="muted mb-8" style="font-size:11px;line-height:1.6;color:var(--muted2)">ℹ️ การตั้ง VSM ที่นี่มีผล <b>เฉพาะเครื่องนี้</b> (รอด sync กับ D1) — ถ้าจะให้ทุกเครื่องเหมือนกัน ให้ใส่รหัสใน <code>VSM_EMP_MAP</code> ใน index.html แล้ว push</div>
     <div class="tbl-wrap"><table id="empTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>VSM</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
@@ -1673,8 +1678,9 @@ let localStorage;
     removeItem: (k) => { delete mem[k]; },
     clear:      () => { mem = {}; },
   };
-  // คีย์ cache ก้อนใหญ่ที่ "โหลดใหม่จากเซิร์ฟเวอร์ได้" → ทิ้งได้ถ้าพื้นที่เต็ม
-  const EVICTABLE = ['vsm4_kpi_records','vsm4_prod_records','vsm4_valve_ids','vsm4_plans'];
+  // คีย์ cache ก้อนใหญ่ที่ "โหลดใหม่จากเซิร์ฟเวอร์ได้" → ทิ้งได้ถ้าพื้นที่เต็ม (เรียงจากใหญ่/ทิ้งง่ายสุดก่อน)
+  //   ขนาดจริงที่วัดได้: prod_records ~3.3 MB · valve_ids ~557 KB · valves ~181 KB · targets ~77 KB
+  const EVICTABLE = ['vsm4_prod_records','vsm4_kpi_records','vsm4_valve_ids','vsm4_plans'];
   function isQuotaErr(e){
     return !!e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
       || e.code === 22 || e.code === 1014 || /quota/i.test(e.message || ''));
@@ -1682,7 +1688,8 @@ let localStorage;
   let warned = false;
   function warnFull(){
     if (warned) return; warned = true;
-    const msg = 'พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม — งานยังบันทึกขึ้นเซิร์ฟเวอร์ได้ตามปกติ '
+    const msg = 'พื้นที่ cache ในเบราว์เซอร์เต็ม (ไม่ใช่ข้อมูลหาย) — ระบบทิ้ง cache เก่าให้อัตโนมัติแล้ว '
+              + 'งานทั้งหมดอยู่บนเซิร์ฟเวอร์ครบ และยังบันทึกได้ตามปกติ '
               + '(ถ้าเปิดในแอป LINE แนะนำให้กดมุมขวาบนแล้วเลือก "เปิดด้วย Safari/Chrome")';
     const show = () => { try { if (typeof toast === 'function') { toast(msg, 'orange'); return true; } } catch (_) {} return false; };
     if (!show()) window.addEventListener('DOMContentLoaded', show);
@@ -1700,16 +1707,21 @@ let localStorage;
       setItem:    (k, v) => {
         const s = String(v);
         try { ls.setItem(k, s); return; }
-        catch (e) {
-          if (!isQuotaErr(e)) throw e;          // error อื่น (เช่น SecurityError) ปล่อยตามเดิม
-          try {
-            for (const ek of EVICTABLE) { if (ek !== k) { try { ls.removeItem(ek); } catch (_) {} } }
-            ls.setItem(k, s); return;
-          } catch (e2) {
-            try { ls.removeItem(k); } catch (_) {}  // กันค่าครึ่ง ๆ ค้าง
-            warnFull();                              // กลืน error — ข้อมูลบนเซิร์ฟเวอร์ยังครบ
-          }
+        catch (e) { if (!isQuotaErr(e)) throw e; }   // error อื่น (เช่น SecurityError) ปล่อยตามเดิม
+        // พื้นที่เต็ม → ทิ้ง cache ก้อนใหญ่ "ทีละก้อน" แล้วลองใหม่ (ทิ้งเท่าที่จำเป็นพอ ไม่ล้างหมด)
+        for (const ek of EVICTABLE) {
+          if (ek === k) continue;
+          try { ls.removeItem(ek); } catch (_) {}
+          try { ls.setItem(k, s); return; }
+          catch (e2) { if (!isQuotaErr(e2)) throw e2; }
         }
+        /* ★ 2026-07-30 — ทิ้งหมดแล้วยังไม่พอ: "คงค่าเดิมไว้" ห้ามลบคีย์นี้
+           เดิมบรรทัดนี้คือ ls.removeItem(k) (ตั้งใจกันค่าครึ่ง ๆ ค้าง) แต่ setItem ของ localStorage
+           เป็น atomic อยู่แล้ว — เขียนไม่สำเร็จ = ค่าเดิมยังอยู่ครบ ไม่มีค่าครึ่ง ๆ
+           ผลข้างเคียงที่เกิดจริง: vsm4_valves (181 KB) เขียนไม่ลง → ถูก "ลบทิ้ง" →
+           เปิดแอปครั้งหน้า state.valves ตกไปใช้ DEFAULT_VALVES แค่ 3 เบอร์ →
+           วาล์ว 1,213 เบอร์กลายเป็น "ไม่รู้จักลูกค้า" → ชิป SWE/OES&OEM ขึ้น 0 ทั้งที่ข้อมูลครบบนเซิร์ฟเวอร์ */
+        warnFull();                                  // กลืน error — ข้อมูลบนเซิร์ฟเวอร์ยังครบ
       },
     };
   }
@@ -1875,10 +1887,31 @@ function lsLoad(key, fallback) {
 let _fvVer = 0;                       // เวอร์ชันข้อมูล — ใช้ทั้ง filterVsm memo (#3)
 const _lsDirty = {};                  // key → ค่าล่าสุดที่รอเขียนลง localStorage
 let _lsTimer = null;
+/* ★ 2026-07-30 — กัน "พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม" ที่เด้งแทบทุกครั้งที่เปิดแอป
+   สาเหตุ: cache 4 ก้อนนี้ถูกเขียนลง localStorage เต็มจำนวน (KPI/prod 10,000 แถว + IDs 50,000
+   แถว ≈ หลาย MB) แต่ quota ของ in-app browser (LINE/iOS) มีแค่ ~5 MB
+   แก้: เขียนลง disk แค่ "ชุดล่าสุด" ตามเพดานด้านล่าง — ของใน memory (state.*) ยังครบเหมือนเดิม
+        และเปิดแอปครั้งหน้า reload()/ensureAllJobsLoaded() ดึงของจริงจาก Cloud มาอยู่แล้ว
+   ★ record ที่ยังไม่ขึ้น Cloud (_unsynced) มีอยู่ที่นี่ที่เดียว → เก็บไว้ครบเสมอ ห้ามตัด */
+const LS_CAP = {
+  'vsm4_kpi_records':  4000,
+  'vsm4_prod_records': 4000,
+  'vsm4_valve_ids':    8000,
+  'vsm4_plans':        3000,
+};
+function _lsTrim(key, val) {
+  const cap = LS_CAP[key];
+  if (!cap || !Array.isArray(val) || val.length <= cap) return val;
+  const pending = val.filter(r => r && r._unsynced);
+  const rest    = val.filter(r => !(r && r._unsynced));
+  const dateOf  = r => String((r && (r.shift_date || r.record_date || r.timestamp || r.plan_date)) || '');
+  rest.sort((a, b) => dateOf(b).localeCompare(dateOf(a)));   // ใหม่สุดก่อน (ไม่มีวันที่ = คงลำดับเดิม)
+  return [...pending, ...rest.slice(0, Math.max(0, cap - pending.length))];
+}
 function _lsFlush() {
   if (_lsTimer) { clearTimeout(_lsTimer); _lsTimer = null; }
   for (const k in _lsDirty) {
-    try { localStorage.setItem(k, JSON.stringify(_lsDirty[k])); } catch (e) {}
+    try { localStorage.setItem(k, JSON.stringify(_lsTrim(k, _lsDirty[k]))); } catch (e) {}
     delete _lsDirty[k];
   }
 }
@@ -2164,11 +2197,36 @@ const VSM_EMP_MAP = {
    ใช้ตอน admin เพิ่ม/ย้าย VSM ผ่านหน้า Settings ก่อนนำไปฝังในโค้ด
    (มีผลเฉพาะเครื่องนั้น จนกว่าจะ push เข้า VSM_EMP_MAP) */
 const LS_EMP_VSM = 'vsm4_emp_vsm';
-function loadEmpVsmOv() { try { return JSON.parse(localStorage.getItem(LS_EMP_VSM)) || {}; } catch (e) { return {}; } }
+/* ★ 2026-07-30: ทำความสะอาดคีย์ VSM ที่ไม่มีจริง
+   ตัวเลือกในหน้าตั้งค่าเคยเป็น value="vsm12" ("VSM 1-2") ซึ่งไม่ใช่คีย์ที่ระบบรู้จัก (VSM_KEYS = vsm1..vsm4)
+   ผลคือ: ① กรอง "VSM 1-2" ไม่เจอใครเลย (เทียบกับ e.vsm ที่เป็น vsm1/vsm2)
+          ② คนที่เพิ่มใหม่ด้วยตัวเลือกนั้นถูก resolve เป็นค่าที่ไม่มีใน VSM_KEYS → ตกไป VSM4
+   normVsmKey() = กันทั้งสองเคส · legacy 'vsm12' → 'vsm1' (ย้ายเป็น vsm2 ได้ทีหลังจากหน้าตั้งค่า) */
+const LEGACY_VSM_MAP = { vsm12: 'vsm1', 'vsm1-2': 'vsm1', vsm21: 'vsm2' };
+function normVsmKey(v) {
+  const k = String(v || '').trim().toLowerCase();
+  if (isVsmKey(k)) return k;
+  return LEGACY_VSM_MAP[k] || null;          // null = ไม่รู้จัก → ผู้เรียกตัดสินใจ fallback เอง
+}
+function loadEmpVsmOv() {
+  let ov = {};
+  try { ov = JSON.parse(localStorage.getItem(LS_EMP_VSM)) || {}; } catch (e) { ov = {}; }
+  // migrate ครั้งเดียว: ค่าที่ค้างเป็น 'vsm12' (หรือคีย์เพี้ยนอื่น) → คีย์จริง · ค่าที่แปลไม่ได้ทิ้ง
+  let changed = false;
+  for (const k of Object.keys(ov)) {
+    const n = normVsmKey(ov[k]);
+    if (n !== ov[k]) { if (n) ov[k] = n; else delete ov[k]; changed = true; }
+  }
+  if (changed) { try { localStorage.setItem(LS_EMP_VSM, JSON.stringify(ov)); } catch (e) {} }
+  return ov;
+}
 let _empVsmOv = loadEmpVsmOv();   // cache (อ่าน localStorage ครั้งเดียว — vsmOf เรียกถี่)
 function saveEmpVsmOv(id, vsm) {
-  _empVsmOv[String(id||'').toUpperCase()] = vsm;
+  const v = normVsmKey(vsm);
+  if (!v) return false;                       // คีย์ไม่ถูกต้อง → ไม่บันทึก (กันข้อมูลเพี้ยนเข้าไปอีก)
+  _empVsmOv[String(id||'').toUpperCase()] = v;
   localStorage.setItem(LS_EMP_VSM, JSON.stringify(_empVsmOv));
+  return true;
 }
 function delEmpVsmOv(id) {
   delete _empVsmOv[String(id||'').toUpperCase()];
@@ -2177,7 +2235,7 @@ function delEmpVsmOv(id) {
 // ลำดับความสำคัญ: โค้ด (VSM_EMP_MAP) = กฎกลาง > override ในเครื่อง > vsm4
 function resolveEmpVsm(id) {
   const up = String(id||'').toUpperCase();
-  return VSM_EMP_MAP[up] || _empVsmOv[up] || DEFAULT_VSM;
+  return normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || DEFAULT_VSM;
 }
 // บังคับ VSM ให้พนักงานทุกคนจาก map/override (ทับค่าที่ได้จาก D1 ซึ่งไม่มี vsm)
 function normalizeEmployeeVsm() {
@@ -2218,10 +2276,11 @@ function vsmOf(rec) {
   const id = recEmpId(rec);
   if (id) {
     const up = id.toUpperCase();
-    if (VSM_EMP_MAP[up]) return VSM_EMP_MAP[up];
-    if (_empVsmOv[up])   return _empVsmOv[up];
+    const m = normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]);
+    if (m) return m;
   }
-  if (rec.vsm) return rec.vsm;   // fallback: ค่าที่ stamp ไว้ (ออฟไลน์/แยกรหัสไม่ออก)
+  const rv = normVsmKey(rec.vsm);
+  if (rv) return rv;              // fallback: ค่าที่ stamp ไว้ (ออฟไลน์/แยกรหัสไม่ออก)
   return DEFAULT_VSM;
 }
 function myVsm() { return CURRENT_USER ? resolveEmpVsm(CURRENT_USER.id) : DEFAULT_VSM; }
@@ -2712,6 +2771,9 @@ async function _heartbeatConn() {
     await api('/api/ping', { silent: true });   // เงียบ ไม่โชว์แถบโหลด
     if (!state.online) setConnBadge('online');   // เชื่อมต่อได้ → online
     flushUnsynced();                             // เชื่อมต่อได้แล้ว → ส่งข้อมูลที่ค้างขึ้น Cloud อัตโนมัติ
+    // ★ 2026-07-30: เน็ตกลับมาแล้วแต่ Master Valve ยังไม่ครบ (cache ถูกล้าง + reload ตอนเปิดแอปล้มเหลว)
+    //   → ดึงใหม่ให้เอง ไม่ต้องรอผู้ใช้กดปุ่ม · ไม่งั้นยอดแยกกลุ่มลูกค้าเพี้ยนไปทั้งวัน
+    if (typeof masterValveLoaded === 'function' && !masterValveLoaded()) reload();
   } catch (e) {
     if (state.online) setConnBadge('local');     // หลุด → local (ข้อมูลยังเซฟ local ได้ปกติ)
   } finally {
@@ -2863,16 +2925,26 @@ async function api(path, opts = {}) {
   const url = API.replace(/\/+$/, '') + path;
   // silent: ไม่โชว์แถบโหลดด้านบน — ใช้กับการรีเฟรชเบื้องหลัง (auto-sync) เพื่อไม่ให้หน้าจอกระพริบ
   if (!opts.silent) _tbStart();
+  // ★ 2026-07-30: กันคำขอ "ค้างไม่จบ" (เน็ตโรงงานหลุดกลางทาง fetch ไม่ timeout เอง)
+  //   → เดิมหน้าจอค้างที่ "กำลังดึงข้อมูล" ไม่มี error ให้เห็น · ตอนนี้ตัดที่ 45 วิ แล้วบอกสาเหตุชัด
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const ms  = opts.timeout || 45000;
+  const timer = ctl ? setTimeout(() => ctl.abort(), ms) : null;
   try {
     const res = await fetch(url, {
       method: opts.method || (opts.body ? 'POST' : 'GET'),
       headers: { 'Content-Type': 'application/json' },
       body: opts.body ? JSON.stringify(opts.body) : undefined,
+      signal: ctl ? ctl.signal : undefined,
     });
     const data = await res.json().catch(() => ({ok:false, error:'invalid response'}));
     if (!res.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + res.status));
     return data;
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error(`หมดเวลารอเซิร์ฟเวอร์ (${Math.round(ms/1000)} วิ) — ${path}`);
+    throw e;
   } finally {
+    if (timer) clearTimeout(timer);
     if (!opts.silent) _tbDone();
   }
 }
@@ -4363,11 +4435,14 @@ async function reload() {
   try {
     // 1) master data — รวม valve_ids  (Quick Win #2: ผ่าน apiInit เพื่อ coalesce + เก็บ cache)
     const res = await apiInit(0);
-    state.valves    = res.valves    || state.valves;
-    state.machines  = res.machines  || state.machines;
-    state.employees = res.employees || state.employees;
-    state.targets   = res.targets   || state.targets;
-    state.ids       = res.ids       || state.ids || [];
+    // ★ 2026-07-30: รับเฉพาะชุดที่ "มีข้อมูลจริง" — เดิม `res.valves || state.valves` ยอมรับ [] ด้วย
+    //   (array ว่างเป็น truthy) → ถ้า Worker คืน valves:[] ชั่วคราว Master Valve จะถูกล้างทั้งก้อน
+    const _ok = a => Array.isArray(a) ? a.length > 0 : (a && typeof a === 'object' && Object.keys(a).length > 0);
+    if (_ok(res.valves))    state.valves    = res.valves;
+    if (_ok(res.machines))  state.machines  = res.machines;
+    if (_ok(res.employees)) state.employees = res.employees;
+    if (_ok(res.targets))   state.targets   = res.targets;
+    if (_ok(res.ids))       state.ids       = res.ids; else state.ids = state.ids || [];
     ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
     ensureVsmZones();         // seed เครื่องทดสอบของ zone VSM1/2/3 (D1 ไม่มี)
     normalizeEmployeeVsm();   // ผูก VSM ให้พนักงานที่ดึงจาก API (เดิม = vsm4)
@@ -4405,13 +4480,28 @@ async function reload() {
     flushUnsynced();   // sync สำเร็จ → ส่งข้อมูลค้าง (ถ้ามี) ขึ้น Cloud ทันที
     _hoFlush();        // ต่อกะที่บันทึกตอน offline → ดันขึ้น cloud ด้วย
     toast('Sync ข้อมูลจาก Cloud สำเร็จ', 'green');
+  } catch (e) {
+    /* ★ 2026-07-30: บอกให้ชัดว่า "ดึงข้อมูลไม่สำเร็จเพราะอะไร"
+       เดิมข้อความเดียวคลุมทุกกรณี + ไม่มีสาเหตุ → ดูไม่ออกว่าเน็ตหลุด, Worker ล่ม หรือโค้ดพัง */
+    _lastSyncError = e;
+    setConnBadge('local');
+    const why = navigator.onLine === false ? 'ไม่มีสัญญาณอินเทอร์เน็ต'
+              : /Failed to fetch|NetworkError|Load failed/i.test(e && e.message || '') ? 'ต่อเซิร์ฟเวอร์ไม่ได้ (เน็ต/Worker)'
+              : (e && e.message) || 'ไม่ทราบสาเหตุ';
+    toast('Sync ไม่สำเร็จ — ยังใช้ Local ได้ปกติ · สาเหตุ: ' + why, 'orange');
+    console.error('[reload] sync failed:', e);
+  }
+  /* ★ วาดหน้าจอ "นอก try ของการ sync" เสมอ — เดิมอยู่ในนั้น ทำให้ error ตอน render
+     ถูกรายงานเป็น "Sync ไม่สำเร็จ" + badge เด้งกลับเป็น Local ทั้งที่ข้อมูลลงมาครบแล้ว */
+  try {
     ensureValidZone(); renderZoneTabs(); populateZoneSelects();
     renderHome(); renderZone(); renderSettings();
   } catch (e) {
-    setConnBadge('local');
-    toast('Sync ไม่สำเร็จ — ยังใช้ Local ได้ปกติ', 'orange');
+    console.error('[reload] render failed:', e);
+    toast('แสดงผลบางส่วนไม่สำเร็จ: ' + ((e && e.message) || e), 'orange');
   }
 }
+let _lastSyncError = null;   // เก็บ error ล่าสุดของ reload() — กดดูได้จากหน้าตั้งค่า
 
 /* ============================================================
    P2-21 (2026-07-16): กลุ่มลูกค้าเหลือ 4 กลุ่มเท่านั้น — MSI / SWE / OES&OEM / Other
@@ -5431,7 +5521,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.33":"Production Record + KPI · v3.33",
+"ระบบบันทึกผลิต + KPI · v3.35":"Production Record + KPI · v3.35",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -5668,6 +5758,8 @@ const I18N_X = {
 "ต้องการบันทึกทันที หรือ แก้ไขก่อน?":"Save now or edit first?","💾 บันทึกเลย":"💾 Save now","✏️ แก้ไขก่อน":"✏️ Edit first",
 "🚫 ออกโดยไม่บันทึก":"🚫 Leave without saving",
 "พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม — งานยังบันทึกขึ้นเซิร์ฟเวอร์ได้ตามปกติ":"Browser storage is full — jobs still save to the server normally",
+"พื้นที่ cache ในเบราว์เซอร์เต็ม (ไม่ใช่ข้อมูลหาย) — ระบบทิ้ง cache เก่าให้อัตโนมัติแล้ว":"Browser cache is full (no data lost) — old cache was dropped automatically",
+"งานทั้งหมดอยู่บนเซิร์ฟเวอร์ครบ และยังบันทึกได้ตามปกติ":"All jobs are on the server and saving still works normally",
 "(ถ้าเปิดในแอป LINE แนะนำให้กดมุมขวาบนแล้วเลือก \"เปิดด้วย Safari/Chrome\")":"(If opened in the LINE app, tap the top-right menu and choose \"Open in Safari/Chrome\")",
 "โหมดเปิดไฟล์นี้ไม่รองรับการบันทึกถาวร — ใช้งานได้ปกติแต่ข้อมูลจะหายเมื่อรีเฟรช":"This file mode doesn't support persistent storage — works fine, but data is lost on refresh",
 "ใช้ข้อมูลใน LocalStorage (โหมด Local)":"Using LocalStorage data (Local mode)",
@@ -7969,10 +8061,10 @@ function _saveHoPending(){ try{ localStorage.setItem(LS_HO_PENDING, JSON.stringi
 //    ผ่าน VSM_EMP_MAP → คนที่ไม่อยู่ในแผนที่ตกไป vsm4 = "VSM1 ลงต่อกะไปโผล่ VSM4")
 //   entry เก่าที่ไม่มี vsm → เดาจาก byId เหมือนเดิม · เดาไม่ได้ = vsm4 (ของเก่าเป็นคน VSM4)
 function _hoVsm(e){
-  const v=String((e&&e.vsm)||'').trim().toLowerCase();
-  if(v&&VSM_LABEL[v]!==undefined) return v;
+  const v=normVsmKey(e&&e.vsm);
+  if(v) return v;
   const id=String((e&&e.byId)||'').trim().toUpperCase();
-  if(id){ if(VSM_EMP_MAP[id]) return VSM_EMP_MAP[id]; if(_empVsmOv[id]) return _empVsmOv[id]; }
+  if(id){ const m=normVsmKey(VSM_EMP_MAP[id])||normVsmKey(_empVsmOv[id]); if(m) return m; }
   return DEFAULT_VSM;
 }
 // รายการต่อประเภท (ตัด deleted + เฉพาะ VSM ตัวเอง, ใหม่ล่าสุดก่อน)
@@ -8609,8 +8701,8 @@ function _saveWipinPending(){ try{ localStorage.setItem(LS_WIPIN_PEND, JSON.stri
 // VSM ของ entry — สืบจากรหัสผู้บันทึก (byId) เหมือน _hoVsm → แต่ละ VSM เห็นเฉพาะของตัวเอง (Admin เห็นทีละสายที่เลือก)
 function _wipinVsm(e){
   const id=String((e&&e.byId)||'').trim().toUpperCase();
-  if(id){ if(VSM_EMP_MAP[id]) return VSM_EMP_MAP[id]; if(_empVsmOv[id]) return _empVsmOv[id]; }
-  return (e&&e.vsm)||DEFAULT_VSM;
+  if(id){ const m=normVsmKey(VSM_EMP_MAP[id])||normVsmKey(_empVsmOv[id]); if(m) return m; }
+  return normVsmKey(e&&e.vsm)||DEFAULT_VSM;
 }
 // รายการที่ยังไม่ลบ + เฉพาะ VSM ที่กำลังดู (ใหม่ล่าสุดก่อน)
 function _wipinList(){
@@ -8735,7 +8827,7 @@ async function ensureFgMonthLoaded(force){
   const t=todayISO(), key=t.slice(0,7), from=key+'-01';
   if(!force && key===_fgMonthKey && (Date.now()-_fgMonthAt)<60000) return false;   // กันยิงถี่ (1 ครั้ง/นาที)
   try{
-    const k=await api('/api/kpi?'+new URLSearchParams({from, to:t, limit:'50000'}));
+    const k=await api('/api/kpi?'+new URLSearchParams({from, to:t, limit:'50000'}),{timeout:120000});
     if(!k||!Array.isArray(k.records)) return false;
     _fgMonthKey=key; _fgMonthAt=Date.now();
     const before=state.kpiRecords.length;
@@ -8759,8 +8851,8 @@ async function ensureAllJobsLoaded(force){
   try {
     const t = todayISO();
     const [k, p] = await Promise.all([
-      api('/api/kpi?from=2020-01-01&to=' + t + '&limit=100000', { silent:true }),
-      api('/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000', { silent:true }),
+      api('/api/kpi?from=2020-01-01&to=' + t + '&limit=100000', { silent:true, timeout:150000 }),
+      api('/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000', { silent:true, timeout:150000 }),
     ]);
     if (!k?.records || !p?.records) return false;
     _allKpi  = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
@@ -8814,6 +8906,24 @@ function _wipPerProc(recs, valve){
   return Object.keys(perProc).filter(p=>perProc[p]>0)
     .sort((a,b)=>rankOf(a)-rankOf(b))
     .map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||'',machines:[...(mcByProc[p]||[])]}));
+}
+/* ★ 2026-07-30 — ตรวจ "ความถูกต้องของข้อมูล" ของรายการรับเข้า WIP IN 1.5
+   เดิม WIP IN รับทุกอย่างที่พิมพ์เข้ามาโดยไม่ตรวจอะไรเลย (ต่างจาก WIP ที่ข้าม !isKnownValve
+   และ WIP OUT ที่ติดธง unknown) → ข้อมูลผิดรูปเข้าไปแล้วไม่มีใครเห็น จนกลายเป็นยอดที่
+   "มีใน WIP IN 1.5 แต่ตามไปหาในหน้าบันทึกข้อมูลไม่เจอ"
+   3 อย่างที่ตรวจ (สแกนของจริงบน Cloud 254 รายการ → ติดธง 2 รายการ ไม่มี false positive):
+     ① เบอร์ไม่มีใน Master Valve  → เลือกในหน้าบันทึกข้อมูลไม่ได้ ไม่มีวันมียอดผลิตมาหักล้าง
+     ② เบอร์มีช่องว่างอยู่ข้างใน  → พิมพ์ 2 เบอร์ติดกัน เช่น "VV6446A0 VV7161MO"
+     ③ Lot สั้นผิดปกติ (<8 ตัว)   → เช่น "1" · lot จริงในระบบยาว 10-12 ตัวทั้งหมด (250/254 = 11 ตัว)  */
+function _wipinIssues(valve,lot){
+  const out=[];
+  const v=String(valve||'').trim();
+  const lk=lotKey(lot);
+  // ตรวจกับ Master ได้ต่อเมื่อ Master โหลดครบ — ไม่งั้นจะติดธงรัวทุกแถวโดยไม่มีความหมาย
+  if(v && masterValveLoaded() && !isKnownValve(v)) out.push(TT('เบอร์ไม่มีใน Master Valve','valve not in Master Valve'));
+  if(/\s/.test(v))          out.push(TT('เบอร์มีช่องว่าง — น่าจะพิมพ์ 2 เบอร์ติดกัน','valve has a space — two numbers typed together'));
+  if(lk && lk.length<8)     out.push(TT('Lot สั้นผิดปกติ — น่าจะพิมพ์ไม่ครบ','lot is too short — likely mistyped'));
+  return out;
 }
 function computeWipBuckets(){
   const vMap={};
@@ -8913,11 +9023,13 @@ function computeWipBuckets(){
       ? (producedKeys.has(k)||reachedFg.has(k))
       : (producedValves.has(vk)||fgValves.has(vk)||producedKeys.has(k)||reachedFg.has(k));
     const cust=custOf(vKey(e.valve));
+    const bad=_wipinIssues(e.valve,e.lot);          // ★ ตรวจความถูกต้องของ Valve/Lot (ดู _wipinIssues)
+    const unknown=bad.length>0;
     // เครื่องจักรที่ผลิตงานนี้ (จาก prodRecords ที่ link จาก KPI — reuse groups ที่จัดกลุ่มไว้แล้ว)
     let machines=[];
     const g=groups[k];
     if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
-    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines});
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad});
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -9016,7 +9128,16 @@ function renderIotWipStrip(b){
   }
   // flex-basis:100% → ชิปกลุ่มลูกค้าขึ้นแถวเต็มของตัวเอง ใต้การ์ดทั้งสอง (ไม่แทรกกลางการ์ด)
   // P2-23: ชิปกดได้ → ป๊อปอัปรายการ Valve ที่รับเข้าแล้วเดือนนี้ + ยังขาดจ่ายเทียบแผนขาย ของกลุ่มนั้น
+  /* ★ 2026-07-30: ถ้า Master Valve ยังไม่โหลด ทุกเบอร์จะถูกจัดเป็น "Other" → ชิป MSI/SWE/OES&OEM ขึ้น 0
+     ทั้งที่ข้อมูลครบบนเซิร์ฟเวอร์ · เดิมเงียบสนิท ตอนนี้บอกสาเหตุ + ปุ่มโหลดใหม่ */
+  const _mvWarn = masterValveLoaded() ? '' :
+    `<div style="flex:1 1 100%;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;font-size:11px;color:#B91C1C;line-height:1.6">
+       ⚠️ ${TT('Master Valve ยังไม่โหลด','Master Valve not loaded')} (${nn((state.valves||[]).length)} ${TT('เบอร์','valves')}) —
+       ${TT('ยอดแยกกลุ่มลูกค้าจะตกไปอยู่ Other ทั้งหมด (MSI / SWE / OES&OEM จะขึ้น 0)','all customer groups fall into Other, so MSI / SWE / OES&OEM show 0')}
+       <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B91C1C;border-color:#FCA5A5" onclick="reload()">🔄 ${TT('โหลดใหม่','Reload')}</button>
+     </div>`;
   const grpChips = `<div class="iot-cust-strip" style="flex:1 1 100%;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+    ${_mvWarn}
     <span style="font-size:10px;font-weight:800;color:var(--muted)">📥 ${TT('รับเข้าเดือนนี้','In this month')}:</span>
     ${Object.entries(_byGrp).map(([g,q])=>`<button type="button" class="tag tag-blue" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit" title="${TT('กดดูรายการ Valve ที่รับเข้า/ยังขาด','tap: received / missing valve list')} — ${escapeHtml(g)}" onclick="showCustInMonth('${encodeURIComponent(g)}')">${escapeHtml(g)}: <b>${nn(q)}</b> ›</button>`).join('')}
     <span style="font-size:9.5px;color:var(--muted)">${TT('กดที่กลุ่มเพื่อดูรายการ','tap a group for details')}</span>
@@ -9040,8 +9161,10 @@ function showCustInMonth(grp){
   const byValve={};
   for(const i of recvRows){
     const k=vKey(i.valve);
-    const cur=byValve[k]||{valve:i.valve,qty:0,lots:new Set(),n:0};
+    const cur=byValve[k]||{valve:i.valve,qty:0,waitQty:0,lots:new Set(),n:0,unknown:false,bad:[]};
     cur.qty+=Number(i.qty)||0; cur.n++;
+    if(!i.started) cur.waitQty+=Number(i.qty)||0;            // ส่วนที่ยังไม่มีร่องรอยการผลิต
+    if(i.unknown){ cur.unknown=true; for(const b of (i.bad||[])) if(!cur.bad.includes(b)) cur.bad.push(b); }
     if(i.lot) cur.lots.add(i.lot);
     byValve[k]=cur;
   }
@@ -9054,15 +9177,21 @@ function showCustInMonth(grp){
   const missQty=miss.reduce((s,r)=>s+r.missing,0);
   const recvTbl = recv.length ? `
     <div class="tbl-wrap"><table><thead><tr>
-      <th>Valve No</th><th class="center">${TT('ครั้งที่รับ','Times')}</th><th>Lot</th><th class="center">${TT('รวมชิ้น','Total pcs')}</th>
+      <th>Valve No</th><th class="center">${TT('ครั้งที่รับ','Times')}</th><th>Lot</th><th class="center">${TT('รวมชิ้น','Total pcs')}</th><th class="center">${TT('สถานะผลิต','Production')}</th>
     </tr></thead><tbody>
       ${recv.map(r=>{
         const lots=[...r.lots];
-        return `<tr>
-          <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
+        // ★ 2026-07-30: เพิ่มคอลัมน์สถานะ — เดิมป๊อปอัปนี้โชว์แต่ "รับเข้าแล้ว" ไม่บอกว่าผลิตไปหรือยัง
+        //   ทำให้ดูเหมือนเบอร์ที่ผลิตจบไปแล้วยัง "ค้างอยู่ใน WIP IN 1.5"
+        const st = r.waitQty>0
+          ? `<span class="tag tag-orange" style="font-size:10.5px">${TT('รอผลิต','waiting')} ${nn(r.waitQty)}</span>`
+          : `<span class="tag tag-green" style="font-size:10.5px">${TT('เริ่มผลิตแล้ว','started')}</span>`;
+        return `<tr${r.unknown?' style="background:#FEF2F2"':''}>
+          <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b>${r.unknown?` <span class="tag tag-red" style="font-size:10px" title="${escapeHtml(r.bad.join(' · '))}">⚠</span><div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml(r.bad.join(' · '))}</div>`:''}</td>
           <td class="center">${nn(r.n)}</td>
           <td style="font-size:11px">${lots.length?escapeHtml(lots.slice(0,3).join(', '))+(lots.length>3?` <span class="muted">+${lots.length-3}</span>`:''):'-'}</td>
           <td class="center"><b>${nn(r.qty)}</b></td>
+          <td class="center">${st}</td>
         </tr>`;
       }).join('')}
     </tbody></table></div>` :
@@ -9600,8 +9729,24 @@ function _wipInWaitDiag(items){
     const qs=arr.map(x=>Number(x.qty)||0); dupExtraQty+=qs.reduce((s,x)=>s+x,0)-Math.max(...qs); } }
   const cut=_wipStuckCutoff();
   const stuck=wait.filter(i=>String(i.ts||'').slice(0,10)<cut);
-  return {waitN:wait.length,totQty,dupGroups,dupExtraQty,stuckN:stuck.length,stuckQty:stuck.reduce((s,i)=>s+(Number(i.qty)||0),0)};
+  // ★ ข้อมูลผิดรูป (Valve/Lot) — ตรวจ "ทุกรายการ" ไม่ใช่เฉพาะที่ยังรอผลิต
+  //   เพราะรายการที่ระบบถือว่า "เริ่มผลิตแล้ว" ก็ยังผิดได้ (เช่น VV2629A0 lot "1")
+  //   และยอดของมันถูกนับรวมในสรุปรับเข้าเดือนนี้ไปแล้ว
+  const bad=(items||[]).filter(i=>i.unknown);
+  return {waitN:wait.length,totQty,dupGroups,dupExtraQty,stuckN:stuck.length,stuckQty:stuck.reduce((s,i)=>s+(Number(i.qty)||0),0),
+          unkN:bad.length,unkQty:bad.reduce((s,i)=>s+(Number(i.qty)||0),0),
+          unkList:bad.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`)};
 }
+/* กรองตารางให้เหลือเฉพาะเบอร์ที่ไม่มีใน Master — ผู้ใช้กดจากแถบเตือนแล้วแก้/ลบทีละรายการได้เลย */
+function wipinShowUnknown(){
+  _wipInFilter.month='';                 // ค้างมาหลายเดือน → ต้องดูทุกเดือน
+  _wipInFilter.status='';
+  _wipInFilter.customer='';
+  _wipPg={q:'',page:1};
+  _wipInOnlyUnknown=true;
+  _refreshWipDetail();
+}
+let _wipInOnlyUnknown=false;             // โหมดดูเฉพาะเบอร์ที่ไม่มีใน Master (ตั้งจากแถบเตือน)
 function wipDetailBody(bucket){
   const b=getWipBuckets();
   if(bucket==='in'){
@@ -9610,8 +9755,9 @@ function wipDetailBody(bucket){
     const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
     const statusF=_wipInFilter.status||'';                         // '' = ทุกสถานะ · 'waiting' = รอผลิต · 'started' = เริ่มผลิตแล้ว · 'stuck' = รอผลิต+ค้างนาน
     const _stuckCut=_wipStuckCutoff();
-    const _ignoreMonth=(statusF==='stuck');   // "ค้างนาน" อยู่คนละเดือน → ข้ามตัวกรองเดือน ดูทุกเดือน
+    const _ignoreMonth=(statusF==='stuck')||_wipInOnlyUnknown;   // "ค้างนาน"/"ไม่มีใน Master" อยู่คนละเดือน → ดูทุกเดือน
     const filt=b.wipIn.items.filter(i=>{
+      if(_wipInOnlyUnknown && !i.unknown) return false;
       if(!_ignoreMonth && _wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
       if(_wipInFilter.customer && i.customer!==_wipInFilter.customer) return false;
       if(statusF==='waiting' && i.started) return false;
@@ -9630,25 +9776,29 @@ function wipDetailBody(bucket){
       return String(c.ts).localeCompare(String(a.ts));
     });
     const rowFn=i=>`
-      <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started?'opacity:.5':''}">
+      <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started&&!i.unknown?'opacity:.5':''}${i.unknown?';background:#FEF2F2':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
-        <td><b>${escapeHtml(i.valve)}</b></td>
+        <td><b>${escapeHtml(i.valve)}</b>${i.unknown?` <span class="tag tag-red" style="font-size:10px" title="${escapeHtml((i.bad||[]).join(' · '))}">⚠</span>`:''}
+          ${i.unknown?`<div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml((i.bad||[]).join(' · '))}</div>`:''}</td>
         <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
         <td>${escapeHtml(i.lot||'-')}</td>
         <td class="center"><b>${nn(i.qty)}</b></td>
         <td class="center">${_wipMcCell(i.machines)}</td>
         <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
-        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${i.started?'':`<button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}')">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
+        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${(i.started&&!i.unknown)?'':`<button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}')">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
       </tr>`;
     _wipDet={items:sorted,rowFn,colspan:8};
     const s=_wipPgSlice();
     // 🔎 แผงตรวจสอบ: อธิบายว่ายอด "รอผลิต" มาจากอะไร (ซ้ำ / ค้างนานเพราะลง Valve/Lot ผิด)
     const _dg=_wipInWaitDiag(b.wipIn.items);
-    const diagHtml=(_dg.dupGroups||_dg.stuckN)?`
+    const diagHtml=(_dg.dupGroups||_dg.stuckN||_dg.unkN)?`
       <div style="background:var(--orange-bg,#FFF7ED);border:1.5px solid var(--orange-bd,#FED7AA);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
         <div style="font-weight:800;color:var(--orange,#C2410C);margin-bottom:2px">🔎 ${TT('ตรวจสอบยอด "รอผลิต"','Check the "waiting" total')} — ${nn(_dg.waitN)} ${TT('รายการ','items')} · ${nn(_dg.totQty)} ${TT('ชิ้น','pcs')}</div>
         ${_dg.dupGroups?`<div>• ${TT('ซ้ำ','Duplicate')} <b>${nn(_dg.dupGroups)}</b> ${TT('กลุ่ม (Valve/Lot เดียวกันลงหลายครั้ง) ~ เกิน','groups (same valve/lot logged twice) ~ extra')} <b>${nn(_dg.dupExtraQty)}</b> ${TT('ชิ้น','pcs')} — ${TT('กด ✏️/🗑 ในตารางเพื่อแก้/ลบ','use ✏️/🗑 in the table to fix/remove')}</div>`:''}
         ${_dg.stuckN?`<div>• ${TT('ค้างเกิน','Stuck over')} ${_WIP_STUCK_DAYS} ${TT('วัน','days')} <b>${nn(_dg.stuckN)}</b> ${TT('รายการ','items')} (${nn(_dg.stuckQty)} ${TT('ชิ้น','pcs')}) — ${TT('อาจลง Valve/Lot ผิด ยังไม่ตรงยอดผลิต · เลือกสถานะ "ค้างนาน" เพื่อดูแล้วกด ✏️ แก้','possibly wrong valve/lot — pick "long-stuck" then ✏️ to fix')}</div>`:''}
+        ${_dg.unkN?`<div style="color:#B91C1C">• ⚠️ ${TT('ข้อมูล Valve / Lot ผิดรูป','Malformed Valve / Lot')} <b>${nn(_dg.unkN)}</b> ${TT('รายการ','items')} (${nn(_dg.unkQty)} ${TT('ชิ้น','pcs')}) — ${escapeHtml(_dg.unkList.slice(0,4).join(' · '))}${_dg.unkList.length>4?` +${_dg.unkList.length-4}`:''}
+          <br><span style="font-size:11px">${TT('ตามไปหาในหน้าบันทึกข้อมูลไม่เจอ (เบอร์ไม่มีใน Master / พิมพ์ 2 เบอร์ติดกัน / Lot สั้นผิดปกติ) แต่ยอดถูกนับรวมไปแล้ว','not findable on the entry page (valve not in Master / two numbers typed together / lot too short) yet the qty is already counted')}</span>
+          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B91C1C;border-color:#FCA5A5" onclick="wipinShowUnknown()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>`:''}
       </div>`:'';
     return `
      <div data-wipbody>
@@ -9743,6 +9893,7 @@ function _wipTitle(bucket){ return bucket==='in'?'📥 WIP IN 1.5':bucket==='out
 function showWipDetail(bucket, fromIot){
   _wipDetailBucket=bucket;
   _wipPg={q:'',page:1};                        // เปิดป๊อปอัปใหม่ = เริ่มหน้า 1 คำค้นว่าง
+  _wipInOnlyUnknown=false;                     // ล้างโหมด "ดูเฉพาะเบอร์ที่ไม่มีใน Master"
   const title=_wipTitle(bucket), body=`<div class="wip-detail-box">${wipDetailBody(bucket)}</div>`;
   if(fromIot && document.getElementById('iotCard')?.classList.contains('iot-fs')){
     _openIotPop(title, body, false, true);     // กว้างพิเศษ — ช่อง/ตารางอ่านง่าย
@@ -11230,6 +11381,12 @@ function isKnownValve(vn) {
   if (!v) return false;
   return state.valves.some(x => (x.valveNo || '').toUpperCase() === v);
 }
+/* ★ 2026-07-30 — "Master Valve โหลดครบหรือยัง"
+   ถ้า cache ถูกล้าง (พื้นที่เต็ม) + sync ไม่สำเร็จ → state.valves ตกไปใช้ DEFAULT_VALVES แค่ 3 เบอร์
+   สภาพนี้ทำให้ทุกอย่างที่อ้าง Master เพี้ยนเงียบ ๆ: ลูกค้ากลายเป็น "Other" ทั้งหมด (ชิป SWE = 0),
+   ลำดับ process หาย, ธง "ไม่มีใน Master Valve" ขึ้นรัวทุกแถว
+   → ใช้ตัวนี้เป็นด่านตรวจ แล้ว "บอกผู้ใช้" แทนที่จะโชว์ตัวเลขผิด */
+function masterValveLoaded() { return (state.valves || []).length > DEFAULT_VALVES.length; }
 
 /* ===== PROCESS MASTER แยกตาม VSM =====
    • VSM3 + VSM4 = ใช้ชุดเดียวกัน → เก็บใน valve.processes (เหมือนเดิม ไม่แตะ)
@@ -14495,11 +14652,26 @@ async function commitPasteValves() {
 }
 function renderEmployeeList() {
   normalizeEmployeeVsm();
-  const flt = $('empVsmFilter')?.value || '';
-  const list = flt ? state.employees.filter(e => (e.vsm||DEFAULT_VSM) === flt) : state.employees;
+  const flt = normVsmKey($('empVsmFilter')?.value || '') || '';
+  const list = flt ? state.employees.filter(e => resolveEmpVsm(e.id) === flt) : state.employees;
   $('empCount').textContent = list.length;
+  // ค่าเริ่มต้นของช่อง "เพิ่มพนักงาน" = สายที่กำลังดูอยู่ (เดิม fix ไว้ที่ VSM4 → คนใหม่ตกไป VSM4 เสมอ)
+  const nEl = $('newEmpVsm');
+  if (nEl) {
+    const vv = viewVsm();
+    if (nEl.dataset.forVsm !== vv) { nEl.dataset.forVsm = vv; delete nEl.dataset.touched; }   // สลับสาย → ค่าเริ่มต้นตามสายใหม่
+    if (!nEl.dataset.touched) nEl.value = vv;
+    if (!nEl.dataset.bound) { nEl.dataset.bound = '1'; nEl.addEventListener('change', () => { nEl.dataset.touched = '1'; }); }
+  }
+  // นับหัวรายสาย — เห็นทันทีว่าสายไหนมีกี่คน (ตรวจว่ารายชื่อ VSM1/VSM2 เข้าระบบครบไหม)
+  const tally = $('empVsmTally');
+  if (tally) {
+    const cnt = {};
+    for (const e of state.employees) { const k = resolveEmpVsm(e.id); cnt[k] = (cnt[k] || 0) + 1; }
+    tally.textContent = '(' + VSM_KEYS.map(k => `${VSM_LABEL[k]}: ${cnt[k] || 0}`).join(' · ') + ')';
+  }
   const vsmSelect = (e) => `<select onchange="setEmployeeVsm('${escapeHtml(e.id)}',this.value)" style="border:1px solid var(--blue-soft);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;background:#fff">${
-    VSM_LIST.map(v => `<option value="${v.key}"${(e.vsm||DEFAULT_VSM)===v.key?' selected':''}>${v.label}</option>`).join('')
+    VSM_LIST.map(v => `<option value="${v.key}"${resolveEmpVsm(e.id)===v.key?' selected':''}>${v.label}</option>`).join('')
   }</select>`;
   const _epage = _clampPage('emp', list.length);
   const rows = list.slice(_epage * LIST_PAGE, (_epage + 1) * LIST_PAGE)
@@ -14507,7 +14679,9 @@ function renderEmployeeList() {
   $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
   if ($('empPagination')) $('empPagination').innerHTML = _listPagerHtml('emp', list.length, 'empGoPage');
 }
-async function setEmployeeVsm(id, vsm) {
+async function setEmployeeVsm(id, vsmRaw) {
+  const vsm = normVsmKey(vsmRaw);
+  if (!vsm) { renderEmployeeList(); toast('สาย VSM ไม่ถูกต้อง', 'orange'); return; }
   const e = state.employees.find(x => x.id === id);
   if (!e) return;
   // ถ้ารหัสนี้ถูกกำหนดไว้ในโค้ด (VSM_EMP_MAP) แล้ว → โค้ดเป็นกฎกลาง แก้ในเครื่องไม่มีผล
@@ -14532,17 +14706,22 @@ async function setEmployeeVsm(id, vsm) {
 async function addEmployee() {
   const id = $('newEmpId').value.trim();
   const name = $('newEmpName').value.trim();
-  const vsm = $('newEmpVsm')?.value || DEFAULT_VSM;
+  // ค่าจาก dropdown ต้องเป็นคีย์จริง — ถ้าอ่านไม่ได้ ใช้ "สายที่กำลังดู" ไม่ใช่ DEFAULT_VSM (VSM4)
+  const vsm = normVsmKey($('newEmpVsm')?.value) || viewVsm();
   if (!id) { toast('กรอกรหัสพนักงาน', 'orange'); return; }
   saveEmpVsmOv(id, vsm);   // ผูก VSM แบบรอด sync (localStorage)
   const existing = state.employees.findIndex(e => e.id === id);
   if (existing >= 0) state.employees[existing] = { id, name, vsm }; else state.employees.push({ id, name, vsm });
   lsSave(LS.EMPLOYEES, state.employees);
-  const inCode = VSM_EMP_MAP[String(id).toUpperCase()];
-  toast(inCode ? `บันทึกพนักงาน — VSM ใช้ค่าจากโค้ด (${VSM_LABEL[inCode]})` : `บันทึกพนักงาน (${VSM_LABEL[vsm]||vsm})`, 'green');
+  const inCode = normVsmKey(VSM_EMP_MAP[String(id).toUpperCase()]);
+  // ถ้ารหัสอยู่ใน VSM_EMP_MAP แล้ว โค้ดคือกฎกลาง → เตือนให้ชัดว่าค่าที่เลือกไม่ถูกใช้
+  toast(inCode && inCode !== vsm
+    ? `⚠️ ${id} ถูกกำหนดเป็น ${VSM_LABEL[inCode]} ใน VSM_EMP_MAP (โค้ด) — ค่าที่เลือกไม่มีผล`
+    : `บันทึกพนักงาน (${VSM_LABEL[inCode || vsm] || vsm})`, inCode && inCode !== vsm ? 'orange' : 'green');
   $('newEmpId').value=''; $('newEmpName').value='';
   renderEmployeeList();
-  if (API) { try { await api('/api/employees', { body: { id, name, vsm } }); } catch (e) {} }
+  if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  if (API) { try { await api('/api/employees', { body: { id, name, vsm: inCode || vsm } }); } catch (e) {} }
 }
 async function delEmployee(id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
@@ -14646,15 +14825,49 @@ function procDept(p) {
 }
 // ลำดับ process หลัง FG "ของวาล์วเบอร์นี้" — ตาม Master valve (processes ของวาล์ว) ไม่ใช่สูตรตายตัว
 // เช่น VV7242M1 = FG → QC เลย (ข้าม P/T, POL) · ตัดเอาตั้งแต่ FG เป็นต้นไป + DONE ปิดท้าย
-function postFgFlowFor(valve) {
+// ลำดับ process ทั้งเส้นของวาล์ว (ตาม VSM ที่กำลังดู — VSM1/2 มีชุดของตัวเอง · VSM3/4 ใช้ valve.processes)
+function _valveProcList(valve) {
   const v = (state.valves || []).find(x => vKey(x.valveNo) === vKey(valve));
-  const procs = (v && Array.isArray(v.processes)) ? v.processes.filter(Boolean) : null;
-  if (procs && procs.length) {
-    const i = procs.indexOf('FG');
+  if (!v) return [];
+  const byVsm = (typeof procsOf === 'function') ? procsOf(v).filter(Boolean) : [];
+  if (byVsm.length) return byVsm;
+  return (Array.isArray(v.processes) ? v.processes.filter(Boolean) : []);
+}
+// คีย์เทียบชื่อ process แบบไม่สนเครื่องหมาย: 'P/T'→'PT' · 'T/T'→'TT' · 'HOD/REM.'→'HODREM'
+function _pfKey(p) { return String(p || '').trim().toUpperCase().replace(/[^A-Z0-9&]/g, ''); }
+function postFgFlowFor(valve) {
+  const procs = _valveProcList(valve);
+  if (procs.length) {
+    const i = procs.findIndex(p => _pfKey(p) === 'FG');
     if (i >= 0) return [...procs.slice(i), 'DONE'];
   }
   return POST_FG_FLOW;
 }
+/* ★ 2026-07-30 — เกณฑ์ "งานนี้เข้าข่ายจบได้ในกล่องรับงานเข้า Process ถัดไป (หลัง FG)"
+   กฎจากหน้างาน: หลัง FG ต้องไม่เหลือ process อื่นนอกจาก  P/T · T/T · QC · POL · BUFF
+   เพราะ 5 ตัวนี้เป็นงานปลายทาง (ส่งต่อแผนกอื่น/เก็บงาน) ไม่ใช่การผลิตต่อในสาย
+     SFG FG QC              ✓        SFG FG COT IND T/T QC   ✗ (COT/IND = ผลิตต่อ)
+     SFG FG P/T POL QC      ✓        FG SFG QC               ✗ (SFG อยู่หลัง FG)
+     SFG FG T/T QC          ✓        FG SFG2 QC              ✗
+     FG QC                  ✓        SFG T/T IND TG FG QC    ✓ (หลัง FG เหลือแค่ QC)
+     FG BUFF P/T QC         ✓
+   วาล์วที่ยังไม่มี Process Master → ถือว่าเข้าข่าย (ไม่งั้นงานหายจากกล่องโดยไม่มีเหตุผล) */
+const POST_FG_OK_AFTER = new Set(['PT', 'TT', 'QC', 'POL', 'BUFF']);
+// process ที่อยู่ "หลัง FG" ตาม Master ของวาล์วเบอร์นี้ (ไม่รวม FG เอง) — [] = ไม่รู้/ไม่มี
+function postFgTail(valve) {
+  const procs = _valveProcList(valve);
+  const i = procs.findIndex(p => _pfKey(p) === 'FG');
+  return i >= 0 ? procs.slice(i + 1) : [];
+}
+// คืน { ok, bad[] } — bad = process หลัง FG ที่ทำให้ยังจบไม่ได้
+function postFgEligibility(valve) {
+  const procs = _valveProcList(valve);
+  if (!procs.length) return { ok: true, bad: [] };                 // ไม่มี Master → ไม่ตัดสิน
+  if (procs.findIndex(p => _pfKey(p) === 'FG') < 0) return { ok: true, bad: [] };   // ไม่มี FG ในสาย → ปล่อยตามเดิม
+  const bad = postFgTail(valve).filter(p => !POST_FG_OK_AFTER.has(_pfKey(p)));
+  return { ok: bad.length === 0, bad };
+}
+function postFgEligible(valve) { return postFgEligibility(valve).ok; }
 const JOBPROC_PREFIX  = 'jobproc.';    // process code ที่ขยับไป
 const JOBPROCD_PREFIX = 'jobprocd.';   // วันที่ขยับ/จบ (เลข YYYYMMDD)
 const JOBPROCQ_PREFIX = 'jobprocq.';   // ยอดชิ้น (OPR ที่ FG) สแน็ปช็อตตอนขยับ — ใช้รวมยอด "ผลิตเสร็จ" ได้โดยไม่ต้องพึ่ง KPI ย้อนหลัง
@@ -14744,10 +14957,17 @@ function computePostFgAll(recs) {
   return out;
 }
 // งานที่ยังไม่จบ (อยู่ใน FG/P/T/POL/QC) — สำหรับกล่องจัดการ
+// ★ ติดธง eligible/badProcs ตามกฎ "หลัง FG เหลือได้แค่ P/T · T/T · QC · POL · BUFF"
+//   ไม่กรองทิ้งที่นี่ — ผู้เรียกเลือกเองว่าจะโชว์กลุ่มไหน (กล่องหลัก = เข้าข่าย · กล่องรอง = ยังไม่เข้าข่าย)
 function computePostFgJobs(recs) {
   // กล่องจัดการงานหลัง FG = เฉพาะวาล์วที่มีใน Master (วาล์วผิด → ไปแก้ที่กล่อง Unknown ก่อน)
-  return computePostFgAll(recs).filter(j => !j.unknown && j.cur !== 'DONE').sort((a, b) => b.qty - a.qty);
+  return computePostFgAll(recs)
+    .filter(j => !j.unknown && j.cur !== 'DONE')
+    .map(j => { const el = postFgEligibility(j.valve); return { ...j, eligible: el.ok, badProcs: el.bad }; })
+    .sort((a, b) => b.qty - a.qty);
 }
+// เฉพาะงานที่ "เข้าข่ายจบได้" — ใช้กับปุ่มจบงานทั้งหมด/รายการหลัก
+function computePostFgEligibleJobs(recs) { return computePostFgJobs(recs).filter(j => j.eligible); }
 /* targets store เก็บงานที่จบแล้วเป็น jobproc.<VALVE::LOT> — "ไม่มี VSM" อยู่ในคีย์
    จึงต้องสืบสายจาก record ของงานนั้นเพื่อแยกสายให้เหมือนทุกที่ในแอป
    ★ ยึด "สายที่งานนั้นผ่าน FG" (record ที่เครื่องตั้ง process = FG) ไม่ใช่ record ใดก็ได้:
@@ -14809,6 +15029,7 @@ function computeDoneFromStore() {
    ตอนนี้ยึดกฎเดียวกับที่อื่น: filterVsm (zone → VSM) */
 function _postFgSrc(){ return filterVsm(_postFgRecs || _wipKpiSrc()); }
 let _postFgDoneList = [];
+let _postFgBlockList = [];      // งานที่หลัง FG ยังมี process ผลิตต่อ → ยังไม่เข้าข่ายจบ
 let _postFgQuery = '';          // คำค้น valve/lot ในกล่องรับงานหลัง FG
 let _postFgAutoLoaded = false;  // โหลดงานค้าง "ทั้งหมด" อัตโนมัติแล้วหรือยัง (ครั้งเดียวต่อ session)
 function onPostFgSearch(v) { _postFgQuery = v || ''; renderPostFgJobs(); }
@@ -14818,23 +15039,27 @@ function renderPostFgJobs() {
   // ครั้งแรกที่เปิดหน้าตั้งค่า + ออนไลน์ → ดึงงานค้าง "ทั้งหมด" (ไม่จำกัด 30 วัน) อัตโนมัติแบบเงียบ
   // เพื่อให้เห็น "ทั้งหมดที่ค้างอยู่" โดยไม่ต้องกดปุ่มเอง
   if (API && !_postFgAutoLoaded && !_postFgRecs) { _postFgAutoLoaded = true; refreshPostFgFromCloud(true); return; }
-  const allActive = computePostFgJobs(_postFgSrc());                    // เฉพาะสายที่กำลังดู
+  const allJobs   = computePostFgJobs(_postFgSrc());                    // เฉพาะสายที่กำลังดู
+  const allActive = allJobs.filter(j => j.eligible);                    // เข้าข่ายจบได้ (หลัง FG เหลือแค่ P/T·T/T·QC·POL·BUFF)
+  const allBlock  = allJobs.filter(j => !j.eligible);                   // ยังมี process ผลิตต่อหลัง FG → ยังจบไม่ได้
   const allDone   = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));   // แยกสายให้แล้วในตัวฟังก์ชัน
   // ค้นหา valve หรือ lot (ค้นทั้งงานค้างและงานที่จบแล้ว) — สะดวกหาวาล์วที่จะกด process ถัดไป
   const q = _postFgQuery.trim().toLowerCase();
   const match = j => !q || (j.valve || '').toLowerCase().includes(q) || (j.lot || '').toLowerCase().includes(q);
-  _postFgList     = allActive.filter(match);
-  _postFgDoneList = allDone.filter(match);
+  _postFgList      = allActive.filter(match);
+  _postFgBlockList = allBlock.filter(match);
+  _postFgDoneList  = allDone.filter(match);
   const head = `
     <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px">
       VSM4 จบที่ <b>FG</b> · ส่งต่อ <b>ตามลำดับ process ของวาล์วเบอร์นั้น</b> (Master valve) จนจบงาน — บางเบอร์ <b>FG → QC</b> เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม "→" ไปขั้นถัดไปของเบอร์นั้นเอง
+      <br>✅ เข้าข่ายจบได้ = <b>หลัง FG เหลือได้แค่ P/T · T/T · QC · POL · BUFF</b> เท่านั้น — ถ้ายังมี process ผลิตต่อ (SFG, COT, IND, TG…) จะอยู่กลุ่ม "ยังจบไม่ได้" ด้านล่าง
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <input type="search" id="postFgSearch" value="${escapeHtml(_postFgQuery)}" placeholder="🔎 ค้นหา Valve หรือ Lot" oninput="onPostFgSearch(this.value)" style="flex:1;min-width:160px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
       <button class="btn btn-outline btn-sm" onclick="refreshPostFgFromCloud()" style="white-space:nowrap">🔄 ดึงทั้งหมด</button>
       ${allActive.length ? `<button class="btn btn-green btn-sm" onclick="finishAllPostFg()" style="white-space:nowrap">✅ จบงานทั้งหมด (${nn(allActive.length)})</button>` : ''}
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}${allBlock.length ? ` · <span style="color:#B45309">⛔ ยังจบไม่ได้ <b>${nn(allBlock.length)}</b></span>` : ''}
       · <span class="tag tag-blue" style="font-size:10.5px">🔒 เฉพาะ ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}</span></div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
     const flow = postFgFlowFor(j.valve);              // ลำดับเฉพาะของวาล์วเบอร์นี้
@@ -14857,6 +15082,28 @@ function renderPostFgJobs() {
       </div>
     </div>`;
   }).join('') : `<div class="muted center" style="padding:14px">${q ? 'ไม่พบงานค้างที่ตรงกับคำค้น' : 'ไม่มีงานค้างหลัง FG 🎉'}</div>`;
+  /* ⛔ กลุ่ม "ยังจบไม่ได้" — ผ่าน FG แล้วก็จริง แต่ Master ของเบอร์นั้นยังมี process ผลิตต่อ
+     (เช่น SFG FG COT IND T/T QC) → ไม่ให้กดจบ แต่ยัง "เห็น" ได้ ไม่ให้งานหายเงียบ */
+  const blockHtml = _postFgBlockList.length ? `
+    <details style="margin-top:6px;border:1.5px solid #FCD34D;border-radius:10px;overflow:hidden">
+      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:#B45309;background:#FFFBEB;list-style:none">
+        ⛔ ยังไม่เข้าข่ายจบ (${_postFgBlockList.length}) — หลัง FG ยังมี process ผลิตต่อ
+      </summary>
+      <div style="padding:8px 10px">
+        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px">
+          จบได้เมื่อหลัง FG เหลือเฉพาะ <b>P/T · T/T · QC · POL · BUFF</b> — ถ้าลำดับ process ของเบอร์นี้ผิด ให้ไปแก้ที่ <b>Master Valve</b>
+        </div>
+        ${_postFgBlockList.map(d => `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FDE68A">
+            <div style="min-width:0">
+              <div style="font-weight:800;font-size:12.5px">${escapeHtml(d.valve)}</div>
+              <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${nn(d.qty)} ชิ้น · อยู่ที่ ${escapeHtml(d.cur)}</div>
+              <div style="font-size:10.5px;color:#B45309">ติดที่: ${(d.badProcs || []).map(p => `<span class="tag tag-orange" style="font-size:10px;padding:1px 5px">${escapeHtml(p)}</span>`).join(' ')}</div>
+            </div>
+            <span class="tag" style="background:#FEF3C7;color:#92400E;white-space:nowrap">ยังจบไม่ได้</span>
+          </div>`).join('')}
+      </div>
+    </details>` : '';
   // รายการ "จบแล้ว" — กดเอากลับได้ถ้ากดผิด
   const doneHtml = _postFgDoneList.length ? `
     <details style="margin-top:6px;border:1.5px solid var(--green-bd);border-radius:10px;overflow:hidden">
@@ -14877,7 +15124,7 @@ function renderPostFgJobs() {
   // คงโฟกัส + ตำแหน่งเคอร์เซอร์ของช่องค้นหาไว้หลัง re-render (ไม่งั้นพิมพ์แล้วหลุดโฟกัสทุกตัวอักษร)
   const wasFocused = document.activeElement && document.activeElement.id === 'postFgSearch';
   const caret = wasFocused ? document.activeElement.selectionStart : null;
-  box.innerHTML = head + activeHtml + doneHtml;
+  box.innerHTML = head + activeHtml + blockHtml + doneHtml;
   if (wasFocused) { const si = $('postFgSearch'); if (si) { si.focus(); if (caret != null) si.setSelectionRange(caret, caret); } }
 }
 async function undoneJobAt(i) {
@@ -14912,6 +15159,11 @@ async function advanceJobAt(i, dir) {
   const ni  = idx + dir;
   if (ni < 0 || ni >= flow.length) return;
   const to = flow[ni];
+  // กันจบงานที่หลัง FG ยังมี process ผลิตต่อ (เช่น SFG/COT/IND) — กฎเดียวกับกล่อง "ยังไม่เข้าข่ายจบ"
+  if (to === 'DONE') {
+    const el = postFgEligibility(j.valve);
+    if (!el.ok) { toast(`⛔ ${j.valve} ยังจบไม่ได้ — หลัง FG ยังมี ${el.bad.join(', ')}`, 'orange'); return; }
+  }
   if (!API) {
     // ไม่มีการเชื่อมต่อ Cloud → ห้ามขยับ เพราะจะทำให้เครื่องอื่นเห็นไม่ตรงกัน
     toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงขยับสถานะงานได้ เพื่อให้ทุกเครื่องเห็นตรงกัน', 'orange');
@@ -14939,10 +15191,13 @@ async function finishAllPostFg() {
   if (_advancingJob) return;
   if (!API) { toast('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ (D1) ก่อนจึงจบงานได้', 'orange'); return; }
   // ★ เฉพาะสายที่กำลังดูเท่านั้น — เดิมจบข้ามสายให้ด้วย (admin ดู VSM4 แล้วกด → งาน VSM3 จบไปเงียบ ๆ)
-  const jobs = computePostFgJobs(_postFgSrc());   // งานค้างของสายนี้ (ไม่กรองคำค้น)
+  // ★ เฉพาะงานที่ "เข้าข่ายจบได้" — หลัง FG ต้องเหลือแค่ P/T · T/T · QC · POL · BUFF
+  const all  = computePostFgJobs(_postFgSrc());   // งานค้างของสายนี้ (ไม่กรองคำค้น)
+  const jobs = all.filter(j => j.eligible);
+  const skipped = all.length - jobs.length;
   const _vl = VSM_LABEL[viewVsm()] || viewVsm();
-  if (!jobs.length) { toast(`ไม่มีงานค้างหลัง FG ของ ${_vl}`, 'orange'); return; }
-  if (!(await confirmModal(`จบงานหลัง FG ทั้งหมด ${nn(jobs.length)} รายการ\nของ ${_vl} เท่านั้น?\n(ทุกงานจะถูกตั้งเป็น DONE — เอากลับทีหลังได้)`))) return;
+  if (!jobs.length) { toast(skipped ? `งานค้าง ${nn(skipped)} รายการยังจบไม่ได้ — หลัง FG ยังมี process ผลิตต่อ` : `ไม่มีงานค้างหลัง FG ของ ${_vl}`, 'orange'); return; }
+  if (!(await confirmModal(`จบงานหลัง FG ทั้งหมด ${nn(jobs.length)} รายการ\nของ ${_vl} เท่านั้น?\n(ทุกงานจะถูกตั้งเป็น DONE — เอากลับทีหลังได้)${skipped ? `\n\n⛔ ข้าม ${nn(skipped)} รายการที่ยังจบไม่ได้ (หลัง FG ยังมี process ผลิตต่อ)` : ''}`))) return;
   _advancingJob = true;
   showBusy(`กำลังจบงานทั้งหมด ${nn(jobs.length)} รายการ…`);
   try {
@@ -14980,7 +15235,7 @@ async function refreshPostFgFromCloud(silent) {
     // โหลดชุดครบทุกช่วงไว้แล้ว (หน้าติดตามงาน) → ใช้ซ้ำ ไม่ต้องดึงก้อน ~10 MB อีกรอบ
     if (_allKpi) { _postFgRecs = _allKpi; }
     else {
-      const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=100000').catch(() => null);
+      const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=100000', { timeout:150000 }).catch(() => null);
       _postFgRecs = k?.records || state.kpiRecords || [];
     }
   } catch (e) { _postFgRecs = state.kpiRecords || []; }
