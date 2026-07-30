@@ -1044,7 +1044,7 @@ tr.hv-detail.hv-done>td{opacity:.55}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.35</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.36</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5521,7 +5521,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.35":"Production Record + KPI · v3.35",
+"ระบบบันทึกผลิต + KPI · v3.36":"Production Record + KPI · v3.36",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9261,6 +9261,19 @@ function _wipinMissingItems(){
   }
   return [...seen.values()].sort((a,b)=>String(b.first).localeCompare(String(a.first)));
 }
+/* ★ 2026-07-30 — กันข้อมูลผิดรูป "ไหลต่อ" เข้า WIP IN 1.5 อัตโนมัติ
+   เคสจริง: KPI record ลง valve เป็น "VV6446A0 vv7161mo" (พิมพ์ 2 เบอร์ติดกัน) → ปุ่ม
+   "ลงบันทึก WIP IN ทั้งหมด" สร้างรายการรับเข้าที่มีเบอร์ผิดตามไปด้วย (note ยืนยันว่ามาจากปุ่มนี้)
+   → ต้นทางผิด 1 ที่ กลายเป็นผิด 2 ที่ · ตอนนี้แยกออกมาให้ไปแก้ที่ยอดผลิตต้นทางก่อน */
+function _wipinMissingSplit(){
+  const all=_wipinMissingItems();
+  const ok=[], bad=[];
+  for(const it of all){
+    const why=_wipinIssues(it.valve,it.lot);
+    if(why.length) bad.push({...it,why}); else ok.push(it);
+  }
+  return {ok,bad};
+}
 let _wipinMissQ='';   // คำค้นในแผง "ลืมลงบันทึก" (คงไว้ข้ามการ re-render)
 function _wipinMissSearch(inp){ _wipinMissQ=(inp.value||'').trim().toLowerCase(); _wipinMissApplyFilter(inp.closest('details')); }
 function _wipinMissApplyFilter(root){
@@ -9271,9 +9284,24 @@ function _wipinMissApplyFilter(root){
 }
 function renderWipinMissing(){
   const box=$('wipinMissing'); if(!box) return;
-  const items=_wipinMissingItems();
-  if(!items.length){ box.innerHTML=''; return; }
+  const {ok:items,bad}=_wipinMissingSplit();          // ★ แยกรายการที่ข้อมูลผิดรูปออก ไม่ให้ลงอัตโนมัติ
+  if(!items.length && !bad.length){ box.innerHTML=''; return; }
   const CAP=300;
+  // แผงย่อย: รายการที่ "ลงอัตโนมัติไม่ได้" เพราะ Valve/Lot ต้นทางผิดรูป — ต้องไปแก้ยอดผลิตก่อน
+  const badHtml=bad.length?`
+    <div style="margin-top:8px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:9px;padding:8px 10px">
+      <div style="font-weight:800;font-size:12.5px;color:#B91C1C;margin-bottom:4px">⛔ ลงอัตโนมัติไม่ได้ ${bad.length} รายการ — Valve/Lot ต้นทางผิดรูป</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px">ถ้าลงไปจะได้รายการรับเข้าที่ผิดตามไปด้วย — กด ✏️ แก้ที่ยอดผลิตต้นทางก่อน แล้วรายการจะย้ายขึ้นไปด้านบนเอง</div>
+      ${bad.map(it=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #FECACA">
+        <div style="flex:1;min-width:0">
+          <b style="color:#B91C1C">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
+          <div style="font-size:11px;color:#B91C1C">${escapeHtml(it.why.join(' · '))}</div>
+          <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ SSG ${escapeHtml(it.first||'-')}</div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;color:#B91C1C;border-color:#FCA5A5"
+          onclick="wipinMissingEdit('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}')">✏️ แก้ต้นทาง</button>
+      </div>`).join('')}
+    </div>`:'';
   const rows=items.slice(0,CAP).map((it,i)=>`
     <div data-vl="${escapeHtml((it.valve+' '+(it.lot||'')).toLowerCase())}" style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #FDE68A">
       <div style="flex:1;min-width:0">
@@ -9289,11 +9317,12 @@ function renderWipinMissing(){
   box.innerHTML=`
     <details ${_wipinMissQ?'open':''} style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
       <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:13.5px;color:var(--orange)">
-        🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length}</span>
-        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ SSG แล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู</span>
+        🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length+bad.length}</span>
+        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ SSG แล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู${bad.length?` · ⛔ ${bad.length} รายการต้องแก้ต้นทางก่อน`:''}</span>
       </summary>
-      <button type="button" class="btn btn-blue btn-block" style="margin-top:8px;padding:10px;font-size:14px"
-        onclick="wipinAddAllMissing()">➕ ลงบันทึก WIP IN ทั้งหมด (${items.length} รายการ)</button>
+      ${items.length?`<button type="button" class="btn btn-blue btn-block" style="margin-top:8px;padding:10px;font-size:14px"
+        onclick="wipinAddAllMissing()">➕ ลงบันทึก WIP IN ทั้งหมด (${items.length} รายการ)</button>`:''}
+      ${badHtml}
       <div style="margin-top:8px"><input type="search" value="${escapeHtml(_wipinMissQ)}" oninput="_wipinMissSearch(this)" placeholder="🔍 ค้นหา Valve No / Lot…" autocomplete="off"
         style="width:100%;padding:8px 12px;border:1.5px solid var(--orange-bd);border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       <div style="margin-top:6px">${rows}${items.length>CAP?`<div class="muted" style="font-size:11px;padding:6px 0">… +${items.length-CAP} รายการ</div>`:''}
@@ -9303,11 +9332,11 @@ function renderWipinMissing(){
 }
 /* ปุ่มเดียวลงบันทึกรับเข้าย้อนหลังทุกรายการที่ค้าง (ยอดตามที่ผลิตที่ SSG ของแต่ละ Valve/Lot) */
 async function wipinAddAllMissing(){
-  const items=_wipinMissingItems();
-  if(!items.length){ toast('ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
+  const {ok:items,bad}=_wipinMissingSplit();   // ★ ข้ามรายการที่ Valve/Lot ต้นทางผิดรูป
+  if(!items.length){ toast(bad.length?`เหลือแต่รายการที่ต้องแก้ต้นทางก่อน ${bad.length} รายการ`:'ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
   const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
   const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น · ${it.first||'-'}`).join('\n');
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่เริ่มทำ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่เริ่มทำ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)${bad.length?`\n\n⛔ ข้าม ${bad.length} รายการที่ Valve/Lot ต้นทางผิดรูป (ต้องแก้ที่ยอดผลิตก่อน)`:''}\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
   for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',it.first);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   toast(`✅ ลงบันทึก WIP IN 1.5 แล้ว ${items.length} รายการ · รวม ${nn(total)} ชิ้น`,'green');
