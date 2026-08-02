@@ -143,6 +143,7 @@ export default {
       if (path === '/api/machines'        && m === 'GET')  return ok(await getMachinesGrouped(env));
       if (path === '/api/machines'        && m === 'POST') return ok(await upsertMachine(env, await readJson(request)));
       if (path === '/api/machines/delete' && m === 'POST') return ok(await deleteMachine(env, await readJson(request)));
+      if (path === '/api/machines/rename' && m === 'POST') return ok(await renameMachine(env, await readJson(request)));
 
       // employees
       if (path === '/api/employees'        && m === 'GET')  return ok({ employees: await getEmployees(env) });
@@ -199,6 +200,9 @@ async function ensureSchema(env) {
     'ALTER TABLE production_records ADD COLUMN machine_id TEXT',
     'ALTER TABLE production_records ADD COLUMN zone TEXT',
     'ALTER TABLE production_records ADD COLUMN vsm TEXT',
+    // ★ 2026-08-02: พนักงานเก็บสาย VSM ไว้ในฐานข้อมูล — เดิมไม่มีคอลัมน์นี้
+    //   → คนที่ admin เพิ่มใหม่ผูก VSM ได้เฉพาะเครื่องที่เพิ่ม (localStorage) เครื่องอื่นเห็นเป็น VSM4
+    'ALTER TABLE employees ADD COLUMN vsm TEXT',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
@@ -464,26 +468,117 @@ async function deleteMachine(env, body) {
   return { deleted: r.meta?.changes || 0 };
 }
 
+/* เปลี่ยน "รหัสเครื่อง" ถึงฐานข้อมูลจริง — machines + kpi_records + production_records
+   body: { from, to, zone? }
+   ⚠️ zone จำเป็นเมื่อรหัสเดิมซ้ำอยู่หลายโซน (เช่น G-2018 อยู่ทั้ง ZJ/ZK) — ไม่ส่ง = เปลี่ยนทุกโซน
+   idempotent: รันซ้ำได้ (รอบสองจะไม่เจอแถวเดิม → changes = 0)                            */
+/* หาโซนทั้งหมดที่ใช้รหัสเครื่องนี้อยู่ (ดูครบทั้ง 3 ตาราง) — ใช้เป็นด่านกันเปลี่ยนผิดตัว */
+async function zonesUsingMachine(env, id) {
+  const zones = new Set();
+  for (const t of ['machines', 'kpi_records', 'production_records']) {
+    try {
+      const { results } = await env.DB.prepare(
+        `SELECT DISTINCT zone FROM ${t} WHERE machine_id = ? AND zone IS NOT NULL AND zone <> ''`
+      ).bind(id).all();
+      for (const r of (results || [])) zones.add(r.zone);
+    } catch (e) { /* ตารางไม่มีคอลัมน์ zone → ข้าม */ }
+  }
+  return [...zones].sort();
+}
+
+async function renameMachine(env, body) {
+  const from = String(body.from || '').trim();
+  const to   = String(body.to   || '').trim();
+  const zone = String(body.zone || '').trim();
+  if (!from || !to) throw new Error('from/to required');
+  if (from === to) return { from, to, zone, machines: 0, kpi: 0, prod: 0 };
+
+  /* ★★ ด่านกัน "เปลี่ยนผิดตัว" — บังคับระบุ zone เสมอ ★★
+     บทเรียนจริง (2026-08-02): เดิมด่านนี้ปฏิเสธเฉพาะตอนรหัส "ยังอยู่ >1 โซน"
+     แต่พอเปลี่ยนชื่อฝั่ง ZK ไปแล้ว G-2018 เหลือโซนเดียว ด่านเลยปล่อยผ่าน
+     → เรียกโดยไม่ใส่ zone กวาด G-2018@ZJ ไป 40 KPI + 17 prod (กู้คืนแล้ว)
+     ระบบนี้เครื่องสังกัดโซนเสมอ (machines PK = zone+machine_id) จึงไม่มีเหตุผลที่จะ
+     เปลี่ยนชื่อข้ามทุกโซน — บังคับ zone ไปเลย ตัดความเสี่ยงทั้งคลาสนี้ทิ้ง */
+  if (!zone) {
+    const zs = await zonesUsingMachine(env, from);
+    throw new Error(
+      `ต้องระบุ zone เสมอ — "${from}" พบในโซน: ${zs.length ? zs.join(', ') : '(ไม่พบ)'} · ` +
+      `รหัสเครื่องซ้ำกันได้หลายไลน์ ถ้าไม่ระบุโซนจะเปลี่ยนชื่อของไลน์อื่นไปด้วย`);
+  }
+  const zonesUsed = await zonesUsingMachine(env, from);
+  if (zonesUsed.length && !zonesUsed.includes(zone)) {
+    throw new Error(`ไม่พบ "${from}" ในโซน ${zone} (พบที่: ${zonesUsed.join(', ')})`);
+  }
+
+  const zc   = ' AND zone = ?';
+  const args = [to, from, zone];
+  /* preview:true = ดูว่าจะกระทบกี่แถว โดยไม่แก้อะไรเลย — ให้ตรวจก่อนลงมือได้เสมอ */
+  if (body.preview) {
+    const cnt = async (t) => {
+      try {
+        const r = await env.DB.prepare(
+          `SELECT COUNT(*) AS n FROM ${t} WHERE machine_id = ?${zc}`).bind(from, zone).first();
+        return r?.n || 0;
+      } catch (e) { return 0; }
+    };
+    return { preview: true, from, to, zone, zones_found: zonesUsed,
+             machines: await cnt('machines'), kpi: await cnt('kpi_records'), prod: await cnt('production_records') };
+  }
+  const run = async (sql, a) => {
+    try { const r = await env.DB.prepare(sql).bind(...a).run(); return r.meta?.changes || 0; }
+    catch (e) { return 0; }   // ตารางไม่มีคอลัมน์ / ชนคีย์ซ้ำ → ข้าม ไม่ให้ทั้งคำขอพัง
+  };
+  // OR REPLACE = ถ้ามีแถวชื่อใหม่อยู่แล้ว (seed สร้างไว้) ให้ทับ ไม่ใช่ error คีย์ซ้ำ
+  const machines = await run(`UPDATE OR REPLACE machines SET machine_id = ? WHERE machine_id = ?${zc}`, args);
+  const kpi      = await run(`UPDATE kpi_records SET machine_id = ? WHERE machine_id = ?${zc}`, args);
+  const prod     = await run(`UPDATE production_records SET machine_id = ? WHERE machine_id = ?${zc}`, args);
+  return { from, to, zone, machines, kpi, prod, zones_found: zonesUsed };
+}
+
 // ============================================================
 // EMPLOYEES
 // ============================================================
 async function getEmployees(env) {
-  const { results } = await env.DB.prepare(
-    'SELECT emp_id AS id, name FROM employees ORDER BY emp_id'
-  ).all();
-  return results || [];
+  // คอลัมน์ vsm เพิ่มทีหลัง (ensureSchema) — DB เก่าที่ ALTER ยังไม่ผ่านจะ error → fallback แบบไม่มี vsm
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT emp_id AS id, name, vsm FROM employees ORDER BY emp_id'
+    ).all();
+    return results || [];
+  } catch (e) {
+    const { results } = await env.DB.prepare(
+      'SELECT emp_id AS id, name FROM employees ORDER BY emp_id'
+    ).all();
+    return results || [];
+  }
 }
+
+const VSM_OK = new Set(['vsm1', 'vsm2', 'vsm3', 'vsm4']);
 
 async function upsertEmployee(env, body) {
   const id   = String(body.id || body.emp_id || '').trim();
   if (!id) throw new Error('emp id required');
   const name = String(body.name || '').trim();
-  await env.DB.prepare(`
-    INSERT INTO employees (emp_id, name, updated_at)
-    VALUES (?, ?, datetime('now'))
-    ON CONFLICT(emp_id) DO UPDATE SET name=excluded.name, updated_at=excluded.updated_at
-  `).bind(id, name).run();
-  return { employee: { id, name } };
+  const raw  = String(body.vsm || '').trim().toLowerCase();
+  const vsm  = VSM_OK.has(raw) ? raw : null;      // คีย์เพี้ยน (เช่น 'vsm12') → เก็บ null ดีกว่าเก็บค่าที่ระบบอ่านไม่ออก
+  try {
+    await env.DB.prepare(`
+      INSERT INTO employees (emp_id, name, vsm, updated_at)
+      VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(emp_id) DO UPDATE SET
+        name=excluded.name,
+        vsm=COALESCE(excluded.vsm, employees.vsm),   -- ไม่ส่ง vsm มา = ไม่ล้างค่าเดิม
+        updated_at=excluded.updated_at
+    `).bind(id, name, vsm).run();
+    return { employee: { id, name, vsm } };
+  } catch (e) {
+    await env.DB.prepare(`
+      INSERT INTO employees (emp_id, name, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(emp_id) DO UPDATE SET name=excluded.name, updated_at=excluded.updated_at
+    `).bind(id, name).run();
+    return { employee: { id, name } };
+  }
 }
 
 async function deleteEmployee(env, body) {
