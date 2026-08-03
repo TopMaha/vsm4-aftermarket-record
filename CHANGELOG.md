@@ -1,6 +1,10 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.40 — 2026-08-03 — VSM2: เครื่องจักรตรงเอกสารทั้งชุด 71 เครื่อง (เพิ่ม 24 + ย้ายโซน 18) · ยังไม่แตะ IOT
+## v3.40 — 2026-08-03 — VSM2: เครื่องจักรตรงเอกสารทั้งชุด 71 เครื่อง (เพิ่ม 24 + ย้ายโซน 18) · ยังไม่แตะ IOT  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `9b7ee742-c25e-4965-a2a3-4387a077869a` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `8e52b91` → https://topmaha.github.io/vsm4-aftermarket-record/
+(ตรวจแล้วทั้งคู่: ขนาดไฟล์เท่ากัน 1,302,451 bytes · หัวแอปขึ้น **v3.40** · มี `VSM2_ZONE_MOVE` ในหน้าที่เสิร์ฟจริง)
 
 **คำขอผู้ใช้**: ตรวจรายการ Machine No ตามเอกสาร "Machine VSM2" ว่ารายการไหนยังไม่มีใน Zone → เพิ่มให้
 **ส่วนของ IOT ยังไม่ต้องเพิ่ม** · (รอบสอง) 18 เครื่องที่อยู่คนละโซนกับเอกสาร → **แก้เลย**
