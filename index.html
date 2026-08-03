@@ -432,6 +432,35 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,86,219,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ===== สถานะ "กำลังทำงาน" — บอกผู้ใช้ว่าระบบทำอะไรอยู่ (ไม่บล็อกการใช้งาน) =====
+   ป้ายลอยด้านบน: งานที่กำลังทำล่าสุด · แถบในหน้า (.ldstrip): จุดที่ข้อมูลยังไม่พร้อม */
+/* วางไว้เหนือแถบเมนูล่าง — ไม่บังหัวแอป/ปุ่ม 🔄 ⚙️ และไม่ชนกับ toast (ซึ่งอยู่ top:70px) */
+#loadPill{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));z-index:4900;
+  transform:translateX(-50%) translateY(16px);display:none;align-items:center;gap:9px;
+  max-width:min(94vw,440px);background:rgba(15,23,42,.93);color:#fff;border-radius:999px;
+  padding:9px 15px 9px 13px;box-shadow:0 10px 28px rgba(15,23,42,.38);
+  font-size:13px;font-weight:800;letter-spacing:.2px;pointer-events:none;opacity:0;
+  transition:opacity .18s ease,transform .18s ease}
+#loadPill.on{display:flex;opacity:1;transform:translateX(-50%) translateY(0)}
+#loadPill .sp{width:15px;height:15px;flex:0 0 auto;border:2.5px solid rgba(255,255,255,.28);
+  border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+#loadPill .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#loadPill .sub{font-size:11px;font-weight:700;opacity:.72;white-space:nowrap;flex:0 0 auto}
+
+.ldstrip{margin:0 0 10px}
+.ldstrip-r{display:flex;align-items:center;gap:9px;background:var(--blue-light);
+  border:1.5px solid var(--blue-soft);border-radius:11px;padding:10px 13px;margin-bottom:6px;
+  font-size:12.5px;font-weight:800;color:var(--blue-dark);line-height:1.5}
+.ldstrip-r .spinner{width:15px;height:15px;border-width:2.5px;flex:0 0 auto}
+.ldstrip-r b{font-weight:700;opacity:.7}
+/* กล่อง/แถว "กำลังโหลด" ที่ใช้แทนเนื้อหาซึ่งยังวาดไม่เสร็จ */
+.ldbox{display:flex;align-items:center;justify-content:center;gap:9px;padding:20px 12px;
+  color:var(--muted);font-size:12.5px;font-weight:800}
+.skel{height:11px;border-radius:6px;margin:7px 0;
+  background:linear-gradient(90deg,#EEF2F7 25%,#E2E8F0 37%,#EEF2F7 63%);background-size:400% 100%;
+  animation:skelSweep 1.2s ease infinite}
+@keyframes skelSweep{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
 /* ===== DESKTOP ===== */
 @media(min-width:768px){
   main{padding:16px 20px 100px}
@@ -1296,6 +1325,9 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 
 <div id="topbar"></div>
 
+<!-- ป้ายบอกสถานะ "กำลังโหลด/กำลังทำงาน" — ลอยอยู่บนสุด ไม่บล็อกการกดใช้งาน -->
+<div id="loadPill" aria-live="polite"></div>
+
 <!-- ============== LOCK IN OVERLAY ============== -->
 <div class="lock-overlay" id="lockOverlay">
   <div class="lock-card">
@@ -1323,7 +1355,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.40</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.41</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1492,6 +1524,9 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 <!-- ============== TAB: ติดตามงาน ============== -->
 <section id="pane-prod" class="pane">
 
+  <!-- แถบสถานะ: บอกว่ากำลังดึง/คำนวณข้อมูลอะไรอยู่ (แทนที่จะค้างเงียบ ๆ) -->
+  <div id="prodLoading" class="ldstrip" style="display:none"></div>
+
   <!-- สถานะงานในพื้นที่: WIP IN 1.5 / WIP / WIP OUT (กดดูรายละเอียดได้) -->
   <div class="card" id="wipBucketCard">
     <div class="card-title"><span class="ci">📦</span>สถานะงานในพื้นที่</div>
@@ -1562,6 +1597,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 
 <!-- ============== TAB: HISTORY ============== -->
 <section id="pane-history" class="pane">
+  <!-- แถบสถานะ: กำลังดึงประวัติ / กำลังจัดเรียง — ผู้ใช้จะได้รู้ว่ายังไม่ค้าง -->
+  <div id="histLoading" class="ldstrip" style="display:none"></div>
   <div class="card">
     <div class="card-title"><span class="ci">🗂️</span>ประวัติ</div>
     <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
@@ -1710,6 +1747,9 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 
 <!-- ============== TAB: SETTINGS ============== -->
 <section id="pane-settings" class="pane">
+  <!-- แถบสถานะ: กำลังเตรียมหน้าตั้งค่า / กำลังสลับ VSM (บอกความคืบหน้าเป็นขั้น ๆ) -->
+  <div id="setLoading" class="ldstrip" style="display:none"></div>
+
   <!-- ผู้ใช้งานปัจจุบัน + ปุ่มออกจากระบบ (เห็นชัด หาง่าย) -->
   <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
     <div style="min-width:0">
@@ -3356,6 +3396,105 @@ function _tbDone() {
   _tbTimer = setTimeout(() => { bar.classList.remove('go'); bar.style.width = '0'; }, 350);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   สถานะ "กำลังทำงาน" แบบไม่บล็อกหน้าจอ (2026-08-03)
+   ปัญหาเดิม: งานหนัก (ดึงข้อมูลก้อนใหญ่ / วาดตารางหลายพันแถว) ทำรวดเดียว
+              → หน้าจอค้างเงียบ ๆ หลายวินาที ผู้ใช้ไม่รู้ว่าแอปแฮงหรือกำลังทำงาน
+   แก้เป็น 2 ชั้น:
+     1) ประกาศงาน — loadOn(key,msg,{at,sub}) / loadOff(key)
+        โชว์ป้ายลอยบนสุด + แถบในหน้าที่เกี่ยวข้อง (at = id ของ .ldstrip)
+     2) หายใจก่อนลงมือ — await yieldUI() ปล่อยให้เบราว์เซอร์ได้ "วาดป้ายนั้นออกมา"
+        และรับการกดของผู้ใช้ ก่อนเริ่มงานหนักก้อนถัดไป
+   งานยาว ๆ จึงถูกซอยเป็นขั้น (chunk) — เห็นความคืบหน้า และเลื่อนจอได้ตลอด
+   ═══════════════════════════════════════════════════════════════════════ */
+const _loadJobs = new Map();                       // key → {msg, sub, at, t}
+const _LOAD_STRIPS = ['prodLoading', 'histLoading', 'setLoading'];
+const LOAD_MAX_MS = 180000;                        // งานเดียวไม่ควรค้างเกิน 3 นาที (api() ตัดที่ 45–150 วิอยู่แล้ว)
+let _loadWatch = null;
+function loadOn(key, msg, opts) {
+  opts = opts || {};
+  _loadJobs.set(key, { msg: msg || 'กำลังโหลดข้อมูล…', sub: opts.sub || '', at: opts.at || '', t: Date.now() });
+  // กันป้ายค้าง: ถ้างานใดไม่ปิดตัวเอง (เช่น request ค้าง/โค้ดพลาด) ให้ปลดทิ้งเอง
+  // ป้าย "กำลังโหลด" ที่ค้างถาวร แย่กว่าไม่มีป้าย เพราะผู้ใช้จะไม่เชื่อถืออีกเลย
+  if (!_loadWatch) _loadWatch = setInterval(_loadTick, 5000);
+  _paintLoad();
+}
+function _loadTick() {
+  const now = Date.now();
+  let changed = false;
+  for (const [k, j] of _loadJobs) if (now - j.t > LOAD_MAX_MS) { _loadJobs.delete(k); changed = true; }
+  if (changed) _paintLoad();
+  if (!_loadJobs.size) { clearInterval(_loadWatch); _loadWatch = null; }
+}
+/* อัปเดตข้อความ/ความคืบหน้าของงานเดิม (ไม่รีเซ็ตลำดับ) */
+function loadStep(key, msg, sub) {
+  const j = _loadJobs.get(key); if (!j) return;
+  if (msg != null) j.msg = msg;
+  if (sub != null) j.sub = sub;
+  j.t = Date.now();               // ยังคืบหน้าอยู่ → เลื่อนเวลาหมดอายุออกไป
+  _paintLoad();
+}
+function loadOff(key) { if (_loadJobs.delete(key)) _paintLoad(); }
+/* แถบในหน้านั้นกำลังโชว์อยู่จริงไหม (แถบอยู่ในหน้าที่เปิดอยู่) */
+function _stripShowing(id) {
+  const el = $(id);
+  return !!el && !!el.closest('section.pane')?.classList.contains('active');
+}
+function _paintLoad() {
+  const jobs = [..._loadJobs.values()];
+  const pill = $('loadPill');
+  if (pill) {
+    // ป้ายลอยโชว์เฉพาะงานที่ "ไม่มีแถบในหน้าให้เห็นอยู่แล้ว" — กันบอกซ้ำสองที่ + กันบังเนื้อหา
+    const floating = jobs.filter(j => !j.at || !_stripShowing(j.at));
+    if (!floating.length) pill.classList.remove('on');
+    else {
+      const j = floating[floating.length - 1];        // งานล่าสุด = สิ่งที่ผู้ใช้เพิ่งสั่ง
+      pill.innerHTML = '<span class="sp"></span><span class="tx">' + escapeHtml(j.msg) + '</span>'
+        + (j.sub ? '<span class="sub">' + escapeHtml(j.sub) + '</span>' : '')
+        + (floating.length > 1 ? '<span class="sub">+' + (floating.length - 1) + '</span>' : '');
+      pill.classList.add('on');
+    }
+  }
+  const byAt = {};
+  for (const j of jobs) if (j.at) (byAt[j.at] = byAt[j.at] || []).push(j);
+  for (const id of _LOAD_STRIPS) {
+    const el = $(id); if (!el) continue;
+    const list = byAt[id];
+    if (!list || !list.length) { el.style.display = 'none'; el.innerHTML = ''; continue; }
+    el.style.display = '';
+    el.innerHTML = list.map(j =>
+      '<div class="ldstrip-r"><span class="spinner"></span><span>' + escapeHtml(j.msg)
+      + (j.sub ? ' <b>' + escapeHtml(j.sub) + '</b>' : '') + '</span></div>').join('');
+  }
+}
+/* คืนคิวให้เบราว์เซอร์ 1 เฟรม — ป้าย/แถบที่เพิ่งสั่งจะได้ถูกวาดจริงก่อนงานหนักก้อนถัดไป
+   (มี timeout กันค้างตอนแท็บถูกซ่อน ซึ่ง requestAnimationFrame จะไม่ทำงาน) */
+function yieldUI() {
+  return new Promise(res => {
+    let done = false;
+    const fin = () => { if (!done) { done = true; res(); } };
+    // rAF = รอให้เฟรมถัดไปถูกวาด · setTimeout(0) ข้างใน = ทำงานต่อ "หลัง" วาดเสร็จจริง
+    try { requestAnimationFrame(() => setTimeout(fin, 0)); } catch (e) {}
+    setTimeout(fin, 100);   // กันค้างตอนแท็บถูกซ่อน/WebView หน่วง rAF
+  });
+}
+/* ครอบงานที่ใช้เวลา: โชว์สถานะ → หายใจ 1 เฟรม → ทำงาน → ปิดสถานะเสมอ */
+async function withLoading(key, msg, fn, opts) {
+  loadOn(key, msg, opts);
+  await yieldUI();
+  try { return await fn(); }
+  finally { loadOff(key); }
+}
+/* กล่อง "กำลังโหลด" สำหรับวางแทนเนื้อหาที่ยังวาดไม่เสร็จ */
+function ldBox(msg) {
+  return '<div class="ldbox"><span class="spinner"></span><span>' + escapeHtml(msg || 'กำลังโหลดข้อมูล…') + '</span></div>';
+}
+function ldSkeleton(n) {
+  let h = '<div style="padding:6px 2px">';
+  for (let i = 0; i < (n || 4); i++) h += '<div class="skel" style="width:' + (100 - i * 9) + '%"></div>';
+  return h + '</div>';
+}
+
 /* ===== Busy overlay — บล็อกหน้าจอระหว่างบันทึก/แก้ไข จนกว่าจะเสร็จจริง =====
    ป้องกันการกดซ้ำ + บอกผู้ใช้ชัดเจนว่า "กำลังบันทึก" และ "เสร็จแล้ว" ===== */
 let _busyFailsafe = null;
@@ -3545,6 +3684,9 @@ function _doSetPane(name) {
   $('pane-' + name).classList.add('active');
   $$('nav.bnav button').forEach(b => b.classList.toggle('active', b.dataset.pane === name));
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  _paintLoad();   // เปลี่ยนหน้า → คิดใหม่ว่างานที่ยังค้างอยู่ควรโชว์เป็นแถบในหน้า หรือป้ายลอย
+  // หน้าที่ต้องเตรียมข้อมูลก่อนใช้ → ขึ้นสถานะทันทีที่กด (แล้วตัวฟังก์ชันจะปิดสถานะเองเมื่อเสร็จ)
+  // ไม่งั้นผู้ใช้จะเห็นหน้าจอค้างเฉย ๆ ระหว่างที่ระบบกำลังทำงาน
   if (name === 'home')     renderHome();
   if (name === 'kpi')      renderZone();
   if (name === 'prod')     renderHome();
@@ -4708,6 +4850,8 @@ async function applyRegisterAllLots() {
 // ดึงจาก D1 + merge กับ local แล้ว render
 async function pullPlans() {
   if (!API) { renderPlans(); return; }
+  // ป้ายลอย (ไม่ใส่แถบในหน้า) — หน้าแผนไม่ต้องถูกดันเนื้อหา แต่ต้องรู้ว่ากำลังดึงข้อมูลอยู่
+  loadOn('plans', TT('📅 กำลังโหลดแผนการผลิต…','📅 Loading production plans…'));
   try {
     const res = await api('/api/plans?limit=5000').catch(()=>null);
     if (res?.plans) {
@@ -4718,6 +4862,7 @@ async function pullPlans() {
       lsSave(LS.PLANS, state.plans);
     }
   } catch (e) {}
+  finally { loadOff('plans'); }
   renderPlans();
 }
 
@@ -5300,6 +5445,9 @@ async function reload() {
     toast('ใช้ข้อมูลใน LocalStorage (โหมด Local)', 'green');
     return;
   }
+  // ★ 2026-08-03 — sync ก้อนใหญ่: บอกสถานะทุกขั้น (เดิมเงียบจนกว่าจะเสร็จ = ดูเหมือนแอปค้าง)
+  loadOn('reload', TT('☁️ กำลังซิงก์ข้อมูลกับ Cloud…','☁️ Syncing with Cloud…'),
+    { sub: TT('ข้อมูลหลัก (วาล์ว/เครื่อง/พนักงาน)','master data') });
   try {
     // 1) master data — รวม valve_ids  (Quick Win #2: ผ่าน apiInit เพื่อ coalesce + เก็บ cache)
     const res = await apiInit(0);
@@ -5330,6 +5478,7 @@ async function reload() {
     });
 
     // 2) ดึง records 30 วันล่าสุด เพื่อ multi-user view
+    loadStep('reload', null, TT('ยอดผลิต + KPI + แผน (30 วันล่าสุด)','records + KPI + plans (30 days)'));
     const d = new Date(); d.setDate(d.getDate() - 30);
     const fromDate = `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
     try {
@@ -5363,11 +5512,15 @@ async function reload() {
   /* ★ วาดหน้าจอ "นอก try ของการ sync" เสมอ — เดิมอยู่ในนั้น ทำให้ error ตอน render
      ถูกรายงานเป็น "Sync ไม่สำเร็จ" + badge เด้งกลับเป็น Local ทั้งที่ข้อมูลลงมาครบแล้ว */
   try {
+    loadStep('reload', null, TT('กำลังอัปเดตหน้าจอ…','updating views…'));
+    await yieldUI();                       // ให้ป้ายได้วาด ก่อนวาดหน้าจอก้อนใหญ่
     ensureValidZone(); renderZoneTabs(); populateZoneSelects();
     renderHome(); renderZone(); renderSettings();
   } catch (e) {
     console.error('[reload] render failed:', e);
     toast('แสดงผลบางส่วนไม่สำเร็จ: ' + ((e && e.message) || e), 'orange');
+  } finally {
+    loadOff('reload');
   }
 }
 let _lastSyncError = null;   // เก็บ error ล่าสุดของ reload() — กดดูได้จากหน้าตั้งค่า
@@ -6308,7 +6461,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && API && !_isModalOpen()) {
     _heartbeatConn();   // กลับมาที่แท็บ → เช็กการเชื่อมต่อใหม่ (อัปเดต badge)
     const activePane = document.querySelector('section.pane.active')?.id;
-    if (activePane === 'pane-home' || activePane === 'pane-prod') renderHome();
+    if (activePane === 'pane-home' || activePane === 'pane-prod') renderHome({ background: true });
     if (activePane === 'pane-history') _autoRefreshHistory();   // กลับมาที่แท็บ → รีเฟรชเงียบ ไม่กระพริบ
   }
 });
@@ -6410,7 +6563,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.40":"Production Record + KPI · v3.40",
+"ระบบบันทึกผลิต + KPI · v3.41":"Production Record + KPI · v3.41",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7430,13 +7583,18 @@ let _iotVsmSel='vsm4';
 try{ const _s=localStorage.getItem('vsm4_iot_vsm'); if(isVsmKey(_s)) _iotVsmSel=_s; }catch(e){}
 function _fpVsm(){ return viewVsm(); }   // ผังโรงงาน = VSM ที่กำลังดู (แหล่งเดียวกับทั้งแอป)
 // Admin เลือกดู VSM ไหนก็ได้ (vsm1/2/3/4) — ล็อกทีละสาย ไม่ปนข้อมูลข้าม VSM
-function iotSetVsm(v){
+async function iotSetVsm(v){
   _iotVsmSel = isVsmKey(v) ? v : DEFAULT_VSM;
   try{ localStorage.setItem('vsm4_iot_vsm',_iotVsmSel); }catch(e){}
   // Admin สลับ VSM → ล็อกทั้งแอปตามสายที่เลือก (ประวัติ/Dashboard/KPI/ต่อกะ/ฟอร์มบันทึก/รายชื่อพนักงาน) ไม่ใช่แค่ผัง
   if (typeof updateVsmHeader === 'function') updateVsmHeader();   // หัวแอป + ป้าย VSM เปลี่ยนตามสายที่เลือก
-  if (typeof refreshVsmViews === 'function') refreshVsmViews();
-  else renderMachineStatusChecker();
+  // ปุ่มที่กดต้องไฮไลต์ทันที ไม่ต้องรอวาดทั้งหน้าเสร็จ (เดิมกดแล้วเหมือนไม่ติด เพราะจอค้าง)
+  try{ if (typeof renderSettingsVsmBar === 'function') renderSettingsVsmBar(); }catch(e){}
+  const label = (typeof VSM_LABEL !== 'undefined' && VSM_LABEL[_iotVsmSel]) || _iotVsmSel;
+  await withLoading('vsm', `🏭 ${TT('กำลังสลับไป','Switching to')} ${label}…`, async () => {
+    if (typeof refreshVsmViews === 'function') await refreshVsmViews();
+    else renderMachineStatusChecker();
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -10181,6 +10339,13 @@ async function ensureAllJobsLoaded(force){
   if (!API || _allBusy) return false;
   if (!force && _allKpi && (Date.now() - _allAt) < ALLJOBS_TTL) return false;
   _allBusy = true;
+  /* ★ 2026-08-03 — ก้อนนี้ใหญ่ที่สุดในแอป (~10 MB, หลายวินาที) และเป็นตัวที่ทำให้
+     ยอด WIP/WIP IN ยังไม่ครบ → ต้องมีป้ายบอก ไม่ใช่ปล่อยให้ผู้ใช้เห็นตัวเลขนิ่ง ๆ แล้วงง */
+  loadOn('alljobs', TT('⏳ กำลังโหลดข้อมูลย้อนหลังทั้งหมด (ใช้คิดยอด WIP)…',
+                       '⏳ Loading full history (for WIP figures)…'),
+    // force = เปิดแอป/กดรีเฟรชเอง → ใส่แถบในหน้าให้เห็นชัด
+    // ไม่ force = รอบอัตโนมัติทุก 2 ชม. → ป้ายลอยอย่างเดียว หน้าจอจะได้ไม่เด้งตอนผู้ใช้กำลังอ่าน
+    { at: force ? 'prodLoading' : '', sub: TT('ยอด WIP ที่เห็นตอนนี้ยังไม่ครบ','WIP figures not complete yet') });
   try {
     const t = todayISO();
     const [k, p] = await Promise.all([
@@ -10188,6 +10353,8 @@ async function ensureAllJobsLoaded(force){
       api('/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000', { silent:true, timeout:150000 }),
     ]);
     if (!k?.records || !p?.records) return false;
+    loadStep('alljobs', null, TT('กำลังประมวลผลข้อมูล…','processing data…'));
+    await yieldUI();                 // ปล่อยให้จอวาดป้าย ก่อนคำนวณก้อนใหญ่ (normalize หมื่นแถว)
     _allKpi  = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
     _allProd = p.records
       .map(r => ({ ...r, record_id:r.record_id||r.recordId, valve_no:r.valveNo||r.valve_no, current_process:r.currentProcess||r.current_process }))
@@ -10198,7 +10365,7 @@ async function ensureAllJobsLoaded(force){
     _postFgRecs = _allKpi;           // กล่องงานหลัง FG ใช้ชุดเดียวกัน (ไม่ต้องดึงซ้ำอีก 10 MB)
     return true;
   } catch (e) { return false; }      // offline → ใช้ cache ไปก่อน
-  finally { _allBusy = false; }
+  finally { _allBusy = false; loadOff('alljobs'); }
 }
 // ชุดข้อมูลที่ใช้คิด 3 ถัง — ครบทุกช่วงถ้าโหลดเสร็จแล้ว · ระหว่างรอโหลดใช้ cache ไปก่อน
 function _wipKpiSrc()  { return _allKpi  || state.kpiRecords  || []; }
@@ -11435,6 +11602,7 @@ function _openIotPop(title, body, stack, wide){
    ใหม่: paint จาก state ทันที (sync) → ดึง API เบื้องหลัง → merge เข้า state →
    paint ซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง (signature guard กันกระตุก/กระพริบ) */
 let _homeSyncing = false;
+let _homeSeq = 0;              // ลำดับการเรียก — กันรอบเก่าปิดป้าย "กำลังโหลด" ของรอบใหม่
 function _homeSig() {
   const today = todayISO();
   const dFrom = $('dashFrom')?.value || today, dTo = $('dashTo')?.value || today;
@@ -11448,9 +11616,22 @@ function _homeSig() {
   }
   return s;
 }
-async function renderHome() {
-  _paintHome();                       // 1) paint จาก state ทันที — ไม่รอ network
-  if (!API || _homeSyncing) return;   // offline หรือกำลัง sync อยู่ → พอแค่ paint local
+async function renderHome(opts) {
+  /* ★ 2026-08-03 — บอกสถานะทุกครั้งที่กำลังเตรียม/ดึงข้อมูล
+     เดิม: _paintHome() คำนวณ 3 ถัง WIP + ตาราง Process จากข้อมูลหมื่นแถวแบบ sync
+           แล้วต่อด้วยการดึง Cloud อีก 3 ก้อน — ทั้งหมดเงียบ ผู้ใช้เห็นจอค้าง */
+  const seq = ++_homeSeq;             // เรียกซ้อน (สลับแท็บ/เปลี่ยนวันที่รัว ๆ) → รอบเก่าไม่แย่งปิดป้าย
+  const onProd = document.querySelector('section.pane.active')?.id === 'pane-prod';
+  /* รีเฟรชเบื้องหลัง (auto-sync / กลับมาที่แท็บ) → โชว์แค่ป้ายลอย ไม่ใส่แถบในหน้า
+     เพราะแถบในหน้าดันเนื้อหาลง = หน้าจอเด้งขณะผู้ใช้กำลังอ่าน (ข้อกำหนดเดิมของระบบ) */
+  const at = (onProd && !(opts && opts.background)) ? 'prodLoading' : '';
+  loadOn('home', onProd ? TT('📋 กำลังเตรียมข้อมูลติดตามงาน…','📋 Preparing job tracking…')
+                        : TT('📈 กำลังเตรียม Dashboard…','📈 Preparing dashboard…'),
+    { at, sub: TT('กำลังคำนวณจากข้อมูลในเครื่อง','computing from local data') });
+  await yieldUI();                    // ให้แถบสถานะได้วาดก่อนเริ่มคำนวณก้อนใหญ่
+  try { _paintHome(); } catch (e) {}  // 1) paint จาก state ทันที — ไม่รอ network
+  if (!API || _homeSyncing) { if (seq === _homeSeq) loadOff('home'); return; }   // offline หรือกำลัง sync อยู่ → พอแค่ paint local
+  loadStep('home', null, TT('กำลังดึงข้อมูลล่าสุดจาก Cloud…','fetching latest from Cloud…'));
   _homeSyncing = true;
   const before = _homeSig();
   try {
@@ -11473,9 +11654,14 @@ async function renderHome() {
     if (kRange?.records || kToday?.records || p?.records) {
       lsSave(LS.KPI, state.kpiRecords);
       lsSave(LS.PROD_REC, state.prodRecords);
-      if (_homeSig() !== before) _paintHome();   // 4) paint ซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง
+      if (_homeSig() !== before) {
+        loadStep('home', null, TT('กำลังอัปเดตหน้าจอ…','updating view…'));
+        await yieldUI();
+        _paintHome();                           // 4) paint ซ้ำเฉพาะเมื่อข้อมูลเปลี่ยนจริง
+      }
     }
-  } catch (e) { /* เงียบ — paint local ไปแล้ว */ } finally { _homeSyncing = false; }
+  } catch (e) { /* เงียบ — paint local ไปแล้ว */ }
+  finally { _homeSyncing = false; if (seq === _homeSeq) loadOff('home'); }
 }
 
 function _paintHome() {
@@ -13774,17 +13960,32 @@ function _histClientSearch(rows, q) {
 }
 
 let _histReq = 0;   // ลำดับคำขอ — กัน response เก่ามา render ทับของใหม่ (อาการ "ขึ้น ๆ หาย ๆ")
+/* ลำดับ "ของป้ายกำลังโหลด" แยกจาก _histReq เพราะ _autoRefreshHistory (เบื้องหลัง) ก็บวก _histReq ด้วย
+   ถ้าใช้ตัวเดียวกัน รอบเบื้องหลังจะไปแย่งสิทธิ์ปิดป้าย → ป้าย "กำลังโหลด" ค้างทั้งที่โหลดเสร็จแล้ว */
+let _histLoadSeq = 0;
 async function loadHistory(keepPage = false) {
   if (!keepPage) _histPage = 0;   // เปลี่ยนฟิลเตอร์ → กลับหน้าแรก
   const myReq = ++_histReq;
+  const myLoad = ++_histLoadSeq;
   const from = $('histFrom').value, to = $('histTo').value;
   const zone = $('histZone').value, q = $('histSearch').value.trim();
   const filt = { from, to, zone, q };
 
-  // แสดง local ก่อน (เร็ว ไม่ต้องรอ API) — render จะ slice เหลือ _histLimit + ตั้งปุ่มโหลดเพิ่มเอง
-  _renderHistLocal();
+  /* ★ 2026-08-03 — บอกสถานะก่อนลงมือเสมอ
+     เดิม: กดเข้าหน้าประวัติ/เปลี่ยนช่วงวันที่ → กรอง+เรียงข้อมูลหลายพันแถว แล้วรอ API
+           ทั้งหมดนี้เงียบสนิท ผู้ใช้เห็นแค่ตารางเก่าค้างอยู่ นึกว่าแอปแฮง */
+  const kindLabel = state.histType === 'kpi' ? 'KPI' : 'Production';
+  loadOn('hist', `🗂️ ${TT('กำลังโหลดประวัติ','Loading history')} ${kindLabel}…`,
+    { at: 'histLoading', sub: TT('กำลังจัดข้อมูลในเครื่อง','reading local data') });
+  await yieldUI();                       // ให้แถบ "กำลังโหลด" ขึ้นก่อน แล้วค่อยลงมือ
+  if (myLoad !== _histLoadSeq) return;   // ผู้ใช้เปลี่ยนฟิลเตอร์ระหว่างนั้น → ทิ้งรอบนี้ (รอบใหม่คุมป้ายต่อ)
 
-  if (!API) return;   // offline → local cache คือ source, render จัดการ paging แล้ว
+  // แสดง local ก่อน (เร็ว ไม่ต้องรอ API) — render จะ slice เหลือ _histLimit + ตั้งปุ่มโหลดเพิ่มเอง
+  try { _renderHistLocal(); } catch (e) {}
+
+  if (!API) { loadOff('hist'); return; }   // offline → local cache คือ source, render จัดการ paging แล้ว
+
+  loadStep('hist', null, TT('กำลังดึงข้อมูลล่าสุดจาก Cloud…', 'fetching latest from Cloud…'));
 
   // ดึงชุดใหญ่มาแบ่งหน้าฝั่ง client (DOM แสดงแค่ 30 แถว/หน้า → เครื่องไม่ช้า)
   const fetchLimit = HIST_FETCH;
@@ -13799,6 +14000,9 @@ async function loadHistory(keepPage = false) {
       const res = await api('/api/kpi?' + params);
       if (myReq !== _histReq) return;   // มีคำขอใหม่กว่าแล้ว → ทิ้งผลเก่า ไม่ render ทับ
       if (res?.records !== undefined) {
+        loadStep('hist', null, `${TT('กำลังจัดเรียง','sorting')} ${nn(res.records.length)} ${TT('รายการ','rows')}…`);
+        await yieldUI();
+        if (myReq !== _histReq) return;
         // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
         if (!q && !zone) _syncKpiFromApi(res.records, from, to);
         renderKpiHist(_histClientSearch(res.records, q));
@@ -13812,13 +14016,20 @@ async function loadHistory(keepPage = false) {
       const res = await api('/api/records?' + params);
       if (myReq !== _histReq) return;   // มีคำขอใหม่กว่าแล้ว → ทิ้งผลเก่า ไม่ render ทับ
       if (res?.records !== undefined) {
+        loadStep('hist', null, `${TT('กำลังจัดเรียง','sorting')} ${nn(res.records.length)} ${TT('รายการ','rows')}…`);
+        await yieldUI();
+        if (myReq !== _histReq) return;
         // sync local state ให้ตรงกับ API (ถ้าไม่มี search filter)
         if (!q) _syncProdFromApi(res.records, from, to);
         renderProdHist(_histClientSearch(res.records, q));
       }
     }
   } catch (e) {
-    // API ล้มเหลว — local ที่แสดงอยู่ถูกต้องแล้ว
+    // API ล้มเหลว — local ที่แสดงอยู่ถูกต้องแล้ว แต่ต้องบอกผู้ใช้ ไม่ใช่เงียบไป
+    if (myLoad === _histLoadSeq)
+      toast(TT('ดึงประวัติจาก Cloud ไม่สำเร็จ — แสดงข้อมูลในเครื่องแทน','Cloud fetch failed — showing local data'), 'orange');
+  } finally {
+    if (myLoad === _histLoadSeq) loadOff('hist');   // รอบใหม่แซงแล้ว → ปล่อยให้รอบใหม่คุมป้ายต่อ
   }
 }
 
@@ -14634,28 +14845,57 @@ function renderSettingsVsmBar() {
     </div>`;
 }
 
-function renderSettings() {
+/* ★ 2026-08-03 — หน้าตั้งค่าวาดเป็น "ขั้น ๆ" พร้อมบอกความคืบหน้า
+   เดิม: กดเข้าหน้าตั้งค่า / สลับ VSM → วาดตารางวาล์ว+พนักงาน+เครื่อง+งานหลัง FG รวดเดียว
+         หลายพันแถว = main thread ตัน หน้าจอค้างเงียบ ๆ 2–5 วินาที กดอะไรไม่ได้เลย
+   ใหม่: ซอยเป็น 6 ขั้น คั่นด้วย yieldUI() → ป้าย "กำลังเตรียมหน้าตั้งค่า (n/6)" ขึ้นให้เห็น
+         หน้าจอเลื่อน/กดได้ระหว่างวาด · สลับ VSM ซ้ำระหว่างวาด → รอบเก่าหยุดเอง ไม่วาดซ้อน */
+let _setSeq = 0;
+async function renderSettings() {
   // ⚡ เพื่อความเร็ว: render หน้าตั้งค่า (ตารางวาล์ว/พนักงาน/เครื่อง ที่อาจมีหลายพันแถว)
   // เฉพาะตอนที่หน้าตั้งค่าเปิดอยู่จริงเท่านั้น — setPane จะเปิดหน้าก่อนเรียก จึงทำงานปกติ
   if (document.querySelector('section.pane.active')?.id !== 'pane-settings') return;
-  renderSettingsVsmBar();
-  if ($('apiUrl')) $('apiUrl').value = API;
-  if ($('settingsUser')) $('settingsUser').textContent = CURRENT_USER
-    ? `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[myVsm()] || myVsm()}`
-    : 'ยังไม่ได้เข้าใช้งาน';
-  renderZoneTargets();
-  // Local data counts
-  if ($('lsKpiCount'))   $('lsKpiCount').textContent   = state.kpiRecords.length;
-  if ($('lsProdCount'))  $('lsProdCount').textContent  = state.prodRecords.length;
-  if ($('lsValveCount')) $('lsValveCount').textContent = state.valves.length;
-  if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
-  renderValveList(); renderIdList(); renderEmployeeList(); renderMachineList();
-  renderUnknownValves();
-  renderUnknownLots();
-  renderUnknownProcs();
-  renderWipinMissing();   // P1-19: งานที่ผลิตที่ SSG แล้วแต่ยังไม่ลง WIP IN 1.5
-  renderPostFgJobs();
-  initSettingsCollapse();
+  const seq = ++_setSeq;
+  const alive = () => seq === _setSeq
+    && document.querySelector('section.pane.active')?.id === 'pane-settings';
+
+  // ส่วนหัวเบา ๆ วาดทันที (ผู้ใช้เห็นว่ากดติดแล้ว + ปุ่ม VSM ไฮไลต์ถูกตัวทันที)
+  try {
+    renderSettingsVsmBar();
+    if ($('apiUrl')) $('apiUrl').value = API;
+    if ($('settingsUser')) $('settingsUser').textContent = CURRENT_USER
+      ? `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[myVsm()] || myVsm()}`
+      : 'ยังไม่ได้เข้าใช้งาน';
+  } catch (e) {}
+
+  const steps = [
+    ['เป้าหมาย + จำนวนข้อมูล', () => {
+      renderZoneTargets();
+      if ($('lsKpiCount'))   $('lsKpiCount').textContent   = state.kpiRecords.length;
+      if ($('lsProdCount'))  $('lsProdCount').textContent  = state.prodRecords.length;
+      if ($('lsValveCount')) $('lsValveCount').textContent = state.valves.length;
+      if ($('lsEmpCount'))   $('lsEmpCount').textContent   = state.employees.length;
+    }],
+    ['รายการวาล์ว + Valve ID', () => { renderValveList(); renderIdList(); }],
+    ['พนักงาน + เครื่องจักร',  () => { renderEmployeeList(); renderMachineList(); }],
+    ['รายการที่ยังไม่เข้าระบบ', () => { renderUnknownValves(); renderUnknownLots(); renderUnknownProcs(); }],
+    ['งานที่ยังไม่ลง WIP IN',   () => { renderWipinMissing(); }],   // P1-19
+    ['งานหลัง FG',             () => { renderPostFgJobs(); }],
+  ];
+  const TITLE = TT('⚙️ กำลังเตรียมหน้าตั้งค่า…', '⚙️ Preparing settings…');
+  loadOn('settings', TITLE, { at: 'setLoading', sub: `0/${steps.length}` });
+  try {
+    for (let i = 0; i < steps.length; i++) {
+      if (!alive()) return;
+      loadStep('settings', TITLE, `${i + 1}/${steps.length} · ${steps[i][0]}`);
+      await yieldUI();                       // ให้ป้ายได้วาด + ผู้ใช้ยังกด/เลื่อนจอได้
+      if (!alive()) return;
+      try { steps[i][1](); } catch (e) {}    // ขั้นใดพัง ไม่ให้ล้มทั้งหน้า
+    }
+    try { initSettingsCollapse(); } catch (e) {}
+  } finally {
+    if (seq === _setSeq) loadOff('settings');   // รอบใหม่แซงแล้ว → ปล่อยให้รอบใหม่คุมป้ายต่อ
+  }
 }
 
 /* ===== แจ้งเตือน Admin: Valve No ที่พนักงานบันทึกแต่ไม่มีในฐานข้อมูล =====
@@ -15273,15 +15513,35 @@ function adminLock() {
   refreshVsmViews();
 }
 // re-render ทุกมุมมองที่กรองตาม VSM (เรียกเมื่อสลับ Admin mode / สลับสาย VSM / login)
-function refreshVsmViews() {
+/* ★ 2026-08-03 — วาดเป็นขั้น ๆ พร้อมป้ายบอกสถานะ
+   เดิมทุกมุมมองถูกวาดรวดเดียว (ฟอร์มบันทึก + Dashboard + แผน + ประวัติ + ตั้งค่า)
+   → สลับ VSM ทีนึงจอค้างยาว ไม่มีอะไรบอกว่าเกิดอะไรขึ้น */
+let _vsmViewSeq = 0;
+async function refreshVsmViews() {
   _listPage.valve = _listPage.emp = _listPage.mc = 0;   // สลับ VSM → กลับหน้าแรกของทุกตาราง
+  const seq = ++_vsmViewSeq;
   try { updateVsmHeader(); } catch (e) {}   // ป้าย VSM + หัวแอปตามสายที่กำลังดู
-  try { ensureValidZone(); renderZoneTabs(); renderZone(); } catch (e) {}
-  try { populateZoneSelects(); } catch (e) {}
-  try { renderHome(); } catch (e) {}
-  try { renderPlans(); } catch (e) {}
-  try { if (state.histType) _renderHistLocal(); } catch (e) {}
-  try { renderSettings(); } catch (e) {}
+  const TITLE = TT('🔄 กำลังอัปเดตข้อมูลตามสายที่เลือก…', '🔄 Updating views for selected line…');
+  loadOn('vsmviews', TITLE, { sub: `0/4` });
+  try {
+    const steps = [
+      ['ฟอร์มบันทึก + Zone', () => { ensureValidZone(); renderZoneTabs(); renderZone(); populateZoneSelects(); }],
+      ['แผนการผลิต',        () => { renderPlans(); }],
+      ['ประวัติ',            () => { if (state.histType) _renderHistLocal(); }],
+      ['Dashboard / ติดตามงาน', () => { renderHome().catch(() => {}); }],   // ดึง Cloud ต่อเบื้องหลัง (มีป้ายของตัวเอง)
+    ];
+    for (let i = 0; i < steps.length; i++) {
+      if (seq !== _vsmViewSeq) return;                 // มีการสลับสายใหม่กว่า → ทิ้งรอบนี้
+      loadStep('vsmviews', TITLE, `${i + 1}/${steps.length} · ${steps[i][0]}`);
+      await yieldUI();
+      if (seq !== _vsmViewSeq) return;
+      try { steps[i][1](); } catch (e) {}
+    }
+    if (seq !== _vsmViewSeq) return;
+    try { await renderSettings(); } catch (e) {}       // หน้าตั้งค่ามีป้ายความคืบหน้าของตัวเอง
+  } finally {
+    if (seq === _vsmViewSeq) loadOff('vsmviews');
+  }
 }
 // สร้างปุ่ม Zone tab ตาม VSM ปัจจุบัน (ฟอร์มบันทึก)
 function renderZoneTabs() {
@@ -16586,7 +16846,13 @@ function renderPostFgJobs() {
   if (!box) return;
   // ครั้งแรกที่เปิดหน้าตั้งค่า + ออนไลน์ → ดึงงานค้าง "ทั้งหมด" (ไม่จำกัด 30 วัน) อัตโนมัติแบบเงียบ
   // เพื่อให้เห็น "ทั้งหมดที่ค้างอยู่" โดยไม่ต้องกดปุ่มเอง
-  if (API && !_postFgAutoLoaded && !_postFgRecs) { _postFgAutoLoaded = true; refreshPostFgFromCloud(true); return; }
+  // ระหว่างรอ: บอกให้เห็นว่ากำลังดึงอยู่ ไม่ใช่กล่องว่าง ๆ ที่ดูเหมือนแอปค้าง
+  if (API && !_postFgAutoLoaded && !_postFgRecs) {
+    _postFgAutoLoaded = true;
+    box.innerHTML = ldBox(TT('กำลังดึงงานหลัง FG ทั้งหมดจาก Cloud…', 'Loading all post-FG jobs from Cloud…')) + ldSkeleton(3);
+    refreshPostFgFromCloud(true);
+    return;
+  }
   const allJobs   = computePostFgJobs(_postFgSrc());                    // เฉพาะสายที่กำลังดู
   const allActive = allJobs.filter(j => j.eligible);                    // เข้าข่ายจบได้ (หลัง FG เหลือแค่ P/T·T/T·QC·POL·BUFF)
   const allBlock  = allJobs.filter(j => !j.eligible);                   // ยังมี process ผลิตต่อหลัง FG → ยังจบไม่ได้
@@ -16774,6 +17040,8 @@ async function finishAllPostFg() {
 async function refreshPostFgFromCloud(silent) {
   if (!API) { _postFgRecs = null; renderPostFgJobs(); return; }
   if (!silent) showBusy('กำลังดึงงานทั้งหมด…');
+  // แม้เป็นโหมดเงียบ (โหลดอัตโนมัติครั้งแรก) ก็ต้องมีป้ายบอก — ก้อนนี้ใหญ่ ใช้เวลาหลายวินาที
+  loadOn('postfg', TT('📦 กำลังดึงงานหลัง FG ทั้งหมด…', '📦 Loading all post-FG jobs…'), { at: 'setLoading' });
   try {
     const init = await api('/api/init').catch(() => null);
     if (init?.targets) {
@@ -16787,7 +17055,9 @@ async function refreshPostFgFromCloud(silent) {
       _postFgRecs = k?.records || state.kpiRecords || [];
     }
   } catch (e) { _postFgRecs = state.kpiRecords || []; }
+  finally { loadOff('postfg'); }
   if (!silent) hideBusy();
+  await yieldUI();          // ปล่อยให้จอวาดก่อน แล้วค่อยลงมือวาดรายการก้อนใหญ่
   renderPostFgJobs();
 }
 
