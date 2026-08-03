@@ -943,9 +943,23 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .iot-fs.iot-page2 > #iotSalesPage{display:flex;flex-direction:column;overflow:hidden}
 .iot-fs #iotSalesPage > .isl-bar{flex:0 0 auto}
 .iot-fs #iotSalesPage > .isl-foot{flex:0 0 auto}
+.iot-fs #iotSalesPage > .isl-np{flex:0 0 auto}    /* แถบเตือน "ไม่มีในแผน" สูงเท่าเนื้อหา ไม่ยืดกินพื้นที่ตาราง */
 .iot-fs #iotSalesPage > .isl-wrap{flex:1 1 auto;min-height:0;align-items:stretch}
 .iot-fs #iotSalesPage > .isl-wrap > .isl-grp{display:flex;flex-direction:column;min-height:0}
 .iot-fs #iotSalesPage > .isl-wrap > .isl-grp > .isl-gh{flex:0 0 auto}
+
+/* ★ 2026-08-03 (req #1) — เต็มจอ + หน้า 2 = "บอร์ดติดตามงานขายล้วน ๆ" เต็มจอจริง
+   ของเดิม: เต็มจอยังคงแบ่งครึ่งจอให้แผงต่อกะ + แถบ OAE/WIP ค้างอยู่ด้านบน
+            → บอร์ดที่มี 130+ แถว เหลือพื้นที่จริงไม่ถึงครึ่ง เห็นทีละ ~8 แถว
+   ตอนนี้: หน้า 2 ตัด ต่อกะ / เส้นแบ่งลาก / OAE / WIP ออกทั้งหมด แล้วให้ตารางกินเต็มความกว้าง
+           (ของพวกนั้นเป็นเรื่องของ "ผังเครื่องจักร" = หน้า 1 — กดสลับกลับไปดูได้ตลอด) */
+.iot-fs.iot-page2 > #iotFsSide,
+.iot-fs.iot-page2 > #iotSplit,
+.iot-fs.iot-page2 > #iotOaeStrip,
+.iot-fs.iot-page2 > #iotWipStrip{display:none!important}
+.iot-fs.iot-page2 > #iotSalesPage{grid-column:1 / -1}
+/* ปุ่ม 📝 ต่อกะ ก็ไม่เกี่ยวกับหน้านี้ — ซ่อนทั้งโหมดปกติและเต็มจอ (req: "เอาต่อกะออก") */
+.iot-page2 #hoAddBtn{display:none!important}
 
 /* แถบหัว: เลือกเดือน + ตัวกรองลูกค้า + ตัวเลขสรุป */
 .isl-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
@@ -969,10 +983,47 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .isl-seg .c{font-size:9.5px;font-weight:900;background:rgba(15,23,42,.09);border-radius:99px;padding:0 5px;
   min-width:15px;text-align:center;font-variant-numeric:tabular-nums}
 .isl-seg button.on .c{background:var(--blue);color:#fff}
-/* แผ่นตัวเลขสรุป */
+
+/* ★ 2026-08-03 (req #2) — "หางานง่าย ๆ": ช่องค้นหา + ตัวเลือกการเรียง อยู่บนแถบหัวคู่กัน
+   ทำไมต้องมีทั้งคู่: หัวตารางกดเรียงได้อยู่แล้ว แต่ (ก) บนจอสัมผัส/จอติดผนังกดหัวตารางยาก
+   (ข) ไม่มีใครรู้ว่ากดได้ ถ้าไม่มีลูกศรบอก → เพิ่ม dropdown ที่ "เห็นแล้วรู้เลยว่าเรียงตามอะไรอยู่"
+   และช่องค้นหา — คำถามจริงหน้าไลน์คือ "เบอร์นี้/ล็อตนี้อยู่ตรงไหน" ไม่ใช่การไล่อ่านทีละแถว */
+.isl-find{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.isl-search{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1.5px solid var(--blue-soft);
+  border-radius:10px;padding:2px 8px;box-shadow:var(--shadow);transition:border-color .14s,box-shadow .14s}
+.isl-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.isl-search .ic{font-size:11px;opacity:.6;line-height:1}
+.isl-search input{border:0;outline:0;background:transparent;font-family:inherit;font-weight:700;
+  font-size:calc(11.5px*var(--isl-s));color:var(--blue-dark);width:clamp(110px,15vw,190px);padding:4px 0;min-width:0}
+.isl-search input::placeholder{color:var(--muted2);font-weight:600}
+.isl-search input::-webkit-search-cancel-button{display:none}
+.isl-search .x{border:0;background:#E8EFFC;color:#31456B;border-radius:99px;width:18px;height:18px;cursor:pointer;
+  font-size:10px;font-weight:900;line-height:1;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.isl-search .x:hover{background:var(--blue);color:#fff}
+.isl-sortbox{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--blue-soft);
+  border-radius:10px;padding:2px 3px 2px 8px;box-shadow:var(--shadow)}
+.isl-sortbox > span{font-size:calc(9.5px*var(--isl-s));font-weight:800;color:var(--muted);white-space:nowrap}
+.isl-sortbox select{border:0;outline:0;background:transparent;font-family:inherit;font-weight:800;
+  font-size:calc(11px*var(--isl-s));color:var(--blue-dark);padding:3px 2px;cursor:pointer;max-width:130px}
+.isl-sortbox .dir{border:1.5px solid var(--blue-soft);background:#F3F7FF;color:var(--blue);border-radius:8px;
+  min-width:30px;height:26px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:900;line-height:1}
+.isl-sortbox .dir:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.isl-sortbox .dir:focus-visible,.isl-search .x:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px}
+/* แถบบอกว่ากำลังกรองอยู่ + ปุ่มล้าง — ผู้ใช้ต้องไม่หลงคิดว่า "ข้อมูลหาย" ตอนตัวเลขไม่ครบ */
+.isl-clr{display:inline-flex;align-items:center;gap:5px;border:1.5px solid #FDE68A;background:#FFFBEB;color:#92400E;
+  border-radius:99px;padding:3px 10px;font-size:calc(10px*var(--isl-s));font-weight:800;cursor:pointer;font-family:inherit}
+.isl-clr:hover{background:#FEF3C7;border-color:#FBBF24}
+
+/* แผ่นตัวเลขสรุป — กดได้ = ตัวกรองสถานะในตัว (เห็นเลข "เลยกำหนด 12" แล้วกดดู 12 ตัวนั้นได้ทันที) */
 .isl-kpis{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
 .isl-kpi{background:var(--card);border:1.5px solid var(--border);border-radius:9px;padding:3px 9px;min-width:58px;
-  box-shadow:var(--shadow)}
+  box-shadow:var(--shadow);text-align:left;font-family:inherit}
+button.isl-kpi{cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+button.isl-kpi:hover{transform:translateY(-1px);box-shadow:0 3px 9px rgba(15,23,42,.16)}
+button.isl-kpi:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+button.isl-kpi.on{border-width:2px;box-shadow:inset 0 0 0 1px #fff,0 3px 9px rgba(15,23,42,.18)}
+button.isl-kpi.on .k::after{content:" ✕";font-weight:900}
+.isl-kpi.none{border-color:#CBD5E1;background:#F8FAFC}                    .isl-kpi.none .v{color:#475569}
 .isl-kpi .v{font-size:calc(14.5px*var(--isl-s));font-weight:900;line-height:1.15;color:var(--blue-dark);
   font-variant-numeric:tabular-nums;letter-spacing:-.4px}
 .isl-kpi .k{font-size:calc(9px*var(--isl-s));font-weight:800;color:var(--muted);letter-spacing:.2px;white-space:nowrap}
@@ -1008,6 +1059,35 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .isl-t th.s{cursor:pointer;user-select:none;-webkit-tap-highlight-color:rgba(37,99,235,.2)}
 .isl-t th.s:hover{background:var(--blue-soft);color:var(--blue-dark)}
 .isl-t th.on{color:var(--blue);box-shadow:inset 0 -2.5px 0 var(--blue)}
+.isl-t th.s:focus-visible{outline:2.5px solid var(--blue);outline-offset:-2px}
+/* ★ req #2 — ลูกศรบอก "คอลัมน์นี้กดเรียงได้" ขึ้นทุกคอลัมน์ที่เรียงได้ (จาง) · คอลัมน์ที่เรียงอยู่ = ชัด
+   ของเดิมโชว์ลูกศรเฉพาะคอลัมน์ที่เรียงอยู่ → ไม่มีใครรู้ว่าคอลัมน์อื่นก็กดได้ */
+.isl-t th.s .ar{display:inline-block;margin-left:3px;font-size:.92em;opacity:.28;transition:opacity .14s}
+.isl-t th.s:hover .ar{opacity:.6}
+.isl-t th.on .ar{opacity:1;color:var(--blue)}
+
+/* ★ 2026-08-03 (req #3) — แถบเตือน "รายการนี้ไม่มีในแผนขาย"
+   บอร์ดนี้สร้างจากแผนขายล้วน ๆ → ของที่รับเข้าจริงแต่ไม่มีใครวางแผนไว้ จะไม่โผล่ที่ไหนเลย
+   ต้องดันขึ้นมาให้เห็นตรงนี้ พร้อมเหตุผลว่า "ทำไมถึงไม่มี" จะได้ตามตรวจถูกจุด */
+.isl-np{border:1.5px solid #FCD34D;background:linear-gradient(120deg,#FFFBEB,#FEF3C7);border-radius:var(--r);
+  padding:7px 11px;margin-bottom:9px}
+.isl-np > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  font-size:calc(11.5px*var(--isl-s));font-weight:900;color:#92400E}
+.isl-np > summary::-webkit-details-marker{display:none}
+.isl-np > summary .n{background:#D97706;color:#fff;border-radius:99px;padding:1px 9px;font-size:calc(10.5px*var(--isl-s))}
+.isl-np > summary .hint{font-weight:700;font-size:calc(9.8px*var(--isl-s));color:#A16207}
+.isl-np[open] > summary{margin-bottom:6px}
+.isl-np-sc{max-height:210px;overflow:auto;border:1px solid #FDE68A;border-radius:9px;background:var(--card)}
+.isl-np-t{width:100%;border-collapse:separate;border-spacing:0;font-size:calc(10.8px*var(--isl-s));font-variant-numeric:tabular-nums}
+.isl-np-t th{position:sticky;top:0;z-index:2;background:#FEF3C7;color:#92400E;font-size:calc(9.2px*var(--isl-s));
+  font-weight:900;text-align:left;padding:5px 8px;white-space:nowrap;border-bottom:1px solid #FDE68A}
+.isl-np-t td{padding:4px 8px;border-bottom:1px solid #FEF3C7;white-space:nowrap}
+.isl-np-t tr:last-child td{border-bottom:0}
+.isl-np-why{display:inline-block;font-size:calc(9.2px*var(--isl-s));font-weight:800;border-radius:99px;
+  padding:1px 7px;background:#FEE2E2;color:#B91C1C;border:1px solid #FECACA}
+.isl-np-why.lot{background:#FFEDD5;color:#9A3412;border-color:#FED7AA}
+.isl-np-why.vsm{background:#EDE9FE;color:#5B21B6;border-color:#DDD6FE}
+.isl-np-why.cancelled{background:#F1F5F9;color:#475569;border-color:#E2E8F0}
 .isl-t td{padding:4px 8px;border-bottom:1px solid #EEF2F8;white-space:nowrap;vertical-align:middle}
 .isl-t tbody tr{transition:background .12s}
 .isl-t tbody tr:nth-child(even){background:#FBFCFE}
@@ -1025,6 +1105,8 @@ tr.s-late:hover{background:#FFECEC!important}
 
 .isl-part{font-weight:800;color:var(--blue-dark);font-family:'Courier New',monospace;
   font-size:calc(11.8px*var(--isl-s));letter-spacing:.2px}
+/* ตัวอักษรที่ตรงคำค้น — สีเน้นพอให้กวาดตาเจอ ไม่กลบตัวหนังสือเดิม */
+.isl-hi{background:#FDE68A;color:#78350F;border-radius:3px;padding:0 1px;font-weight:900}
 .isl-lot{color:#5A6B85;font-family:'Courier New',monospace;font-size:calc(10.8px*var(--isl-s))}
 .isl-ord{font-weight:800;color:#31456B}
 /* วันที่ + นับถอยหลัง — บอก "เหลือกี่วัน" ตรง ๆ แทนให้คนคิดเอง */
@@ -1072,6 +1154,14 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   #iotSalesPage{--isl-rail:5px}
   .isl-kpis{margin-left:0;width:100%}
   .isl-kpi{flex:1 1 0;min-width:0;padding:4px 7px}
+  /* มือถือ: ช่องค้นหา/ตัวเรียง ขึ้นเต็มบรรทัดของตัวเอง · ตัวอักษร 16px กัน iOS ซูมหน้าจอตอนโฟกัส */
+  .isl-find{width:100%}
+  .isl-search{flex:1 1 200px}
+  .isl-search input{width:100%;font-size:16px}
+  .isl-sortbox{flex:1 1 170px}
+  .isl-sortbox select{flex:1 1 auto;max-width:none;font-size:16px}
+  .isl-search .x{width:26px;height:26px;font-size:12px}
+  .isl-sortbox .dir{min-width:40px;height:36px}
   .isl-wrap{grid-template-columns:1fr}
   /* ★ ห้ามใช้ max-height:none บนมือถือ — .isl-sc ต้องเป็นตัวเลื่อนเอง หัวตารางถึงจะ sticky ค้างได้
      (ไม่งั้นเลื่อนทั้งหน้า แล้วหัวตารางหายไปพร้อมการ์ด) */
@@ -1233,7 +1323,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.38</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.39</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1591,6 +1681,9 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 
     <!-- req #7: แผงตรวจงานที่ถูกย้ายไปขายเดือนถัดไป (โชว์เฉพาะเมื่อเจอ) -->
     <div id="planRollover"></div>
+
+    <!-- ★ 2026-08-03 (req): งานที่รับเข้า WIP IN 1.5 แล้ว แต่ไม่มีแผนขายรองรับ (โชว์เฉพาะเมื่อเจอ) -->
+    <div id="planNoPlan"></div>
 
     <div class="tbl-wrap" style="max-height:70vh">
       <!-- ★ 2026-08-02 UX: Lot / Q'ty เดิมแคบจนตัวเลขโดนตัด · "หมายเหตุ" เดิม min-width กินพื้นที่ที่เหลือทั้งหมด
@@ -3769,6 +3862,84 @@ function _planDateISO(s){
 }
 function _planDateBad(s){ if(!s) return false; return _planDateISO(s) !== String(s).slice(0,10); }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ 2026-08-03 (req) — "รายการนี้ไม่มีในแผนขาย" — แจ้งให้รู้ + บอกเหตุผล
+   ทำไมถึงต้องมี: บอร์ดติดตามงานขาย (IOT หน้า 2) และตารางเทียบยอดใน WIP IN 1.5
+   สร้างขึ้นจาก state.plans ล้วน ๆ → ของที่ "รับเข้ามาจริง" แต่ไม่มีใครวางแผนไว้
+   จะไม่โผล่ที่ไหนเลยสักที่เดียว หายเงียบทั้งใบ ไม่มีสัญญาณอะไรบอก
+   กฎจับคู่ = กฎเดียวกับ _wipPlanRows (เบอร์ตรง + แผนที่ไม่ระบุ Lot ถือว่าตรงทุก Lot)
+   ═══════════════════════════════════════════════════════════════════════ */
+let _planIdxCache=null, _planIdxVer=-1, _planIdxVsm='';
+function _planIndex(){
+  const v = viewVsm();
+  if(_planIdxCache && _planIdxVer===_fvVer && _planIdxVsm===v) return _planIdxCache;
+  const mine={}, all={}, months=new Set();     // เบอร์วาล์ว → รายการแผน (mine = เฉพาะสายที่กำลังดู)
+  for(const p of (state.plans||[])){
+    const vk=vKey(p.valve_no); if(!vk) continue;
+    (all[vk]=all[vk]||[]).push(p);
+  }
+  for(const p of filterVsm(state.plans||[])){
+    const vk=vKey(p.valve_no); if(!vk) continue;
+    (mine[vk]=mine[vk]||[]).push(p);
+    const m=_planDateISO(p.plan_date).slice(0,7); if(m) months.add(m);   // เดือนที่ "มีการวางแผนจริง"
+  }
+  _planIdxCache={mine,all,months}; _planIdxVer=_fvVer; _planIdxVsm=v;
+  return _planIdxCache;
+}
+/* คืน "เหตุผลที่ไม่มีในแผน" — '' = มีในแผนปกติ (ไม่ต้องเตือน)
+     none      = ไม่มีแผนของเบอร์นี้เลย (ลืมวางแผน / รับงานนอกแผน)
+     lot       = มีเบอร์นี้ในแผน แต่คนละ Lot (ลง Lot ผิด หรือแผนยังไม่ได้ใส่ Lot ที่ผลิตจริง)
+     cancelled = มีแผนอยู่ แต่ถูกยกเลิกไปแล้ว (ยกเลิกแผนแต่ของยังเข้ามา)
+     vsm       = แผนอยู่ที่สายอื่น (งานข้ามสาย — ไม่ใช่ความผิด แต่ต้องรู้ว่าทำไมบอร์ดสายนี้ไม่ขึ้น) */
+function _planMissWhy(valve, lot){
+  const vk=vKey(valve); if(!vk) return '';
+  const {mine,all}=_planIndex();
+  const lk=lotKey(lot);
+  const fit=arr=>(arr||[]).filter(p=>{ const pl=lotKey(p.lot); return !pl || pl===lk; });
+  const hitMine=fit(mine[vk]);
+  if(hitMine.length) return hitMine.every(p=>p.status==='cancelled') ? 'cancelled' : '';
+  if(fit(all[vk]).length) return 'vsm';        // มีแผน แต่ผูกกับสายอื่น
+  if((mine[vk]||[]).length || (all[vk]||[]).length) return 'lot';
+  return 'none';
+}
+const PLAN_MISS_LB = {
+  none:      ['ไม่มีในแผนขาย',        'not in any sales plan'],
+  lot:       ['มีเบอร์นี้ แต่คนละ Lot','valve planned, different lot'],
+  cancelled: ['แผนถูกยกเลิกไปแล้ว',   'plan was cancelled'],
+  vsm:       ['แผนอยู่ที่สายอื่น',     'plan belongs to another line'],
+};
+function planMissLabel(why){ const m=PLAN_MISS_LB[why]; return m?TT(m[0],m[1]):''; }
+/* ป้ายสั้นสำหรับช่องแคบ ๆ ในตาราง (คำเต็มอยู่ใน title ตอนชี้เมาส์) */
+const PLAN_MISS_SHORT = { none:['ไม่มีในแผน','no plan'], lot:['คนละ Lot','other lot'],
+                          cancelled:['แผนถูกยกเลิก','plan cancelled'], vsm:['แผนสายอื่น','other line'] };
+function planMissShort(why){ const m=PLAN_MISS_SHORT[why]; return m?TT(m[0],m[1]):''; }
+/* รายการรับเข้า WIP IN 1.5 ที่ไม่มีในแผนขาย — รวมยอดต่อ (Valve + Lot) · ใหม่ล่าสุดก่อน
+   ym = 'YYYY-MM' กรองเฉพาะเดือนที่รับเข้า ('' = ทุกเดือน)
+
+   ★ กติกากันเตือนมั่ว (สำคัญ): เตือนเฉพาะของที่รับเข้าใน "เดือนที่มีการวางแผนจริง" เท่านั้น
+   เหตุผลจากข้อมูลจริง: ตารางแผนเก็บย้อนหลังไม่กี่เดือน (ตอนตรวจมีแค่ ก.ค.–ส.ค.)
+   ถ้าไม่กัน ของที่รับเข้าเดือน พ.ค./มิ.ย. จะโดนติดธง "ไม่มีในแผน" ยกเข่ง ทั้งที่เดือนนั้น
+   ไม่มีข้อมูลแผนให้เทียบตั้งแต่แรก — เตือนแบบนั้นคือเสียงรบกวน ไม่ใช่ข้อมูล
+   (ล็อตที่รับเข้าเดือนก่อนแต่มีแผนไปขายเดือนถัดไป ยังจับคู่ได้ปกติ — การจับคู่ไม่ดูเดือน)
+   arr.skipped = จำนวนที่ถูกข้ามด้วยกติกานี้ (เอาไปบอกผู้ใช้ได้ว่าทำไมบางรายการไม่ถูกตรวจ) */
+function planMissingIntake(ym){
+  const {months}=_planIndex();
+  const by={}; let skipped=0;
+  for(const e of _wipinList()){
+    const m=String(e.ts||'').slice(0,7);
+    if(ym && m!==ym) continue;
+    const why=_planMissWhy(e.valve,e.lot); if(!why) continue;
+    if(!months.has(m)){ skipped++; continue; }      // เดือนนั้นไม่มีแผนเลย → ไม่มีอะไรให้เทียบ
+    const k=jobKey(e.valve,e.lot);
+    const c=by[k]||(by[k]={valve:e.valve,lot:e.lot||'',qty:0,n:0,ts:'',why});
+    c.qty+=Number(e.qty)||0; c.n++;
+    if(String(e.ts||'')>c.ts) c.ts=String(e.ts||'');
+  }
+  const out=Object.values(by).sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  out.skipped=skipped;
+  return out;
+}
+
 /* ── สถานะจริงจากการบันทึกผลิต — "ถึงขั้นตอนไหนแล้ว" (req #5.2) ── */
 function _planAutoStatus(p){
   const vk = vKey(p.valve_no||''); if(!vk) return null;
@@ -4094,6 +4265,102 @@ function renderPlans() {
   if (rb){ rb.style.display = badN ? '' : 'none'; rb.textContent = `🔧 ซ่อมวันที่ (${badN})`; }
   renderPlanMonths();   // มุมมองรายเดือน (req #6) sync ตามข้อมูลล่าสุด
   renderPlanRollover();  // ★ แผงตรวจ "งานถูกย้ายไปขายเดือนถัดไป" (req #7)
+  renderPlanNoPlan();    // ★ 2026-08-03 (req) แผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"
+}
+
+/* ═══ ★ 2026-08-03 (req) — แผง "รับเข้าแล้ว แต่ไม่มีแผนขายรองรับ" (หน้าวางแผน) ═══
+   ทำไมอยู่ตรงนี้: คนที่แก้ปัญหานี้ได้จริงคือคนวางแผน และเขาทำงานอยู่บนหน้านี้
+   ของที่ขึ้นในแผงนี้ = รายการ WIP IN 1.5 ที่หาแผนคู่กันไม่เจอ → ตามได้ 3 ทาง
+     ① ลืมวางแผน → กด ➕ เพิ่มแผน ได้จากแถวนั้นเลย
+     ② ลง Valve/Lot ผิดตอนรับเข้า → ไปแก้ที่ป๊อปอัป WIP IN 1.5 (ปุ่ม ✏️)
+     ③ แผนอยู่คนละสาย / แผนถูกยกเลิก → แผงบอกให้ตรง ๆ จะได้ไม่ไปนั่งหาผิดที่ */
+let _planNoPlanOpen=false;
+function renderPlanNoPlan(){
+  const box=$('planNoPlan'); if(!box) return;
+  const list=planMissingIntake('');                       // ทุกเดือน — ของค้างมาจากเดือนก่อนก็ต้องเห็น
+  if(!list.length){ box.innerHTML=''; return; }
+  const tot=list.reduce((s,r)=>s+r.qty,0);
+  const byWhy={}; for(const r of list) byWhy[r.why]=(byWhy[r.why]||0)+1;
+  const CAP=120, view=list.slice(0,CAP);
+  box.innerHTML=`
+    <details ${_planNoPlanOpen?'open':''} ontoggle="_planNoPlanOpen=this.open"
+      style="margin-bottom:10px;border:1.5px solid #FCD34D;border-radius:11px;background:linear-gradient(120deg,#FFFBEB,#FEF3C7);padding:9px 12px">
+      <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:13.5px;color:#92400E;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span>📋 รับเข้าแล้ว แต่ไม่มีในแผนขาย</span>
+        <span style="background:#D97706;color:#fff;border-radius:999px;padding:1px 10px;font-size:12px">${nn(list.length)} รายการ · ${nn(tot)} ชิ้น</span>
+        <span style="font-weight:600;font-size:11px;color:var(--muted)">· ของเข้ามาแล้วแต่ไม่มีแผนรองรับ — กดเพื่อดูว่าทำไมถึงไม่มี</span>
+      </summary>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px">
+        ${Object.entries(byWhy).map(([w,n])=>`<span class="tag" style="font-size:11px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A">${escapeHtml(planMissLabel(w))}: <b>${nn(n)}</b></span>`).join('')}
+      </div>
+      <div class="tbl-wrap" style="max-height:330px">
+        <table><thead><tr>
+          <th style="width:104px">วันที่รับเข้า</th><th style="width:118px">Valve No</th><th style="width:130px">Lot</th>
+          <th class="center" style="width:78px">ชิ้น</th><th>ทำไมไม่มีในแผน</th><th class="center" style="width:112px">จัดการ</th>
+        </tr></thead><tbody>
+        ${view.map(r=>`<tr>
+          <td>${escapeHtml(String(r.ts||'').slice(0,10)||'-')}</td>
+          <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
+          <td style="font-size:11.5px">${escapeHtml(r.lot||'-')}</td>
+          <td class="center"><b>${nn(r.qty)}</b></td>
+          <td style="font-size:12px;color:#92400E">${escapeHtml(planMissLabel(r.why))}</td>
+          <td class="center"><button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
+            onclick="openAddPlanFor('${encodeURIComponent(r.valve)}','${encodeURIComponent(r.lot||'')}',${r.qty})">➕ เพิ่มแผน</button></td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>
+      ${list.length>CAP?`<div class="muted" style="font-size:11px;padding:6px 0">… และอีก ${nn(list.length-CAP)} รายการ</div>`:''}
+      <div style="font-size:11px;color:#92400E;line-height:1.7;margin-top:6px">
+        💡 ถ้าเบอร์/Lot ถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด <b>📥 WIP IN 1.5</b> (หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่
+        ${list.skipped?`<br>ℹ️ ข้ามการตรวจ <b>${nn(list.skipped)}</b> รายการ — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนให้เทียบเลย (ตารางแผนเก็บย้อนหลังไม่กี่เดือน)`:''}
+      </div>
+    </details>`;
+}
+/* ➕ เพิ่มแผนขายจากรายการที่รับเข้ามาแล้ว — เติม Valve/Lot/จำนวน ให้ล่วงหน้า เหลือแค่ใส่วันที่ขาย */
+function openAddPlanFor(valveEnc, lotEnc, qty){
+  const valve=decodeURIComponent(valveEnc||''), lot=decodeURIComponent(lotEnc||'');
+  openModal('➕ เพิ่มแผนขาย (จากงานที่รับเข้าแล้ว)',`
+    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12px;color:var(--blue-dark);line-height:1.7;margin-bottom:10px">
+      งานนี้ <b>รับเข้า WIP IN 1.5 แล้ว</b> แต่ยังไม่มีแผนขาย — ใส่วันที่ขายแล้วบันทึก เพื่อให้ขึ้นบนบอร์ดติดตามงานขาย<br>
+      <span class="muted" style="font-size:11px">ถ้าเบอร์/Lot ผิด ให้ไปแก้ที่รายการรับเข้าแทน อย่าเพิ่งเพิ่มแผน</span>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Valve No</label><input type="text" id="napValve" value="${escapeHtml(valve)}" style="text-transform:uppercase;font-weight:700"></div>
+      <div class="fr"><label>Lot</label><input type="text" id="napLot" value="${escapeHtml(lot)}" placeholder="(ไม่บังคับ)"></div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>วันที่ขาย</label><input type="date" id="napDate" value="${escapeHtml(todayISO())}"></div>
+      <div class="fr"><label>จำนวน (Q'ty)</label><input type="text" id="napQty" value="${escapeHtml(String(qty||0))}" inputmode="text" onblur="evalFormula(this)"></div>
+    </div>
+    <div class="fr"><label>สถานะแผน</label><select id="napStatus">
+      ${Object.entries(PLAN_STATUS).map(([k,v])=>`<option value="${k}" ${k==='planned'?'selected':''}>${v.label}</option>`).join('')}
+    </select></div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-green" onclick="saveAddPlanFor()">💾 บันทึกแผน</button>
+    </div>`);
+}
+async function saveAddPlanFor(){
+  const valve=vKey($('napValve')?.value||'');
+  const lot=String($('napLot')?.value||'').trim();
+  const date=$('napDate')?.value||'';
+  const qty=Math.max(0,Math.round(fnum($('napQty')?.value||'')));
+  if(!valve){ toast('กรอก Valve No','orange'); return; }
+  if(!date){ toast('เลือกวันที่ขาย','orange'); return; }
+  if(!(qty>0)){ toast('กรอกจำนวน','orange'); return; }
+  const p={ plan_id:planNewId(), valve_no:valve, lot, plan_date:date, quantity:qty,
+            status:$('napStatus')?.value||'planned', note:'เพิ่มจากแผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"',
+            created_by:CURRENT_USER?.id||'', vsm:viewVsm() };
+  state.plans.unshift(p);
+  lsSave(LS.PLANS, state.plans);
+  closeModal();
+  if(API){
+    try{ await api('/api/plans',{ body:p }); toast(`✅ เพิ่มแผน ${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น แล้ว`,'green'); }
+    catch(e){ toast('บันทึก Local แล้ว — Cloud ไม่สำเร็จ: '+e.message,'orange'); }
+  } else toast(`เพิ่มแผน ${valve} แล้ว (local)`,'green');
+  renderPlans();
+  if(typeof renderWipBuckets==='function') renderWipBuckets();
+  if(_iotPage===2 && typeof renderIotSales==='function') renderIotSales(true);
 }
 
 /* ── สแกน Lot ที่พนักงานพิมพ์เพิ่มเอง (วาล์วรู้จัก แต่ Lot ยังไม่ลงทะเบียนใน Valve IDs) ──
@@ -6057,7 +6324,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.38":"Production Record + KPI · v3.38",
+"ระบบบันทึกผลิต + KPI · v3.39":"Production Record + KPI · v3.39",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7102,6 +7369,23 @@ let _iotPage      = 1;            // 1 = ผังเครื่องจัก
 let _islMonth     = '';           // 'YYYY-MM' ('' = เดือนปัจจุบัน)
 let _islCust      = 'all';        // all | MSI | SWE | OES&OEM
 let _islSort      = { key: 'due', dir: 1 };
+/* ★ 2026-08-03 (req #2) — เครื่องมือ "หางาน" ของบอร์ด: คำค้น + ตัวกรองสถานะ
+   _islQ  = คำค้น Part No / Lot (พิมพ์แล้วกรองทันที)
+   _islSt = all | none (ยังไม่เริ่ม) | run (กำลังผลิต) | done (ผลิตเสร็จ) | late (เลยกำหนด) */
+let _islQ         = '';
+let _islSt        = 'all';
+let _islNpOpen    = false;        // แถบ "ไม่มีในแผนขาย" กางค้างไว้ไหม (คงสภาพข้ามการวาดใหม่)
+/* ตัวเลือกการเรียง — ใช้ทั้ง dropdown บนแถบหัว และหัวตารางที่กดได้ (สองทางนี้เป็นค่าเดียวกันเสมอ) */
+const _ISL_SORTS = [
+  ['due',   'วันกำหนดส่ง',   'Due date'],
+  ['part',  'Part No',       'Part No'],
+  ['lot',   'Lot No.',       'Lot No.'],
+  ['order', 'ยอดสั่ง',       'Order'],
+  ['qty',   "ยอดผลิตได้",    "Q'ty made"],
+  ['pc',    '% ความคืบหน้า', '% progress'],
+  ['status','สถานะ',         'Status'],
+  ['line',  'สายที่ผลิต',    'Line'],
+];
 const _ISL_GROUPS = [
   { id: 'MSISWE', label: 'MSI and SWE', custs: ['MSI', 'SWE'] },
   { id: 'OESOEM', label: 'OES&OEM',     custs: ['OES&OEM'] },
@@ -7126,9 +7410,32 @@ function islShiftMonth(d) {
   renderIotSales(true);   // เปลี่ยนเดือน = ข้อมูลคนละชุด → เริ่มดูจากบนสุด
 }
 function islSetCust(c) { _islCust = c || 'all'; renderIotSales(true); }
+/* กดหัวตาราง: คอลัมน์เดิม = สลับ น้อย→มาก / มาก→น้อย · คอลัมน์ใหม่ = เริ่มที่ น้อย→มาก */
 function islSetSort(k) {
   if (_islSort.key === k) _islSort.dir *= -1; else _islSort = { key: k, dir: 1 };
   renderIotSales();
+}
+/* เลือกจาก dropdown: เปลี่ยนคอลัมน์อย่างเดียว ไม่สลับทิศ (คนเลือกจากเมนูไม่ได้ตั้งใจสลับทิศ) */
+function islPickSort(k) { if (_islSort.key !== k) _islSort = { key: k, dir: 1 }; renderIotSales(true); }
+function islToggleDir() { _islSort.dir *= -1; renderIotSales(); }
+/* ค้นหา Part No / Lot — พิมพ์แล้วกรองทันที (โฟกัส/ตำแหน่งเคอร์เซอร์ถูกคืนให้หลังวาดใหม่ ดู renderIotSales) */
+function islSetQ(v) { _islQ = String(v || '').trim(); renderIotSales(true); }
+/* กดแผ่นตัวเลขสรุป = กรองสถานะนั้น · กดซ้ำ = ล้างตัวกรอง */
+function islSetSt(s) { _islSt = (_islSt === s) ? 'all' : (s || 'all'); renderIotSales(true); }
+function islClearFilters() { _islQ = ''; _islSt = 'all'; _islCust = 'all'; renderIotSales(true); }
+/* ★ ปุ่มซูม −/⊙/+ ตอนอยู่หน้า 2: ไม่มีผังให้ซูม → ปรับ "ขนาดตัวหนังสือทั้งบอร์ด" แทน
+   (ขึ้นจอติดผนัง = อยากตัวใหญ่อ่านจากไกล · นั่งดูใกล้ ๆ = อยากเห็นหลายแถวต่อจอ)
+   จำค่าไว้ข้ามครั้ง — ตั้งครั้งเดียวจบ ไม่ต้องมาปรับใหม่ทุกวัน */
+const LS_ISL_ZOOM = 'vsm4_isl_zoom';
+let _islZoom = (() => { const v = parseFloat(localStorage.getItem(LS_ISL_ZOOM) || ''); return (v >= .7 && v <= 1.9) ? v : 1; })();
+function _islApplyZoom() {
+  const box = document.getElementById('iotSalesPage');
+  if (box) box.style.setProperty('--isl-s', String(_islZoom));
+}
+function islZoom(dir) {
+  _islZoom = dir === 0 ? 1 : Math.min(1.8, Math.max(.75, Math.round((_islZoom + dir * .1) * 100) / 100));
+  try { localStorage.setItem(LS_ISL_ZOOM, String(_islZoom)); } catch (e) {}
+  _islApplyZoom();   // ตัวหนังสือขยาย/ย่อให้เห็นทันที = feedback ในตัว (toast มองไม่เห็นตอน native fullscreen)
 }
 /* ดัชนี "ผลิตไปถึงไหนแล้ว" ต่อ (valve::lot) — สร้างครั้งเดียวต่อการวาด 1 รอบ
    ใช้ชุดข้อมูลแบบเดียวกับ WIP (ครบทุกช่วงเวลา) + รวมสายพี่น้อง VSM3/VSM4 */
@@ -7180,15 +7487,31 @@ function _islRow(p, idx) {
   };
 }
 const _ISL_ST_RANK = { none: 0, run: 1, done: 2 };
+/* % ความคืบหน้าของแถว — ใช้ทั้งตอนเรียงและตอนวาดแถบ (ต้องเป็นสูตรเดียวกันเป๊ะ) */
+function _islPc(r) { return r.order > 0 ? Math.round(r.qty / r.order * 100) : (r.qty > 0 ? 100 : 0); }
 function _islSortRows(rows) {
   const k = _islSort.key, dir = _islSort.dir;
   const val = r => k === 'part' ? r.valve : k === 'lot' ? r.lot : k === 'order' ? r.order
-              : k === 'qty' ? r.qty : k === 'status' ? _ISL_ST_RANK[r.st] : r.due;
+              : k === 'qty' ? r.qty : k === 'pc' ? _islPc(r) : k === 'line' ? r.remark
+              : k === 'status' ? _ISL_ST_RANK[r.st] : r.due;
   return rows.slice().sort((a, b) => {
     const va = val(a), vb = val(b);
     let c = (typeof va === 'number') ? va - vb : String(va).localeCompare(String(vb));
+    // ตัวตัดสินรองคงที่เสมอ → ลำดับแถวไม่สลับไปมาเองตอนรีเฟรชอัตโนมัติ
     if (c === 0) c = String(a.valve).localeCompare(String(b.valve));
+    if (c === 0) c = String(a.lot).localeCompare(String(b.lot));
     return c * dir;
+  });
+}
+/* กรองตามคำค้น (Part No / Lot) + สถานะที่เลือกจากแผ่นตัวเลขสรุป */
+function _islFilterRows(rows) {
+  const q = _islQ.toLowerCase();
+  return rows.filter(r => {
+    // เกณฑ์ต้องตรงกับตัวเลขบนแผ่นสรุปเป๊ะ ๆ (กด "เลยกำหนด 12" แล้วต้องได้ 12 แถวพอดี)
+    if (_islSt === 'late') { if (!r.late) return false; }
+    else if (_islSt !== 'all' && r.st !== _islSt) return false;
+    if (!q) return true;
+    return (r.valve + ' ' + r.lot).toLowerCase().indexOf(q) >= 0;
   });
 }
 /* นับวันถึงกำหนดขาย — บอก "เหลือกี่วัน / เลยมากี่วัน" ตรง ๆ (สิ่งที่คนดูอยากรู้จริง) */
@@ -7202,17 +7525,27 @@ function _islDueRel(due) {
   return { txt: `${TT('อีก','in')} ${d} ${TT('วัน','d')}`, cls: d <= 3 ? 'warn' : '' };
 }
 function _islTable(rows) {
-  const hd = (k, lb, extra = '') => `<th class="s${_islSort.key === k ? ' on' : ''}"${extra} onclick="islSetSort('${k}')">${lb}${_islSort.key === k ? (_islSort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`;
+  /* หัวตารางกดเรียงได้ทุกคอลัมน์ — ★ req #2:
+     • ลูกศรจาง ↕ ขึ้นทุกคอลัมน์ที่กดได้ (เดิมไม่มีอะไรบอกเลยว่ากดได้)
+     • aria-sort + tabindex + Enter/Space → ใช้คีย์บอร์ด/โปรแกรมอ่านหน้าจอได้ตามมาตรฐาน */
+  const hd = (k, lb, extra = '') => {
+    const on = _islSort.key === k, asc = _islSort.dir > 0;
+    const tip = TT('กดเพื่อเรียงตาม ', 'Sort by ') + lb + (on ? (asc ? ' (▲ ' + TT('น้อย→มาก','asc') + ')' : ' (▼ ' + TT('มาก→น้อย','desc') + ')') : '');
+    return `<th class="s${on ? ' on' : ''}"${extra} role="button" tabindex="0" title="${escapeHtml(tip)}"
+      aria-sort="${on ? (asc ? 'ascending' : 'descending') : 'none'}"
+      onclick="islSetSort('${k}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();islSetSort('${k}')}"
+      >${lb}<span class="ar">${on ? (asc ? '▲' : '▼') : '↕'}</span></th>`;
+  };
   const body = _islSortRows(rows).map((r, i) => {
     const stTxt = r.st === 'done' ? TT('ผลิตเสร็จ','Done') : r.st === 'run' ? escapeHtml(r.proc || TT('กำลังผลิต','Running')) : TT('ยังไม่เริ่ม','Not started');
     const rel = _islDueRel(r.due);
     // ความคืบหน้า = ยอดที่ผลิตได้ ÷ ยอดสั่ง (แถบตันที่ 100% แต่ตัวเลข % บอกของจริง)
-    const pc  = r.order > 0 ? Math.round(r.qty / r.order * 100) : (r.qty > 0 ? 100 : 0);
+    const pc  = _islPc(r);
     const bar = Math.max(0, Math.min(100, pc));
     return `<tr class="s-${r.late ? 'late' : r.st}" style="animation-delay:${Math.min(i, 14) * 18}ms">
       <td class="no">${i + 1}</td>
-      <td class="isl-part">${escapeHtml(r.valve)}</td>
-      <td class="isl-lot">${escapeHtml(r.lot || '—')}</td>
+      <td class="isl-part">${_islHi(r.valve)}</td>
+      <td class="isl-lot">${r.lot ? _islHi(r.lot) : '—'}</td>
       <td style="text-align:right"><span class="isl-ord">${r.order ? nn(r.order) : '<span class="isl-dash">—</span>'}</span></td>
       <td><div class="isl-due"><span class="d">${_fmtThDate(r.due)}</span>${rel ? `<span class="r ${rel.cls}">${rel.txt}</span>` : ''}</div></td>
       <td><div class="isl-q">
@@ -7232,8 +7565,17 @@ function _islTable(rows) {
       ${hd('due','Due date')}
       ${hd('qty',"Q'ty")}
       ${hd('status','Status')}
-      <th>Remark</th>
+      ${hd('line','Remark')}
     </tr></thead><tbody>${body}</tbody></table></div>`;
+}
+/* ไฮไลต์ตัวอักษรที่ตรงคำค้น — กวาดตาเจอแถวที่ต้องการทันที ไม่ต้องไล่อ่านทีละตัว */
+function _islHi(txt) {
+  const s = String(txt == null ? '' : txt);
+  const q = _islQ;
+  if (!q) return escapeHtml(s);
+  const i = s.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return escapeHtml(s);
+  return escapeHtml(s.slice(0, i)) + '<mark class="isl-hi">' + escapeHtml(s.slice(i, i + q.length)) + '</mark>' + escapeHtml(s.slice(i + q.length));
 }
 /* ★ 2026-08-02 — วาดใหม่แบบ "ไม่รบกวนคนที่กำลังนั่งดูอยู่"
    อาการเดิม: กำลังไล่ดูรายการงานขายกลางตาราง พอ auto-sync ทำงาน ตารางถูกสร้างใหม่ทั้งก้อน
@@ -7252,21 +7594,32 @@ function renderIotSales(resetScroll) {
     .filter(p => p.status !== 'cancelled' && (p.valve_no || '').trim() && _planDateISO(p.plan_date).slice(0, 7) === ym)
     .map(p => _islRow(p, idx));
   // กรองตามกลุ่มลูกค้าที่เลือก
-  const shown = _islCust === 'all' ? rows : rows.filter(r => r.cust === _islCust);
+  const inCust = _islCust === 'all' ? rows : rows.filter(r => r.cust === _islCust);
+  // ★ req #2 — แล้วค่อยกรองด้วย "สถานะที่กด + คำค้น" (2 ชั้นนี้คือเครื่องมือหางาน)
+  const shown = _islFilterRows(inCust);
   // จัดกลุ่ม → วาดเฉพาะกลุ่มที่มีข้อมูลจริง (ไม่เว้นช่องว่างเปล่า ๆ)
   const groups = _ISL_GROUPS
     .map(g => ({ ...g, rows: shown.filter(r => g.custs.includes(r.cust)) }))
     .filter(g => g.rows.length);
   const totOrder = shown.reduce((s, r) => s + r.order, 0);
   const totQty   = shown.reduce((s, r) => s + r.qty, 0);
-  const nDone    = shown.filter(r => r.st === 'done').length;
-  const nRun     = shown.filter(r => r.st === 'run').length;
-  const nLate    = shown.filter(r => r.late).length;
+  // ตัวเลขบนแผ่นสรุป = นับจากชุด "ก่อนกรองสถานะ/คำค้น" → ตัวเลขนิ่ง ไม่กระโดดตอนกดกรอง
+  const nNone    = inCust.filter(r => r.st === 'none').length;
+  const nDone    = inCust.filter(r => r.st === 'done').length;
+  const nRun     = inCust.filter(r => r.st === 'run').length;
+  const nLate    = inCust.filter(r => r.late).length;
+  const filtering = _islSt !== 'all' || !!_islQ;
   const cnt = c => rows.filter(r => r.cust === c).length;
   const segBtn = (v, lb, n) => `<button type="button" class="${_islCust===v?'on':''}" onclick="islSetCust('${v}')"
     aria-pressed="${_islCust===v}">${lb}<span class="c">${n}</span></button>`;
   const kpi = (v, k, cls) => `<div class="isl-kpi ${cls||''}"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  /* แผ่นตัวเลขที่ "กดได้" = ตัวกรองสถานะ — เห็นเลขแล้วกดดูรายการนั้นได้เลย ไม่ต้องมีตัวกรองแยกอีกชุด */
+  const kpiBtn = (n, k, cls, st) => `<button type="button" class="isl-kpi ${cls} ${_islSt===st?'on':''}"
+    aria-pressed="${_islSt===st}" title="${escapeHtml(_islSt===st ? TT('กดอีกครั้งเพื่อล้างตัวกรอง','Tap again to clear filter') : TT('กดเพื่อดูเฉพาะ ','Show only ')+k)}"
+    onclick="islSetSt('${st}')"><div class="v">${nn(n)}</div><div class="k">${k}</div></button>`;
   const isNow = ym === todayISO().slice(0, 7);
+  // ★ req #3 — งานที่รับเข้าเดือนนี้ แต่ไม่มีในแผนขาย → บอร์ดนี้ไม่มีทางแสดงได้ ต้องเตือนไว้ด้านบน
+  const noPlan = planMissingIntake(ym);
 
   const html = `
     <div class="isl-bar">
@@ -7286,14 +7639,38 @@ function renderIotSales(resetScroll) {
               และเป็นสัญญาณเตือนด้วย: ตกกลุ่มนี้ = เบอร์วาล์วไม่มีใน Master Valve */
           cnt('Other') ? segBtn('Other', TT('อื่น ๆ','Other'), cnt('Other')) : ''}
       </span>
+      <span class="isl-find">
+        <span class="isl-search">
+          <span class="ic" aria-hidden="true">🔍</span>
+          <input id="islQ" type="search" value="${escapeHtml(_islQ)}" autocomplete="off" spellcheck="false"
+            placeholder="${TT('ค้นหา Part No / Lot…','Search Part No / Lot…')}"
+            aria-label="${TT('ค้นหา Part No หรือ Lot','Search Part No or Lot')}"
+            oninput="islSetQ(this.value)" onkeydown="if(event.key==='Escape'){event.preventDefault();islSetQ('')}">
+          ${_islQ ? `<button type="button" class="x" onclick="islSetQ('')" aria-label="${TT('ล้างคำค้น','Clear search')}" title="${TT('ล้างคำค้น (Esc)','Clear search (Esc)')}">✕</button>` : ''}
+        </span>
+        <span class="isl-sortbox">
+          <span>${TT('เรียงตาม','Sort by')}</span>
+          <select aria-label="${TT('เรียงตาม','Sort by')}" onchange="islPickSort(this.value)">
+            ${_ISL_SORTS.map(([k,th,en]) => `<option value="${k}" ${_islSort.key===k?'selected':''}>${TT(th,en)}</option>`).join('')}
+          </select>
+          <button type="button" class="dir" onclick="islToggleDir()"
+            title="${_islSort.dir>0?TT('น้อย→มาก (กดเพื่อสลับ)','Ascending (tap to flip)'):TT('มาก→น้อย (กดเพื่อสลับ)','Descending (tap to flip)')}"
+            aria-label="${TT('สลับทิศทางการเรียง','Flip sort direction')}">${_islSort.dir>0?'▲':'▼'}</button>
+        </span>
+        ${filtering ? `<button type="button" class="isl-clr" onclick="islClearFilters()">
+            ${TT('แสดง','Showing')} <b>${nn(shown.length)}</b>/${nn(rows.length)} · ${TT('ล้างตัวกรอง','Clear filters')} ✕
+          </button>` : ''}
+      </span>
       <span class="isl-kpis">
         ${kpi(nn(totOrder), 'Order')}
         ${kpi(nn(totQty) + (totOrder ? ` <span style="font-size:.62em;opacity:.65">${Math.round(totQty/totOrder*100)}%</span>` : ''), "Q'ty " + TT('ผลิตได้','made'))}
-        ${nRun  ? kpi(nRun,  TT('กำลังผลิต','Running'), 'run')  : ''}
-        ${nDone ? kpi(nDone, TT('ผลิตเสร็จ','Done'),    'done') : ''}
-        ${nLate ? kpi(nLate, TT('เลยกำหนด','Overdue'),  'late') : ''}
+        ${nLate ? kpiBtn(nLate, TT('เลยกำหนด','Overdue'),  'late', 'late') : ''}
+        ${nRun  ? kpiBtn(nRun,  TT('กำลังผลิต','Running'),  'run',  'run')  : ''}
+        ${nNone ? kpiBtn(nNone, TT('ยังไม่เริ่ม','Not started'), 'none', 'none') : ''}
+        ${nDone ? kpiBtn(nDone, TT('ผลิตเสร็จ','Done'),     'done', 'done') : ''}
       </span>
     </div>
+    ${_islNoPlanHtml(noPlan, ym)}
     ${groups.length
       ? `<div class="isl-wrap${groups.length === 1 ? ' one' : ''}">${groups.map(g => {
           const go = g.rows.reduce((s,r)=>s+r.order,0), gq = g.rows.reduce((s,r)=>s+r.qty,0);
@@ -7308,10 +7685,17 @@ function renderIotSales(resetScroll) {
             ${_islTable(g.rows)}
           </div>`; }).join('')}</div>`
       : (rows.length
-          /* เดือนนี้มีข้อมูล แต่ตัวกรองที่เลือกไม่มี — ต้องบอกให้ตรง ไม่ใช่ "ไม่มีรายการขายในเดือนนี้" */
-          ? `<div class="isl-empty"><span class="ic">🔍</span>${TT('ไม่มีรายการของกลุ่ม','No rows for')} <b>${escapeHtml(_islCust)}</b> ${TT('ในเดือนนี้','this month')}
-               <div style="font-size:11.5px;margin-top:3px;color:var(--muted2)">${TT('เดือนนี้มีทั้งหมด','This month has')} <b>${rows.length}</b> ${TT('รายการ — กด','rows — tap')} <b>${TT('ทั้งหมด','All')}</b> ${TT('เพื่อดูทุกกลุ่ม','to see every group')}</div>
-             </div>`
+          /* เดือนนี้มีข้อมูล แต่ตัวกรองที่เลือกไม่มี — ต้องบอกให้ตรง ไม่ใช่ "ไม่มีรายการขายในเดือนนี้"
+             ★ req #2: แยกกรณี "ค้นหา/กรองสถานะแล้วไม่เจอ" ออกจาก "กลุ่มลูกค้านี้ไม่มี" + มีปุ่มล้างให้กดกลับ */
+          ? (filtering
+            ? `<div class="isl-empty"><span class="ic">🔍</span>${TT('ไม่พบงานที่ตรงกับที่ค้น/กรอง','No job matches your search or filter')}
+                 ${_islQ ? `<div style="font-size:12.5px;margin-top:4px;color:var(--blue-dark)">${TT('คำค้น','Search')}: <b>${escapeHtml(_islQ)}</b></div>` : ''}
+                 <div style="font-size:11.5px;margin-top:3px;color:var(--muted2)">${TT('เดือนนี้มีทั้งหมด','This month has')} <b>${rows.length}</b> ${TT('รายการ','rows')}</div>
+                 <button type="button" class="isl-clr" style="margin-top:8px" onclick="islClearFilters()">↺ ${TT('ล้างตัวกรองทั้งหมด','Clear all filters')}</button>
+               </div>`
+            : `<div class="isl-empty"><span class="ic">🔍</span>${TT('ไม่มีรายการของกลุ่ม','No rows for')} <b>${escapeHtml(_islCust)}</b> ${TT('ในเดือนนี้','this month')}
+                 <div style="font-size:11.5px;margin-top:3px;color:var(--muted2)">${TT('เดือนนี้มีทั้งหมด','This month has')} <b>${rows.length}</b> ${TT('รายการ — กด','rows — tap')} <b>${TT('ทั้งหมด','All')}</b> ${TT('เพื่อดูทุกกลุ่ม','to see every group')}</div>
+               </div>`)
           : `<div class="isl-empty"><span class="ic">📭</span>${TT('ไม่มีรายการขายในเดือนนี้','No sales rows for this month')}
                <div style="font-size:11.5px;margin-top:3px;color:var(--muted2)">${TT('เพิ่มได้ที่หน้า','Add them on the')} <b>📅 ${TT('วางแผน','Planning')}</b> ${TT('หรือกดลูกศรดูเดือนอื่น','or use the arrows to browse other months')}</div>
              </div>`)}
@@ -7321,11 +7705,19 @@ function renderIotSales(resetScroll) {
       <span><b>Status</b> ${TT('process ล่าสุดจากการบันทึกผลิต','latest recorded process')}</span>
       <span><b>Remark</b> ${TT('สายที่ผลิตจริง','line that produced it')}</span>
       <span style="color:#B91C1C"><b>▌</b> ${TT('แถบสีข้างแถว = สถานะ (เทา ยังไม่เริ่ม · ส้ม กำลังผลิต · เขียว เสร็จ · แดง เลยกำหนด)','row rail = status')}</span>
+      <span>🔎 ${TT('กดหัวตารางหรือใช้ช่อง "เรียงตาม" เพื่อจัดลำดับ · กดแผ่นตัวเลขเพื่อกรองสถานะ','Tap a column header or use “Sort by” · tap a summary tile to filter by status')}</span>
+      <span>🔍 ${TT('ปุ่ม − ⊙ + ปรับขนาดตัวอักษรของบอร์ดนี้','The − ⊙ + buttons resize this board’s text')}</span>
     </div>`;
 
   // (1) เหมือนเดิมทุกตัวอักษร → จบตรงนี้ ไม่วาดใหม่
   if (html === _islSig && box.firstElementChild && !resetScroll) return;
   _islSig = html;
+
+  /* ★ req #2 — ช่องค้นหาอยู่ในก้อน HTML ที่ถูกวาดใหม่ทั้งชุด: ถ้าไม่จำโฟกัส/ตำแหน่งเคอร์เซอร์ไว้
+     พิมพ์ตัวที่ 2 จะพิมพ์ไม่ติด (ช่องถูกสร้างใหม่ทุกครั้ง) — เก็บไว้ก่อน แล้วคืนให้หลังวาดเสร็จ */
+  const ae = document.activeElement;
+  const refocusQ = !!(ae && ae.id === 'islQ');
+  const caret = refocusQ ? ae.selectionStart : 0;
 
   // (2) จำตำแหน่งเลื่อนไว้ก่อนวาด (ผูกกับ "กลุ่ม" ไม่ใช่ลำดับ — สลับกลุ่มแล้วยังคืนถูกตัว)
   const keep = {};
@@ -7347,6 +7739,46 @@ function renderIotSales(resetScroll) {
   }
   box.scrollTop = boxTop;   // resetScroll → 0 (DOM ใหม่เริ่มที่บนสุดอยู่แล้ว)
   if (!resetScroll && window.scrollY !== winTop) window.scrollTo(0, winTop);
+  _islApplyZoom();          // ขนาดตัวอักษรที่ผู้ใช้ตั้งไว้ (ปุ่ม − ⊙ +) ติดกลับมาหลังวาดใหม่
+  // คืนโฟกัส + ตำแหน่งเคอร์เซอร์ให้ช่องค้นหา → พิมพ์รวดเดียวจบ ไม่สะดุด
+  if (refocusQ) {
+    const q = document.getElementById('islQ');
+    if (q) { q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
+  }
+}
+/* ★ req #3 — แถบเตือน "รับเข้าเดือนนี้แต่ไม่มีในแผนขาย" (บนสุดของบอร์ด)
+   บอร์ดนี้วาดจากแผนขายล้วน ๆ → ของพวกนี้ไม่มีทางโผล่เป็นแถวได้เลย ถ้าไม่เตือนไว้ก็ไม่มีใครรู้
+   พับเก็บเป็นค่าเริ่มต้น (ไม่บังบอร์ด) แต่หัวข้อบอกจำนวน+ยอดชัด ๆ · กางแล้วเห็นเหตุผลรายตัว */
+function _islNoPlanHtml(list, ym) {
+  if (!list || !list.length) return '';
+  const tot = list.reduce((s, r) => s + r.qty, 0);
+  const CAP = 60, view = list.slice(0, CAP);
+  return `<details class="isl-np" ${_islNpOpen ? 'open' : ''} ontoggle="_islNpOpen=this.open">
+    <summary>
+      <span>⚠️ ${TT('รับเข้าเดือนนี้ แต่ไม่มีในแผนขาย','Received this month but not in any sales plan')}</span>
+      <span class="n">${nn(list.length)} ${TT('รายการ','items')} · ${nn(tot)} ${TT('ชิ้น','pcs')}</span>
+      <span class="hint">${TT('งานพวกนี้ไม่ขึ้นในบอร์ดด้านล่าง — กดดูว่าทำไมถึงไม่มีในแผน','These rows can’t appear on the board below — tap to see why')}</span>
+    </summary>
+    <div class="isl-np-sc"><table class="isl-np-t">
+      <thead><tr>
+        <th>${TT('วันที่รับเข้า','In date')}</th><th>Part No</th><th>Lot No.</th>
+        <th style="text-align:right">${TT('ชิ้น','Pcs')}</th><th>${TT('ทำไมไม่มีในแผน','Why it is missing')}</th>
+      </tr></thead>
+      <tbody>${view.map(r => `<tr>
+        <td>${escapeHtml(String(r.ts || '').slice(0, 10) || '—')}</td>
+        <td style="font-family:'Courier New',monospace;font-weight:800;color:var(--blue-dark)">${escapeHtml(r.valve)}</td>
+        <td style="font-family:'Courier New',monospace">${escapeHtml(r.lot || '—')}</td>
+        <td style="text-align:right;font-weight:800">${nn(r.qty)}</td>
+        <td><span class="isl-np-why ${r.why}">${escapeHtml(planMissLabel(r.why))}</span></td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    ${list.length > CAP ? `<div style="font-size:10.5px;color:#92400E;padding:4px 2px 0">… ${TT('และอีก','and')} ${nn(list.length - CAP)} ${TT('รายการ','items')}</div>` : ''}
+    <div style="font-size:10.5px;color:#92400E;line-height:1.7;padding:5px 2px 0">
+      ${TT('ตรวจที่หน้า','Check on the')} <b>📅 ${TT('วางแผน','Planning')}</b> ${TT('เดือน','month')} <b>${escapeHtml(ym)}</b> —
+      ${TT('ถ้าลืมวางแผนให้เพิ่มแผน · ถ้าเบอร์/Lot ผิดให้แก้ที่รายการรับเข้า WIP IN 1.5','add the missing plan, or fix a wrong valve/lot on the WIP IN 1.5 entry')}
+      ${list.skipped ? `<br>${TT('(ข้ามการตรวจ','(skipped')} ${nn(list.skipped)} ${TT('รายการ — เดือนที่รับเข้ายังไม่มีข้อมูลแผนให้เทียบ)','items — their intake month has no plan data to compare against)')}` : ''}
+    </div>
+  </details>`;
 }
 
 /* ============================================================
@@ -7717,6 +8149,9 @@ function _applyIotZoom(){
 /* ผู้ใช้กด +/− เอง = หยุดปรับซูมอัตโนมัติ (เคารพค่าที่เขาตั้ง) · กด ⊙ = คืนค่าให้ปรับอัตโนมัติอีกครั้ง */
 let _iotUserZoom=false;
 function iotZoomBtn(dir){
+  // ★ 2026-08-03 — อยู่หน้า 2 (บอร์ดงานขาย) ไม่มีผังให้ซูม → ปุ่มชุดนี้ปรับขนาดตัวอักษรบอร์ดแทน
+  //   (เดิมกดแล้วไม่มีอะไรเกิดขึ้นเลย = ปุ่มตาย ผู้ใช้กดแล้วงง)
+  if(_iotPage===2){ islZoom(dir); return; }
   if(dir===0){
     _iotUserZoom=false; _iotScale=1.0;
     if(_iotData){ renderFloorPlan(_iotData.active,_iotData.oae); return; }   // วาดใหม่เพื่อคิดซูมอัตโนมัติ
@@ -9861,6 +10296,7 @@ function computeWipBuckets(){
 
   // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
   const wipIn={total:0,byCust:{},items:[]};
+  const _planMonths=_planIndex().months;              // เดือนที่มีการวางแผนจริง (ใช้กันเตือน "ไม่มีในแผน" มั่ว)
   for(const e of _wipinList()){
     const k=jobKey(e.valve,e.lot);
     const vk=vKey(e.valve);
@@ -9871,11 +10307,15 @@ function computeWipBuckets(){
     const cust=custOf(vKey(e.valve));
     const bad=_wipinIssues(e.valve,e.lot);          // ★ ตรวจความถูกต้องของ Valve/Lot (ดู _wipinIssues)
     const unknown=bad.length>0;
+    /* ★ 2026-08-03 (req) — ไม่มีในแผนขายไหม + เพราะอะไร
+       ตรวจเฉพาะของที่รับเข้าใน "เดือนที่มีการวางแผนจริง" (กติกาเดียวกับ planMissingIntake —
+       เดือนที่ไม่มีแผนเลย ไม่มีอะไรให้เทียบ ติดธงไปก็เป็นเสียงรบกวนเปล่า ๆ) */
+    const noPlan=_planMonths.has(String(e.ts||'').slice(0,7)) ? _planMissWhy(e.valve,e.lot) : '';
     // เครื่องจักรที่ผลิตงานนี้ (จาก prodRecords ที่ link จาก KPI — reuse groups ที่จัดกลุ่มไว้แล้ว)
     let machines=[];
     const g=groups[k];
     if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
-    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad});
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan});
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -10608,9 +11048,15 @@ function _wipInWaitDiag(items){
   //   เพราะรายการที่ระบบถือว่า "เริ่มผลิตแล้ว" ก็ยังผิดได้ (เช่น VV2629A0 lot "1")
   //   และยอดของมันถูกนับรวมในสรุปรับเข้าเดือนนี้ไปแล้ว
   const bad=(items||[]).filter(i=>i.unknown);
+  /* ★ 2026-08-03 (req) — "ไม่มีในแผนขาย": ตรวจทุกรายการ (ไม่ใช่เฉพาะที่รอผลิต)
+     เพราะของที่เริ่มผลิตไปแล้วแต่ไม่มีแผน ก็คือของที่ "ผลิตออกมาโดยไม่มีใครสั่ง" — ต้องรู้เหมือนกัน */
+  const np=(items||[]).filter(i=>i.noPlan);
+  const npBy={}; for(const i of np) npBy[i.noPlan]=(npBy[i.noPlan]||0)+1;
   return {waitN:wait.length,totQty,dupGroups,dupExtraQty,stuckN:stuck.length,stuckQty:stuck.reduce((s,i)=>s+(Number(i.qty)||0),0),
           unkN:bad.length,unkQty:bad.reduce((s,i)=>s+(Number(i.qty)||0),0),
-          unkList:bad.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`)};
+          unkList:bad.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`),
+          npN:np.length,npQty:np.reduce((s,i)=>s+(Number(i.qty)||0),0),npBy,
+          npList:np.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`)};
 }
 /* กรองตารางให้เหลือเฉพาะเบอร์ที่ไม่มีใน Master — ผู้ใช้กดจากแถบเตือนแล้วแก้/ลบทีละรายการได้เลย */
 function wipinShowUnknown(){
@@ -10622,15 +11068,23 @@ function wipinShowUnknown(){
   _refreshWipDetail();
 }
 let _wipInOnlyUnknown=false;             // โหมดดูเฉพาะเบอร์ที่ไม่มีใน Master (ตั้งจากแถบเตือน)
+/* ★ 2026-08-03 (req) — กรองให้เหลือเฉพาะ "รายการที่ไม่มีในแผนขาย" (กดจากแถบเตือน)
+   ของพวกนี้กระจายอยู่หลายเดือน → ต้องล้างตัวกรองเดือน/ลูกค้าให้หมด ไม่งั้นกดแล้วเหมือนไม่มีอะไรเกิดขึ้น */
+function wipinShowNoPlan(){
+  _wipInFilter.month=''; _wipInFilter.status='noplan'; _wipInFilter.customer='';
+  _wipPg={q:'',page:1};
+  _wipInOnlyUnknown=false;
+  _refreshWipDetail();
+}
 function wipDetailBody(bucket){
   const b=getWipBuckets();
   if(bucket==='in'){
     const months=_wipMonthsFromItems(b.wipIn.items);
     if(_wipInFilter.month===null) _wipInFilter.month=months[0]||'';   // ครั้งแรก = เดือนล่าสุด · '' = ทุกเดือน (ผู้ใช้เลือกเอง ไม่เด้งกลับ)
     const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
-    const statusF=_wipInFilter.status||'';                         // '' = ทุกสถานะ · 'waiting' = รอผลิต · 'started' = เริ่มผลิตแล้ว · 'stuck' = รอผลิต+ค้างนาน
+    const statusF=_wipInFilter.status||'';                         // '' = ทุกสถานะ · 'waiting' = รอผลิต · 'started' = เริ่มผลิตแล้ว · 'stuck' = รอผลิต+ค้างนาน · 'noplan' = ไม่มีในแผนขาย
     const _stuckCut=_wipStuckCutoff();
-    const _ignoreMonth=(statusF==='stuck')||_wipInOnlyUnknown;   // "ค้างนาน"/"ไม่มีใน Master" อยู่คนละเดือน → ดูทุกเดือน
+    const _ignoreMonth=(statusF==='stuck')||(statusF==='noplan')||_wipInOnlyUnknown;   // "ค้างนาน"/"ไม่มีในแผน"/"ไม่มีใน Master" อยู่คนละเดือน → ดูทุกเดือน
     const filt=b.wipIn.items.filter(i=>{
       if(_wipInOnlyUnknown && !i.unknown) return false;
       if(!_ignoreMonth && _wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
@@ -10638,6 +11092,7 @@ function wipDetailBody(bucket){
       if(statusF==='waiting' && i.started) return false;
       if(statusF==='started' && !i.started) return false;
       if(statusF==='stuck' && (i.started || String(i.ts||'').slice(0,10)>=_stuckCut)) return false;
+      if(statusF==='noplan' && !i.noPlan) return false;
       return true;
     });
     // สรุปตามลูกค้า (เฉพาะที่ยังไม่เริ่มผลิต)
@@ -10654,7 +11109,10 @@ function wipDetailBody(bucket){
       <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started&&!i.unknown?'opacity:.5':''}${i.unknown?';background:#FEF2F2':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
         <td><b>${escapeHtml(i.valve)}</b>${i.unknown?` <span class="tag tag-red" style="font-size:10px" title="${escapeHtml((i.bad||[]).join(' · '))}">⚠</span>`:''}
-          ${i.unknown?`<div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml((i.bad||[]).join(' · '))}</div>`:''}</td>
+          ${i.unknown?`<div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml((i.bad||[]).join(' · '))}</div>`:''}
+          ${/* ★ req — ป้ายบอกตรงแถวว่า "รายการนี้ไม่มีในแผนขาย" + เหตุผลย่อ (คำเต็มอยู่ใน tooltip) */''}
+          ${i.noPlan?`<div style="margin-top:2px"><span class="tag" style="font-size:9.5px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;white-space:nowrap"
+             title="${escapeHtml(TT('ไม่มีในแผนขาย','Not in any sales plan')+' — '+planMissLabel(i.noPlan))}">📋 ${escapeHtml(planMissShort(i.noPlan))}</span></div>`:''}</td>
         <td><span class="tag tag-blue">${escapeHtml(i.customer)}</span></td>
         <td>${escapeHtml(i.lot||'-')}</td>
         <td class="center"><b>${nn(i.qty)}</b></td>
@@ -10666,6 +11124,17 @@ function wipDetailBody(bucket){
     const s=_wipPgSlice();
     // 🔎 แผงตรวจสอบ: อธิบายว่ายอด "รอผลิต" มาจากอะไร (ซ้ำ / ค้างนานเพราะลง Valve/Lot ผิด)
     const _dg=_wipInWaitDiag(b.wipIn.items);
+    /* ★ 2026-08-03 (req) — แถบเตือน "ไม่มีในแผนขาย" แยกออกมาเป็นก้อนของตัวเอง
+       ไม่เอาไปรวมกับกล่อง "ตรวจสอบยอดรอผลิต" เพราะคนละเรื่องกัน:
+       อันนั้น = ยอดเพี้ยน · อันนี้ = ของเข้ามาโดยไม่มีแผนรองรับ (ต้องตามหาคนสั่ง/คนวางแผน) */
+    const _npHtml=_dg.npN?`
+      <div style="background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
+        <div style="font-weight:800;color:#92400E">📋 ${TT('รับเข้าแล้ว แต่ไม่มีในแผนขาย','Received but not in any sales plan')} — <b>${nn(_dg.npN)}</b> ${TT('รายการ','items')} · <b>${nn(_dg.npQty)}</b> ${TT('ชิ้น','pcs')}</div>
+        <div style="color:#A16207">${Object.entries(_dg.npBy).map(([w,n])=>`• ${escapeHtml(planMissLabel(w))} <b>${nn(n)}</b> ${TT('รายการ','items')}`).join('<br>')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(_dg.npList.slice(0,4).join(' · '))}${_dg.npList.length>4?` +${_dg.npList.length-4}`:''}</div>
+        <div style="font-size:11px;color:#92400E;margin-top:3px">${TT('ตรวจว่า: ลืมวางแผน? · ลง Valve/Lot ผิด? · แผนอยู่คนละสาย? — แล้วแก้ที่หน้า 📅 วางแผน หรือแก้รายการรับเข้าด้วย ✏️','Check: plan forgotten? wrong valve/lot? plan on another line? — fix on 📅 Planning or edit the intake with ✏️')}
+          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#92400E;border-color:#FCD34D" onclick="wipinShowNoPlan()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>
+      </div>`:'';
     const diagHtml=(_dg.dupGroups||_dg.stuckN||_dg.unkN)?`
       <div style="background:var(--orange-bg,#FFF7ED);border:1.5px solid var(--orange-bd,#FED7AA);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
         <div style="font-weight:800;color:var(--orange,#C2410C);margin-bottom:2px">🔎 ${TT('ตรวจสอบยอด "รอผลิต"','Check the "waiting" total')} — ${nn(_dg.waitN)} ${TT('รายการ','items')} · ${nn(_dg.totQty)} ${TT('ชิ้น','pcs')}</div>
@@ -10677,6 +11146,7 @@ function wipDetailBody(bucket){
       </div>`:'';
     return `
      <div data-wipbody>
+      ${_npHtml}
       ${diagHtml}
       ${_wipInPlanHtml()}
       <div class="fg-auto mb-8">
@@ -10696,6 +11166,7 @@ function wipDetailBody(bucket){
             <option value="waiting" ${statusF==='waiting'?'selected':''}>🟠 ${TT('รอผลิต','Waiting')}</option>
             <option value="stuck" ${statusF==='stuck'?'selected':''}>⏳ ${TT('รอผลิต · ค้างนาน (>'+_WIP_STUCK_DAYS+' วัน)','Waiting · long-stuck (>'+_WIP_STUCK_DAYS+'d)')}</option>
             <option value="started" ${statusF==='started'?'selected':''}>🟢 ${TT('เริ่มผลิตแล้ว','Started')}</option>
+            <option value="noplan" ${statusF==='noplan'?'selected':''}>📋 ${TT('ไม่มีในแผนขาย','Not in any sales plan')}</option>
           </select></div>
       </div>
       <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
