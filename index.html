@@ -1323,7 +1323,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.39</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.40</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2708,20 +2708,36 @@ const VSM12_MACHINES = {
     'H-1113','H-1115','D-1123','F-1126','F-1115','H-1117',
     'H-1118','H-1119','H-1120','H-1122'
   ],
-  V2Z1: [   // VSM2 · Zone 1 (4 เครื่อง)
-    'F-1147','F-1146','F-1109','F-1142'
+  /* ★ 2026-08-03 · VSM2 = ยกชุดตามเอกสาร "Machine VSM2" (71 เครื่องที่ยังใช้งาน)
+     — เดิมมี 47 เครื่อง → เติมที่ขาด 24 + ย้าย 18 ตัวที่อยู่ผิดโซน (ดู VSM2_ZONE_MOVE)
+     — ไม่ใส่เครื่อง Non use: F-1151 · W-1137 · W-1138 · G-2049 · G-2095
+     — "REMOVE EXCESS STELLITE (3x machine)" ยังไม่มีรหัสเครื่อง → ยังไม่เพิ่ม
+     — ยังไม่แตะผัง IOT (FP2_MC) ตามที่ผู้ใช้สั่ง */
+  V2Z1: [   // VSM2 · Zone 1 (17 เครื่อง)
+    'G-1106',                                                          // DEBURR FORGE (UPSET) — Chamfer pin
+    'F-1109','F-1150','F-1142','F-1146','F-1147','F-1148','F-1149','F-1154',  // STRAIGHTEN HEAD & STEM
+    'L-1111','L-1112','L-240','L-1114',                                // STELLITE SEAT PREPARE
+    'L-260',                                                           // HOD ROUGH
+    'G-1105','G-1115',                                                 // FLASH FINISH GRIND
+    'G-1102'                                                           // FLASH ROUGH GRIND
   ],
-  V2Z2: [   // VSM2 · Zone 2 (19 เครื่อง)
-    'W-1115','W-1116','W-1117','W-1118','W-1119','W-1120',
-    'W-1121','G-229','G-228','G-242','C-210','C-211',
-    'C-212','F-1157','W-1135','W-1126','W-1108','W-1109',
-    'W-1114'
+  V2Z2: [   // VSM2 · Zone 2 (31 เครื่อง)
+    'F-1157','F-1143','F-1144',                                        // STRAIGHTEN HEAD & STEM
+    'Q-1101',                                                          // STRAIGHTEN & DEFLECT
+    'W-1115','W-1116','W-1117','W-1119','W-1120','W-1121',             // FRICTION WELD,TURN FLASH (Ford)
+    'L-230','L-222','L-224',                                           // TOP TURN
+    'G-242','G-228','G-229',                                           // STEM ROUGH GRIND (Factory 1)
+    'C-210','C-211','C-212',                                           // Cut valve (Blumberg)
+    'C-203','C-1105','C-205','C-206','C-207','C-208',                  // Cut valve
+    'C-209','C-213','C-217','C-214','C-215','C-220'
   ],
-  V2Z3: [   // VSM2 · Zone 3 (24 เครื่อง)
-    'D-1118','G-2025','C-220','C-203','C-205','C-215',
-    'C-206','C-207','C-208','C-209','C-213','C-214',
-    'W-1134','W-1128','W-1131','W-1127','W-1124','W-1129',
-    'W-1130','G-278','G-2043','G-1110','L-230','L-222'
+  V2Z3: [   // VSM2 · Zone 3 (23 เครื่อง)
+    'W-1114','W-1129','W-1130',                                        // FRICTION WELD & CLIP (P/P)
+    'W-1124',                                                          // FRICTION WELD & CLIP (H/P)
+    'W-1128','W-1134','W-1127','W-1131',                               // FRICTION WELD,TURN FLASH (H/P)
+    'G-2043','G-278',                                                  // STEM ROUGH GRIND (Factory 1)
+    'W-1108','W-1109','W-1118','W-1126','W-1135','W-1139',             // DEPOSIT STELLITE SEAT
+    'G-1110','D-1118','D-1119','D-1120','W-1136','C-204','G-2025'      // Holow cell (MUG→DRILL→WASH→Na→WELD→CUT→SSG)
   ],
 };
 const SEED_VSM_MACHINES = {};
@@ -2838,6 +2854,51 @@ function mcRenameRecs(arr) {
   }
   return n;
 }
+/* ============================================================
+   ★ 2026-08-03 — ย้ายโซนเครื่อง VSM2 ให้ตรงเอกสาร "Machine VSM2" (18 เครื่อง)
+     • W-1108/1109/1114/1118/1126/1135  V2Z2 → V2Z3   (Friction Weld P/P + Deposit Stellite seat)
+     • C-203/205/206/207/208/209/213/214/215/220, L-222/230  V2Z3 → V2Z2  (Cut valve + Top turn)
+   รหัสเครื่อง VSM2 ไม่ซ้ำข้ามโซน → ย้ายด้วย id ได้ปลอดภัย (ต่างจาก VSM3 ที่ต้องระบุโซนคู่เสมอ)
+   ข้อมูลเดิม: normalize `zone` ตอนอ่านทุกครั้ง (ทุกจอเห็นโซนใหม่ทันทีแม้ D1 ยังเป็นค่าเก่า)
+              + ปุ่ม 🔧 ในหน้าตั้งค่า (โหมด VSM2) → ย้ายแถวใน D1 ให้ตรงกันจริง
+   ============================================================ */
+const VSM2_ZONE_MOVE = [
+  { id:'W-1108', from:'V2Z2', to:'V2Z3' }, { id:'W-1109', from:'V2Z2', to:'V2Z3' },
+  { id:'W-1114', from:'V2Z2', to:'V2Z3' }, { id:'W-1118', from:'V2Z2', to:'V2Z3' },
+  { id:'W-1126', from:'V2Z2', to:'V2Z3' }, { id:'W-1135', from:'V2Z2', to:'V2Z3' },
+  { id:'C-203',  from:'V2Z3', to:'V2Z2' }, { id:'C-205',  from:'V2Z3', to:'V2Z2' },
+  { id:'C-206',  from:'V2Z3', to:'V2Z2' }, { id:'C-207',  from:'V2Z3', to:'V2Z2' },
+  { id:'C-208',  from:'V2Z3', to:'V2Z2' }, { id:'C-209',  from:'V2Z3', to:'V2Z2' },
+  { id:'C-213',  from:'V2Z3', to:'V2Z2' }, { id:'C-214',  from:'V2Z3', to:'V2Z2' },
+  { id:'C-215',  from:'V2Z3', to:'V2Z2' }, { id:'C-220',  from:'V2Z3', to:'V2Z2' },
+  { id:'L-222',  from:'V2Z3', to:'V2Z2' }, { id:'L-230',  from:'V2Z3', to:'V2Z2' },
+];
+const _MC_ZMOVE_IDX = {};
+for (const r of VSM2_ZONE_MOVE) _MC_ZMOVE_IDX[r.from + '::' + r.id.toUpperCase()] = r.to;
+/* โซนใหม่ของเครื่องนี้ (คืนค่าเดิมถ้าไม่เข้าเงื่อนไข) */
+function mcFixZone(zone, id) {
+  const z = String(zone || '').trim().toUpperCase();
+  if (!z) return zone;
+  return _MC_ZMOVE_IDX[z + '::' + String(id || '').trim().toUpperCase()] || zone;
+}
+/* normalize `zone` ของ record ทั้งก้อน — idempotent เรียกซ้ำได้ · คืนจำนวนที่แก้ */
+function mcZoneFixRecs(arr) {
+  if (!Array.isArray(arr)) return 0;
+  let n = 0;
+  for (const r of arr) {
+    if (!r) continue;
+    const cur = r.zone || r.zone_key || r.zoneKey || '';
+    const nz  = mcFixZone(cur, r.machine_id || r.machineId || '');
+    if (nz !== cur) {
+      if (r.zone     !== undefined || (r.zone_key === undefined && r.zoneKey === undefined)) r.zone = nz;
+      if (r.zone_key !== undefined) r.zone_key = nz;
+      if (r.zoneKey  !== undefined) r.zoneKey  = nz;
+      if (r.zone_label !== undefined) r.zone_label = ZONE_LABEL[nz] || r.zone_label;
+      n++;
+    }
+  }
+  return n;
+}
 /* เรียกทุกจุดที่ "รับข้อมูลเข้า" (เปิดแอป / reload / ดึงชุดเต็ม / auto-sync) */
 function applyMcRenameAll() {
   let n = 0;
@@ -2845,6 +2906,11 @@ function applyMcRenameAll() {
   n += mcRenameRecs(state.prodRecords);
   if (typeof _allKpi  !== 'undefined' && _allKpi)  n += mcRenameRecs(_allKpi);
   if (typeof _allProd !== 'undefined' && _allProd) n += mcRenameRecs(_allProd);
+  // ★ 2026-08-03: ย้ายโซน VSM2 — ต้องทำ "หลัง" rename เสมอ (rename ใช้ zone เดิมเป็นกุญแจ)
+  n += mcZoneFixRecs(state.kpiRecords);
+  n += mcZoneFixRecs(state.prodRecords);
+  if (typeof _allKpi  !== 'undefined' && _allKpi)  n += mcZoneFixRecs(_allKpi);
+  if (typeof _allProd !== 'undefined' && _allProd) n += mcZoneFixRecs(_allProd);
   if (n) {
     try { lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords); } catch (e) {}
   }
@@ -2872,11 +2938,38 @@ function ensureVsmZones() {
     const cur = state.machines[oz];
     if (Array.isArray(cur) && cur.length > 0 && cur.every(m => new RegExp('^' + oz + '-\\d+$','i').test(String((m && m.id) || '')))) delete state.machines[oz];
   }
-  // แผนที่ id → โซน VSM3 ที่ถูกต้องตาม seed ปัจจุบัน (ใช้จับเครื่องที่ "ย้ายโซน" เช่น G-2063 ZH→ZI)
-  const seedZoneOf = {};
+  /* แผนที่ id → โซนที่ถูกต้องตาม seed ปัจจุบัน — แยกตาม VSM (รหัสซ้ำข้าม VSM ได้ เช่น C-1101 VSM1 vs C-1105 VSM2)
+     ใช้จับเครื่องที่ "ย้ายโซน": VSM3 เช่น G-2063 ZH→ZI · ★ 2026-08-03 VSM2 อีก 18 ตัว (VSM2_ZONE_MOVE) */
+  const seedZonesOfVsm = {};   // vsm → id → [zone,…]
   for (const z of Object.keys(SEED_VSM_MACHINES)) {
-    if (ZONE_DEFS[z].vsm !== 'vsm3') continue;
-    for (const sm of SEED_VSM_MACHINES[z]) seedZoneOf[String(sm.id).toUpperCase()] = z;
+    const v = ZONE_DEFS[z].vsm;
+    if (!seedZonesOfVsm[v]) seedZonesOfVsm[v] = {};
+    for (const sm of SEED_VSM_MACHINES[z]) {
+      const k = String(sm.id).toUpperCase();
+      (seedZonesOfVsm[v][k] = seedZonesOfVsm[v][k] || []).push(z);
+    }
+  }
+  // เครื่องที่ seed ตั้งใจให้อยู่ 2 โซน (VSM3 · G-274 = ISUZU 1 + Mitsubishi 3) → ห้ามย้าย ไม่งั้นจะสลับไปมาทุกครั้งที่โหลด
+  const seedZoneOfVsm = {};
+  for (const v of Object.keys(seedZonesOfVsm)) {
+    seedZoneOfVsm[v] = {};
+    for (const [id, zs] of Object.entries(seedZonesOfVsm[v])) if (zs.length === 1) seedZoneOfVsm[v][id] = zs[0];
+  }
+  /* ย้ายเครื่องข้ามโซนก่อน "เติมของที่ขาด" — ยกทั้งก้อน (คง target/man_std/process ที่ผู้ใช้ตั้งไว้)
+     ทำแยกรอบเพราะต้องหยิบออกจากโซนเก่าแล้ววางโซนใหม่ ซึ่งอยู่คนละ key */
+  const moved = [];
+  for (const z of Object.keys(SEED_VSM_MACHINES)) {
+    const cur = state.machines[z];
+    if (!Array.isArray(cur) || cur.length === 0) continue;
+    const map = seedZoneOfVsm[ZONE_DEFS[z].vsm] || {};
+    for (let i = cur.length - 1; i >= 0; i--) {
+      const correct = map[String((cur[i] && cur[i].id) || '').toUpperCase()];
+      if (correct && correct !== z) moved.push([correct, cur.splice(i, 1)[0]]);   // ไม่แตะเครื่องที่ admin เพิ่มเอง (ไม่อยู่ใน seed)
+    }
+  }
+  for (const [z, m] of moved) {
+    if (!Array.isArray(state.machines[z])) state.machines[z] = [];
+    if (!state.machines[z].some(x => String((x && x.id) || '').toUpperCase() === String(m.id).toUpperCase())) state.machines[z].push(m);
   }
   for (const z of Object.keys(SEED_VSM_MACHINES)) {
     const cur = state.machines[z];
@@ -2886,13 +2979,6 @@ function ensureVsmZones() {
     if (!Array.isArray(cur) || cur.length === 0 || oldTestSeed) {
       state.machines[z] = JSON.parse(JSON.stringify(SEED_VSM_MACHINES[z]));
     } else {
-      // VSM3: ลบเครื่องที่ seed ย้ายไปโซน VSM3 อื่นแล้ว (เช่น G-2063 ZH→ZI) — ไม่แตะเครื่องที่ admin เพิ่มเอง (ไม่อยู่ใน seed)
-      if (ZONE_DEFS[z].vsm === 'vsm3') {
-        for (let i = cur.length - 1; i >= 0; i--) {
-          const correct = seedZoneOf[String((cur[i] && cur[i].id) || '').toUpperCase()];
-          if (correct && correct !== z) cur.splice(i, 1);
-        }
-      }
       // เติมเครื่องที่ seed ไว้แต่ยังไม่มีในเครื่องนี้ (เช่น G-259/G-2063 ที่เพิ่งเข้าไลน์) — ไม่ลบ/ไม่ทับของเดิม
       const have = new Set(cur.map(m => String((m && m.id) || '').toUpperCase()));
       for (const sm of SEED_VSM_MACHINES[z]) {
@@ -6324,7 +6410,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.39":"Production Record + KPI · v3.39",
+"ระบบบันทึกผลิต + KPI · v3.40":"Production Record + KPI · v3.40",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -16729,7 +16815,27 @@ function _mcCmpId(a, b) {
    ปุ่มนี้คือการ "แก้ที่ D1 จริง" ให้ข้อมูลดิบตรงกับหน้าจอ · กดซ้ำได้ (idempotent) */
 function renderMcRenameBox() {
   const box = $('mcRenameBox'); if (!box) return;
-  if (!canSeeAllVsm() || viewVsm() !== 'vsm3') { box.innerHTML = ''; return; }
+  if (!canSeeAllVsm()) { box.innerHTML = ''; return; }
+  // ★ 2026-08-03 — VSM2: ย้ายโซนเครื่อง 18 ตัวให้ตรงเอกสาร (แอปย้ายให้ตอนอ่านแล้ว · ปุ่มนี้แก้ D1 จริง)
+  if (viewVsm() === 'vsm2') {
+    const grp = {};
+    for (const r of VSM2_ZONE_MOVE) (grp[r.from + '→' + r.to] = grp[r.from + '→' + r.to] || []).push(r.id);
+    box.innerHTML = `
+      <div style="border:1.5px solid #FDE68A;background:#FFFBEB;border-radius:10px;padding:9px 11px;margin-bottom:9px">
+        <div style="font-size:12.5px;font-weight:900;color:#B45309;margin-bottom:3px">🔧 ย้ายโซนเครื่อง VSM2 (2026-08-03)</div>
+        <div style="font-size:11px;color:#92400E;line-height:1.6">
+          ${Object.entries(grp).map(([k, ids]) => {
+            const [f, t] = k.split('→');
+            return `<div>• <b>${ZONE_LABEL[f] || f}</b> → <b style="color:#15803D">${ZONE_LABEL[t] || t}</b> (${ids.length}) : ${ids.join(' ')}</div>`;
+          }).join('')}
+          <div style="margin-top:3px;color:var(--muted)">หน้าจอ/KPI/ยอดผลิต ย้ายให้อัตโนมัติแล้ว — กดปุ่มนี้เพื่อย้ายแถวเครื่องในฐานข้อมูล (D1) ให้ตรงกัน</div>
+        </div>
+        <button class="btn btn-sm btn-block" style="margin-top:8px;background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;font-weight:800"
+          onclick="applyMcZoneMoveCloud()">🔧 ย้ายโซนเครื่องในฐานข้อมูล</button>
+      </div>`;
+    return;
+  }
+  if (viewVsm() !== 'vsm3') { box.innerHTML = ''; return; }
   box.innerHTML = `
     <div style="border:1.5px solid #FDE68A;background:#FFFBEB;border-radius:10px;padding:9px 11px;margin-bottom:9px">
       <div style="font-size:12.5px;font-weight:900;color:#B45309;margin-bottom:3px">🔧 เปลี่ยนชื่อเครื่อง VSM3 (2026-08-02)</div>
@@ -16757,6 +16863,31 @@ async function applyMcRenameCloud() {
   hideBusy();
   if (fail) { toast(`ซ่อมไม่สำเร็จ ${fail} รายการ — Worker อาจยังไม่ได้ deploy เวอร์ชันใหม่`, 'red'); return; }
   toast(`🔧 ซ่อมแล้ว · เครื่อง ${mcs} · KPI ${kpi} · ยอดผลิต ${prod}`, 'green');
+  await reload();
+}
+/* ★ 2026-08-03 — ย้ายโซนเครื่อง VSM2 ใน D1 จริง (Admin เท่านั้น) · กดซ้ำได้ (idempotent)
+   ใช้ endpoint เดิมล้วน ๆ: upsert แถวโซนใหม่ → ลบแถวโซนเก่า (ไม่ต้อง deploy Worker ใหม่)
+   record เก่า (KPI/ยอดผลิต) ยังถือโซนเดิมใน D1 — แอปแปลงให้ตอนอ่านทุกครั้ง (mcZoneFixRecs) */
+async function applyMcZoneMoveCloud() {
+  if (!API) { toast('ยังไม่ได้ตั้ง API — แก้เฉพาะเครื่องนี้', 'orange'); return; }
+  const lines = VSM2_ZONE_MOVE.map(r => `• ${r.id} : ${ZONE_LABEL[r.from] || r.from} → ${ZONE_LABEL[r.to] || r.to}`).join('\n');
+  if (!(await confirmModal(`ย้ายโซนเครื่อง VSM2 ในฐานข้อมูลจริง? (${VSM2_ZONE_MOVE.length} เครื่อง)\n\n${lines}\n\nเป้า/คน-มาตรฐาน ของแต่ละเครื่องยกไปด้วย · ยอด KPI/ยอดผลิตเดิมไม่ถูกแก้ในฐานข้อมูล แต่แอปแปลงโซนให้ตอนอ่านอยู่แล้ว`,
+      { danger: false, yes: 'ย้ายเลย' }))) return;
+  showBusy('กำลังย้ายโซนเครื่อง…', true);
+  let ok = 0, fail = 0;
+  for (const r of VSM2_ZONE_MOVE) {
+    // ค่าที่ใช้ = ตัวที่อยู่ในโซนใหม่ของเครื่องนี้แล้ว (ensureVsmZones ย้ายให้ตอนโหลด) — คง target/man_std เดิม
+    const m = (state.machines[r.to] || []).find(x => String((x && x.id) || '').toUpperCase() === r.id.toUpperCase())
+           || { id: r.id, target: 2000, man_std: 0.5 };
+    try {
+      await api('/api/machines', { body: { zone: r.to, id: m.id, target: m.target, man_std: m.man_std, process: (_machineProc && _machineProc[m.id]) || m.process || '' } });
+      await api('/api/machines/delete', { body: { zone: r.from, id: r.id } });
+      ok++;
+    } catch (e) { fail++; }
+  }
+  hideBusy();
+  if (fail) { toast(`ย้ายไม่สำเร็จ ${fail} เครื่อง (สำเร็จ ${ok})`, 'red'); return; }
+  toast(`🔧 ย้ายโซนแล้ว ${ok} เครื่อง`, 'green');
   await reload();
 }
 
