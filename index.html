@@ -442,27 +442,38 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,86,219,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== สถานะ "กำลังทำงาน" — บอกผู้ใช้ว่าระบบทำอะไรอยู่ (ไม่บล็อกการใช้งาน) =====
-   ป้ายลอยด้านบน: งานที่กำลังทำล่าสุด · แถบในหน้า (.ldstrip): จุดที่ข้อมูลยังไม่พร้อม */
-/* วางไว้เหนือแถบเมนูล่าง — ไม่บังหัวแอป/ปุ่ม 🔄 ⚙️ และไม่ชนกับ toast (ซึ่งอยู่ top:70px) */
-#loadPill{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));z-index:4900;
-  transform:translateX(-50%) translateY(16px);display:none;align-items:center;gap:9px;
-  max-width:min(94vw,440px);background:rgba(15,23,42,.93);color:#fff;border-radius:999px;
-  padding:9px 15px 9px 13px;box-shadow:0 10px 28px rgba(15,23,42,.38);
-  font-size:13px;font-weight:800;letter-spacing:.2px;pointer-events:none;opacity:0;
-  transition:opacity .18s ease,transform .18s ease}
-#loadPill.on{display:flex;opacity:1;transform:translateX(-50%) translateY(0)}
-#loadPill .sp{width:15px;height:15px;flex:0 0 auto;border:2.5px solid rgba(255,255,255,.28);
+/* ===== สถานะ "กำลังทำงาน" — บอกผู้ใช้ว่าระบบทำอะไรอยู่ (ไม่บล็อก + ไม่ขยับ layout) =====
+   กติกาสำคัญ: ทุกชิ้นเป็น position:fixed ล้วน — ไม่กินที่ในสายเนื้อหา
+   ของเดิมใช้แถบ .ldstrip วางในหน้า → โผล่ทีเนื้อหาถูกดันลง หายทีก็ดีดกลับ = จอเด้งขึ้นลงตลอด
+   ของใหม่ค่อย ๆ เผยตามความยาวงาน — งานสั้น ๆ (ส่วนใหญ่) เงียบสนิท ไม่มีอะไรแวบให้รำคาญ
+     ขั้น 1 #loadBar  = แถบบางบนสุด (ไม่บังอะไรเลย)
+     ขั้น 2 #loadPill = ป้ายเล็กมุมล่างขวา เฉพาะงานที่ยาวจริง */
+#loadBar{position:fixed;top:0;left:0;right:0;height:3px;z-index:4890;overflow:hidden;
+  display:none;pointer-events:none;background:rgba(26,86,219,.10)}
+body.is-loading #loadBar{display:block}
+/* #topbar (ความคืบหน้าของ API) อยู่ที่ขอบบนเหมือนกัน — ให้โชว์ทีละอัน ไม่งั้นสองแถบทับกันดูรก */
+body.is-loading #topbar.go ~ #loadBar{display:none}
+#loadBar::before{content:'';position:absolute;top:0;bottom:0;width:40%;border-radius:0 3px 3px 0;
+  background:linear-gradient(90deg,rgba(59,130,246,0),#3B82F6,#10B981,rgba(16,185,129,0));
+  animation:ldSweep 1.15s cubic-bezier(.45,0,.25,1) infinite}
+@keyframes ldSweep{0%{left:-42%}100%{left:100%}}
+
+/* ป้ายข้อความ: มุมล่างขวา เหนือแถบเมนูล่าง — บังเนื้อหาน้อยกว่ากลางจอ และไม่ชนกับ toast (top:70px) */
+#loadPill{position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:4900;
+  transform:translateY(10px);display:none;align-items:center;gap:8px;
+  max-width:min(86vw,400px);background:rgba(15,23,42,.88);color:#fff;border-radius:999px;
+  padding:7px 13px 7px 11px;box-shadow:0 6px 20px rgba(15,23,42,.28);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  font-size:12px;font-weight:700;letter-spacing:.2px;pointer-events:none;opacity:0;
+  transition:opacity .2s ease,transform .2s ease}
+#loadPill.on{display:flex;opacity:1;transform:translateY(0)}
+#loadPill .sp{width:13px;height:13px;flex:0 0 auto;border:2px solid rgba(255,255,255,.28);
   border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 #loadPill .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#loadPill .sub{font-size:11px;font-weight:700;opacity:.72;white-space:nowrap;flex:0 0 auto}
+#loadPill .sub{font-size:10.5px;font-weight:700;opacity:.7;white-space:nowrap;flex:0 0 auto}
 
-.ldstrip{margin:0 0 10px}
-.ldstrip-r{display:flex;align-items:center;gap:9px;background:var(--blue-light);
-  border:1.5px solid var(--blue-soft);border-radius:11px;padding:10px 13px;margin-bottom:6px;
-  font-size:12.5px;font-weight:800;color:var(--blue-dark);line-height:1.5}
-.ldstrip-r .spinner{width:15px;height:15px;border-width:2.5px;flex:0 0 auto}
-.ldstrip-r b{font-weight:700;opacity:.7}
+/* แถบสถานะแบบวางในหน้า — เลิกใช้แล้ว (ต้นเหตุจอเด้ง) กันไว้เผื่อโค้ดเก่าไปสั่งโชว์ */
+.ldstrip,.ldstrip-r{display:none!important}
 /* กล่อง/แถว "กำลังโหลด" ที่ใช้แทนเนื้อหาซึ่งยังวาดไม่เสร็จ */
 .ldbox{display:flex;align-items:center;justify-content:center;gap:9px;padding:20px 12px;
   color:var(--muted);font-size:12.5px;font-weight:800}
@@ -1335,7 +1346,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 
 <div id="topbar"></div>
 
-<!-- ป้ายบอกสถานะ "กำลังโหลด/กำลังทำงาน" — ลอยอยู่บนสุด ไม่บล็อกการกดใช้งาน -->
+<!-- สถานะ "กำลังโหลด/กำลังทำงาน" — ลอยทั้งคู่ ไม่กินที่ในหน้า จอจึงไม่เด้งตอนโผล่/หาย -->
+<div id="loadBar" aria-hidden="true"></div>
 <div id="loadPill" aria-live="polite"></div>
 
 <!-- ============== LOCK IN OVERLAY ============== -->
@@ -1365,7 +1377,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.43</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.44</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3438,23 +3450,32 @@ function _tbDone() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   สถานะ "กำลังทำงาน" แบบไม่บล็อกหน้าจอ (2026-08-03)
+   สถานะ "กำลังทำงาน" แบบไม่บล็อกหน้าจอ (2026-08-03 · ปรับการแสดงผล 2026-08-05)
    ปัญหาเดิม: งานหนัก (ดึงข้อมูลก้อนใหญ่ / วาดตารางหลายพันแถว) ทำรวดเดียว
               → หน้าจอค้างเงียบ ๆ หลายวินาที ผู้ใช้ไม่รู้ว่าแอปแฮงหรือกำลังทำงาน
    แก้เป็น 2 ชั้น:
-     1) ประกาศงาน — loadOn(key,msg,{at,sub}) / loadOff(key)
-        โชว์ป้ายลอยบนสุด + แถบในหน้าที่เกี่ยวข้อง (at = id ของ .ldstrip)
+     1) ประกาศงาน — loadOn(key,msg,{sub}) / loadOff(key)
      2) หายใจก่อนลงมือ — await yieldUI() ปล่อยให้เบราว์เซอร์ได้ "วาดป้ายนั้นออกมา"
         และรับการกดของผู้ใช้ ก่อนเริ่มงานหนักก้อนถัดไป
    งานยาว ๆ จึงถูกซอยเป็นขั้น (chunk) — เห็นความคืบหน้า และเลื่อนจอได้ตลอด
+
+   รอบ 2026-08-05 — แก้เรื่อง "จอเด้งขึ้นลง/ป้ายแวบไปมา":
+     · เลิกใช้แถบ .ldstrip ที่วางในสายเนื้อหา (โผล่ทีดันเนื้อหาลง หายทีดีดกลับขึ้น)
+       ตัวบอกสถานะทั้งหมดเป็น fixed แล้ว = ไม่กระทบ layout เลย · opts.at ยังรับได้แต่ไม่ใช้
+     · เผยเป็นขั้นตามความยาวงาน — งานสั้นกว่า 400ms เงียบสนิท ไม่มีอะไรกระพริบ
    ═══════════════════════════════════════════════════════════════════════ */
-const _loadJobs = new Map();                       // key → {msg, sub, at, t}
-const _LOAD_STRIPS = ['prodLoading', 'histLoading', 'setLoading'];
+const _loadJobs = new Map();                       // key → {msg, sub, t, t0}
 const LOAD_MAX_MS = 180000;                        // งานเดียวไม่ควรค้างเกิน 3 นาที (api() ตัดที่ 45–150 วิอยู่แล้ว)
-let _loadWatch = null;
+const LOAD_BAR_MS  = 400;                          // ก่อนหน้านี้ = เงียบ (งานส่วนใหญ่จบตรงนี้)
+const LOAD_PILL_MS = 1200;                         // ยาวเกินนี้ค่อยบอกเป็นข้อความว่าทำอะไรอยู่
+const LOAD_PILL_MIN_MS = 600;                      // ป้ายที่ขึ้นแล้วต้องอยู่ให้อ่านทัน — กันกระพริบ
+let _loadWatch = null, _loadReveal = null, _loadPillT = null, _loadPillAt = 0;
 function loadOn(key, msg, opts) {
   opts = opts || {};
-  _loadJobs.set(key, { msg: msg || 'กำลังโหลดข้อมูล…', sub: opts.sub || '', at: opts.at || '', t: Date.now() });
+  const prev = _loadJobs.get(key);
+  const now = Date.now();
+  // t0 = เวลาเริ่มจริง (ใช้ตัดสินว่าควรเผยขั้นไหน) — งานเดิมที่ถูกสั่งซ้ำไม่รีเซ็ตนาฬิกา
+  _loadJobs.set(key, { msg: msg || 'กำลังโหลดข้อมูล…', sub: opts.sub || '', t: now, t0: prev ? prev.t0 : now });
   // กันป้ายค้าง: ถ้างานใดไม่ปิดตัวเอง (เช่น request ค้าง/โค้ดพลาด) ให้ปลดทิ้งเอง
   // ป้าย "กำลังโหลด" ที่ค้างถาวร แย่กว่าไม่มีป้าย เพราะผู้ใช้จะไม่เชื่อถืออีกเลย
   if (!_loadWatch) _loadWatch = setInterval(_loadTick, 5000);
@@ -3476,37 +3497,36 @@ function loadStep(key, msg, sub) {
   _paintLoad();
 }
 function loadOff(key) { if (_loadJobs.delete(key)) _paintLoad(); }
-/* แถบในหน้านั้นกำลังโชว์อยู่จริงไหม (แถบอยู่ในหน้าที่เปิดอยู่) */
-function _stripShowing(id) {
-  const el = $(id);
-  return !!el && !!el.closest('section.pane')?.classList.contains('active');
+/* ซ่อนป้ายข้อความ แต่ถ้าเพิ่งขึ้นมาไม่ถึง LOAD_PILL_MIN_MS ให้ค้างไว้ก่อน — ป้ายวับ ๆ อ่านไม่ทันน่ารำคาญกว่าไม่มี */
+function _pillOff() {
+  const pill = $('loadPill'); if (!pill || !pill.classList.contains('on')) { _loadPillAt = 0; return; }
+  const left = LOAD_PILL_MIN_MS - (Date.now() - _loadPillAt);
+  clearTimeout(_loadPillT);
+  if (left > 0) { _loadPillT = setTimeout(_pillOff, left + 20); return; }
+  pill.classList.remove('on'); _loadPillAt = 0;
 }
 function _paintLoad() {
+  clearTimeout(_loadReveal); _loadReveal = null;
   const jobs = [..._loadJobs.values()];
+  if (!jobs.length) {                       // ว่างแล้ว → เก็บของ (ป้ายอาจหน่วงตาม min-time)
+    document.body.classList.remove('is-loading');
+    _pillOff();
+    return;
+  }
+  const age = Date.now() - Math.min(...jobs.map(j => j.t0));
+  document.body.classList.toggle('is-loading', age >= LOAD_BAR_MS);
   const pill = $('loadPill');
-  if (pill) {
-    // ป้ายลอยโชว์เฉพาะงานที่ "ไม่มีแถบในหน้าให้เห็นอยู่แล้ว" — กันบอกซ้ำสองที่ + กันบังเนื้อหา
-    const floating = jobs.filter(j => !j.at || !_stripShowing(j.at));
-    if (!floating.length) pill.classList.remove('on');
-    else {
-      const j = floating[floating.length - 1];        // งานล่าสุด = สิ่งที่ผู้ใช้เพิ่งสั่ง
-      pill.innerHTML = '<span class="sp"></span><span class="tx">' + escapeHtml(j.msg) + '</span>'
-        + (j.sub ? '<span class="sub">' + escapeHtml(j.sub) + '</span>' : '')
-        + (floating.length > 1 ? '<span class="sub">+' + (floating.length - 1) + '</span>' : '');
-      pill.classList.add('on');
-    }
+  if (pill && age >= LOAD_PILL_MS) {
+    const j = jobs[jobs.length - 1];        // งานล่าสุด = สิ่งที่ผู้ใช้เพิ่งสั่ง
+    pill.innerHTML = '<span class="sp"></span><span class="tx">' + escapeHtml(j.msg) + '</span>'
+      + (j.sub ? '<span class="sub">' + escapeHtml(j.sub) + '</span>' : '')
+      + (jobs.length > 1 ? '<span class="sub">+' + (jobs.length - 1) + '</span>' : '');
+    if (!pill.classList.contains('on')) { pill.classList.add('on'); _loadPillAt = Date.now(); }
+    clearTimeout(_loadPillT);
   }
-  const byAt = {};
-  for (const j of jobs) if (j.at) (byAt[j.at] = byAt[j.at] || []).push(j);
-  for (const id of _LOAD_STRIPS) {
-    const el = $(id); if (!el) continue;
-    const list = byAt[id];
-    if (!list || !list.length) { el.style.display = 'none'; el.innerHTML = ''; continue; }
-    el.style.display = '';
-    el.innerHTML = list.map(j =>
-      '<div class="ldstrip-r"><span class="spinner"></span><span>' + escapeHtml(j.msg)
-      + (j.sub ? ' <b>' + escapeHtml(j.sub) + '</b>' : '') + '</span></div>').join('');
-  }
+  // ยังไม่ถึงขั้นถัดไป → ตั้งเวลามาวาดใหม่ตอนถึงเวลา (ไม่ต้อง poll ถี่ ๆ)
+  const next = age < LOAD_BAR_MS ? LOAD_BAR_MS - age : (age < LOAD_PILL_MS ? LOAD_PILL_MS - age : 0);
+  if (next > 0) _loadReveal = setTimeout(_paintLoad, next + 20);
 }
 /* คืนคิวให้เบราว์เซอร์ 1 เฟรม — ป้าย/แถบที่เพิ่งสั่งจะได้ถูกวาดจริงก่อนงานหนักก้อนถัดไป
    (มี timeout กันค้างตอนแท็บถูกซ่อน ซึ่ง requestAnimationFrame จะไม่ทำงาน) */
@@ -6748,7 +6768,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.43":"Production Record + KPI · v3.43",
+"ระบบบันทึกผลิต + KPI · v3.44":"Production Record + KPI · v3.44",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
