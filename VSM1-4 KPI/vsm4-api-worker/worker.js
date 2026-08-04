@@ -570,9 +570,13 @@ async function deleteRecord(env, body) {
   const id = body.recordId || body.record_id;
   // ★ 2026-08-04 — ลบ prod แล้วลบ KPI ที่ผูกกันด้วย "เฉพาะเมื่อเป็นคู่ 1:1"
   //   KPI 1 แถวที่แตกเป็นหลาย process ยังมี prod แถวอื่นอ้างอยู่ → ลบ KPI ทิ้งจะทำยอดหายทั้งก้อน
+  /* ⚠️ ต้องสั่งมาชัดเจน (cascade:true) เท่านั้นจึงจะลบ KPI ตาม — ค่าเริ่มต้นคือ "ไม่ลบ"
+     เพราะมีโค้ดหลายที่ในอดีตใช้ท่า "ลบก่อนแล้ว insert ใหม่" เพื่อ *แก้ไข* ข้อมูล
+     ถ้า cascade ทำงานเองอัตโนมัติ ท่าเหล่านั้นจะทำ KPI (พร้อม OAE/DLE) หายเงียบ ๆ
+     ตอนนี้แก้ client ให้เลิกใช้ท่านั้นหมดแล้ว แต่กันไว้อีกชั้นกันพลาดในอนาคต */
   let kpiDeleted = 0;
   const row = await env.DB.prepare('SELECT kpi_record_id FROM production_records WHERE record_id = ?').bind(id).first();
-  const kid = row?.kpi_record_id;
+  const kid = body.cascade === true ? row?.kpi_record_id : null;
   const r = await env.DB.prepare('DELETE FROM production_records WHERE record_id = ?').bind(id).run();
   if (kid) {
     const left = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kid).first();

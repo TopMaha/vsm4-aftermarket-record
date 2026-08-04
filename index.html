@@ -4696,11 +4696,16 @@ async function _applyLotRewrite(pairs) {   // pairs = [{valve, wrong, correct}]
   if (API && total) {
     showBusy(`กำลังแก้ 0/${total} record…`, true);
     try {
+      /* ★ 2026-08-04 — เลิก "ลบทิ้งก่อนแล้ว insert ใหม่" (ต้นเหตุแถวผี)
+         เดิม: ลบ KPI ทุกตัวออกจาก D1 ก่อน แล้วค่อย insert กลับ · ระหว่างนั้นถ้า insert ล้มเหลว
+               (เน็ตสะดุด / batch ใหญ่เกิน) = KPI หายถาวร แต่ยอดผลิตยังอยู่ → กลายเป็นแถวผี
+               ซ้ำร้าย .catch(()=>{}) กลืน error ของ delete ไว้หมด จึงไม่มีใครรู้ว่าเกิดอะไรขึ้น
+         ตอนนี้ /api/kpi และ /api/records/bulk เป็น upsert (ON CONFLICT DO UPDATE) ตั้งแต่ 2026-07-16
+         → ยิง insert ทับตรง ๆ ได้เลย ไม่ต้องลบก่อน · ล้มเหลวก็แค่ "ค่าเดิมยังอยู่" ไม่มีช่วงที่ข้อมูลหาย
+         (และสำคัญมากหลังมี cascade: การลบ KPI ตอนนี้ลบยอดผลิตที่ผูกกันไปด้วย) */
       let done = 0; const tick = () => busyMsg(`กำลังแก้ ${done}/${total} record…`);
-      await _chunkRun(allKpi.filter(r => r.record_id), r => api('/api/kpi/delete', { body: { record_id: r.record_id } }).catch(() => {}), 8, n => { done = n; tick(); });
-      if (allKpi.length) await api('/api/kpi', { body: { records: allKpi } });
-      await _chunkRun(allProd, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = allKpi.length + n; tick(); });
-      if (allProd.length) await api('/api/records/bulk', { body: { records: allProd } });
+      if (allKpi.length)  { await api('/api/kpi', { body: { records: allKpi } });          done = allKpi.length; tick(); }
+      if (allProd.length) { await api('/api/records/bulk', { body: { records: allProd } }); done = total; tick(); }
       hideBusy();
     } catch (e) { hideBusy(); allKpi.forEach(r => r._unsynced = true); allProd.forEach(r => r._unsynced = true); toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange'); return total; }
   }
@@ -6295,9 +6300,12 @@ async function resolveHelp(rid){
   renderHome();
   if (API){
     try {
-      await api('/api/kpi/delete', { body: { record_id: rid } });
-      const ins = await api('/api/kpi', { body: { records: [r] } });
-      if (ins && ins.ids && ins.ids[0]){ r.record_id = ins.ids[0]; lsSave(LS.KPI, state.kpiRecords); }
+      /* ★ 2026-08-04 — เดิม "ลบ KPI แล้ว insert ใหม่" เพื่อแค่ติ๊กว่าแก้ไขแล้ว
+         ⛔ อันตรายมากหลังมี cascade: ลบ KPI = ลบยอดผลิตที่ผูกกันไปด้วยทั้งชุด
+         และถ้า insert ล้มเหลว (เน็ตสะดุด) ก็หายถาวรทั้งคู่ — เป็นต้นเหตุแถวผีแบบเดียวกัน
+         การติ๊กนี้แตะแค่ฟิลด์ shifts → ใช้ UPDATE ตรง ๆ พอ ไม่ต้องลบอะไรเลย */
+      const res = await api('/api/kpi/update', { body: { record_id: rid, shifts: r.shifts } });
+      if (!res || !res.updated) throw new Error('ฐานข้อมูลไม่พบ record นี้');
     } catch(e){ toast('บันทึกขึ้น Cloud ไม่สำเร็จ — เก็บ Local แล้ว', 'orange'); }
   }
 }
@@ -13776,6 +13784,13 @@ function _spMachineFromNote(note) {
          || String(note || '').match(/ZONE\s*\d+\s*[\/|]\s*([A-Za-z0-9\-]+)/i);
   return m ? m[1].trim() : '';
 }
+/* ยอดผลิตแถวนี้ "ควรจะมี" KPI คู่ไหม — ตัดสินจาก note ที่ระบบประทับตอนสร้าง
+   • auto-linked KPI = เกิดจากการบันทึก KPI → ต้องมีคู่ · ไม่มี = แถวผี ต้องเตือน
+   • ไม่มี note นั้น  = ลงตรงที่หน้าบันทึก Production (ไม่ผ่าน KPI) → ไม่มีคู่เป็นเรื่องปกติ ห้ามเตือน
+   ★ 2026-08-04: ถ้าไม่แยกตรงนี้ หน้าบันทึก Production ตรงจะโดนติดป้าย 👻 ยกแผง ทั้งที่ข้อมูลถูก */
+function _spFromKpi(r) { return /auto-linked KPI/i.test(String(r?.note || '')); }
+/* แถวผีจริง = มาจาก KPI แต่หา KPI คู่ไม่เจอ */
+function _spIsGhost(r) { return _spFromKpi(r) && !String(r?.kpi_record_id || '').trim(); }
 /* วันผลิตจริงของ prod record — shift_date ก่อนเสมอ ค่อย fallback เป็น timestamp
    (timestamp = เวลาที่กดบันทึก · แถวเก่าที่ยังไม่ซ่อมจะไม่มี shift_date) */
 function _spProdDate(r) {
@@ -13806,7 +13821,7 @@ function _spShowRecords(lk, procKeys, title, isOff) {
     const savedAt = r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
     /* ⚠️ ขึ้นเฉพาะ "แถวผี" คือหา KPI คู่ไม่เจอจริง ๆ = ยอดนี้ไม่มีในหน้าประวัติ
        แถวที่ยังไม่ได้กดซ่อมแต่หา KPI เจอ (Worker ผูกให้ตอนอ่าน) ไม่ต้องขึ้นป้าย — ตัวเลขตรงกันอยู่แล้ว */
-    const unlinked = !String(r.kpi_record_id || '').trim();
+    const unlinked = _spIsGhost(r);
     if (unlinked) { ghostQty += q; ghostN++; }
     const rid = (r.record_id || r.recordId || '').replace(/'/g, "\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9">
@@ -14582,7 +14597,7 @@ function renderProdHist(rows) {
   //   เวลาที่กดบันทึกยังดูได้จาก tooltip — ไว้ไล่ย้อนว่าใครลงเมื่อไหร่
   t.querySelector('thead').innerHTML = '<tr><th title="วันผลิตจริง (ตรงกับ shift_date ของ KPI)">วันผลิต</th><th>Valve</th><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>Operator</th><th class="center" style="width:90px">จัดการ</th></tr>';
   tb.innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
-    <td title="บันทึกเมื่อ ${escapeHtml(r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH') : '—')}">${escapeHtml(_spProdDate(r) || '—')}${String(r.kpi_record_id||'').trim() ? '' : ' <span style="color:var(--orange)" title="ยังไม่ผูกกับ KPI — ให้ Admin กด ตรวจ/ซ่อมความสอดคล้อง ที่หน้าตั้งค่า">⚠️</span>'}</td>
+    <td title="บันทึกเมื่อ ${escapeHtml(r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH') : '—')}">${escapeHtml(_spProdDate(r) || '—')}${_spIsGhost(r) ? ' <span style="color:var(--red)" title="หา KPI คู่ของแถวนี้ไม่เจอ — ยอดนี้ไม่มีในแท็บ KPI (ส่วนใหญ่เกิดจากลบ KPI ทิ้งแต่ยอดผลิตค้าง)">👻</span>' : ''}</td>
     <td><b>${escapeHtml(r.valveNo||r.valve_no||'-')}</b></td>
     <td>${escapeHtml(r.lot||'-')}</td>
     <td>${nn(r.quantity)}</td>
@@ -14714,7 +14729,8 @@ async function deleteProdRecord(rid) {
   if (API) {
     showBusy('กำลังลบจากฐานข้อมูล…');
     try {
-      const dres = await api('/api/records/delete', { body: { record_id: rid } });
+      // cascade:true = ผู้ใช้กดลบจากหน้าประวัติและยืนยันแล้ว (Worker ไม่ลบ KPI ให้ถ้าไม่ส่งธงนี้)
+      const dres = await api('/api/records/delete', { body: { record_id: rid, cascade: true } });
       hideBusy();
       removeLocal(!!dres?.kpi_deleted);  // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
       toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.kpi_deleted ? ' · ลบ KPI ที่ผูกกันด้วย' : ''}`, 'green');
@@ -15412,9 +15428,9 @@ async function applyProcAutoMatch() {
   if (API) {
     showBusy(`กำลังแก้ 0/${changed.length} record…`, true);
     try {
-      let done = 0;
-      // /api/records/bulk = insert ล้วน (ไม่ upsert) → ลบอันเดิมก่อนแล้วค่อย insert กัน record ซ้ำ
-      await _chunkRun(changed, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = n; busyMsg(`กำลังแก้ ${done}/${changed.length} record…`); });
+      // ★ 2026-08-04 — เลิกลบก่อน insert · bulk เป็น upsert แล้ว (คอมเมนต์เดิมตกยุค)
+      //   ⛔ หลังมี cascade การลบ prod จะลบ KPI ที่ผูกกันแบบ 1:1 ไปด้วย = OAE/DLE หายทั้งชุด
+      busyMsg(`กำลังแก้ ${changed.length} record…`);
       await api('/api/records/bulk', { body: { records: changed.map(_stripUnsynced) } });
       changed.forEach(r => { delete r._unsynced; });
       lsSave(LS.PROD_REC, state.prodRecords);
@@ -15490,11 +15506,10 @@ async function applyFixUnknownValve() {
   if (API) {
     showBusy(`กำลังแก้ไข ${kpi.length + prod.length} record…`);
     try {
-      for (const r of kpi)  { if (r.record_id) await api('/api/kpi/delete', { body: { record_id: r.record_id } }); }
-      if (kpi.length)       await api('/api/kpi', { body: { records: kpi } });
-      // ⚠️ prod record ใช้คีย์ recordId (camelCase) ไม่ใช่ record_id
-      for (const r of prod) { const pid = r.recordId || r.record_id; if (pid) await api('/api/records/delete', { body: { record_id: pid } }); }
-      if (prod.length)      await api('/api/records/bulk', { body: { records: prod } });
+      // ★ 2026-08-04 — upsert ตรง ๆ ไม่ลบก่อน (ดูเหตุผลเต็มที่ _applyLotRewrite)
+      //   การลบก่อน insert เคยทำให้ KPI หายถาวรเมื่อ insert ล้มเหลว = ต้นเหตุแถวผี
+      if (kpi.length)  await api('/api/kpi', { body: { records: kpi } });
+      if (prod.length) await api('/api/records/bulk', { body: { records: prod } });
       hideBusy();
       toast(`✅ แก้ ${kpi.length + prod.length} record เป็น ${correct} สำเร็จ`, 'green');
     } catch (e) {
@@ -15598,12 +15613,11 @@ async function applyAutoMatch() {
   if (API) {
     showBusy(`กำลังแก้ 0/${total} record…`, true);   // persistent: ไม่ตัดจอเองระหว่าง batch
     try {
+      // ★ 2026-08-04 — upsert ตรง ๆ ไม่ลบก่อน (ดูเหตุผลเต็มที่ _applyLotRewrite)
       let done = 0;
       const tick = () => busyMsg(`กำลังแก้ ${done}/${total} record…`);
-      await _chunkRun(allKpi.filter(r => r.record_id), r => api('/api/kpi/delete', { body: { record_id: r.record_id } }).catch(() => {}), 8, n => { done = n; tick(); });
-      if (allKpi.length) await api('/api/kpi', { body: { records: allKpi } });
-      await _chunkRun(allProd, r => { const pid = r.recordId || r.record_id; return pid ? api('/api/records/delete', { body: { record_id: pid } }).catch(() => {}) : Promise.resolve(); }, 8, n => { done = allKpi.length + n; tick(); });
-      if (allProd.length) await api('/api/records/bulk', { body: { records: allProd } });
+      if (allKpi.length)  { await api('/api/kpi', { body: { records: allKpi } });           done = allKpi.length; tick(); }
+      if (allProd.length) { await api('/api/records/bulk', { body: { records: allProd } }); done = total; tick(); }
       hideBusy();
       toast(`✅ แก้ ${sel.length} วาล์ว (${total} record) สำเร็จ`, 'green');
     } catch (e) {
@@ -16602,17 +16616,18 @@ function importProdEdited(ev) {
     if (typeof render === 'function') { try { render(); } catch (e2) {} }
     toast(`อัปเดต ${changed.length} รายการ`, 'green');
     if (API) {
-      // /api/records/bulk = insert ล้วน (ไม่ upsert) → ต้อง delete ก่อน insert กัน record ซ้ำ (เหมือน saveProdEdit)
+      /* ★ 2026-08-04 — เลิกลบก่อน insert · คอมเมนต์เดิมว่า "bulk = insert ล้วน" ตกยุคแล้ว
+         Worker เปลี่ยนเป็น upsert (ON CONFLICT(record_id) DO UPDATE) ตั้งแต่ 2026-07-16
+         ⛔ อันตรายมากหลังมี cascade: /api/records/delete จะลบ KPI ที่ผูกกันแบบ 1:1 ไปด้วย
+            → import แก้ยอดจาก Excel จะทำ KPI (พร้อม OAE/DLE) หายเงียบ ๆ ทั้งชุด
+         upsert ทีเดียวจบ เร็วกว่า และไม่มีช่วงที่ข้อมูลหายระหว่างทาง */
       let synced = 0;
       showBusy && showBusy('กำลัง sync ' + changed.length + ' รายการ…', true);
-      for (const rec of changed) {
-        const rid = rec.record_id || rec.recordId;
-        try {
-          await api('/api/records/delete', { body: { record_id: rid } });
-          await api('/api/records/bulk',   { body: { records: [rec] } });
-          rec._unsynced = false; synced++;
-        } catch (e2) { /* คงไว้ _unsynced → auto re-sync ภายหลัง */ }
-      }
+      try {
+        await api('/api/records/bulk', { body: { records: changed.map(_stripUnsynced) } });
+        changed.forEach(rec => { rec._unsynced = false; });
+        synced = changed.length;
+      } catch (e2) { /* คงไว้ _unsynced → auto re-sync ภายหลัง */ }
       hideBusy && hideBusy();
       lsSave(LS.PROD_REC, state.prodRecords);
       toast(synced === changed.length ? `Sync ไป Cloud สำเร็จ ${synced} รายการ` : `Sync ${synced}/${changed.length} — ที่เหลือจะ sync อัตโนมัติเมื่อเน็ตกลับมา`, synced === changed.length ? 'green' : 'orange');
