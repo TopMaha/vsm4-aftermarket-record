@@ -2,8 +2,30 @@
 
 ## v3.43 — 2026-08-04 — หน้าประวัติ ↔ หน้าติดตามงาน พูดตรงกันแล้ว (ผูก KPI ↔ ยอดผลิต เป็นข้อมูลชุดเดียว)  ✅ deployed
 
-**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `eb5ae762-a904-4bf0-8d9a-c839f2494e1b` → https://vsm4-api.wiphawas-sketchup.workers.dev
-· GitHub Pages commit `4df1ece` → https://topmaha.github.io/vsm4-aftermarket-record/
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `cddd05e5-dfc7-444d-ae79-778679c6766d` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `c51e551` → https://topmaha.github.io/vsm4-aftermarket-record/
+
+### ✅ ซ่อม D1 + ลบแถวผีแล้ว (2026-08-04)
+สำรองแถวผีไว้ก่อนลบที่ `backups/ghost-rows-before-delete-20260804.json` และ `.csv` (203 แถว · 260,853 ชิ้น)
+
+| รายการ | ก่อน | หลัง |
+|---|---|---|
+| ยอดผลิตใน D1 | 11,719 | 11,646 |
+| ⚠️ ไม่มีคีย์เชื่อมกับ KPI | 11,487 | **0** |
+| 📅 แสดงคนละวันกับประวัติ | 5,304 | **2** |
+| 🛠️ ไม่มีชื่อเครื่อง | 4,502 | **0** |
+| 👻 แถวผี | 200 | **1** (ตัวที่ห้ามลบ — ลงตรงที่ยอดผลิต ไม่เคยมี KPI) |
+| ⚠️ valve/lot ขัดแย้งกับ KPI | 422 | 320 ← **ยังไม่แก้** |
+
+เคสที่ผู้ใช้แจ้ง VV6031A1 / 2606S070074 / FG → หน้าติดตามงาน **1,552** = หน้าประวัติ **1,552** ✓
+
+### ⚡ แก้ต่อ — query ช่วงกว้างตอบ 503
+เอา `PROD_DATE_SQL` (มี `datetime()` + `COALESCE`) ไปใส่ `WHERE` → SQLite ต้องคำนวณทุกแถวก่อนกรอง ใช้ index ไม่ได้
+→ `/api/records` ช่วงกว้างตอบ **503 (error 1102 = Worker เกินโควตา CPU)**
+- เพิ่ม `PROD_DATE_COL` = `shift_date` เปล่า ๆ สำหรับกรองช่วงวัน (ใช้ `idx_prod_shift_date` ได้)
+- `backfillShiftDates()` เติม `shift_date` ให้แถวที่ยังว่างครั้งเดียวจบ แทนการคิดใหม่ทุก query
+- `reconcileCheck/Fix` ยิงทีละเดือนแล้วรวมผล — ช่วงกว้างทีเดียว Worker ไม่ไหว
+- ผลหลังแก้: ทั้งปี 2026 → HTTP 200 · 3.7s (เดิม 503)
 
 ### 🕵️ หาต้นเหตุ "แถวผี" — เจอท่าที่ทำข้อมูลหาย 6 จุด
 ไล่จากข้อมูลจริง 11,719 prod / 12,063 KPI: **79 ชุดบันทึก KPI หายทั้งชุด** (166 prod แถว) · **24 ชุดหายบางแถว** (61 แถว) ·
