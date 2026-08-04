@@ -13794,7 +13794,7 @@ function _spRecsFor(lk, procKeys) {
 function _spShowRecords(lk, procKeys, title, isOff) {
   const recs = _spRecsFor(lk, procKeys);
   if (!recs.length) { toast('ไม่พบรายการ', 'orange'); return; }
-  let total = 0;
+  let total = 0, ghostQty = 0, ghostN = 0;
   const rowsH = recs.map(r => {
     const q = Number(r.quantity) || 0; total += q;
     const mc = _spMachineOf(r) || '—';
@@ -13804,11 +13804,14 @@ function _spShowRecords(lk, procKeys, title, isOff) {
     const pd  = _spProdDate(r);
     const dt  = pd ? new Date(pd + 'T00:00:00').toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '—';
     const savedAt = r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
-    const unlinked = !String(r.kpi_record_id || '').trim();   // ยังไม่ผูกกับ KPI → ตัวเลขนี้อาจไม่มีในหน้าประวัติ
+    /* ⚠️ ขึ้นเฉพาะ "แถวผี" คือหา KPI คู่ไม่เจอจริง ๆ = ยอดนี้ไม่มีในหน้าประวัติ
+       แถวที่ยังไม่ได้กดซ่อมแต่หา KPI เจอ (Worker ผูกให้ตอนอ่าน) ไม่ต้องขึ้นป้าย — ตัวเลขตรงกันอยู่แล้ว */
+    const unlinked = !String(r.kpi_record_id || '').trim();
+    if (unlinked) { ghostQty += q; ghostN++; }
     const rid = (r.record_id || r.recordId || '').replace(/'/g, "\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span>${unlinked ? ' <span class="tag" style="font-size:10px;background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd)" title="แถวนี้ยังไม่ผูกกับ KPI — อาจไม่พบในหน้าประวัติ · ให้ Admin กด “ตรวจ/ซ่อมความสอดคล้อง” ที่หน้าตั้งค่า">⚠️ ไม่ผูก KPI</span>' : ''}</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span>${unlinked ? ' <span class="tag" style="font-size:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" title="หา KPI คู่ของแถวนี้ไม่เจอ — ยอดนี้ไม่มีในหน้าประวัติ (ส่วนใหญ่เกิดจากลบ KPI ทิ้งแต่ยอดผลิตค้าง) · ให้ Admin เปิดหน้าตั้งค่า → ตรวจ/ซ่อมความสอดคล้อง">👻 ไม่มีใน KPI</span>' : ''}</div>
         <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}</span>` : ''}</div>
       </div>
       <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
@@ -13821,6 +13824,11 @@ function _spShowRecords(lk, procKeys, title, isOff) {
       <span style="font-size:12px;color:var(--muted)">${recs.length} รายการ</span>
       <span style="font-size:15px;font-weight:800;color:var(--blue)">รวม ${nn(total)} ชิ้น</span>
     </div>
+    ${ghostN ? `<div style="margin-top:8px;border:1.5px solid var(--red-bd);background:var(--red-bg);border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.7;color:var(--red)">
+      <b>👻 ในยอดรวมนี้มี ${nn(ghostQty)} ชิ้น (${ghostN} รายการ) ที่ไม่มีใน KPI</b><br>
+      <span style="color:#7F1D1D">ถ้ายึดหน้าประวัติเป็นหลัก ยอดจริงคือ <b>${nn(total - ghostQty)} ชิ้น</b> —
+      ส่วนต่างเกิดจาก KPI ถูกลบไปแล้วแต่ยอดผลิตค้างอยู่ ให้ Admin ตรวจที่หน้าตั้งค่า → 🔗 ตรวจ/ซ่อมความสอดคล้อง</span>
+    </div>` : ''}
     <div class="muted" style="font-size:11px;margin-top:8px">${isOff
       ? '💡 process เหล่านี้พนักงานพิมพ์เอง (นอก flow ของวาล์ว) — กด ✏️ เพื่อแก้เป็น process ที่ถูกต้อง บันทึกแล้วอัปเดตฐานข้อมูลทันที'
       : '💡 กด ✏️ เพื่อแก้ไขรายการ — บันทึกแล้วอัปเดตฐานข้อมูลทันที'}</div>
@@ -14665,7 +14673,9 @@ async function deleteKpiRecord(rid) {
   if (API) {
     showBusy('กำลังลบจากฐานข้อมูล…');
     try {
-      const dres = await api('/api/kpi/delete', { body: { record_id: rid } });
+      // prod_ids: แถวที่ยังไม่ได้กดซ่อม คอลัมน์ kpi_record_id ใน D1 ยังว่าง → Worker หาไม่เจอ
+      //   ต้องบอก id ตรง ๆ ไม่งั้นเครื่องนี้เห็นลบแล้ว แต่เครื่องอื่นยังเห็นยอดค้างใน D1
+      const dres = await api('/api/kpi/delete', { body: { record_id: rid, prod_ids: linked.map(r => r.record_id).filter(Boolean) } });
       hideBusy();
       removeLocal();                    // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
       toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.prod_deleted ? ` · ยอดผลิตที่ผูกกัน ${dres.prod_deleted} รายการ` : ''}`, 'green');
@@ -14906,7 +14916,10 @@ async function saveKpiEdit() {
   if (API) {
     showBusy('กำลังบันทึกการแก้ไขลงฐานข้อมูล…');
     try {
-      const res = await api('/api/kpi/update', { body: patch });
+      // prod_ids — เหตุผลเดียวกับตอนลบ: แถวที่ยังไม่ซ่อม คอลัมน์เชื่อมใน D1 ยังว่าง
+      //   ส่ง id ไปด้วย Worker จะแก้ให้ตรง id + เขียนคีย์เชื่อมให้ถาวรไปในตัว
+      const _pids = state.prodRecords.filter(r => r.kpi_record_id === rid).map(r => r.record_id).filter(Boolean);
+      const res = await api('/api/kpi/update', { body: { ...patch, prod_ids: _pids } });
       hideBusy();
       if (!res || !res.updated) throw new Error('ฐานข้อมูลไม่พบ record นี้');
       applyLocal();                       // Worker ยืนยันแล้วเท่านั้นจึงแตะหน้าจอ

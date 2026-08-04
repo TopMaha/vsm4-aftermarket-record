@@ -340,7 +340,75 @@ async function getRecords(env, params) {
   const limit = Math.min(parseInt(params.get('limit') || String(dflt), 10), RECS_MAX);
   const sql = `SELECT * FROM production_records ${where} ORDER BY timestamp DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
-  return (results || []).map(rowToRecord);
+  return await _resolveShiftDates(env, results || []);
+}
+
+/* ★ 2026-08-04 (รอบ 2) — เติม "วันทำงาน" ให้แถวที่ยังไม่ได้ซ่อม โดยดูจาก KPI ตอนอ่าน
+
+   ปัญหา: แถวเก่ายังไม่มี shift_date (ยังไม่ได้กด 🔧 ซ่อม) → เดิม fallback ไปใช้ timestamp
+   แปลงเป็นวันไทย ซึ่ง "เดา" และเดาผิดเมื่อเป็นกะดึก — หน้าติดตามงานจึงยังโชว์ 30 ก.ค.
+   ทั้งที่หน้าประวัติเป็น 29 ก.ค. (เคส VV6031A1 · 580 ชิ้น)
+
+   แก้: อ่าน shift_date ตัวจริงจาก kpi_records ที่ saved_at ตรงกับ timestamp ของแถวนั้น
+   (ตอนบันทึก client เขียนทั้งสองตารางด้วยตัวแปร now ตัวเดียวกัน → ตรงกันเป๊ะระดับ ms)
+   ⇒ หน้าจอถูกต้องทันทีโดยไม่ต้องรอกดซ่อม · ปุ่มซ่อมเหลือหน้าที่ "เขียนลง D1 ให้ถาวร"
+   แถวที่หา KPI ไม่เจอจริง ๆ (แถวผี) จะยังไม่มี kpi_record_id → ติดป้าย ⚠️ ตามเดิม ถูกต้องแล้ว */
+async function _resolveShiftDates(env, rows) {
+  const need = rows.filter(r => !String(r.shift_date || '').trim() && r.timestamp);
+  if (!need.length) return rows.map(rowToRecord);
+  const stamps = [...new Set(need.map(r => r.timestamp))];
+  const found = new Map();   // saved_at → [{machine_id, opr, shift_date, shift_type}]
+  for (let i = 0; i < stamps.length; i += 100) {        // ซอย IN(...) กันเกินเพดานตัวแปรของ D1
+    const chunk = stamps.slice(i, i + 100);
+    const { results } = await env.DB.prepare(
+      `SELECT record_id, saved_at, machine_id, opr, shift_date, record_date, shift_type
+         FROM kpi_records WHERE saved_at IN (${chunk.map(() => '?').join(',')})`).bind(...chunk).all();
+    for (const k of results || []) {
+      if (!found.has(k.saved_at)) found.set(k.saved_at, []);
+      found.get(k.saved_at).push(k);
+    }
+  }
+  /* จับคู่ทีละ "ชุดบันทึก" และ consume KPI ที่ถูกจองแล้ว
+     ❗ห้าม fallback แบบหยิบตัวแรกในชุดมาผูก id — เคยทำให้ prod G-2077/580 (แถวผี)
+       ไปเกาะ KPI ของ G-2076/575 คนละแถวกัน = ป้ายแถวผีหาย + cascade จะไปลบผิดตัว
+     แยกให้ชัด 2 ระดับ:
+       exact (เครื่อง+ยอดตรง) → เชื่อถือได้ → ใส่ทั้งวันที่และ kpi_record_id
+       ทั้งชุดวันเดียวกัน      → เชื่อได้แค่ "วันที่" → ใส่วันที่อย่างเดียว ไม่ผูก id (ยังเป็นแถวผี) */
+  const byTs = new Map();
+  for (const r of need) {
+    if (!byTs.has(r.timestamp)) byTs.set(r.timestamp, []);
+    byTs.get(r.timestamp).push(r);
+  }
+  const claim = new Map();   // prod record_id → { k, exact }
+  for (const [ts, ps] of byTs) {
+    const all = found.get(ts) || [];
+    if (!all.length) continue;
+    const pool = all.slice();
+    for (const p of ps) {    // รอบ 1 — จับคู่แน่นอน แล้วตัดออกจาก pool กันสองแถวแย่ง KPI ตัวเดียวกัน
+      const i = pool.findIndex(k => String(k.machine_id || '') === String(p.machine_id || '')
+                                 && Math.round(+k.opr || 0) === Math.round(+p.quantity || 0));
+      if (i >= 0) claim.set(p.record_id, { k: pool.splice(i, 1)[0], exact: true });
+    }
+    const days = new Set(all.map(k => k.shift_date || k.record_date || '').filter(Boolean));
+    if (days.size !== 1) continue;   // ชุดคร่อม 2 วัน → เดาไม่ได้ ปล่อยให้ปุ่มซ่อมจัดการ
+    for (const p of ps) {            // รอบ 2 — ที่เหลือ เอาแค่วันที่ (ทั้งชุดวันเดียวกันอยู่แล้ว)
+      if (!claim.has(p.record_id)) claim.set(p.record_id, { k: all[0], exact: false });
+    }
+  }
+  return rows.map(r => {
+    const rec = rowToRecord(r);
+    if (String(r.shift_date || '').trim()) return rec;
+    const c = claim.get(r.record_id);
+    if (!c) return rec;                                 // ไม่มี KPI คู่ = แถวผี → ติดป้าย 👻
+    const sd = c.k.shift_date || c.k.record_date || '';
+    if (sd) { rec.shift_date = sd; rec.shift_type = c.k.shift_type || ''; }
+    if (c.exact) {
+      // ผูกให้ตอนอ่าน — ป้าย 👻 จะได้เหลือเฉพาะ "หา KPI คู่ไม่เจอจริง ๆ" ไม่ใช่ "ยังไม่ได้กดซ่อม"
+      rec.kpi_record_id  = c.k.record_id || '';
+      rec.kpi_link_stored = false;   // ยังไม่ถาวรใน D1 — cascade ต้องอาศัย prod_ids จาก client
+    }
+    return rec;
+  });
 }
 
 function rowToRecord(r) {
@@ -364,6 +432,7 @@ function rowToRecord(r) {
     shift_date:         r.shift_date || _thDate(r.timestamp),
     shift_type:         r.shift_type || '',
     kpi_record_id:      r.kpi_record_id || '',
+    kpi_link_stored:    !!String(r.kpi_record_id || '').trim(),   // คีย์เชื่อมถูกเขียนลง D1 แล้วหรือยัง
   };
 }
 
@@ -783,13 +852,13 @@ async function updateKpiRecord(env, body) {
   }
   // ★ 2026-08-04 — แก้ KPI ที่หน้าประวัติ → prod record ที่ผูกกันต้องตามไปด้วย
   //   นี่คือต้นเหตุหลักที่หน้าติดตามงานโชว์ valve/lot/ยอด เก่าค้าง ทั้งที่ประวัติแก้ไปแล้ว
-  const prodSynced = await syncProdFromKpi(env, id, body);
+  const prodSynced = await syncProdFromKpi(env, id, body, body.prod_ids || []);
   return { updated, prod_synced: prodSynced };
 }
 
 /* KPI → prod: ดันฟิลด์ที่ใช้ร่วมกันลงทุก prod record ที่ kpi_record_id = id
    ยอด (quantity) ดันเฉพาะคู่ 1:1 — ถ้า KPI แถวเดียวแตกเป็นหลาย process การเขียนยอดทับทุกแถว = นับซ้ำ */
-async function syncProdFromKpi(env, kpiId, body) {
+async function syncProdFromKpi(env, kpiId, body, prodIds = []) {
   const sets = [], args = [];
   const put = (col, v) => { if (v !== undefined && v !== null) { sets.push(`${col} = ?`); args.push(v); } };
   put('valve_no',   body.valve_no);
@@ -799,17 +868,32 @@ async function syncProdFromKpi(env, kpiId, body) {
   put('zone',       body.zone);
   put('shift_date', body.shift_date || body.record_date);
   put('shift_type', body.shift_type);
+  const pids = (prodIds || []).filter(Boolean);
   if (body.quantity !== undefined || body.opr !== undefined || body.last_process !== undefined) {
     const c = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kpiId).first();
-    if ((c?.n || 0) <= 1) {
+    const n = Math.max(c?.n || 0, pids.length);   // แถวที่ยังไม่ซ่อมนับจาก id ที่ client ส่งมาแทน
+    if (n <= 1) {
       if (body.opr !== undefined) put('quantity', Number(body.opr || 0));
       if (body.last_process !== undefined) put('current_process', body.last_process);
     }
   }
   if (!sets.length) return 0;
-  args.push(kpiId);
-  const r = await env.DB.prepare(`UPDATE production_records SET ${sets.join(', ')} WHERE kpi_record_id = ?`).bind(...args).run();
-  return r.meta?.changes || 0;
+  const setSql = sets.join(', ');
+  let changed = 0;
+  const r = await env.DB.prepare(`UPDATE production_records SET ${setSql} WHERE kpi_record_id = ?`)
+    .bind(...args, kpiId).run();
+  changed += r.meta?.changes || 0;
+  /* แถวที่ยังไม่ได้กดซ่อม คอลัมน์ kpi_record_id ยังว่าง → WHERE ด้านบนไม่โดน
+     ใช้ prod_ids ที่ client ผูกไว้แทน + ถือโอกาสเขียนคีย์เชื่อมให้ถาวรไปเลย */
+  if (pids.length) {
+    const st = env.DB.prepare(
+      `UPDATE production_records SET ${setSql}, kpi_record_id = ? WHERE record_id = ? AND (kpi_record_id IS NULL OR kpi_record_id = '')`);
+    for (let i = 0; i < pids.length; i += 200) {
+      const res = await env.DB.batch(pids.slice(i, i + 200).map(p => st.bind(...args, kpiId, p)));
+      changed += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+    }
+  }
+  return changed;
 }
 
 async function deleteKpiRecords(env, body) {
@@ -821,9 +905,21 @@ async function deleteKpiRecords(env, body) {
   //   ที่หน้าติดตามงานยังโชว์ยอดอยู่ ทั้งที่หน้าประวัติลบไปแล้ว (พบค้างอยู่ 170 แถว)
   const pstmt = env.DB.prepare('DELETE FROM production_records WHERE kpi_record_id = ?');
   const pr = await env.DB.batch(ids.map(id => pstmt.bind(id)));
+  let prodDeleted = pr.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+  /* ★ ข้อมูลที่ยังไม่ได้กดซ่อม คอลัมน์ kpi_record_id ยังว่างใน D1 → WHERE ด้านบนหาไม่เจอ
+     client จึงส่ง prod_ids ที่มันผูกไว้ (ผูกตอนอ่าน) มาให้ลบตรง id — ไม่งั้นเครื่องที่กดลบ
+     เห็นหายไปแล้ว แต่เครื่องอื่นยังเห็นยอดค้างอยู่ใน D1 (กลายเป็นแถวผีตัวใหม่) */
+  const pids = (body.prod_ids || []).filter(Boolean);
+  if (pids.length) {
+    const dstmt = env.DB.prepare('DELETE FROM production_records WHERE record_id = ?');
+    for (let i = 0; i < pids.length; i += 200) {
+      const res = await env.DB.batch(pids.slice(i, i + 200).map(p => dstmt.bind(p)));
+      prodDeleted += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+    }
+  }
   return {
     deleted:      r.reduce((s, x) => s + (x.meta?.changes || 0), 0),
-    prod_deleted: pr.reduce((s, x) => s + (x.meta?.changes || 0), 0),
+    prod_deleted: prodDeleted,
   };
 }
 
