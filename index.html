@@ -17423,6 +17423,10 @@ function _rcCard(d, title) {
     ${row('🛠️ ไม่มีชื่อเครื่อง (KPI มี → เติมให้ได้)', d.machine_missing, true)}
     ${row('⚠️ valve/lot ขัดแย้งกับ KPI', d.field_diff, true)}
     ${row('👻 ยอดผลิตที่ไม่มี KPI คู่ (แถวผี)', d.ghosts, true)}
+    ${d.ghosts_kpi_deleted !== undefined ? `<div style="padding-left:12px;font-size:11px;color:var(--muted)">
+      ${row('↳ เคยมี KPI แล้วถูกลบ (ลบทิ้งได้)', d.ghosts_kpi_deleted, true)}
+      ${row('↳ ลงตรงที่ยอดผลิต ไม่เคยมี KPI (ห้ามลบ)', d.ghosts_standalone)}
+    </div>` : ''}
     ${d.linked !== undefined ? row('✅ ซ่อมแล้ว', d.linked) : row('จะซ่อมได้', d.will_fix)}
     ${d.ghost_deleted ? row('🗑 ลบแถวผีแล้ว', d.ghost_deleted) : ''}
   </div>`;
@@ -17438,9 +17442,9 @@ async function reconcileCheck() {
       ? `<div style="margin-top:8px;border:1.5px solid var(--orange-bd);background:var(--orange-bg);border-radius:10px;padding:8px 10px">
            <div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:4px">👻 ตัวอย่างแถวผี (ไม่มี KPI คู่) — แสดง ${d.ghost_sample.length} จาก ${nn(d.ghosts)}</div>
            <div style="max-height:200px;overflow:auto;font-size:11px;line-height:1.8">
-             ${d.ghost_sample.map(g => `<div>• ${escapeHtml(String(g.timestamp).slice(0,10))} · <b>${escapeHtml(g.machine_id||'—')}</b> · ${escapeHtml(g.valve_no||'')} / ${escapeHtml(g.lot||'')} · ${nn(g.quantity)} ชิ้น${g.process?' · '+escapeHtml(g.process):''}</div>`).join('')}
+             ${d.ghost_sample.map(g => `<div>${g.origin === 'standalone' ? '✍️' : '🔗'} ${escapeHtml(String(g.timestamp).slice(0,10))} · <b>${escapeHtml(g.machine_id||'—')}</b> · ${escapeHtml(g.valve_no||'')} / ${escapeHtml(g.lot||'')} · ${nn(g.quantity)} ชิ้น${g.process?' · '+escapeHtml(g.process):''}${g.origin === 'standalone' ? ' <span style="color:var(--green);font-weight:700">(ไม่เคยมี KPI — ห้ามลบ)</span>' : ''}</div>`).join('')}
            </div>
-           <div style="font-size:11px;color:#92400E;margin-top:5px">แถวเหล่านี้โชว์ยอดที่หน้าติดตามงาน แต่ไม่มีในหน้าประวัติ — ตรวจก่อนว่าเป็นของที่ลบไปแล้วจริง ค่อยสั่งลบ</div>
+           <div style="font-size:11px;color:#92400E;margin-top:5px">🔗 = เคยมี KPI แล้วถูกลบข้างเดียว (ลบทิ้งได้) · ✍️ = ลงตรงที่ยอดผลิต ไม่เคยมี KPI (เป็นข้อมูลถูกต้องของมัน ระบบจะไม่ลบให้)</div>
          </div>`
       : '';
     $('rcResult').innerHTML = _rcCard(d, '🔍 ผลตรวจสอบ (ยังไม่แก้อะไร)') + ghostH;

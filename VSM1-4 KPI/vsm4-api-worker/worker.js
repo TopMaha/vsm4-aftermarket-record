@@ -861,7 +861,7 @@ function _rcPair(prods, kpis) {
 async function _rcLoad(env, from, to) {
   const f = String(from || '2000-01-01').slice(0, 10), t = String(to || '2999-12-31').slice(0, 10);
   const { results: prods } = await env.DB.prepare(
-    `SELECT record_id, timestamp, valve_no, lot, quantity, current_process, machine_id, shift_date, kpi_record_id
+    `SELECT record_id, timestamp, valve_no, lot, quantity, current_process, machine_id, shift_date, kpi_record_id, note, operator
      FROM production_records WHERE ${PROD_DATE_SQL} BETWEEN ? AND ?`).bind(f, t).all();
   // ดึง KPI กว้างกว่า 2 วันทั้งสองด้าน — งานกะดึกถูกบันทึกข้ามวัน ชุดบันทึกจึงคร่อมขอบช่วงได้
   const wf = _rcShift(f, -2), wt = _rcShift(t, 2);
@@ -918,17 +918,26 @@ async function _rcAnalyze(env, from, to) {
            machine_missing: mcMissing, ghosts: ghosts.length } };
 }
 
+/* แถวผีมาจาก 2 ทางที่ผลต่างกันมาก — ต้องแยกให้เห็นก่อนตัดสินใจลบ
+   'kpi-deleted' : note = auto-linked KPI → เคยมี KPI แล้วถูกลบข้างเดียว = ผีจริง ลบได้
+   'standalone'  : ลงตรงที่ยอดผลิต ไม่เคยมี KPI มาแต่แรก = ข้อมูลถูกต้องของมัน ห้ามลบ */
+const _rcOrigin = g => /auto-linked KPI/i.test(String(g.note || '')) ? 'kpi-deleted' : 'standalone';
+
 async function reconcileReport(env, params) {
   const from = params.get('from'), to = params.get('to');
   const a = await _rcAnalyze(env, from, to);
+  const orphaned = a.ghosts.filter(g => _rcOrigin(g) === 'kpi-deleted').length;
   return {
     range: { from: from || null, to: to || null },
     ...a.stats,
     will_fix: a.fixes.length,
+    ghosts_kpi_deleted: orphaned,                    // เคยมี KPI แล้วถูกลบ → ลบทิ้งได้
+    ghosts_standalone:  a.ghosts.length - orphaned,  // ไม่เคยมี KPI → ห้ามลบ
     // ตัวอย่างแถวผีให้ดูก่อนตัดสินใจลบ — ไม่ลบอะไรทั้งสิ้นในโหมดรายงาน
-    ghost_sample: a.ghosts.slice(0, 50).map(g => ({
+    ghost_sample: a.ghosts.slice(0, 100).map(g => ({
       record_id: g.record_id, timestamp: g.timestamp, machine_id: g.machine_id,
       valve_no: g.valve_no, lot: g.lot, quantity: g.quantity, process: g.current_process,
+      origin: _rcOrigin(g), operator: g.operator || '',
     })),
   };
 }
@@ -949,15 +958,19 @@ async function reconcileApply(env, body) {
     linked += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
   }
   // แถวผี (ไม่มี KPI คู่) — ลบเฉพาะเมื่อสั่งมาชัดเจนเท่านั้น ไม่ลบเองโดยอัตโนมัติ
+  //   และลบเฉพาะแถวที่ "เคยมี KPI แล้วถูกลบ" เท่านั้น — แถวที่ลงตรงที่ยอดผลิตเป็นข้อมูลถูกต้องของมัน
   let ghostDeleted = 0;
-  if (body.deleteGhosts === true && a.ghosts.length) {
+  const delable = a.ghosts.filter(g => _rcOrigin(g) === 'kpi-deleted');
+  if (body.deleteGhosts === true && delable.length) {
     const dstmt = env.DB.prepare('DELETE FROM production_records WHERE record_id = ?');
-    for (let i = 0; i < a.ghosts.length; i += 200) {
-      const res = await env.DB.batch(a.ghosts.slice(i, i + 200).map(g => dstmt.bind(g.record_id)));
+    for (let i = 0; i < delable.length; i += 200) {
+      const res = await env.DB.batch(delable.slice(i, i + 200).map(g => dstmt.bind(g.record_id)));
       ghostDeleted += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
     }
   }
-  return { ...a.stats, linked, ghost_deleted: ghostDeleted, ghosts_left: a.ghosts.length - ghostDeleted };
+  return { ...a.stats, linked, ghost_deleted: ghostDeleted,
+           ghosts_left: a.ghosts.length - ghostDeleted,
+           ghosts_kpi_deleted: delable.length, ghosts_standalone: a.ghosts.length - delable.length };
 }
 
 // ============================================================
