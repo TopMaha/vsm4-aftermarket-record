@@ -1365,7 +1365,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.42</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.43</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1860,6 +1860,27 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
       <input type="file" id="prodImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importProdEdited(event)">
       <button class="btn btn-outline btn-sm" onclick="exportValvesNoProc()">⬇️ Export Valve ยังไม่มี Process</button>
     </div>
+  </div>
+
+  <!-- ★ 2026-08-04 — ตรวจ/ซ่อมความสอดคล้อง KPI ↔ ยอดผลิต
+       ข้อมูลที่บันทึกก่อน 4 ส.ค. 2026 ไม่มีคีย์เชื่อม (kpi_record_id) และไม่มีวันผลิต (shift_date)
+       ในตารางยอดผลิต → หน้าประวัติกับหน้าติดตามงานจึงไม่ตรงกัน · ปุ่มนี้ซ่อมย้อนหลังให้ -->
+  <div class="section-title">🔗 ตรวจ/ซ่อมความสอดคล้อง (ประวัติ ↔ ติดตามงาน)</div>
+  <div class="card">
+    <div class="muted" style="font-size:11px;margin-bottom:8px;line-height:1.7">
+      ยอดผลิตที่บันทึกก่อน <b>4 ส.ค. 2026</b> ไม่มีคีย์เชื่อมกับ KPI และเก็บ <b>เวลาที่กดบันทึก</b> แทน <b>วันผลิตจริง</b>
+      → งานกะดึกที่ลงตอนเช้าจะไปโผล่คนละวันกับหน้าประวัติ และการลบ/แก้ที่ประวัติไม่ตามไปถึงหน้าติดตามงาน<br>
+      กด <b>ตรวจสอบ</b> เพื่อดูรายงานก่อน (ไม่แก้อะไร) แล้วค่อยกด <b>ซ่อม</b>
+    </div>
+    <div class="fg" style="margin-bottom:8px">
+      <div class="fr"><label>จาก</label><input type="date" id="rcFrom"></div>
+      <div class="fr"><label>ถึง</label><input type="date" id="rcTo"></div>
+    </div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="reconcileCheck()">🔍 ตรวจสอบ</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;font-weight:800" onclick="reconcileFix()">🔧 ซ่อมความสอดคล้อง</button>
+    </div>
+    <div id="rcResult" style="margin-top:10px"></div>
   </div>
 
   <div class="section-title">🆔 Valve IDs (1 Valve มีหลาย ID)</div>
@@ -6709,7 +6730,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.42":"Production Record + KPI · v3.42",
+"ระบบบันทึกผลิต + KPI · v3.43":"Production Record + KPI · v3.43",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -12936,6 +12957,13 @@ async function _saveKpiImpl() {
       // id ต้องไม่ซ้ำแม้สร้างหลายตัวใน ms เดียวกัน (Worker ใช้เป็น idempotency key — ซ้ำ = ทับกันหาย)
       record_id:       'R-' + Date.now().toString(36) + '-' + prodRecs.length + '-' + Math.random().toString(36).slice(2,8),
       timestamp:       now,
+      /* ★ 2026-08-04 — เก็บ "วันผลิตจริง" + คีย์เชื่อมกลับไป KPI
+         timestamp = เวลาที่กดบันทึก ซึ่ง "ไม่ใช่" วันผลิต — กะดึกลงตอนเช้าอีกวันเป็นเรื่องปกติ
+         เดิมหน้าติดตามงานโชว์ timestamp จึงเห็นคนละวันกับหน้าประวัติที่ยึด shift_date
+         kpi_record_id ทำให้ลบ/แก้ฝั่งใดฝั่งหนึ่งแล้วอีกฝั่งตามได้จริง (เดิมผูกด้วยข้อความใน note) */
+      shift_date:      r.shift_date || r.record_date || '',
+      shift_type:      r.shift_type || '',
+      kpi_record_id:   r.record_id,
       valve_no:        r.valve_no,
       lot:             r.lot,
       quantity:        r.opr,
@@ -13723,10 +13751,28 @@ function spmRemark(vi, li) {
 /* ============================================================
    ค้นหา Process — ปุ่มกดในตาราง (ดูรายละเอียด / แก้ Lot / แก้ process พิมพ์เอง)
    ============================================================ */
-// เครื่องที่ผลิตเก็บอยู่ใน note ของ prod record เช่น "auto-linked KPI ZONE3/G-2030" → "G-2030"
+/* เครื่องที่ผลิต — อ่านจากคอลัมน์ machine_id เป็นหลัก
+   ★ 2026-08-04: เดิมอ่านจากข้อความใน note อย่างเดียว ด้วย regex ที่บังคับรูป "ZONE1/2/3"
+     แต่ VSM1–3 ใช้รหัสโซน ZH · ZJ · ZI · ZK · V1Z2 · V2Z1 … → regex ไม่ match
+     ผล: 72% ของแถวโชว์เครื่องเป็น "—" ทั้งที่ 5,307 แถวมี machine_id ถูกต้องอยู่แล้ว
+     (ตรวจกับ KPI ในชุดบันทึกเดียวกัน 1,513 คู่ → machine_id ตรงกัน 100%)
+     ซ้ำร้าย note เป็นช่องที่ผู้ใช้แก้ทับได้เอง จึงไม่ควรเป็นแหล่งความจริงของชื่อเครื่องตั้งแต่แรก */
+function _spMachineOf(r) {
+  const mc = String(r?.machine_id || r?.machineId || '').trim();
+  return mc || _spMachineFromNote(r?.note);
+}
+// fallback: แถวเก่าที่ machine_id ว่าง — ขุดจาก note "auto-linked KPI <zone>/<machine>" (โซนรูปแบบใดก็ได้)
 function _spMachineFromNote(note) {
-  const m = String(note || '').match(/ZONE\s*\d+\s*[\/|]\s*([A-Za-z0-9\-]+)/i);
-  return m ? m[1] : '';
+  const m = String(note || '').match(/auto-linked KPI\s+[^\/|]+[\/|]\s*([A-Za-z0-9\-]+)/i)
+         || String(note || '').match(/ZONE\s*\d+\s*[\/|]\s*([A-Za-z0-9\-]+)/i);
+  return m ? m[1].trim() : '';
+}
+/* วันผลิตจริงของ prod record — shift_date ก่อนเสมอ ค่อย fallback เป็น timestamp
+   (timestamp = เวลาที่กดบันทึก · แถวเก่าที่ยังไม่ซ่อมจะไม่มี shift_date) */
+function _spProdDate(r) {
+  const sd = String(r?.shift_date || r?.record_date || '').slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sd)) return sd;
+  return r?.timestamp ? new Date(r.timestamp).toLocaleDateString('sv-SE') : '';
 }
 // คืน record ของ lot (lk) ที่ process อยู่ในชุด procKeys (canon)
 function _spRecsFor(lk, procKeys) {
@@ -13742,14 +13788,19 @@ function _spShowRecords(lk, procKeys, title, isOff) {
   let total = 0;
   const rowsH = recs.map(r => {
     const q = Number(r.quantity) || 0; total += q;
-    const mc = _spMachineFromNote(r.note) || '—';
+    const mc = _spMachineOf(r) || '—';
     const proc = _procCanon(((r.currentProcess || r.current_process || '') + '').trim() || '-');
-    const dt = r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    /* ★ 2026-08-04: โชว์ "วันผลิต" (ตรงกับหน้าประวัติ) ไม่ใช่เวลาที่กดบันทึก
+       เวลาที่กดบันทึกยังบอกไว้ต่อท้ายแบบจาง ๆ เผื่อต้องไล่ย้อนว่าใครลงเมื่อไหร่ */
+    const pd  = _spProdDate(r);
+    const dt  = pd ? new Date(pd + 'T00:00:00').toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '—';
+    const savedAt = r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
+    const unlinked = !String(r.kpi_record_id || '').trim();   // ยังไม่ผูกกับ KPI → ตัวเลขนี้อาจไม่มีในหน้าประวัติ
     const rid = (r.record_id || r.recordId || '').replace(/'/g, "\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span></div>
-        <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(r.operator || '—')}</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span>${unlinked ? ' <span class="tag" style="font-size:10px;background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd)" title="แถวนี้ยังไม่ผูกกับ KPI — อาจไม่พบในหน้าประวัติ · ให้ Admin กด “ตรวจ/ซ่อมความสอดคล้อง” ที่หน้าตั้งค่า">⚠️ ไม่ผูก KPI</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}</span>` : ''}</div>
       </div>
       <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
       <button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>
@@ -14025,7 +14076,9 @@ function _syncProdFromApi(apiRecords, from, to) {
   }));
   const normIds = new Set(norm.map(r => r.record_id));
   const outside = state.prodRecords.filter(r => {
-    const d = (r.timestamp||'').slice(0,10);
+    // ★ 2026-08-04: เทียบช่วงด้วย "วันผลิตจริง" ให้ตรงกับที่ API กรองมา (เดิมใช้ timestamp = เวลาที่กดบันทึก)
+    //   ถ้าใช้คนละเกณฑ์ แถวกะดึกจะถูกนับเป็น "นอกช่วง" แล้วเก็บค้างซ้อนกับของที่ API ส่งมา
+    const d = _spProdDate(r);
     const inRange = (!from || d >= from) && (!to || d <= to);
     if (!inRange) return true;                              // นอก range → เก็บ
     return r._unsynced && !normIds.has(r.record_id||r.recordId);  // ใน range แต่ยังค้าง → เก็บไว้
@@ -14259,8 +14312,11 @@ function _histSortKpi(rows) {
 }
 function _histSortProd(rows) {
   return rows.sort((a, b) => {
+    // ★ 2026-08-04: เรียงตาม "วันผลิต" ก่อน ให้ตรงกับคอลัมน์ที่แสดง แล้วค่อยตัดสินด้วยเวลาที่กดบันทึก
+    const da = _spProdDate(a), db = _spProdDate(b);
+    if (db !== da) return String(db).localeCompare(String(da));   // ใหม่สุดก่อน
     const ka = a.timestamp || '', kb = b.timestamp || '';
-    if (kb !== ka) return String(kb).localeCompare(String(ka));   // ใหม่สุดก่อน
+    if (kb !== ka) return String(kb).localeCompare(String(ka));
     return String(a.record_id || a.recordId || '').localeCompare(String(b.record_id || b.recordId || ''));
   });
 }
@@ -14505,9 +14561,11 @@ function renderProdHist(rows) {
   const sig = _histViewSig(view);
   if (sig === _histSig && tb && tb.children.length) return;
   _histSig = sig;
-  t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>Valve</th><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>Operator</th><th class="center" style="width:90px">จัดการ</th></tr>';
+  // ★ 2026-08-04: คอลัมน์วันที่ = "วันผลิตจริง" (เท่ากับ shift_date ของ KPI) ไม่ใช่เวลาที่กดบันทึก
+  //   เวลาที่กดบันทึกยังดูได้จาก tooltip — ไว้ไล่ย้อนว่าใครลงเมื่อไหร่
+  t.querySelector('thead').innerHTML = '<tr><th title="วันผลิตจริง (ตรงกับ shift_date ของ KPI)">วันผลิต</th><th>Valve</th><th>Lot</th><th>Qty</th><th>Process</th><th>Status</th><th>Operator</th><th class="center" style="width:90px">จัดการ</th></tr>';
   tb.innerHTML = view.map(r => `<tr data-rid="${escapeHtml(r.record_id||'')}">
-    <td>${new Date(r.timestamp).toLocaleString('th-TH')}</td>
+    <td title="บันทึกเมื่อ ${escapeHtml(r.timestamp ? new Date(r.timestamp).toLocaleString('th-TH') : '—')}">${escapeHtml(_spProdDate(r) || '—')}${String(r.kpi_record_id||'').trim() ? '' : ' <span style="color:var(--orange)" title="ยังไม่ผูกกับ KPI — ให้ Admin กด ตรวจ/ซ่อมความสอดคล้อง ที่หน้าตั้งค่า">⚠️</span>'}</td>
     <td><b>${escapeHtml(r.valveNo||r.valve_no||'-')}</b></td>
     <td>${escapeHtml(r.lot||'-')}</td>
     <td>${nn(r.quantity)}</td>
@@ -14559,7 +14617,7 @@ async function exportHistory() {
         const _sh = _shiftsArr(r)[0] || {};
         return { 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'Scrap (ชิ้นเสีย)': r.scrap||0, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process, 'พนักงาน': r.operator||r.emp_name||r.emp_id||'', 'CT (sec)': r.ct||_sh.ct||'', 'เวลาเริ่ม': r.time_start||_sh.ts||'', 'เวลาสิ้นสุด': r.time_end||_sh.te||'' };
       })
-    : rows.map(r => ({ 'วันที่': r.timestamp, 'Valve': r.valveNo||r.valve_no, 'Lot': r.lot, 'Qty': r.quantity, 'Process': r.currentProcess||r.current_process, 'Status': r.status, 'Operator': r.operator }));
+    : rows.map(r => ({ 'วันผลิต': _spProdDate(r), 'บันทึกเมื่อ': r.timestamp, 'Valve': r.valveNo||r.valve_no, 'Lot': r.lot, 'Qty': r.quantity, 'Process': r.currentProcess||r.current_process, 'Status': r.status, 'Operator': r.operator, 'KPI ที่ผูก': r.kpi_record_id||'(ยังไม่ผูก)' }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'History');
@@ -14575,19 +14633,33 @@ async function exportHistory() {
    ใหม่: ยิงลบที่ Worker ก่อน → ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ + reload */
 async function deleteKpiRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
-  if (!(await confirmModal('⚠️ ลบ KPI record นี้?\n\nระบบจะลบจากฐานข้อมูลจริง (ทุกเครื่องเห็นเหมือนกัน)'))) return;
+  /* ★ 2026-08-04 — บอกให้ชัดว่ายอดที่หน้าติดตามงานจะหายตามไปด้วยกี่รายการ
+     เดิมลบแค่ฝั่ง KPI → prod ค้างเป็น "แถวผี" ที่หน้าติดตามงานยังนับยอดอยู่ (พบค้าง 170 แถว) */
+  const linked = state.prodRecords.filter(r => r.kpi_record_id === rid);
+  const extra = linked.length
+    ? `\n\n🔗 จะลบยอดผลิตที่ผูกกันอีก ${linked.length} รายการด้วย (${linked.map(r => (r.current_process || r.currentProcess || '-')).join(', ')})\n   → หน้าติดตามงานจะไม่เห็นยอดนี้อีก`
+    : '';
+  if (!(await confirmModal('⚠️ ลบ KPI record นี้?\n\nระบบจะลบจากฐานข้อมูลจริง (ทุกเครื่องเห็นเหมือนกัน)' + extra))) return;
   const removeLocal = () => {
     state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== rid);
     lsSave(LS.KPI, state.kpiRecords);
     _deletedKpiIds.add(rid); _saveTombstones();  // tombstone: ป้องกัน sync กลับ
+    // ลบ prod ที่ผูกกันใน local ให้ตรงกับที่ Worker ทำใน D1 — ไม่งั้นหน้าติดตามงานยังโชว์อยู่จนกว่าจะรีเฟรช
+    if (linked.length) {
+      const ids = new Set(linked.map(r => r.record_id));
+      state.prodRecords = state.prodRecords.filter(r => !ids.has(r.record_id));
+      lsSave(LS.PROD_REC, state.prodRecords);
+      for (const id of ids) _deletedProdIds.add(id);
+      _saveTombstones();
+    }
   };
   if (API) {
     showBusy('กำลังลบจากฐานข้อมูล…');
     try {
-      await api('/api/kpi/delete', { body: { record_id: rid } });
+      const dres = await api('/api/kpi/delete', { body: { record_id: rid } });
       hideBusy();
       removeLocal();                    // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
-      toast('✅ ฐานข้อมูลยืนยันการลบแล้ว', 'green');
+      toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.prod_deleted ? ` · ยอดผลิตที่ผูกกัน ${dres.prod_deleted} รายการ` : ''}`, 'green');
       await loadHistory();              // reload ข้อมูลสดหลังลบสำเร็จ
     } catch (e) {
       hideBusy();
@@ -14601,26 +14673,39 @@ async function deleteKpiRecord(rid) {
 
 async function deleteProdRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
-  if (!(await confirmModal('⚠️ ลบ Production record นี้?\n\nระบบจะลบจากฐานข้อมูลจริง (ทุกเครื่องเห็นเหมือนกัน)'))) return;
-  const removeLocal = () => {
+  /* ★ 2026-08-04 — ลบยอดผลิตที่เป็นคู่ 1:1 กับ KPI จะลบ KPI ตามไปด้วย (Worker เป็นคนตัดสิน)
+     ต้องเตือนก่อน เพราะ KPI ถือ OAE/DLE ของกะนั้นไว้ ไม่ใช่แค่ตัวเลขยอด */
+  const me  = state.prodRecords.find(r => r.record_id === rid);
+  const kid = String(me?.kpi_record_id || '').trim();
+  const sibs = kid ? state.prodRecords.filter(r => r.kpi_record_id === kid).length : 0;
+  const extra = (kid && sibs <= 1)
+    ? '\n\n🔗 รายการนี้เป็นคู่เดียวกับ KPI record — จะลบ KPI (พร้อม OAE/DLE ของกะนั้น) ตามไปด้วย'
+    : (kid ? `\n\n🔗 KPI ที่ผูกกันยังมียอด process อื่นอยู่อีก ${sibs - 1} รายการ → KPI จะไม่ถูกลบ` : '');
+  if (!(await confirmModal('⚠️ ลบ Production record นี้?\n\nระบบจะลบจากฐานข้อมูลจริง (ทุกเครื่องเห็นเหมือนกัน)' + extra))) return;
+  const removeLocal = (alsoKpi) => {
     state.prodRecords = state.prodRecords.filter(r => r.record_id !== rid);
     lsSave(LS.PROD_REC, state.prodRecords);
     _deletedProdIds.add(rid); _saveTombstones();  // tombstone: ป้องกัน sync กลับ
+    if (alsoKpi && kid) {
+      state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== kid);
+      lsSave(LS.KPI, state.kpiRecords);
+      _deletedKpiIds.add(kid); _saveTombstones();
+    }
   };
   if (API) {
     showBusy('กำลังลบจากฐานข้อมูล…');
     try {
-      await api('/api/records/delete', { body: { record_id: rid } });
+      const dres = await api('/api/records/delete', { body: { record_id: rid } });
       hideBusy();
-      removeLocal();                    // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
-      toast('✅ ฐานข้อมูลยืนยันการลบแล้ว', 'green');
+      removeLocal(!!dres?.kpi_deleted);  // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
+      toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.kpi_deleted ? ' · ลบ KPI ที่ผูกกันด้วย' : ''}`, 'green');
       await loadHistory();
     } catch (e) {
       hideBusy();
       toast('❌ ลบไม่สำเร็จ — ข้อมูลยังอยู่ทั้ง Local และฐานข้อมูล: ' + e.message, 'red');
     }
   } else {
-    removeLocal(); _renderHistLocal();
+    removeLocal(kid && sibs <= 1); _renderHistLocal();
     toast('ลบจาก Local แล้ว (offline — ยังไม่ลบจากฐานข้อมูล)', 'orange');
   }
 }
@@ -14791,6 +14876,23 @@ async function saveKpiEdit() {
   const applyLocal = () => {
     Object.assign(state.kpiRecords[idx], localPatch);
     lsSave(LS.KPI, state.kpiRecords);
+    /* ★ 2026-08-04 — ดันค่าที่ใช้ร่วมกันลง prod record ที่ผูกกัน (Worker ทำใน D1 แล้ว ที่นี่คือ local ให้ตรงกัน)
+       เดิมแก้ที่ประวัติแล้วหน้าติดตามงานยังโชว์ valve/lot เก่า — คือต้นเหตุ "ค้นเจอในติดตามงาน แต่ประวัติไม่มี" */
+    const linked = state.prodRecords.filter(r => r.kpi_record_id === rid);
+    if (linked.length) {
+      for (const p of linked) {
+        Object.assign(p, {
+          valve_no: patch.valve_no, valveNo: patch.valve_no,
+          lot: patch.lot, operator: patch.operator,
+          machine_id: patch.machine_id, zone: patch.zone,
+          shift_date: patch.shift_date, shift_type: patch.shift_type,
+          updated_at: localPatch.updated_at,
+        });
+        // ยอด/process ทับได้เฉพาะคู่ 1:1 — KPI แถวเดียวที่แตกหลาย process จะนับซ้ำถ้าเขียนยอดทับทุกแถว
+        if (linked.length === 1) { p.quantity = newOpr; p.current_process = patch.last_process; p.currentProcess = patch.last_process; }
+      }
+      lsSave(LS.PROD_REC, state.prodRecords);
+    }
   };
   if (API) {
     showBusy('กำลังบันทึกการแก้ไขลงฐานข้อมูล…');
@@ -14930,6 +15032,20 @@ async function saveProdEdit() {
       updated_at: new Date().toISOString(),
     });
     lsSave(LS.PROD_REC, state.prodRecords);
+    /* ★ 2026-08-04 — ดันกลับไปที่ KPI ที่ผูกกันด้วย (ทิศตรงข้ามของ saveKpiEdit)
+       valve/lot/ยอด/process เป็นข้อเท็จจริงชุดเดียวกัน แก้ที่ใดที่หนึ่งต้องตรงกันทั้งคู่
+       ไม่แตะ OAE/DLE/target/CT — เป็นของ KPI ล้วน คิดจากเวลาทำงาน ไม่ใช่จากใบผลิต */
+    const kid = String(state.prodRecords[idx].kpi_record_id || '').trim();
+    if (kid) {
+      const k = state.kpiRecords.find(x => x.record_id === kid);
+      if (k) {
+        Object.assign(k, { valve_no: valve, lot: patch.lot, operator: patch.operator, updated_at: new Date().toISOString() });
+        if (state.prodRecords.filter(r => r.kpi_record_id === kid).length <= 1) {
+          k.opr = patch.quantity; k.last_process = proc;
+        }
+        lsSave(LS.KPI, state.kpiRecords);
+      }
+    }
     if (typeof renderUnknownProcs === 'function') renderUnknownProcs();   // refresh รายการ process พิมพ์เอง ถ้าหน้าตั้งค่าเปิดอยู่
   };
   if (API) {
@@ -17281,6 +17397,79 @@ async function applyMcRenameCloud() {
   toast(`🔧 ซ่อมแล้ว · เครื่อง ${mcs} · KPI ${kpi} · ยอดผลิต ${prod}`, 'green');
   await reload();
 }
+/* ============================================================
+   ★ 2026-08-04 — ตรวจ/ซ่อมความสอดคล้อง kpi_records ↔ production_records
+   ซ่อมข้อมูลเก่าที่บันทึกก่อนมีคีย์เชื่อม: เติม kpi_record_id + shift_date ให้ยอดผลิต
+   จับคู่ด้วย prod.timestamp === kpi.saved_at (ตอนบันทึกใช้ตัวแปร now ตัวเดียวกัน)
+   กดซ้ำได้ (idempotent) · แถวผีไม่ลบเองเด็ดขาด ต้องยืนยันแยกอีกชั้น
+   ============================================================ */
+function _rcRange() {
+  const f = $('rcFrom')?.value || '', t = $('rcTo')?.value || '';
+  const p = new URLSearchParams();
+  if (f) p.set('from', f);
+  if (t) p.set('to', t);
+  return { f, t, qs: p.toString() };
+}
+function _rcCard(d, title) {
+  const row = (label, n, warn) =>
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+       <span>${label}</span><b style="color:${warn && n ? 'var(--orange)' : 'var(--text)'}">${nn(n || 0)}</b></div>`;
+  return `<div style="border:1.5px solid var(--blue-soft);border-radius:10px;padding:10px 12px;background:var(--card)">
+    <div style="font-weight:900;font-size:13px;color:var(--blue);margin-bottom:6px">${title}</div>
+    ${row('ยอดผลิตที่ตรวจ', d.prod_rows)}
+    ${row('KPI ที่ตรวจ', d.kpi_rows)}
+    ${row('⚠️ ยังไม่มีคีย์เชื่อมกับ KPI', d.need_link, true)}
+    ${row('⚠️ วันผลิตไม่ตรงกับ KPI', d.wrong_date, true)}
+    ${row('⚠️ valve/lot/เครื่อง ไม่ตรงกับ KPI', d.field_diff, true)}
+    ${row('👻 ยอดผลิตที่ไม่มี KPI คู่ (แถวผี)', d.ghosts, true)}
+    ${d.linked !== undefined ? row('✅ ซ่อมแล้ว', d.linked) : row('จะซ่อมได้', d.will_fix)}
+    ${d.ghost_deleted ? row('🗑 ลบแถวผีแล้ว', d.ghost_deleted) : ''}
+  </div>`;
+}
+async function reconcileCheck() {
+  if (!API) { toast('ต้องต่อ Cloud ก่อน', 'orange'); return; }
+  const { qs } = _rcRange();
+  showBusy('กำลังตรวจสอบความสอดคล้อง…', true);
+  try {
+    const d = await api('/api/reconcile' + (qs ? '?' + qs : ''));
+    hideBusy();
+    const ghostH = d.ghost_sample?.length
+      ? `<div style="margin-top:8px;border:1.5px solid var(--orange-bd);background:var(--orange-bg);border-radius:10px;padding:8px 10px">
+           <div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:4px">👻 ตัวอย่างแถวผี (ไม่มี KPI คู่) — แสดง ${d.ghost_sample.length} จาก ${nn(d.ghosts)}</div>
+           <div style="max-height:200px;overflow:auto;font-size:11px;line-height:1.8">
+             ${d.ghost_sample.map(g => `<div>• ${escapeHtml(String(g.timestamp).slice(0,10))} · <b>${escapeHtml(g.machine_id||'—')}</b> · ${escapeHtml(g.valve_no||'')} / ${escapeHtml(g.lot||'')} · ${nn(g.quantity)} ชิ้น${g.process?' · '+escapeHtml(g.process):''}</div>`).join('')}
+           </div>
+           <div style="font-size:11px;color:#92400E;margin-top:5px">แถวเหล่านี้โชว์ยอดที่หน้าติดตามงาน แต่ไม่มีในหน้าประวัติ — ตรวจก่อนว่าเป็นของที่ลบไปแล้วจริง ค่อยสั่งลบ</div>
+         </div>`
+      : '';
+    $('rcResult').innerHTML = _rcCard(d, '🔍 ผลตรวจสอบ (ยังไม่แก้อะไร)') + ghostH;
+    toast(d.will_fix ? `พบที่ต้องซ่อม ${nn(d.will_fix)} รายการ` : 'ข้อมูลสอดคล้องกันดีแล้ว ✅', d.will_fix ? 'orange' : 'green');
+  } catch (e) {
+    hideBusy();
+    toast('ตรวจไม่สำเร็จ — Worker อาจยังไม่ได้ deploy เวอร์ชันใหม่: ' + e.message, 'red');
+  }
+}
+async function reconcileFix() {
+  if (!API) { toast('ต้องต่อ Cloud ก่อน', 'orange'); return; }
+  const { f, t } = _rcRange();
+  const rangeTxt = (f || t) ? `${f || 'เริ่มแรก'} → ${t || 'ล่าสุด'}` : 'ทุกช่วงเวลา';
+  if (!(await confirmModal(
+      `ซ่อมความสอดคล้อง KPI ↔ ยอดผลิต?\n\n📅 ช่วง: ${rangeTxt}\n\nจะเติมคีย์เชื่อม + วันผลิตจริง ให้ยอดผลิตที่ยังขาด\n(ไม่ลบข้อมูลใด ๆ · กดซ้ำได้ปลอดภัย)`,
+      { danger: false, yes: 'ซ่อมเลย' }))) return;
+  showBusy('กำลังซ่อม…', true);
+  try {
+    const d = await api('/api/reconcile', { body: { from: f || undefined, to: t || undefined } });
+    hideBusy();
+    $('rcResult').innerHTML = _rcCard(d, '🔧 ผลการซ่อม');
+    toast(`🔧 ซ่อมแล้ว ${nn(d.linked)} รายการ${d.ghosts_left ? ` · เหลือแถวผี ${nn(d.ghosts_left)} (ยังไม่ลบ)` : ''}`, 'green');
+    // ดึงของสดกลับมา — หน้าติดตามงาน/ประวัติจะเห็นวันผลิตใหม่ทันที
+    await reload();
+  } catch (e) {
+    hideBusy();
+    toast('ซ่อมไม่สำเร็จ — Worker อาจยังไม่ได้ deploy เวอร์ชันใหม่: ' + e.message, 'red');
+  }
+}
+
 /* ★ 2026-08-03 — ย้ายโซนเครื่อง VSM2 ใน D1 จริง (Admin เท่านั้น) · กดซ้ำได้ (idempotent)
    ใช้ endpoint เดิมล้วน ๆ: upsert แถวโซนใหม่ → ลบแถวโซนเก่า (ไม่ต้อง deploy Worker ใหม่)
    record เก่า (KPI/ยอดผลิต) ยังถือโซนเดิมใน D1 — แอปแปลงให้ตอนอ่านทุกครั้ง (mcZoneFixRecs) */

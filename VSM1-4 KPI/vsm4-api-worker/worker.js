@@ -155,6 +155,9 @@ export default {
       // produced set = full-table DISTINCT scan · หลายเครื่อง poll ทุก 60 วิ → cache ที่ edge 60 วิ กันสแกน D1 ซ้ำ
       if (path === '/api/kpi/produced' && m === 'GET')  return await servedCached(ctx, url, 'produced-v1', 60,
                                                                 async () => ok({ pairs: await getProducedJobs(env) }));
+      // ★ 2026-08-04 — ตรวจ/ซ่อมความสอดคล้อง kpi_records ↔ production_records
+      if (path === '/api/reconcile'  && m === 'GET')  return ok(await reconcileReport(env, url.searchParams));
+      if (path === '/api/reconcile'  && m === 'POST') return ok(await reconcileApply(env, await readJson(request)));
       if (path === '/api/kpi'        && m === 'POST') return ok(await addKpiRecords(env, await readJson(request)));
       if (path === '/api/kpi/update' && m === 'POST') return ok(await updateKpiRecord(env, await readJson(request)));
       if (path === '/api/kpi/delete' && m === 'POST') return ok(await deleteKpiRecords(env, await readJson(request)));
@@ -203,11 +206,30 @@ async function ensureSchema(env) {
     // ★ 2026-08-02: พนักงานเก็บสาย VSM ไว้ในฐานข้อมูล — เดิมไม่มีคอลัมน์นี้
     //   → คนที่ admin เพิ่มใหม่ผูก VSM ได้เฉพาะเครื่องที่เพิ่ม (localStorage) เครื่องอื่นเห็นเป็น VSM4
     'ALTER TABLE employees ADD COLUMN vsm TEXT',
+    /* ★ 2026-08-04 — ผูก production_records ↔ kpi_records ให้เป็นข้อมูลชุดเดียวกัน
+       บั๊กที่แก้ (ตรวจพบจากข้อมูลจริง 9,813 แถว ช่วง 1 ก.ค.–4 ส.ค. 2026):
+         ① timestamp ของ prod = "เวลาที่กดบันทึก" ส่วน KPI = "วันผลิตจริง" (shift_date)
+            → เข้ากะดึกแล้วบันทึกตอนเช้า = คนละวันทันที · 48.8% ของคู่ที่จับคู่ได้ วันไม่ตรงกัน
+            → หน้าติดตามงานโชว์ 30 ก.ค. แต่หน้าประวัติอยู่ 29 ก.ค. (เคส G-2077/VV6031A1)
+         ② ลบ KPI จากหน้าประวัติ → prod record ค้างเป็นผี (พบ 170 แถว)
+         ③ แก้ valve/lot/ยอด ที่ฝั่งใดฝั่งหนึ่ง อีกฝั่งไม่ตาม (valve 0.7% · ยอด 2.3%)
+       ทางแก้: เก็บ shift_date/shift_type ลง prod ตรง ๆ + kpi_record_id เป็นคีย์เชื่อมจริง
+       (เดิมผูกกันด้วยข้อความใน note "auto-linked KPI <zone>/<mc>" ซึ่งผู้ใช้แก้ทับได้) */
+    'ALTER TABLE production_records ADD COLUMN shift_date TEXT',
+    'ALTER TABLE production_records ADD COLUMN shift_type TEXT',
+    'ALTER TABLE production_records ADD COLUMN kpi_record_id TEXT',
+    'CREATE INDEX IF NOT EXISTS idx_prod_kpi_rid ON production_records(kpi_record_id)',
+    'CREATE INDEX IF NOT EXISTS idx_prod_shift_date ON production_records(shift_date)',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
   _schemaReady = true;
 }
+
+/* "วันผลิตจริง" ของ production record — ใช้ตัวเดียวกันทั้ง query และรายงาน
+   มี shift_date (แถวใหม่/ซ่อมแล้ว) → ใช้เลย · ไม่มี (แถวเก่า) → แปลง timestamp UTC เป็นวันที่ไทย
+   ❗ต้อง +7 ชม. ก่อนตัด: 2026-07-29T23:58Z = 30 ก.ค. 06:58 ตามเวลาไทย ถ้าตัดดิบ ๆ จะได้ 29 ผิดวัน */
+const PROD_DATE_SQL = "COALESCE(NULLIF(shift_date,''), substr(datetime(timestamp,'+7 hours'),1,10))";
 
 // ============================================================
 // INIT
@@ -304,8 +326,10 @@ async function getRecords(env, params) {
   const args  = [];
   if (params.get('valve'))  { conds.push('valve_no = ?');        args.push(params.get('valve')); }
   if (params.get('lot'))    { conds.push('lot = ?');             args.push(params.get('lot')); }
-  if (params.get('from'))   { conds.push('timestamp >= ?');      args.push(params.get('from')); }
-  if (params.get('to'))     { conds.push('timestamp <= ?');      args.push(params.get('to') + 'T23:59:59'); }
+  // ★ 2026-08-04: กรองด้วย "วันผลิตจริง" ไม่ใช่เวลาที่กดบันทึก — ให้ตรงกับ /api/kpi ที่ใช้ shift_date
+  //   เดิมกรอง timestamp ดิบ → งานกะดึกที่บันทึกตอนเช้าตกไปอยู่คนละวันกับ KPI ของตัวเอง
+  if (params.get('from'))   { conds.push(`${PROD_DATE_SQL} >= ?`); args.push(String(params.get('from')).slice(0, 10)); }
+  if (params.get('to'))     { conds.push(`${PROD_DATE_SQL} <= ?`); args.push(String(params.get('to')).slice(0, 10)); }
   if (params.get('proc'))   { conds.push('current_process = ?'); args.push(params.get('proc')); }
   if (params.get('status')) { conds.push('status = ?');          args.push(params.get('status')); }
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
@@ -335,24 +359,41 @@ function rowToRecord(r) {
     machine_id:         r.machine_id || '',   // เครื่องจักรที่ผลิต (โชว์ใน WIP IN/OUT)
     zone:               r.zone || '',         // ให้ vsmOf แยก VSM ได้หลัง sync
     vsm:                r.vsm || '',
+    // ★ 2026-08-04 — วันผลิตจริง + คีย์เชื่อมไป kpi_records
+    //   shift_date ว่าง (แถวเก่ายังไม่ซ่อม) → คำนวณจาก timestamp เป็นเวลาไทยให้ client ใช้ได้ทันที
+    shift_date:         r.shift_date || _thDate(r.timestamp),
+    shift_type:         r.shift_type || '',
+    kpi_record_id:      r.kpi_record_id || '',
   };
+}
+
+/* timestamp UTC → วันที่ตามเวลาไทย (YYYY-MM-DD) */
+function _thDate(iso) {
+  if (!iso) return '';
+  const t = new Date(iso);
+  if (isNaN(t)) return String(iso).slice(0, 10);
+  return new Date(t.getTime() + 7 * 3600e3).toISOString().slice(0, 10);
 }
 
 /* upsert 1 แถว production record — id เดิมของ client ถูก "คงไว้" (idempotent)
    ส่งซ้ำ (retry/offline flush) = ทับแถวเดิม ไม่เกิด record ซ้ำใน DB อีก */
 const PROD_UPSERT_SQL = `
-  INSERT INTO production_records (record_id, timestamp, valve_no, lot, quantity, current_process, completed_processes, status, operator, note, machine_id, zone, vsm)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+  INSERT INTO production_records (record_id, timestamp, valve_no, lot, quantity, current_process, completed_processes, status, operator, note, machine_id, zone, vsm, shift_date, shift_type, kpi_record_id)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON CONFLICT(record_id) DO UPDATE SET
     timestamp=excluded.timestamp, valve_no=excluded.valve_no, lot=excluded.lot,
     quantity=excluded.quantity, current_process=excluded.current_process,
     completed_processes=excluded.completed_processes, status=excluded.status,
     operator=excluded.operator, note=excluded.note,
-    machine_id=excluded.machine_id, zone=excluded.zone, vsm=excluded.vsm`;
+    machine_id=excluded.machine_id, zone=excluded.zone, vsm=excluded.vsm,
+    shift_date=excluded.shift_date, shift_type=excluded.shift_type,
+    -- ส่งมาว่าง = ไม่รู้จัก (client รุ่นเก่า) → คงคีย์เชื่อมเดิมไว้ ห้ามล้างทิ้ง
+    kpi_record_id=COALESCE(NULLIF(excluded.kpi_record_id,''), production_records.kpi_record_id)`;
 function prodBind(stmt, r, id) {
+  const ts = r.timestamp || new Date().toISOString();
   return stmt.bind(
     id,
-    r.timestamp || new Date().toISOString(),
+    ts,
     String(r.valveNo || r.valve_no || ''),
     String(r.lot || ''),
     Number(r.quantity || 0),
@@ -363,7 +404,11 @@ function prodBind(stmt, r, id) {
     String(r.note || ''),
     String(r.machine_id || r.machineId || ''),
     String(r.zone || ''),
-    String(r.vsm || '')
+    String(r.vsm || ''),
+    // client รุ่นเก่าไม่ส่ง shift_date มา → อนุมานจาก timestamp เป็นเวลาไทย ดีกว่าปล่อยว่าง
+    String(r.shift_date || r.record_date || _thDate(ts)),
+    String(r.shift_type || ''),
+    String(r.kpi_record_id || '')
   );
 }
 
@@ -397,6 +442,7 @@ async function updateRecord(env, body) {
     lot: 'lot', quantity: 'quantity', currentProcess: 'current_process',
     status: 'status', operator: 'operator', note: 'note',
     valveNo: 'valve_no', machine_id: 'machine_id', zone: 'zone', vsm: 'vsm',
+    shift_date: 'shift_date', shift_type: 'shift_type',
   };
   for (const [k, col] of Object.entries(map)) {
     if (body[k] !== undefined) { sets.push(`${col} = ?`); args.push(body[k]); }
@@ -417,13 +463,56 @@ async function updateRecord(env, body) {
     await prodBind(env.DB.prepare(PROD_UPSERT_SQL), body, id).run();
     updated = 1;
   }
-  return { updated };
+  // ★ 2026-08-04 — แก้ prod แล้วดัน valve/lot/ยอด/process กลับไปที่ KPI ที่ผูกกันอยู่ด้วย
+  //   เดิมแก้ฝั่งเดียว → หน้าประวัติกับหน้าติดตามงานพูดคนละเรื่อง (valve ต่าง 0.7% · ยอดต่าง 2.3%)
+  const kpiSynced = await syncKpiFromProd(env, id, body);
+  return { updated, kpi_synced: kpiSynced };
+}
+
+/* prod → KPI: อัปเดตเฉพาะฟิลด์ที่เป็น "ข้อเท็จจริงเดียวกัน" ของทั้งสองตาราง
+   ไม่แตะ OAE/DLE/target/CT — พวกนั้นเป็นของ KPI ล้วน คำนวณจากเวลาทำงาน ไม่ใช่จากใบผลิต
+   ⚠️ ยอด (opr) ไม่ sync อัตโนมัติเมื่อ KPI 1 แถวแตกเป็นหลาย prod (หลาย process) — ยอดจะซ้ำ */
+async function syncKpiFromProd(env, prodId, body) {
+  const row = await env.DB.prepare('SELECT kpi_record_id FROM production_records WHERE record_id = ?')
+    .bind(prodId).first();
+  const kid = row?.kpi_record_id;
+  if (!kid) return 0;
+  const sets = [], args = [];
+  const put = (col, v) => { if (v !== undefined && v !== null) { sets.push(`${col} = ?`); args.push(v); } };
+  put('valve_no',     body.valveNo ?? body.valve_no);
+  put('lot',          body.lot);
+  put('last_process', body.currentProcess ?? body.current_process);
+  put('operator',     body.operator);
+  put('shift_date',   body.shift_date);
+  put('record_date',  body.shift_date);
+  // ยอด: sync ได้เฉพาะตอน KPI แถวนี้ผูกกับ prod แถวเดียว (ไม่ได้แตกหลาย process) ไม่งั้นยอดจะเพี้ยน
+  if (body.quantity !== undefined) {
+    const c = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kid).first();
+    if ((c?.n || 0) <= 1) put('opr', Number(body.quantity || 0));
+  }
+  if (!sets.length) return 0;
+  args.push(kid);
+  const r = await env.DB.prepare(`UPDATE kpi_records SET ${sets.join(', ')} WHERE record_id = ?`).bind(...args).run();
+  return r.meta?.changes || 0;
 }
 
 async function deleteRecord(env, body) {
   if (!body.recordId && !body.record_id) throw new Error('recordId required');
-  const r = await env.DB.prepare('DELETE FROM production_records WHERE record_id = ?').bind(body.recordId || body.record_id).run();
-  return { deleted: r.meta?.changes || 0 };
+  const id = body.recordId || body.record_id;
+  // ★ 2026-08-04 — ลบ prod แล้วลบ KPI ที่ผูกกันด้วย "เฉพาะเมื่อเป็นคู่ 1:1"
+  //   KPI 1 แถวที่แตกเป็นหลาย process ยังมี prod แถวอื่นอ้างอยู่ → ลบ KPI ทิ้งจะทำยอดหายทั้งก้อน
+  let kpiDeleted = 0;
+  const row = await env.DB.prepare('SELECT kpi_record_id FROM production_records WHERE record_id = ?').bind(id).first();
+  const kid = row?.kpi_record_id;
+  const r = await env.DB.prepare('DELETE FROM production_records WHERE record_id = ?').bind(id).run();
+  if (kid) {
+    const left = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kid).first();
+    if ((left?.n || 0) === 0) {
+      const k = await env.DB.prepare('DELETE FROM kpi_records WHERE record_id = ?').bind(kid).run();
+      kpiDeleted = k.meta?.changes || 0;
+    }
+  }
+  return { deleted: r.meta?.changes || 0, kpi_deleted: kpiDeleted };
 }
 
 // ============================================================
@@ -692,7 +781,35 @@ async function updateKpiRecord(env, body) {
     await addKpiRecords(env, { records: [{ ...body, record_id: id }] });
     updated = 1;
   }
-  return { updated };
+  // ★ 2026-08-04 — แก้ KPI ที่หน้าประวัติ → prod record ที่ผูกกันต้องตามไปด้วย
+  //   นี่คือต้นเหตุหลักที่หน้าติดตามงานโชว์ valve/lot/ยอด เก่าค้าง ทั้งที่ประวัติแก้ไปแล้ว
+  const prodSynced = await syncProdFromKpi(env, id, body);
+  return { updated, prod_synced: prodSynced };
+}
+
+/* KPI → prod: ดันฟิลด์ที่ใช้ร่วมกันลงทุก prod record ที่ kpi_record_id = id
+   ยอด (quantity) ดันเฉพาะคู่ 1:1 — ถ้า KPI แถวเดียวแตกเป็นหลาย process การเขียนยอดทับทุกแถว = นับซ้ำ */
+async function syncProdFromKpi(env, kpiId, body) {
+  const sets = [], args = [];
+  const put = (col, v) => { if (v !== undefined && v !== null) { sets.push(`${col} = ?`); args.push(v); } };
+  put('valve_no',   body.valve_no);
+  put('lot',        body.lot);
+  put('operator',   body.operator);
+  put('machine_id', body.machine_id);
+  put('zone',       body.zone);
+  put('shift_date', body.shift_date || body.record_date);
+  put('shift_type', body.shift_type);
+  if (body.quantity !== undefined || body.opr !== undefined || body.last_process !== undefined) {
+    const c = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kpiId).first();
+    if ((c?.n || 0) <= 1) {
+      if (body.opr !== undefined) put('quantity', Number(body.opr || 0));
+      if (body.last_process !== undefined) put('current_process', body.last_process);
+    }
+  }
+  if (!sets.length) return 0;
+  args.push(kpiId);
+  const r = await env.DB.prepare(`UPDATE production_records SET ${sets.join(', ')} WHERE kpi_record_id = ?`).bind(...args).run();
+  return r.meta?.changes || 0;
 }
 
 async function deleteKpiRecords(env, body) {
@@ -700,7 +817,139 @@ async function deleteKpiRecords(env, body) {
   if (!ids.length) throw new Error('ids required');
   const stmt = env.DB.prepare('DELETE FROM kpi_records WHERE record_id = ?');
   const r = await env.DB.batch(ids.map(id => stmt.bind(id)));
-  return { deleted: r.reduce((s, x) => s + (x.meta?.changes || 0), 0) };
+  // ★ 2026-08-04 — ลบ KPI แล้วต้องลบ prod ที่ผูกกันด้วย ไม่งั้นเหลือเป็น "แถวผี"
+  //   ที่หน้าติดตามงานยังโชว์ยอดอยู่ ทั้งที่หน้าประวัติลบไปแล้ว (พบค้างอยู่ 170 แถว)
+  const pstmt = env.DB.prepare('DELETE FROM production_records WHERE kpi_record_id = ?');
+  const pr = await env.DB.batch(ids.map(id => pstmt.bind(id)));
+  return {
+    deleted:      r.reduce((s, x) => s + (x.meta?.changes || 0), 0),
+    prod_deleted: pr.reduce((s, x) => s + (x.meta?.changes || 0), 0),
+  };
+}
+
+/* ============================================================
+   RECONCILE — ตรวจ/ซ่อมความสอดคล้อง kpi_records ↔ production_records  (2026-08-04)
+
+   ข้อมูลที่บันทึกก่อนวันนี้ไม่มี kpi_record_id/shift_date → ต้องซ่อมย้อนหลัง
+   สายสัมพันธ์ที่ใช้จับคู่: prod.timestamp === kpi.saved_at
+     ตอนบันทึก client ใช้ตัวแปร `now` ตัวเดียวกันเขียนลงทั้งสองตาราง (index.html ~12921)
+     → ค่าตรงกันเป๊ะระดับมิลลิวินาที ใช้เป็นคีย์ย้อนรอย "ชุดบันทึกเดียวกัน" ได้แม่นยำ
+   ภายในชุดเดียวกันจับคู่ต่อด้วย valve+lot+เครื่อง+ยอด → ถ้ายังเหลือค่อยไล่ตามลำดับที่เหลือ
+   ============================================================ */
+const _rcNorm = s => String(s || '').trim().toUpperCase().replace(/\$/g, 'S');
+
+/* จับคู่ prod ↔ kpi ภายในชุดบันทึกเดียวกัน — คืน [[prodRow, kpiRow|null], ...] */
+function _rcPair(prods, kpis) {
+  const left = kpis.slice(), out = [];
+  const exact = p => left.findIndex(k =>
+    _rcNorm(k.valve_no) === _rcNorm(p.valve_no) && _rcNorm(k.lot) === _rcNorm(p.lot) &&
+    _rcNorm(k.machine_id) === _rcNorm(p.machine_id) && Math.round(+k.opr || 0) === Math.round(+p.quantity || 0));
+  const loose = p => left.findIndex(k =>
+    _rcNorm(k.machine_id) === _rcNorm(p.machine_id) && Math.round(+k.opr || 0) === Math.round(+p.quantity || 0));
+  const rest  = [];
+  for (const p of prods) {
+    let i = exact(p);
+    if (i < 0) i = loose(p);
+    if (i < 0) { rest.push(p); continue; }
+    out.push([p, left.splice(i, 1)[0]]);
+  }
+  // ที่เหลือ = ฝั่งใดฝั่งหนึ่งถูกแก้ไปแล้ว (valve/lot/ยอด ไม่ตรง) — จับคู่ตามลำดับที่เหลือ
+  for (const p of rest) out.push([p, left.length ? left.shift() : null]);
+  return out;
+}
+
+async function _rcLoad(env, from, to) {
+  const f = String(from || '2000-01-01').slice(0, 10), t = String(to || '2999-12-31').slice(0, 10);
+  const { results: prods } = await env.DB.prepare(
+    `SELECT record_id, timestamp, valve_no, lot, quantity, current_process, machine_id, shift_date, kpi_record_id
+     FROM production_records WHERE ${PROD_DATE_SQL} BETWEEN ? AND ?`).bind(f, t).all();
+  // ดึง KPI กว้างกว่า 2 วันทั้งสองด้าน — งานกะดึกถูกบันทึกข้ามวัน ชุดบันทึกจึงคร่อมขอบช่วงได้
+  const wf = _rcShift(f, -2), wt = _rcShift(t, 2);
+  const { results: kpis } = await env.DB.prepare(
+    `SELECT record_id, saved_at, shift_date, record_date, shift_type, valve_no, lot, opr, last_process, machine_id
+     FROM kpi_records WHERE COALESCE(shift_date, record_date) BETWEEN ? AND ?`).bind(wf, wt).all();
+  return { prods: prods || [], kpis: kpis || [] };
+}
+function _rcShift(d, days) {
+  const t = new Date(d + 'T00:00:00Z');
+  return new Date(t.getTime() + days * 864e5).toISOString().slice(0, 10);
+}
+
+/* วิเคราะห์ทั้งช่วง — ใช้ร่วมกันทั้งโหมดรายงานและโหมดซ่อม */
+async function _rcAnalyze(env, from, to) {
+  const { prods, kpis } = await _rcLoad(env, from, to);
+  const byBatch = new Map();
+  for (const k of kpis) {
+    const b = String(k.saved_at || ''); if (!b) continue;
+    if (!byBatch.has(b)) byBatch.set(b, []);
+    byBatch.get(b).push(k);
+  }
+  const pByBatch = new Map();
+  for (const p of prods) {
+    const b = String(p.timestamp || ''); if (!b) continue;
+    if (!pByBatch.has(b)) pByBatch.set(b, []);
+    pByBatch.get(b).push(p);
+  }
+  const fixes = [], ghosts = [];
+  let dateWrong = 0, noLink = 0, fieldDiff = 0;
+  for (const [b, ps] of pByBatch) {
+    const ks = byBatch.get(b);
+    if (!ks || !ks.length) { for (const p of ps) ghosts.push(p); continue; }
+    for (const [p, k] of _rcPair(ps, ks)) {
+      if (!k) { ghosts.push(p); continue; }
+      const sd = k.shift_date || k.record_date || '';
+      const diff =
+        _rcNorm(k.valve_no) !== _rcNorm(p.valve_no) ||
+        _rcNorm(k.lot)      !== _rcNorm(p.lot)      ||
+        (k.machine_id && _rcNorm(k.machine_id) !== _rcNorm(p.machine_id));
+      if (diff) fieldDiff++;
+      if (sd && sd !== (p.shift_date || '')) dateWrong++;
+      if (!p.kpi_record_id) noLink++;
+      if (!p.kpi_record_id || (sd && p.shift_date !== sd)) {
+        fixes.push({ id: p.record_id, kid: k.record_id, sd, st: k.shift_type || '' });
+      }
+    }
+  }
+  return { prods, kpis, fixes, ghosts, stats: { prod_rows: prods.length, kpi_rows: kpis.length,
+           need_link: noLink, wrong_date: dateWrong, field_diff: fieldDiff, ghosts: ghosts.length } };
+}
+
+async function reconcileReport(env, params) {
+  const from = params.get('from'), to = params.get('to');
+  const a = await _rcAnalyze(env, from, to);
+  return {
+    range: { from: from || null, to: to || null },
+    ...a.stats,
+    will_fix: a.fixes.length,
+    // ตัวอย่างแถวผีให้ดูก่อนตัดสินใจลบ — ไม่ลบอะไรทั้งสิ้นในโหมดรายงาน
+    ghost_sample: a.ghosts.slice(0, 50).map(g => ({
+      record_id: g.record_id, timestamp: g.timestamp, machine_id: g.machine_id,
+      valve_no: g.valve_no, lot: g.lot, quantity: g.quantity, process: g.current_process,
+    })),
+  };
+}
+
+async function reconcileApply(env, body) {
+  const a = await _rcAnalyze(env, body.from, body.to);
+  let linked = 0;
+  // เติม kpi_record_id + shift_date/shift_type ให้แถวเก่า — ทีละ 200 กันเกินเพดาน batch ของ D1
+  const stmt = env.DB.prepare(
+    'UPDATE production_records SET kpi_record_id = ?, shift_date = ?, shift_type = ? WHERE record_id = ?');
+  for (let i = 0; i < a.fixes.length; i += 200) {
+    const chunk = a.fixes.slice(i, i + 200);
+    const res = await env.DB.batch(chunk.map(f => stmt.bind(f.kid, f.sd, f.st, f.id)));
+    linked += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+  }
+  // แถวผี (ไม่มี KPI คู่) — ลบเฉพาะเมื่อสั่งมาชัดเจนเท่านั้น ไม่ลบเองโดยอัตโนมัติ
+  let ghostDeleted = 0;
+  if (body.deleteGhosts === true && a.ghosts.length) {
+    const dstmt = env.DB.prepare('DELETE FROM production_records WHERE record_id = ?');
+    for (let i = 0; i < a.ghosts.length; i += 200) {
+      const res = await env.DB.batch(a.ghosts.slice(i, i + 200).map(g => dstmt.bind(g.record_id)));
+      ghostDeleted += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+    }
+  }
+  return { ...a.stats, linked, ghost_deleted: ghostDeleted, ghosts_left: a.ghosts.length - ghostDeleted };
 }
 
 // ============================================================
