@@ -17419,8 +17419,9 @@ function _rcCard(d, title) {
     ${row('ยอดผลิตที่ตรวจ', d.prod_rows)}
     ${row('KPI ที่ตรวจ', d.kpi_rows)}
     ${row('⚠️ ยังไม่มีคีย์เชื่อมกับ KPI', d.need_link, true)}
-    ${row('⚠️ วันผลิตไม่ตรงกับ KPI', d.wrong_date, true)}
-    ${row('⚠️ valve/lot/เครื่อง ไม่ตรงกับ KPI', d.field_diff, true)}
+    ${row('📅 วันผลิตที่แสดงอยู่ผิดวันจริง ๆ', d.wrong_date, true)}
+    ${row('🛠️ ไม่มีชื่อเครื่อง (KPI มี → เติมให้ได้)', d.machine_missing, true)}
+    ${row('⚠️ valve/lot ขัดแย้งกับ KPI', d.field_diff, true)}
     ${row('👻 ยอดผลิตที่ไม่มี KPI คู่ (แถวผี)', d.ghosts, true)}
     ${d.linked !== undefined ? row('✅ ซ่อมแล้ว', d.linked) : row('จะซ่อมได้', d.will_fix)}
     ${d.ghost_deleted ? row('🗑 ลบแถวผีแล้ว', d.ghost_deleted) : ''}

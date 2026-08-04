@@ -891,27 +891,31 @@ async function _rcAnalyze(env, from, to) {
     pByBatch.get(b).push(p);
   }
   const fixes = [], ghosts = [];
-  let dateWrong = 0, noLink = 0, fieldDiff = 0;
+  let dateWrong = 0, noLink = 0, fieldDiff = 0, mcMissing = 0;
   for (const [b, ps] of pByBatch) {
     const ks = byBatch.get(b);
     if (!ks || !ks.length) { for (const p of ps) ghosts.push(p); continue; }
     for (const [p, k] of _rcPair(ps, ks)) {
       if (!k) { ghosts.push(p); continue; }
       const sd = k.shift_date || k.record_date || '';
-      const diff =
-        _rcNorm(k.valve_no) !== _rcNorm(p.valve_no) ||
-        _rcNorm(k.lot)      !== _rcNorm(p.lot)      ||
-        (k.machine_id && _rcNorm(k.machine_id) !== _rcNorm(p.machine_id));
-      if (diff) fieldDiff++;
-      if (sd && sd !== (p.shift_date || '')) dateWrong++;
+      /* ⚠️ ต้องเทียบกับ "วันที่ที่หน้าจอแสดงอยู่ตอนนี้จริง ๆ" ไม่ใช่คอลัมน์ shift_date ดิบ
+         แถวเก่ายังไม่ถูกซ่อม คอลัมน์จะว่าง แต่หน้าจอ fallback ไปใช้ timestamp แปลงเป็นวันไทยอยู่แล้ว
+         ถ้านับแถวว่างเป็น "วันผิด" ทั้งหมด ตัวเลขจะพองเกินจริง (11,488 ทั้งที่ผิดจริง ~4,400) */
+      const effective = p.shift_date || _thDate(p.timestamp);
+      // valve/lot ต่างกันจริง — เทียบเฉพาะตอนที่ทั้งสองฝั่งมีค่า (ฝั่งว่าง = ข้อมูลขาด ไม่ใช่ขัดแย้ง)
+      if ((k.valve_no && p.valve_no && _rcNorm(k.valve_no) !== _rcNorm(p.valve_no)) ||
+          (k.lot && p.lot && _rcNorm(k.lot) !== _rcNorm(p.lot))) fieldDiff++;
+      if (k.machine_id && !String(p.machine_id || '').trim()) mcMissing++;
+      if (sd && sd !== effective) dateWrong++;
       if (!p.kpi_record_id) noLink++;
       if (!p.kpi_record_id || (sd && p.shift_date !== sd)) {
-        fixes.push({ id: p.record_id, kid: k.record_id, sd, st: k.shift_type || '' });
+        fixes.push({ id: p.record_id, kid: k.record_id, sd, st: k.shift_type || '', mc: k.machine_id || '' });
       }
     }
   }
   return { prods, kpis, fixes, ghosts, stats: { prod_rows: prods.length, kpi_rows: kpis.length,
-           need_link: noLink, wrong_date: dateWrong, field_diff: fieldDiff, ghosts: ghosts.length } };
+           need_link: noLink, wrong_date: dateWrong, field_diff: fieldDiff,
+           machine_missing: mcMissing, ghosts: ghosts.length } };
 }
 
 async function reconcileReport(env, params) {
@@ -933,11 +937,15 @@ async function reconcileApply(env, body) {
   const a = await _rcAnalyze(env, body.from, body.to);
   let linked = 0;
   // เติม kpi_record_id + shift_date/shift_type ให้แถวเก่า — ทีละ 200 กันเกินเพดาน batch ของ D1
+  // machine_id เติมเฉพาะแถวที่ว่างอยู่ (COALESCE) — ห้ามเขียนทับของเดิมที่ถูกต้องแล้ว
   const stmt = env.DB.prepare(
-    'UPDATE production_records SET kpi_record_id = ?, shift_date = ?, shift_type = ? WHERE record_id = ?');
+    `UPDATE production_records
+        SET kpi_record_id = ?, shift_date = ?, shift_type = ?,
+            machine_id = COALESCE(NULLIF(machine_id,''), ?)
+      WHERE record_id = ?`);
   for (let i = 0; i < a.fixes.length; i += 200) {
     const chunk = a.fixes.slice(i, i + 200);
-    const res = await env.DB.batch(chunk.map(f => stmt.bind(f.kid, f.sd, f.st, f.id)));
+    const res = await env.DB.batch(chunk.map(f => stmt.bind(f.kid, f.sd, f.st, f.mc || '', f.id)));
     linked += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
   }
   // แถวผี (ไม่มี KPI คู่) — ลบเฉพาะเมื่อสั่งมาชัดเจนเท่านั้น ไม่ลบเองโดยอัตโนมัติ
