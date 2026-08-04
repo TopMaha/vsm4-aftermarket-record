@@ -1,6 +1,9 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.44 — 2026-08-05 — เลิกให้ "แถบกำลังโหลด" ดันหน้าจอเด้งขึ้นลง
+## v3.44 — 2026-08-05 — เลิกให้ "แถบกำลังโหลด" ดันหน้าจอเด้งขึ้นลง  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `b21b325c-2fdf-4ef0-acc2-44b951859cd6` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `32a8120` → https://topmaha.github.io/vsm4-aftermarket-record/
 
 ### 🐛 อาการ
 ระหว่างใช้งาน หน้าจอเลื่อนขึ้น-ลงเองเป็นระยะ กดอะไรพลาดตำแหน่ง
