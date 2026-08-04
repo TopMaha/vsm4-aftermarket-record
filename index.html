@@ -1888,6 +1888,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
     <div class="row" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline btn-sm" onclick="reconcileCheck()">🔍 ตรวจสอบ</button>
       <button class="btn btn-sm" style="background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;font-weight:800" onclick="reconcileFix()">🔧 ซ่อมความสอดคล้อง</button>
+      <button class="btn btn-sm btn-outline" onclick="reconcileSyncFields()" title="ยอดผลิตที่ผูกกับ KPI แล้ว แต่เลข Valve/Lot ไม่ตรงกัน (เกิดจากแก้ที่หน้าประวัติข้างเดียวก่อนมีระบบเชื่อม) — ดันเลขจาก KPI ลงมาให้ตรงกัน">🔄 ดัน Valve/Lot จาก KPI</button>
     </div>
     <div id="rcResult" style="margin-top:10px"></div>
   </div>
@@ -17482,6 +17483,7 @@ function _rcCard(d, title) {
     ${row('ยอดผลิตที่ตรวจ', d.prod_rows)}
     ${row('KPI ที่ตรวจ', d.kpi_rows)}
     ${row('⚠️ ยังไม่มีคีย์เชื่อมกับ KPI', d.need_link, true)}
+    ${row('🔀 ผูกผิดคู่อยู่ (ซ่อมแล้วจะผูกใหม่)', d.wrong_link, true)}
     ${row('📅 หน้าติดตามงานแสดงคนละวันกับประวัติ', d.date_mismatch, true)}
     <div style="padding-left:12px">
       ${row('↳ กะดึก / ลงย้อนหลัง — <b style="color:var(--green)">ถูกตามกติกาแล้ว</b>', d.date_by_rule)}
@@ -17491,12 +17493,52 @@ function _rcCard(d, title) {
     ${row('⚠️ valve/lot ขัดแย้งกับ KPI', d.field_diff, true)}
     ${row('👻 ยอดผลิตที่ไม่มี KPI คู่ (แถวผี)', d.ghosts, true)}
     ${d.ghosts_kpi_deleted !== undefined ? `<div style="padding-left:12px;font-size:11px;color:var(--muted)">
-      ${row('↳ เคยมี KPI แล้วถูกลบ (ลบทิ้งได้)', d.ghosts_kpi_deleted, true)}
+      ${row('↳ KPI ถูกลบไปทั้งชุด (ลบทิ้งได้)', d.ghosts_kpi_deleted, true)}
+      ${row('↳ ชุดยังมี KPI แต่จับคู่ไม่ได้ (<b>ต้องดูเอง</b>)', d.ghosts_need_review, true)}
       ${row('↳ ลงตรงที่ยอดผลิต ไม่เคยมี KPI (ห้ามลบ)', d.ghosts_standalone)}
     </div>` : ''}
     ${d.linked !== undefined ? row('✅ ซ่อมแล้ว', d.linked) : row('จะซ่อมได้', d.will_fix)}
+    ${d.fields_synced ? row('🔄 ดัน Valve/Lot จาก KPI แล้ว', d.fields_synced) : ''}
+    ${d.fields_skipped ? row('⏭️ ข้าม (ต่างกันหลายฟิลด์ ฟันธงไม่ได้ — ต้องดูเอง)', d.fields_skipped, true) : ''}
     ${d.ghost_deleted ? row('🗑 ลบแถวผีแล้ว', d.ghost_deleted) : ''}
   </div>`;
+}
+
+/* ★ 2026-08-04 — ดัน Valve/Lot จาก KPI ลงยอดผลิตที่ผูกกันแล้วแต่เลขไม่ตรง
+   เกิดจากยุคก่อนมี cascade: แก้เลขที่หน้าประวัติแล้วยอดผลิตไม่ตามไป
+   → ค้นที่หน้าติดตามงานเจอเลขที่หน้าประวัติไม่มี · ยึด KPI เป็นหลัก (ใบที่ admin ตรวจทาน)
+   ไม่แตะยอด/process — ยอดต่างเป็นคนละเรื่อง (KPI 1 แถวแตกหลาย process ยอดต้องต่างอยู่แล้ว) */
+async function reconcileSyncFields() {
+  if (!API) { toast('ต้องต่อ Cloud ก่อน', 'orange'); return; }
+  const { f, t } = _rcRange();
+  const rangeTxt = (f || t) ? `${f || 'เริ่มแรก'} → ${t || 'ล่าสุด'}` : 'ทุกช่วงเวลา';
+  if (!(await confirmModal(
+      `ดันเลข Valve/Lot จาก KPI ลงยอดผลิต?\n\n📅 ช่วง: ${rangeTxt}\n\n` +
+      `ใช้กับยอดผลิตที่ผูกกับ KPI แล้ว แต่เลข Valve/Lot ไม่ตรงกัน\n` +
+      `(เกิดจากแก้ที่หน้าประวัติข้างเดียวก่อนมีระบบเชื่อม)\n\n` +
+      `⚠️ ยึด "หน้าประวัติถูกเสมอ" — ยอดผลิตจะถูกเขียนทับด้วยเลขจาก KPI\n` +
+      `ไม่แตะยอดและ process`,
+      { danger: true, yes: 'ดันเลย' }))) return;
+  const months = _rcMonths(f, t);
+  showBusy('กำลังดันเลข…', true);
+  try {
+    const parts = [];
+    for (let i = 0; i < months.length; i++) {
+      busyMsg(`กำลังดัน ${months[i].from.slice(0, 7)} … (${i + 1}/${months.length})`);
+      await yieldUI();
+      parts.push(await api('/api/reconcile', { body: { from: months[i].from, to: months[i].to, syncFields: true } }).catch(() => null));
+    }
+    const d = _rcMerge(parts);
+    const failed = parts.filter(x => !x).length;
+    hideBusy();
+    $('rcResult').innerHTML = _rcCard(d, '🔄 ผลการดัน Valve/Lot');
+    if (failed) toast(`⚠️ ไม่สำเร็จ ${failed}/${months.length} เดือน — กดซ้ำได้ปลอดภัย`, 'orange');
+    toast(`🔄 ดันแล้ว ${nn(d.fields_synced || 0)} รายการ`, 'green');
+    await reload();
+  } catch (e) {
+    hideBusy();
+    toast('ไม่สำเร็จ: ' + e.message, 'red');
+  }
 }
 async function reconcileCheck() {
   if (!API) { toast('ต้องต่อ Cloud ก่อน', 'orange'); return; }
@@ -17518,9 +17560,14 @@ async function reconcileCheck() {
       ? `<div style="margin-top:8px;border:1.5px solid var(--orange-bd);background:var(--orange-bg);border-radius:10px;padding:8px 10px">
            <div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:4px">👻 ตัวอย่างแถวผี (ไม่มี KPI คู่) — แสดง ${d.ghost_sample.length} จาก ${nn(d.ghosts)}</div>
            <div style="max-height:200px;overflow:auto;font-size:11px;line-height:1.8">
-             ${d.ghost_sample.map(g => `<div>${g.origin === 'standalone' ? '✍️' : '🔗'} ${escapeHtml(String(g.timestamp).slice(0,10))} · <b>${escapeHtml(g.machine_id||'—')}</b> · ${escapeHtml(g.valve_no||'')} / ${escapeHtml(g.lot||'')} · ${nn(g.quantity)} ชิ้น${g.process?' · '+escapeHtml(g.process):''}${g.origin === 'standalone' ? ' <span style="color:var(--green);font-weight:700">(ไม่เคยมี KPI — ห้ามลบ)</span>' : ''}</div>`).join('')}
+             ${d.ghost_sample.map(g => {
+               const ic = g.origin === 'standalone' ? '✍️' : (g.deletable ? '🔗' : '❓');
+               const tag = g.origin === 'standalone' ? ' <span style="color:var(--green);font-weight:700">(ไม่เคยมี KPI — ห้ามลบ)</span>'
+                         : (!g.deletable ? ' <span style="color:var(--blue);font-weight:700">(ชุดยังมี KPI — ต้องดูเอง ระบบไม่ลบ)</span>' : '');
+               return `<div>${ic} ${escapeHtml(String(g.timestamp).slice(0,10))} · <b>${escapeHtml(g.machine_id||'—')}</b> · ${escapeHtml(g.valve_no||'')} / ${escapeHtml(g.lot||'')} · ${nn(g.quantity)} ชิ้น${g.process?' · '+escapeHtml(g.process):''}${tag}</div>`;
+             }).join('')}
            </div>
-           <div style="font-size:11px;color:#92400E;margin-top:5px">🔗 = เคยมี KPI แล้วถูกลบข้างเดียว (ลบทิ้งได้) · ✍️ = ลงตรงที่ยอดผลิต ไม่เคยมี KPI (เป็นข้อมูลถูกต้องของมัน ระบบจะไม่ลบให้)</div>
+           <div style="font-size:11px;color:#92400E;margin-top:5px">🔗 = KPI ถูกลบไปทั้งชุด (ลบทิ้งได้) · ❓ = ชุดยังมี KPI แต่จับคู่ไม่ได้ ต้องตรวจเอง · ✍️ = ลงตรงที่ยอดผลิต ไม่เคยมี KPI · <b>ระบบลบให้เฉพาะ 🔗 เท่านั้น</b></div>
          </div>`
       : '';
     $('rcResult').innerHTML = _rcCard(d, '🔍 ผลตรวจสอบ (ยังไม่แก้อะไร)') + ghostH;

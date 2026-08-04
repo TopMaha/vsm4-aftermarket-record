@@ -956,24 +956,43 @@ async function deleteKpiRecords(env, body) {
    ============================================================ */
 const _rcNorm = s => String(s || '').trim().toUpperCase().replace(/\$/g, 'S');
 
-/* จับคู่ prod ↔ kpi ภายในชุดบันทึกเดียวกัน — คืน [[prodRow, kpiRow|null], ...] */
+/* จับคู่ prod ↔ kpi ภายในชุดบันทึกเดียวกัน — คืน [[prodRow, kpiRow|null], ...]
+
+   ★ 2026-08-04 (แก้รอบ 2) — เปลี่ยนจาก "ไล่ตามลำดับที่เหลือ" มาเป็น "ให้คะแนนแล้วจับคู่ที่ดีที่สุดก่อน"
+   ❗บั๊กเดิม: รอบแรกจับคู่แบบ exact → loose → แล้วที่เหลือจับตามลำดับดื้อ ๆ
+     ทำให้ในชุดเดียวกันจับสลับคู่กันได้ เช่น (พบจริง)
+       prod L-237 498 VV2629M0/2607S070244  ไปผูกกับ  kpi L-237 175 VV2504A0/2606S060402
+       prod L-238 175 VV2504A0/2606S060402  ไปผูกกับ  kpi L-238 498 VV2629A0/2607s070244
+     ซึ่งที่ถูกคือไขว้กัน (ยอด+lot ตรงกันข้าม) — ถ้าเอาไปดัน valve/lot ต่อ ข้อมูลจะเละ
+   ใหม่: คิดคะแนนความเหมือนทุกคู่ที่เป็นไปได้ แล้วเลือกคู่คะแนนสูงสุดก่อน (greedy)
+     คะแนนต่ำกว่าเกณฑ์ = ไม่จับคู่ ดีกว่าจับมั่ว (ยกเว้นชุดที่มีอย่างละ 1 ตัว ซึ่งต้องเป็นคู่กันแน่) */
+function _rcScore(p, k) {
+  let s = 0;
+  if (_rcNorm(k.machine_id) === _rcNorm(p.machine_id)) s += 4;   // เครื่องเดียวกัน = สัญญาณแรงสุด
+  if (Math.round(+k.opr || 0) === Math.round(+p.quantity || 0)) s += 3;
+  if (k.valve_no && p.valve_no && _rcNorm(k.valve_no) === _rcNorm(p.valve_no)) s += 2;
+  if (k.lot && p.lot && _rcNorm(k.lot) === _rcNorm(p.lot)) s += 2;
+  if (k.last_process && p.current_process &&
+      _rcNorm(k.last_process) === _rcNorm(p.current_process)) s += 1;
+  return s;
+}
+const RC_MIN_SCORE = 5;   // ต่ำกว่านี้ = หลักฐานไม่พอ ปล่อยไม่จับคู่ (เช่น เครื่องตรงอย่างเดียว = 4)
+
 function _rcPair(prods, kpis) {
-  const left = kpis.slice(), out = [];
-  const exact = p => left.findIndex(k =>
-    _rcNorm(k.valve_no) === _rcNorm(p.valve_no) && _rcNorm(k.lot) === _rcNorm(p.lot) &&
-    _rcNorm(k.machine_id) === _rcNorm(p.machine_id) && Math.round(+k.opr || 0) === Math.round(+p.quantity || 0));
-  const loose = p => left.findIndex(k =>
-    _rcNorm(k.machine_id) === _rcNorm(p.machine_id) && Math.round(+k.opr || 0) === Math.round(+p.quantity || 0));
-  const rest  = [];
-  for (const p of prods) {
-    let i = exact(p);
-    if (i < 0) i = loose(p);
-    if (i < 0) { rest.push(p); continue; }
-    out.push([p, left.splice(i, 1)[0]]);
+  // ชุดที่มีอย่างละตัวเดียว = มาจากการกดบันทึกครั้งเดียวกันแน่นอน จับคู่ได้เลยไม่ต้องดูคะแนน
+  if (prods.length === 1 && kpis.length === 1) return [[prods[0], kpis[0]]];
+  const cand = [];
+  for (let i = 0; i < prods.length; i++)
+    for (let j = 0; j < kpis.length; j++)
+      cand.push({ i, j, s: _rcScore(prods[i], kpis[j]) });
+  cand.sort((a, b) => b.s - a.s || a.i - b.i || a.j - b.j);   // เรียงคะแนนมาก→น้อย (เสมอ = ตามลำดับเดิม)
+  const usedP = new Set(), usedK = new Set(), map = new Map();
+  for (const c of cand) {
+    if (c.s < RC_MIN_SCORE) break;                 // ที่เหลือคะแนนต่ำกว่าเกณฑ์หมดแล้ว
+    if (usedP.has(c.i) || usedK.has(c.j)) continue;
+    usedP.add(c.i); usedK.add(c.j); map.set(c.i, kpis[c.j]);
   }
-  // ที่เหลือ = ฝั่งใดฝั่งหนึ่งถูกแก้ไปแล้ว (valve/lot/ยอด ไม่ตรง) — จับคู่ตามลำดับที่เหลือ
-  for (const p of rest) out.push([p, left.length ? left.shift() : null]);
-  return out;
+  return prods.map((p, i) => [p, map.get(i) || null]);
 }
 
 async function _rcLoad(env, from, to) {
@@ -1009,13 +1028,17 @@ async function _rcAnalyze(env, from, to) {
     if (!pByBatch.has(b)) pByBatch.set(b, []);
     pByBatch.get(b).push(p);
   }
-  const fixes = [], ghosts = [];
-  let dateWrong = 0, noLink = 0, fieldDiff = 0, mcMissing = 0, dateByRule = 0, dateOdd = 0;
+  const fixes = [], ghosts = [], pairs = [];
+  let dateWrong = 0, noLink = 0, fieldDiff = 0, mcMissing = 0, dateByRule = 0, dateOdd = 0, relinked = 0;
   for (const [b, ps] of pByBatch) {
     const ks = byBatch.get(b);
-    if (!ks || !ks.length) { for (const p of ps) ghosts.push(p); continue; }
+    // ชุดนี้ไม่มี KPI เลย → ผีแท้ (KPI ถูกลบไปทั้งชุด) ลบทิ้งได้
+    if (!ks || !ks.length) { for (const p of ps) ghosts.push({ ...p, _why: 'no-batch' }); continue; }
     for (const [p, k] of _rcPair(ps, ks)) {
-      if (!k) { ghosts.push(p); continue; }
+      /* ★ ชุดนี้ "มี KPI อยู่" แต่จับคู่แถวนี้ไม่ได้ (คะแนนไม่ถึงเกณฑ์) = ยังไม่ฟันธงว่าเป็นผี
+         ห้ามลบเด็ดขาด — อาจเป็นใบจริงที่ถูกแก้หลายฟิลด์จนจับคู่อัตโนมัติไม่ได้ ต้องให้คนดู */
+      if (!k) { ghosts.push({ ...p, _why: 'unmatched' }); continue; }
+      pairs.push({ p, k, score: _rcScore(p, k) });   // เก็บคู่ที่จับได้จริง + ความมั่นใจ ให้ syncFields ใช้ต่อ
       const sd = k.shift_date || k.record_date || '';
       /* ⚠️ ต้องเทียบกับ "วันที่ที่หน้าจอแสดงอยู่ตอนนี้จริง ๆ" ไม่ใช่คอลัมน์ shift_date ดิบ
          แถวเก่ายังไม่ถูกซ่อม คอลัมน์จะว่าง แต่หน้าจอ fallback ไปใช้ timestamp แปลงเป็นวันไทยอยู่แล้ว
@@ -1039,13 +1062,18 @@ async function _rcAnalyze(env, from, to) {
         else dateOdd++;                                          // วันผลิตอยู่อนาคตของวันบันทึก = ต้องดู
       }
       if (!p.kpi_record_id) noLink++;
-      if (!p.kpi_record_id || (sd && p.shift_date !== sd)) {
+      // ★ รวม "ผูกผิดตัว" ด้วย — รอบแรกจับคู่ตามลำดับดื้อ ๆ จึงมีแถวที่ kpi_record_id ชี้ผิดคู่
+      //   ต้องเขียนทับให้ตรงตามการจับคู่แบบให้คะแนน ไม่งั้น cascade จะไปแก้/ลบผิดแถว
+      const wrongLink = p.kpi_record_id && p.kpi_record_id !== k.record_id;
+      if (wrongLink) relinked++;
+      if (!p.kpi_record_id || wrongLink || (sd && p.shift_date !== sd)) {
         fixes.push({ id: p.record_id, kid: k.record_id, sd, st: k.shift_type || '', mc: k.machine_id || '' });
       }
     }
   }
-  return { prods, kpis, fixes, ghosts, stats: { prod_rows: prods.length, kpi_rows: kpis.length,
+  return { prods, kpis, fixes, ghosts, pairs, stats: { prod_rows: prods.length, kpi_rows: kpis.length,
            need_link: noLink, field_diff: fieldDiff, machine_missing: mcMissing,
+           wrong_link: relinked,              // ผูกผิดคู่อยู่ ต้องเขียนทับ
            date_mismatch: dateWrong,          // หน้าติดตามงานแสดงคนละวันกับประวัติ
            date_by_rule: dateByRule,          // ↳ กะดึก/ลงย้อนหลัง = ถูกตามกติกา ไม่ใช่ข้อมูลผิด
            date_odd: dateOdd,                 // ↳ วันผลิตอยู่หลังวันกดบันทึก = ผิดปกติจริง
@@ -1056,22 +1084,27 @@ async function _rcAnalyze(env, from, to) {
    'kpi-deleted' : note = auto-linked KPI → เคยมี KPI แล้วถูกลบข้างเดียว = ผีจริง ลบได้
    'standalone'  : ลงตรงที่ยอดผลิต ไม่เคยมี KPI มาแต่แรก = ข้อมูลถูกต้องของมัน ห้ามลบ */
 const _rcOrigin = g => /auto-linked KPI/i.test(String(g.note || '')) ? 'kpi-deleted' : 'standalone';
+/* ลบทิ้งได้เฉพาะ "เกิดจาก KPI + ทั้งชุดบันทึกไม่มี KPI เหลืออยู่เลย" เท่านั้น
+   ชุดที่ยังมี KPI อยู่แต่จับคู่ไม่ได้ (_why='unmatched') ห้ามลบ — ต้องให้คนตรวจก่อน */
+const _rcDeletable = g => _rcOrigin(g) === 'kpi-deleted' && g._why === 'no-batch';
 
 async function reconcileReport(env, params) {
   const from = params.get('from'), to = params.get('to');
   const a = await _rcAnalyze(env, from, to);
-  const orphaned = a.ghosts.filter(g => _rcOrigin(g) === 'kpi-deleted').length;
+  const orphaned = a.ghosts.filter(_rcDeletable).length;
+  const needReview = a.ghosts.filter(g => g._why === 'unmatched').length;
   return {
     range: { from: from || null, to: to || null },
     ...a.stats,
     will_fix: a.fixes.length,
-    ghosts_kpi_deleted: orphaned,                    // เคยมี KPI แล้วถูกลบ → ลบทิ้งได้
-    ghosts_standalone:  a.ghosts.length - orphaned,  // ไม่เคยมี KPI → ห้ามลบ
+    ghosts_kpi_deleted: orphaned,       // KPI ถูกลบไปทั้งชุด → ลบทิ้งได้
+    ghosts_need_review: needReview,     // ชุดยังมี KPI แต่จับคู่ไม่ได้ → ห้ามลบ ต้องให้คนดู
+    ghosts_standalone:  a.ghosts.filter(g => _rcOrigin(g) === 'standalone').length,  // ไม่เคยมี KPI → ห้ามลบ
     // ตัวอย่างแถวผีให้ดูก่อนตัดสินใจลบ — ไม่ลบอะไรทั้งสิ้นในโหมดรายงาน
     ghost_sample: a.ghosts.slice(0, 100).map(g => ({
       record_id: g.record_id, timestamp: g.timestamp, machine_id: g.machine_id,
       valve_no: g.valve_no, lot: g.lot, quantity: g.quantity, process: g.current_process,
-      origin: _rcOrigin(g), operator: g.operator || '',
+      origin: _rcOrigin(g), why: g._why, deletable: _rcDeletable(g), operator: g.operator || '',
     })),
   };
 }
@@ -1091,10 +1124,36 @@ async function reconcileApply(env, body) {
     const res = await env.DB.batch(chunk.map(f => stmt.bind(f.kid, f.sd, f.st, f.mc || '', f.id)));
     linked += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
   }
+  /* ★ 2026-08-04 — ดัน valve/lot จาก KPI ลงยอดผลิตที่ผูกกันอยู่ (syncFields:true เท่านั้น)
+     ใช้กับข้อมูลที่ "แก้ข้างเดียว" ก่อนมี cascade: หน้าประวัติแก้เลข valve/lot ไปแล้ว
+     แต่ยอดผลิตยังค้างเลขเก่า → ค้นหน้าติดตามงานเจอเลขที่ประวัติไม่มี
+     ยึด KPI เป็นหลักเพราะเป็นใบที่ admin แก้และตรวจทาน · ไม่แตะยอด/process
+     (ยอดต่างเป็นคนละเรื่อง อาจเป็น KPI 1 แถวแตกหลาย process ซึ่งยอดต้องต่างอยู่แล้ว) */
+  let fieldsSynced = 0, fieldsSkipped = 0;
+  if (body.syncFields === true) {
+    /* ใช้ "คู่ที่เพิ่งคำนวณใหม่" ไม่ใช่ kpi_record_id ที่เก็บไว้ — ของเก่าอาจผูกผิดคู่
+       และเขียนทับเฉพาะคู่ที่ "มั่นใจพอ" (RC_SURE_SCORE) เท่านั้น
+       เกณฑ์ 7 = ต้องมีสัญญาณแรง ≥2 อย่าง เช่น เครื่อง+ยอด หรือ ยอด+valve+lot
+       ต่ำกว่านั้นแปลว่าต่างกันหลายฟิลด์เกินกว่าจะฟันธงว่าเป็นใบเดียวกัน → ข้ามไว้ให้คนดูเอง */
+    const RC_SURE_SCORE = 7;
+    const jobs = [];
+    for (const { p, k, score } of a.pairs) {
+      const vD = p.valve_no && k.valve_no && _rcNorm(p.valve_no) !== _rcNorm(k.valve_no);
+      const lD = p.lot && k.lot && _rcNorm(p.lot) !== _rcNorm(k.lot);
+      if (!vD && !lD) continue;
+      if (score < RC_SURE_SCORE) { fieldsSkipped++; continue; }
+      jobs.push({ id: p.record_id, v: vD ? k.valve_no : p.valve_no, l: lD ? k.lot : p.lot });
+    }
+    const fstmt = env.DB.prepare('UPDATE production_records SET valve_no = ?, lot = ? WHERE record_id = ?');
+    for (let i = 0; i < jobs.length; i += 200) {
+      const res = await env.DB.batch(jobs.slice(i, i + 200).map(j => fstmt.bind(j.v, j.l, j.id)));
+      fieldsSynced += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+    }
+  }
   // แถวผี (ไม่มี KPI คู่) — ลบเฉพาะเมื่อสั่งมาชัดเจนเท่านั้น ไม่ลบเองโดยอัตโนมัติ
   //   และลบเฉพาะแถวที่ "เคยมี KPI แล้วถูกลบ" เท่านั้น — แถวที่ลงตรงที่ยอดผลิตเป็นข้อมูลถูกต้องของมัน
   let ghostDeleted = 0;
-  const delable = a.ghosts.filter(g => _rcOrigin(g) === 'kpi-deleted');
+  const delable = a.ghosts.filter(_rcDeletable);
   if (body.deleteGhosts === true && delable.length) {
     const dstmt = env.DB.prepare('DELETE FROM production_records WHERE record_id = ?');
     for (let i = 0; i < delable.length; i += 200) {
@@ -1103,8 +1162,11 @@ async function reconcileApply(env, body) {
     }
   }
   return { ...a.stats, linked, ghost_deleted: ghostDeleted,
+           fields_synced: fieldsSynced, fields_skipped: fieldsSkipped,
            ghosts_left: a.ghosts.length - ghostDeleted,
-           ghosts_kpi_deleted: delable.length, ghosts_standalone: a.ghosts.length - delable.length };
+           ghosts_kpi_deleted: delable.length,
+           ghosts_need_review: a.ghosts.filter(g => g._why === 'unmatched').length,
+           ghosts_standalone: a.ghosts.filter(g => _rcOrigin(g) === 'standalone').length };
 }
 
 // ============================================================
