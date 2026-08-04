@@ -2,8 +2,37 @@
 
 ## v3.43 — 2026-08-04 — หน้าประวัติ ↔ หน้าติดตามงาน พูดตรงกันแล้ว (ผูก KPI ↔ ยอดผลิต เป็นข้อมูลชุดเดียว)  ✅ deployed
 
-**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `fe9a1dee-bb63-4e6a-9384-b4a2eceb1c5d` → https://vsm4-api.wiphawas-sketchup.workers.dev
-· GitHub Pages commit `0258a79` → https://topmaha.github.io/vsm4-aftermarket-record/
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `eb5ae762-a904-4bf0-8d9a-c839f2494e1b` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `4df1ece` → https://topmaha.github.io/vsm4-aftermarket-record/
+
+### 🕵️ หาต้นเหตุ "แถวผี" — เจอท่าที่ทำข้อมูลหาย 6 จุด
+ไล่จากข้อมูลจริง 11,719 prod / 12,063 KPI: **79 ชุดบันทึก KPI หายทั้งชุด** (166 prod แถว) · **24 ชุดหายบางแถว** (61 แถว) ·
+165/166 มี `note = auto-linked KPI` ⇒ เคยมี KPI จริงแล้วหายไปทีหลัง ไม่ใช่ข้อมูลที่ลงตรง
+
+**ต้นเหตุ:** โค้ด 6 จุด "แก้ข้อมูล" ด้วยการ **ลบทิ้งจาก D1 ก่อนแล้วค่อย insert กลับ**
+ถ้า insert ล้มเหลว (เน็ตสะดุด / batch ใหญ่เกิน) = ข้อมูลหายถาวร แต่ของอีกตารางยังอยู่ = แถวผี
+บางจุดครอบ `.catch(() => {})` ไว้ที่ delete จึงไม่มีใครรู้ว่าเกิดอะไรขึ้น
+
+| # | จุด | แตะตาราง |
+|---|---|---|
+| 1 | `_applyLotRewrite` — แก้ Lot ผิด | KPI + prod |
+| 2 | `fixValveOne` — แก้ Valve ทีละตัว | KPI + prod |
+| 3 | `fixValveBulk` — แก้ Valve หลายตัว | KPI + prod |
+| 4 | `fixProcessBulk` — แก้ Process หลายแบบ | prod |
+| 5 | `importProdEdited` — Import ยอดจาก Excel | prod |
+| 6 | ปุ่มติ๊ก "ทำเครื่องหมายแก้ไขแล้ว" | KPI |
+
+แก้ทั้ง 6 จุดเป็น **upsert ตรง ๆ** — `/api/kpi` และ `/api/records/bulk` เป็น `ON CONFLICT(record_id) DO UPDATE` มาตั้งแต่ 2026-07-16 แล้ว
+คอมเมนต์เก่าที่เขียนว่า *"bulk = insert ล้วน (ไม่ upsert) → ต้อง delete ก่อน"* **ตกยุคไปแล้ว** · ข้อ 6 เปลี่ยนไปใช้ `/api/kpi/update` (แตะแค่ฟิลด์ `shifts`)
+
+⚠️ **ข้อ 4–6 เป็น regression ที่เพิ่งสร้างเองจาก cascade เมื่อวาน** — การลบจะพา KPI/ยอดผลิตอีกฝั่งหายไปด้วย
+เช่น Import ยอดจาก Excel จะทำ KPI พร้อม OAE/DLE หายเงียบทั้งชุด · แก้ทันก่อนมีคนใช้
+
+**กันอีกชั้น:** `/api/records/delete` จะลบ KPI ตามก็ต่อเมื่อส่ง `cascade: true` เท่านั้น (เฉพาะหน้าประวัติที่ผู้ใช้กดลบเองและยืนยันแล้ว)
+โค้ดอื่นที่เรียกโดยไม่ตั้งใจจะไม่ทำ KPI หาย — ทดสอบแล้วคืน `{deleted:0, kpi_deleted:0}`
+
+**แก้ป้าย 👻 ให้ดู `note` ด้วย** — ยอดที่ลงตรงหน้าบันทึก Production (ไม่ผ่าน KPI) ไม่มีคู่เป็นเรื่องปกติ ห้ามติดป้าย
+เดิมเช็กแค่ `kpi_record_id` ว่าง → จะติดธงยกแผงถ้ามีคนใช้หน้านั้น
 
 ### 🔁 รอบแก้เพิ่ม — วันผลิตถูกต้องทันทีโดยไม่ต้องรอกดซ่อม
 ผู้ใช้แจ้งว่ายอด 580 หน้าประวัติบอก 29/07 แต่หน้าติดตามงานยังบอก 30/07
