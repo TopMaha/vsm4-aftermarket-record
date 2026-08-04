@@ -156,6 +156,16 @@ section.pane.active{display:block}
 .pfilter-lbl{flex:1;font-size:12px;font-weight:800;color:var(--blue-dark);display:flex;align-items:center;gap:6px}
 .pfilter-badge{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-soft);border-radius:999px;padding:2px 10px;font-size:10.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
 .pfilter-badge.partial{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+/* ยามเฝ้ายอด FG — ป้าย ⚠ ในแถบสรุป กดได้ (เปิดคู่มือ "ทำยังไงต่อ") หน้าตายังเหมือนข้อความเดิม */
+.fgchk{background:none;border:none;padding:0;font:inherit;color:#B91C1C;font-weight:800;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;-webkit-tap-highlight-color:transparent}
+.fgchk:active{opacity:.6}
+.fgdiag-num{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.fgdiag-num>div{border:1.5px solid var(--blue-soft);border-radius:10px;padding:8px 6px;text-align:center;background:#fff}
+.fgdiag-num .k{display:block;font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:2px}
+.fgdiag-num .v{font-size:15px;font-weight:900;color:var(--blue-dark)}
+.fgdiag-box{border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.65;margin-bottom:10px}
+.fgdiag-h{font-size:12px;font-weight:800;color:var(--blue-dark);margin:12px 0 5px}
+.fgdiag-steps{margin:0;padding-left:17px;font-size:12px;line-height:1.8;color:var(--text)}
 .pfilter-chev{color:var(--blue);font-size:11px;transition:transform .2s}
 .pfilter[open] .pfilter-chev{transform:rotate(180deg)}
 .pfilter-body{padding:2px 11px 11px}
@@ -1355,7 +1365,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.41</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.42</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5643,6 +5653,18 @@ function computeProcessOutput(kpiRecords) {
     if (!agg[vk]) agg[vk] = { valve: vno, lot, opr: 0, machines: new Set() };
     agg[vk].opr += qty;
     if (r.machine_id) agg[vk].machines.add(r.machine_id);
+    // ★ 2026-08-04 (v3.42) เฉพาะ FG — เก็บยอดแยก "รายวัน + รายล็อต"
+    //   ใช้ในป๊อปอัป ⚠ เพื่อชี้ให้ผู้ใช้เห็นเองว่าส่วนต่างอยู่วันไหน/ล็อตไหน (เดิมต้องไล่หดช่วงวันที่ทีละวันเอง)
+    //   คีย์วัน '' = record ที่ไม่ได้ระบุวันที่/กะ — ฝั่ง WIP OUT ตัดยอดตามวัน จึงไม่นับให้ = ต้นเหตุยอดไม่ตรงที่พบบ่อยสุด
+    //   สูตรหาวันต้องตรงกับ computePostFgAll เป๊ะ ไม่งั้นจะเทียบกันไม่ได้
+    if (proc === 'FG') {
+      const d = (r.shift_date || r.record_date || (r.timestamp || '').slice(0, 10) || '');
+      const dayAgg = byProc[proc].dayAgg || (byProc[proc].dayAgg = {});
+      const cell = dayAgg[d] || (dayAgg[d] = { opr: 0, jobs: {} });
+      cell.opr += qty;
+      const jb = cell.jobs[vk] || (cell.jobs[vk] = { valve: vno, lot, opr: 0 });
+      jb.opr += qty;
+    }
   }
   return Object.entries(byProc)
     .map(([proc, v]) => {
@@ -5652,6 +5674,7 @@ function computeProcessOutput(kpiRecords) {
       return {
         proc, opr: v.opr, machines: [...v.machines], valves,
         valveCount: new Set(valves.map(x => x.valve)).size,
+        days: v.dayAgg || {},          // มีเฉพาะแถว FG — ใช้ในป๊อปอัปยามเฝ้ายอด FG
       };
     })
     .sort((a, b) => {
@@ -5759,8 +5782,131 @@ function _fgReconcileHtml(f, t) {
     if (!fgProc && !fgWipOut) return '';
     return diff === 0
       ? ` · <span style="color:#047857;font-weight:700" title="ยอด FG ตรงกับการ์ด WIP OUT (ผ่าน FG) ช่วงเดียวกัน">✓ FG ${nn(fgProc)} ตรงกับ WIP OUT</span>`
-      : ` · <span style="color:#B91C1C;font-weight:800" title="FG ที่นี่ ${nn(fgProc)} · WIP OUT ${nn(fgWipOut)} — ต้องเท่ากัน กดรีเฟรชหรือแจ้งผู้ดูแล">⚠ FG ไม่ตรงกับ WIP OUT (${diff > 0 ? '+' : ''}${nn(diff)})</span>`;
+      : ` · <button type="button" class="fgchk" onclick="showFgReconcile()" title="FG ที่นี่ ${nn(fgProc)} · WIP OUT ${nn(fgWipOut)} — ต้องเท่ากัน · แตะเพื่อดูวิธีแก้">⚠ FG ไม่ตรงกับ WIP OUT (${diff > 0 ? '+' : ''}${nn(diff)}) · แตะดูวิธีแก้</button>`;
   } catch (e) { return ''; }
+}
+/* ── คู่มือในแอป: แตะป้าย ⚠ แล้วบอกเลยว่า "ทำยังไงต่อ" (2026-08-04, v3.42) ──────────
+   เดิมผู้ใช้เห็นแค่ส่วนต่าง แล้วต้องไล่หดช่วงวันที่ทีละวัน + ไล่เทียบล็อตเองในป๊อปอัปคนละที่
+   ตอนนี้ทำให้เสร็จตรงนี้: บอกสถานะการโหลดข้อมูล (สาเหตุอันดับ 1) → ชี้ว่าต่างวันไหน → ต่างล็อตไหน
+   → เหลือให้ผู้ใช้แค่ไปแก้ใบบันทึก หรือกดคัดลอกสรุปส่งผู้ดูแล                                   */
+let _fgDiagTxt = '';
+function showFgReconcile() {
+  const f = $('procFrom')?.value || '', t = $('procTo')?.value || '';
+  const fgRow = _lastProcOut.find(o => o.proc === 'FG');
+  const b = getWipBuckets();
+  const fgProc   = Math.round(+(fgRow && fgRow.opr) || 0);
+  const fgWipOut = Math.round(_wipOutRange(b, f, t) || 0);
+  const diff = fgWipOut - fgProc;
+  const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
+  const dayLbl = d => d ? fmtD(d) : '<b style="color:#B91C1C">⚠ ไม่ระบุวันที่</b>';
+
+  // ฝั่ง WIP OUT — แตกยอดรายวัน/รายล็อต ด้วยกติกาเดียวกับ _wipOutRange (ไม่งั้นเทียบกันไม่ได้)
+  const outDay = {}, outJob = {};
+  for (const i of (b.wipOut.items || [])) {
+    const m = i.fgByDate || {};
+    for (const d in m) {
+      if (d < f || d > t) continue;
+      const q = Number(m[d]) || 0;
+      const jk = d + '§' + vKey(i.valve) + '::' + lotKey(i.lot);
+      outDay[d] = (outDay[d] || 0) + q;
+      outJob[jk] = (outJob[jk] || 0) + q;
+    }
+  }
+  // ฝั่งตาราง Output ของ Process (แถว FG) — days เก็บไว้ตอน computeProcessOutput
+  const procDay = (fgRow && fgRow.days) || {};
+  const bad = [...new Set([...Object.keys(procDay), ...Object.keys(outDay)])]
+    .map(d => { const fg = Math.round((procDay[d] && procDay[d].opr) || 0), out = Math.round(outDay[d] || 0); return { d, fg, out, gap: out - fg }; })
+    .filter(x => x.gap !== 0)
+    .sort((a, z) => Math.abs(z.gap) - Math.abs(a.gap));
+
+  // เจาะรายล็อตของวันที่ต่างมากสุด 3 วัน (พอให้เห็นตัวการ ไม่ท่วมจอ)
+  const rows = [];
+  for (const x of bad.slice(0, 3)) {
+    const jobs = (procDay[x.d] && procDay[x.d].jobs) || {};
+    for (const vk in jobs) {
+      const fg = Math.round(jobs[vk].opr), out = Math.round(outJob[x.d + '§' + vk] || 0);
+      if (fg !== out) rows.push({ d: x.d, valve: jobs[vk].valve, lot: jobs[vk].lot, fg, out });
+    }
+    // ล็อตที่โผล่เฉพาะฝั่ง WIP OUT (พบน้อย แต่ถ้าไม่โชว์ จะอธิบายส่วนต่างไม่ครบ)
+    for (const k in outJob) {
+      if (!k.startsWith(x.d + '§')) continue;
+      const vk = k.slice(x.d.length + 1);
+      if (jobs[vk]) continue;
+      rows.push({ d: x.d, valve: vk.split('::')[0], lot: (vk.split('::')[1] || ''), fg: 0, out: Math.round(outJob[k]) });
+    }
+  }
+  rows.sort((a, z) => Math.abs(z.out - z.fg) - Math.abs(a.out - a.fg));
+
+  const complete = _wipDataComplete();
+  const box = (bg, bd, col, html) => `<div class="fgdiag-box" style="background:${bg};border:1.5px solid ${bd};color:${col}">${html}</div>`;
+  const body = `
+    <div class="fgdiag-num">
+      <div><span class="k">FG (ตารางนี้)</span><span class="v">${nn(fgProc)}</span></div>
+      <div><span class="k">WIP OUT (ผ่าน FG)</span><span class="v">${nn(fgWipOut)}</span></div>
+      <div><span class="k">ส่วนต่าง</span><span class="v" style="color:#B91C1C">${diff > 0 ? '+' : ''}${nn(diff)}</span></div>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin:-3px 0 10px;line-height:1.6">
+      📅 ${fmtD(f)} – ${fmtD(t)} · 2 ยอดนี้ต้องเท่ากันเสมอ เพราะนับจากใบบันทึกชุดเดียวกัน (เครื่องที่ตั้ง process = FG)
+    </div>
+    ${complete
+      ? box('#F0FDF4', '#BBF7D0', '#166534', '✅ <b>ข้อมูลย้อนหลังโหลดครบแล้ว</b> — ส่วนต่างไม่ได้เกิดจากโหลดไม่ทัน แต่มาจากใบบันทึกที่ลงไว้ ดูข้างล่างว่าอยู่ตรงไหน')
+      : box('#FFF7ED', '#FED7AA', '#9A3412', '⏳ <b>ระบบยังโหลดข้อมูลย้อนหลังไม่ครบ</b> — ยอด WIP OUT จะยังต่ำกว่าจริงระหว่างนี้<br>รอให้ ⏳ ที่การ์ด “WIP กำลังผลิต” หายไป แล้วแตะป้ายนี้ใหม่ · <b>ส่วนใหญ่หายเองตรงขั้นนี้</b>')}
+    ${bad.length ? `
+      <div class="fgdiag-h">📅 ส่วนต่างอยู่วันไหน (${bad.length} วัน)</div>
+      <div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th class="center">FG</th><th class="center">WIP OUT</th><th class="center">ต่าง</th></tr></thead><tbody>
+        ${bad.slice(0, 10).map(x => `<tr><td>${dayLbl(x.d)}</td><td class="center">${nn(x.fg)}</td><td class="center">${nn(x.out)}</td><td class="center" style="color:#B91C1C;font-weight:800">${x.gap > 0 ? '+' : ''}${nn(x.gap)}</td></tr>`).join('')}
+      </tbody></table></div>
+      ${bad.length > 10 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">… และอีก ${bad.length - 10} วัน</div>` : ''}
+      ${procDay[''] ? box('#FEF2F2', '#FCA5A5', '#7F1D1D', `⚠ มีใบบันทึกที่ลง FG แต่ <b>ไม่ได้ระบุวันที่/กะ</b> รวม <b>${nn(Math.round(procDay[''].opr))}</b> ชิ้น — ฝั่ง WIP OUT ตัดยอดตามวัน จึงนับให้ไม่ได้ (ต้นเหตุที่พบบ่อยที่สุด)`) : ''}`
+      : box('#F8FAFF', 'var(--blue-soft)', 'var(--blue-dark)', 'ยอดรายวันตรงกันทุกวันในช่วงนี้ — แปลว่าข้อมูล 2 ฝั่งยังคนละชุด กด 🔄 โหลดข้อมูลใหม่ แล้วแตะดูอีกครั้ง')}
+    ${rows.length ? `
+      <div class="fgdiag-h">🔎 ล็อตที่ยอดไม่ตรง</div>
+      <div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>วาล์ว / Lot</th><th class="center">FG</th><th class="center">WIP OUT</th></tr></thead><tbody>
+        ${rows.slice(0, 12).map(r => `<tr><td>${dayLbl(r.d)}</td><td><b>${escapeHtml(r.valve)}</b>${r.lot ? ' / ' + escapeHtml(r.lot) : ''}</td><td class="center">${nn(r.fg)}</td><td class="center" style="${r.out ? '' : 'color:#B91C1C;font-weight:800'}">${nn(r.out)}</td></tr>`).join('')}
+      </tbody></table></div>
+      ${rows.length > 12 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">… และอีก ${rows.length - 12} ล็อต</div>` : ''}` : ''}
+    <div class="fgdiag-h">🛠 ทำยังไงต่อ</div>
+    <ol class="fgdiag-steps">
+      <li>กด <b>🔄 โหลดข้อมูลใหม่</b> (ปุ่มข้างล่าง) แล้วแตะป้ายนี้อีกครั้ง — ขึ้น ✓ เขียว = จบ ไม่ต้องทำอะไรต่อ</li>
+      <li>ยังไม่หาย → เปิดหน้า <b>ประวัติ</b> ที่วันในตารางข้างบน แล้วดูใบบันทึกของล็อตนั้น มักเจอ 1 ใน 3 อย่าง:
+          <b>ไม่ได้ระบุวันที่/กะ</b> · <b>เบอร์วาล์วพิมพ์ผิด</b> (ไม่มีใน Master Valve) · <b>ล็อตวิ่งข้ามสาย VSM3⇄VSM4</b></li>
+      <li>แก้ใบบันทึกให้ถูก → ยอดจะกลับมาตรงเอง ไม่ต้องแก้ที่อื่น</li>
+      <li>ใบบันทึกถูกหมดแล้วแต่ยังไม่ตรง → <b>แจ้งผู้ดูแล</b> พร้อมกด <b>📋 คัดลอกสรุป</b> ส่งไปด้วย</li>
+    </ol>
+    ${box('#FFFBEB', '#FDE68A', '#92400E', 'ℹ️ <b>ระหว่างนี้ใช้ตัวเลขไหนได้</b> — ยอด <b>FG ในตาราง Output ของ Process</b> ใช้ได้ (ดึงสดตามช่วงที่เลือกทุกครั้ง) · ส่วน <b>WIP OUT</b> อย่าเพิ่งเอาไปรายงานจนกว่าป้ายจะขึ้น ✓')}
+    <div class="row" style="gap:8px">
+      <button class="btn btn-blue btn-sm" style="flex:1" onclick="closeModal();reload()">🔄 โหลดข้อมูลใหม่</button>
+      <button class="btn btn-outline btn-sm" onclick="_fgDiagCopy()">📋 คัดลอกสรุป</button>
+    </div>`;
+
+  _fgDiagTxt = [
+    '⚠ FG ไม่ตรงกับ WIP OUT',
+    `ช่วง: ${fmtD(f)} – ${fmtD(t)} · สาย: ${viewVsm()}`,
+    `FG (Output ของ Process) = ${nn(fgProc)}`,
+    `WIP OUT (ผ่าน FG) = ${nn(fgWipOut)}`,
+    `ส่วนต่าง = ${diff > 0 ? '+' : ''}${nn(diff)}`,
+    `ข้อมูลย้อนหลัง: ${complete ? 'โหลดครบแล้ว' : 'ยังโหลดไม่ครบ'}`,
+    ...(bad.length ? ['วันที่ไม่ตรง:', ...bad.slice(0, 10).map(x => `  ${x.d || '(ไม่ระบุวันที่)'} — FG ${nn(x.fg)} / OUT ${nn(x.out)} = ${x.gap > 0 ? '+' : ''}${nn(x.gap)}`)] : []),
+    ...(rows.length ? ['ล็อตที่ไม่ตรง:', ...rows.slice(0, 12).map(r => `  ${r.d || '(ไม่ระบุวันที่)'} ${r.valve}${r.lot ? ' / ' + r.lot : ''} — FG ${nn(r.fg)} / OUT ${nn(r.out)}`)] : []),
+  ].join('\n');
+
+  openModal('⚠ FG ไม่ตรงกับ WIP OUT — ทำยังไงต่อ', body);
+}
+function _fgDiagCopy() {
+  const s = _fgDiagTxt || '';
+  const ok = () => toast('คัดลอกแล้ว — ส่งให้ผู้ดูแลได้เลย', 'green');
+  // in-app browser (LINE ฯลฯ) บางตัวไม่มี clipboard API → มี fallback แบบ textarea เสมอ
+  const fallback = () => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); ok();
+    } catch (e) { toast('คัดลอกไม่สำเร็จ — จับภาพหน้าจอส่งแทนได้', 'orange'); }
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(ok, fallback);
+    else fallback();
+  } catch (e) { fallback(); }
 }
 function renderProcTableUI() {
   // บอกช่วงวันที่ + สรุปยอดของข้อมูล (ตามตัวกรองที่เลือกในหน้านี้)
@@ -6563,7 +6709,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.41":"Production Record + KPI · v3.41",
+"ระบบบันทึกผลิต + KPI · v3.42":"Production Record + KPI · v3.42",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
