@@ -891,7 +891,7 @@ async function _rcAnalyze(env, from, to) {
     pByBatch.get(b).push(p);
   }
   const fixes = [], ghosts = [];
-  let dateWrong = 0, noLink = 0, fieldDiff = 0, mcMissing = 0;
+  let dateWrong = 0, noLink = 0, fieldDiff = 0, mcMissing = 0, dateByRule = 0, dateOdd = 0;
   for (const [b, ps] of pByBatch) {
     const ks = byBatch.get(b);
     if (!ks || !ks.length) { for (const p of ps) ghosts.push(p); continue; }
@@ -906,7 +906,19 @@ async function _rcAnalyze(env, from, to) {
       if ((k.valve_no && p.valve_no && _rcNorm(k.valve_no) !== _rcNorm(p.valve_no)) ||
           (k.lot && p.lot && _rcNorm(k.lot) !== _rcNorm(p.lot))) fieldDiff++;
       if (k.machine_id && !String(p.machine_id || '').trim()) mcMissing++;
-      if (sd && sd !== effective) dateWrong++;
+      /* ★ ต่างวันกัน ≠ ข้อมูลผิด — ต้องแยกให้ชัด ไม่งั้นอ่านรายงานแล้วตกใจเปล่า
+         กติกา "วันทำงาน" ของโรงงาน (index.html `_resolveShift`):
+           08:00–19:59 = กะกลางวัน → วันทำงาน = วันที่เริ่มงาน
+           20:00–23:59 = กะกลางคืน → วันทำงาน = วันที่เริ่มงาน
+           00:00–07:59 = กะกลางคืน → วันทำงาน = "วันก่อนหน้า" (หางกะดึกของเมื่อวาน)
+         ⇒ กะดึกที่ลงตอนเช้า หรือกะที่ลงย้อนหลัง จะมีวันผลิต < วันที่กดบันทึกเสมอ = ถูกต้อง
+         ตรวจข้อมูลจริงทั้งปี 2026 (5,304 แถวที่ต่างกัน): เข้ากติกา 5,304 · ผิดปกติ 0
+         สิ่งเดียวที่ผิดจริงคือ "วันผลิตอยู่หลังวันกดบันทึก" ซึ่งเป็นไปไม่ได้ */
+      if (sd && sd !== effective) {
+        dateWrong++;
+        if (new Date(effective) > new Date(sd)) dateByRule++;   // ลงทีหลัง/กะดึก = ปกติ
+        else dateOdd++;                                          // วันผลิตอยู่อนาคตของวันบันทึก = ต้องดู
+      }
       if (!p.kpi_record_id) noLink++;
       if (!p.kpi_record_id || (sd && p.shift_date !== sd)) {
         fixes.push({ id: p.record_id, kid: k.record_id, sd, st: k.shift_type || '', mc: k.machine_id || '' });
@@ -914,8 +926,11 @@ async function _rcAnalyze(env, from, to) {
     }
   }
   return { prods, kpis, fixes, ghosts, stats: { prod_rows: prods.length, kpi_rows: kpis.length,
-           need_link: noLink, wrong_date: dateWrong, field_diff: fieldDiff,
-           machine_missing: mcMissing, ghosts: ghosts.length } };
+           need_link: noLink, field_diff: fieldDiff, machine_missing: mcMissing,
+           date_mismatch: dateWrong,          // หน้าติดตามงานแสดงคนละวันกับประวัติ
+           date_by_rule: dateByRule,          // ↳ กะดึก/ลงย้อนหลัง = ถูกตามกติกา ไม่ใช่ข้อมูลผิด
+           date_odd: dateOdd,                 // ↳ วันผลิตอยู่หลังวันกดบันทึก = ผิดปกติจริง
+           ghosts: ghosts.length } };
 }
 
 /* แถวผีมาจาก 2 ทางที่ผลต่างกันมาก — ต้องแยกให้เห็นก่อนตัดสินใจลบ

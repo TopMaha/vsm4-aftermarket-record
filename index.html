@@ -1872,6 +1872,15 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
       → งานกะดึกที่ลงตอนเช้าจะไปโผล่คนละวันกับหน้าประวัติ และการลบ/แก้ที่ประวัติไม่ตามไปถึงหน้าติดตามงาน<br>
       กด <b>ตรวจสอบ</b> เพื่อดูรายงานก่อน (ไม่แก้อะไร) แล้วค่อยกด <b>ซ่อม</b>
     </div>
+    <!-- ★ กันอ่านรายงานผิด: "คนละวัน" ส่วนใหญ่คือกติกากะดึกที่ถูกอยู่แล้ว ไม่ใช่ข้อมูลเสีย -->
+    <div style="border:1.5px solid var(--green-bd,#A7F3D0);background:var(--green-bg,#ECFDF5);border-radius:9px;padding:8px 10px;margin-bottom:9px;font-size:11px;line-height:1.75;color:#065F46">
+      <b>📅 "คนละวัน" ส่วนใหญ่ไม่ใช่ข้อมูลผิด</b> — กติกาวันทำงานของโรงงานคือ<br>
+      • 08:00–19:59 = กะกลางวัน → วันทำงาน = วันที่เริ่มงาน<br>
+      • 20:00–23:59 = กะกลางคืน → วันทำงาน = วันที่เริ่มงาน<br>
+      • 00:00–07:59 = กะกลางคืน → วันทำงาน = <b>วันก่อนหน้า</b> (หางกะดึกของเมื่อวาน)<br>
+      หน้าประวัติยึดวันทำงานนี้ซึ่ง<b>ถูกอยู่แล้ว</b> · หน้าติดตามงานเดิมไม่มีวันทำงานเก็บไว้ เลยไปโชว์วันที่กดบันทึกแทน<br>
+      <b>ปุ่มซ่อมแค่คัดลอกวันทำงานจาก KPI มาใส่ ไม่เปลี่ยนการจัดกะใด ๆ ทั้งสิ้น</b>
+    </div>
     <div class="fg" style="margin-bottom:8px">
       <div class="fr"><label>จาก</label><input type="date" id="rcFrom"></div>
       <div class="fr"><label>ถึง</label><input type="date" id="rcTo"></div>
@@ -17419,7 +17428,11 @@ function _rcCard(d, title) {
     ${row('ยอดผลิตที่ตรวจ', d.prod_rows)}
     ${row('KPI ที่ตรวจ', d.kpi_rows)}
     ${row('⚠️ ยังไม่มีคีย์เชื่อมกับ KPI', d.need_link, true)}
-    ${row('📅 วันผลิตที่แสดงอยู่ผิดวันจริง ๆ', d.wrong_date, true)}
+    ${row('📅 หน้าติดตามงานแสดงคนละวันกับประวัติ', d.date_mismatch, true)}
+    <div style="padding-left:12px">
+      ${row('↳ กะดึก / ลงย้อนหลัง — <b style="color:var(--green)">ถูกตามกติกาแล้ว</b>', d.date_by_rule)}
+      ${row('↳ วันผลิตอยู่หลังวันกดบันทึก — <b>ผิดปกติ</b>', d.date_odd, true)}
+    </div>
     ${row('🛠️ ไม่มีชื่อเครื่อง (KPI มี → เติมให้ได้)', d.machine_missing, true)}
     ${row('⚠️ valve/lot ขัดแย้งกับ KPI', d.field_diff, true)}
     ${row('👻 ยอดผลิตที่ไม่มี KPI คู่ (แถวผี)', d.ghosts, true)}
