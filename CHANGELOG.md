@@ -1,6 +1,10 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.42 — 2026-08-04 — ป้าย "⚠ FG ไม่ตรงกับ WIP OUT" กดได้: บอกเลยว่าต่างวันไหน ล็อตไหน ทำยังไงต่อ
+## v3.42 — 2026-08-04 — ป้าย "⚠ FG ไม่ตรงกับ WIP OUT" กดได้: บอกเลยว่าต่างวันไหน ล็อตไหน ทำยังไงต่อ  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `135a1c34-1bc7-4601-a9c6-3e96b1d40338` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `16373bb` → https://topmaha.github.io/vsm4-aftermarket-record/
+(ตรวจแล้วทั้งคู่: ขนาดไฟล์เท่ากัน 1,342,680 bytes · หัวแอปขึ้น **v3.42** · มี `showFgReconcile` ในหน้าที่เสิร์ฟจริง)
 
 **คำขอผู้ใช้**: เห็นป้าย `⚠ FG ไม่ตรงกับ WIP OUT (-1,920)` ที่หน้าติดตามงานแล้วไม่รู้ว่าคืออะไร ต้องทำยังไงต่อ
 → เอาคำอธิบาย + ขั้นตอนแก้ ใส่ลงในแอปเลย ไม่ต้องถามใคร
