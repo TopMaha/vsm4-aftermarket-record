@@ -231,6 +231,24 @@ async function ensureSchema(env) {
    ❗ต้อง +7 ชม. ก่อนตัด: 2026-07-29T23:58Z = 30 ก.ค. 06:58 ตามเวลาไทย ถ้าตัดดิบ ๆ จะได้ 29 ผิดวัน */
 const PROD_DATE_SQL = "COALESCE(NULLIF(shift_date,''), substr(datetime(timestamp,'+7 hours'),1,10))";
 
+/* ⚡ เวอร์ชันที่ใช้ "กรองช่วงวัน" — ต้องเป็นคอลัมน์เปล่า ๆ เท่านั้นถึงจะใช้ index ได้
+   ❗บทเรียน 2026-08-04: เอา PROD_DATE_SQL (มี datetime()+COALESCE) ไปใส่ WHERE
+     → SQLite ต้องคำนวณทุกแถวก่อนกรอง ใช้ idx ไม่ได้ → /api/records ช่วงกว้างตอบ 503
+       (error 1102 = Worker เกินโควตา CPU) ทั้งที่ก่อนหน้านี้ 11k แถวยังไหว
+   ตอนนี้ทุกแถวมี shift_date แล้ว (prodBind เขียนให้เสมอ + backfillShiftDates ซ่อมของเก่า)
+   จึงกรองด้วยคอลัมน์ตรง ๆ ได้ · แถวที่ยังว่าง (ถ้ามี) ถูกกวาดด้วย backfill ก่อนใช้งานทุกครั้ง */
+const PROD_DATE_COL = 'shift_date';
+
+/* เติม shift_date ให้แถวที่ยังว่าง — ครั้งเดียวจบ ไม่ใช่คิดใหม่ทุก query
+   เรียกก่อนงานที่ต้องกรองช่วงวันจริงจัง (reconcile) · ปกติจะไม่มีแถวเข้าเงื่อนไขแล้ว = แทบไม่มีต้นทุน */
+async function backfillShiftDates(env) {
+  const r = await env.DB.prepare(
+    `UPDATE production_records
+        SET shift_date = substr(datetime(timestamp,'+7 hours'),1,10)
+      WHERE COALESCE(shift_date,'') = '' AND timestamp IS NOT NULL`).run();
+  return r.meta?.changes || 0;
+}
+
 // ============================================================
 // INIT
 // ============================================================
@@ -328,8 +346,8 @@ async function getRecords(env, params) {
   if (params.get('lot'))    { conds.push('lot = ?');             args.push(params.get('lot')); }
   // ★ 2026-08-04: กรองด้วย "วันผลิตจริง" ไม่ใช่เวลาที่กดบันทึก — ให้ตรงกับ /api/kpi ที่ใช้ shift_date
   //   เดิมกรอง timestamp ดิบ → งานกะดึกที่บันทึกตอนเช้าตกไปอยู่คนละวันกับ KPI ของตัวเอง
-  if (params.get('from'))   { conds.push(`${PROD_DATE_SQL} >= ?`); args.push(String(params.get('from')).slice(0, 10)); }
-  if (params.get('to'))     { conds.push(`${PROD_DATE_SQL} <= ?`); args.push(String(params.get('to')).slice(0, 10)); }
+  if (params.get('from'))   { conds.push(`${PROD_DATE_COL} >= ?`); args.push(String(params.get('from')).slice(0, 10)); }
+  if (params.get('to'))     { conds.push(`${PROD_DATE_COL} <= ?`); args.push(String(params.get('to')).slice(0, 10)); }
   if (params.get('proc'))   { conds.push('current_process = ?'); args.push(params.get('proc')); }
   if (params.get('status')) { conds.push('status = ?');          args.push(params.get('status')); }
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
@@ -960,9 +978,10 @@ function _rcPair(prods, kpis) {
 
 async function _rcLoad(env, from, to) {
   const f = String(from || '2000-01-01').slice(0, 10), t = String(to || '2999-12-31').slice(0, 10);
+  await backfillShiftDates(env);   // กันแถวที่ยังไม่มีวันทำงานหลุดช่วง (ปกติเป็น 0 แถว)
   const { results: prods } = await env.DB.prepare(
     `SELECT record_id, timestamp, valve_no, lot, quantity, current_process, machine_id, shift_date, kpi_record_id, note, operator
-     FROM production_records WHERE ${PROD_DATE_SQL} BETWEEN ? AND ?`).bind(f, t).all();
+     FROM production_records WHERE ${PROD_DATE_COL} BETWEEN ? AND ?`).bind(f, t).all();
   // ดึง KPI กว้างกว่า 2 วันทั้งสองด้าน — งานกะดึกถูกบันทึกข้ามวัน ชุดบันทึกจึงคร่อมขอบช่วงได้
   const wf = _rcShift(f, -2), wt = _rcShift(t, 2);
   const { results: kpis } = await env.DB.prepare(

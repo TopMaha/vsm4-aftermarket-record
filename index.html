@@ -17447,6 +17447,32 @@ function _rcRange() {
   if (t) p.set('to', t);
   return { f, t, qs: p.toString() };
 }
+/* ซอยช่วงเป็นเดือน ๆ — ยิงทีเดียวทั้งปี Worker จะเกินโควตา CPU แล้วตอบ 503 (error 1102)
+   ไม่ระบุช่วง = ไล่ตั้งแต่ ม.ค. ปีที่แล้ว ถึงสิ้นเดือนนี้ (ครอบข้อมูลจริงทั้งหมด) */
+function _rcMonths(f, t) {
+  const now = new Date();
+  const s = f ? new Date(f + 'T00:00:00') : new Date(now.getFullYear() - 1, 0, 1);
+  const e = t ? new Date(t + 'T00:00:00') : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const out = [], P = n => String(n).padStart(2, '0');
+  let cur = new Date(s.getFullYear(), s.getMonth(), 1);
+  while (cur <= e) {
+    const last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+    const from = cur > s ? cur : s, to = last < e ? last : e;
+    out.push({ from: `${from.getFullYear()}-${P(from.getMonth()+1)}-${P(from.getDate())}`,
+               to:   `${to.getFullYear()}-${P(to.getMonth()+1)}-${P(to.getDate())}` });
+    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+  }
+  return out;
+}
+/* รวมผลหลายเดือนเป็นก้อนเดียว */
+function _rcMerge(list) {
+  const sum = {}, keys = ['prod_rows','kpi_rows','need_link','field_diff','machine_missing',
+                          'date_mismatch','date_by_rule','date_odd','ghosts','ghosts_kpi_deleted',
+                          'ghosts_standalone','will_fix','linked','ghost_deleted','ghosts_left'];
+  for (const k of keys) for (const d of list) if (d && d[k] !== undefined) sum[k] = (sum[k] || 0) + d[k];
+  sum.ghost_sample = list.flatMap(d => d?.ghost_sample || []).slice(0, 200);
+  return sum;
+}
 function _rcCard(d, title) {
   const row = (label, n, warn) =>
     `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
@@ -17474,10 +17500,19 @@ function _rcCard(d, title) {
 }
 async function reconcileCheck() {
   if (!API) { toast('ต้องต่อ Cloud ก่อน', 'orange'); return; }
-  const { qs } = _rcRange();
+  const { f, t } = _rcRange();
+  const months = _rcMonths(f, t);
   showBusy('กำลังตรวจสอบความสอดคล้อง…', true);
   try {
-    const d = await api('/api/reconcile' + (qs ? '?' + qs : ''));
+    // ★ ยิงทีละเดือน — ช่วงกว้างทีเดียว Worker เกินโควตา CPU แล้วตอบ 503 (error 1102)
+    const parts = [];
+    for (let i = 0; i < months.length; i++) {
+      busyMsg(`กำลังตรวจ ${months[i].from.slice(0, 7)} … (${i + 1}/${months.length})`);
+      await yieldUI();
+      const p = new URLSearchParams({ from: months[i].from, to: months[i].to });
+      parts.push(await api('/api/reconcile?' + p).catch(() => null));
+    }
+    const d = _rcMerge(parts);
     hideBusy();
     const ghostH = d.ghost_sample?.length
       ? `<div style="margin-top:8px;border:1.5px solid var(--orange-bd);background:var(--orange-bg);border-radius:10px;padding:8px 10px">
@@ -17502,11 +17537,21 @@ async function reconcileFix() {
   if (!(await confirmModal(
       `ซ่อมความสอดคล้อง KPI ↔ ยอดผลิต?\n\n📅 ช่วง: ${rangeTxt}\n\nจะเติมคีย์เชื่อม + วันผลิตจริง ให้ยอดผลิตที่ยังขาด\n(ไม่ลบข้อมูลใด ๆ · กดซ้ำได้ปลอดภัย)`,
       { danger: false, yes: 'ซ่อมเลย' }))) return;
+  const months = _rcMonths(f, t);
   showBusy('กำลังซ่อม…', true);
   try {
-    const d = await api('/api/reconcile', { body: { from: f || undefined, to: t || undefined } });
+    // ★ ยิงทีละเดือน — ช่วงกว้างทีเดียว Worker เกินโควตา CPU แล้วตอบ 503 (error 1102)
+    const parts = [];
+    for (let i = 0; i < months.length; i++) {
+      busyMsg(`กำลังซ่อม ${months[i].from.slice(0, 7)} … (${i + 1}/${months.length})`);
+      await yieldUI();
+      parts.push(await api('/api/reconcile', { body: { from: months[i].from, to: months[i].to } }).catch(() => null));
+    }
+    const d = _rcMerge(parts);
+    const failed = parts.filter(x => !x).length;
     hideBusy();
     $('rcResult').innerHTML = _rcCard(d, '🔧 ผลการซ่อม');
+    if (failed) toast(`⚠️ ซ่อมไม่สำเร็จ ${failed}/${months.length} เดือน — กดซ่อมซ้ำได้ปลอดภัย`, 'orange');
     toast(`🔧 ซ่อมแล้ว ${nn(d.linked)} รายการ${d.ghosts_left ? ` · เหลือแถวผี ${nn(d.ghosts_left)} (ยังไม่ลบ)` : ''}`, 'green');
     // ดึงของสดกลับมา — หน้าติดตามงาน/ประวัติจะเห็นวันผลิตใหม่ทันที
     await reload();
