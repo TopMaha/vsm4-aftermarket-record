@@ -1,6 +1,9 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.46 — 2026-08-06 — ค้นหา Process เห็นงานที่รับเข้าแล้ว · สถานะแผนให้ระบบกำหนดเอง · เน็ตหลุดต้องรู้ตัว (ทุกชนิดข้อมูล) · FG แยกลูกค้า · คีย์บอร์ดมือถือไม่เด้ง  ⏳ ยังไม่ deploy
+## v3.46 — 2026-08-06 — ค้นหา Process เห็นงานที่รับเข้าแล้ว · สถานะแผนให้ระบบกำหนดเอง · เน็ตหลุดต้องรู้ตัว (ทุกชนิดข้อมูล) · FG แยกลูกค้า · คีย์บอร์ดมือถือไม่เด้ง  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `270e3af0-975e-41b9-9c87-20351c128d7f` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `f83dd04` → https://topmaha.github.io/vsm4-aftermarket-record/
 
 ทำตามที่แจ้งมา 6 ข้อ · แก้ที่ `index.html` อย่างเดียว (Worker ไม่แตะ) · สำรองไว้ที่ `backups/index.before-6req-20260806.html`
 
