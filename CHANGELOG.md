@@ -3,7 +3,7 @@
 ## v3.45 — 2026-08-05 — PDAC คิดใหม่ให้ถูก · หน้าวางแผนกรองแบบ Excel + เลือกหลายรายการ + แบ่งหน้า · เก็บภาษาอังกฤษให้ครบ  ✅ deployed
 
 **Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `522a9933-791d-4d95-bf99-0d74ba0d798e` → https://vsm4-api.wiphawas-sketchup.workers.dev
-· GitHub Pages → https://topmaha.github.io/vsm4-aftermarket-record/
+· GitHub Pages commit `5457bf2` → https://topmaha.github.io/vsm4-aftermarket-record/
 
 ### 🐛 บั๊กใหญ่ — PDAC "รวม 2 กะ" ได้ค่าสูงกว่าทั้งกะกลางวันและกลางคืน
 
