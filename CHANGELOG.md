@@ -2,7 +2,7 @@
 
 ## v3.45 — 2026-08-05 — PDAC คิดใหม่ให้ถูก · หน้าวางแผนกรองแบบ Excel + เลือกหลายรายการ + แบ่งหน้า · เก็บภาษาอังกฤษให้ครบ  ✅ deployed
 
-**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `522a9933-791d-4d95-bf99-0d74ba0d798e` → https://vsm4-api.wiphawas-sketchup.workers.dev
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `2a33fcbc-a184-494a-b82a-93afb7c1d047` → https://vsm4-api.wiphawas-sketchup.workers.dev
 · GitHub Pages commit `5457bf2` → https://topmaha.github.io/vsm4-aftermarket-record/
 
 ### 🐛 บั๊กใหญ่ — PDAC "รวม 2 กะ" ได้ค่าสูงกว่าทั้งกะกลางวันและกลางคืน
@@ -60,6 +60,10 @@ recs.some(r => (r.pdac_val||0) >= 0.883 || r.pdac_pass === 'PASS')
 - หัวคอลัมน์ยังกดเพื่อเรียงได้เหมือนเดิม (กดที่ **ชื่อ** = เรียง · กดที่ **▾** = ตัวกรอง)
 
 ### 🚀 ตามที่ขอ: แบ่งหน้าตารางแผน (แก้อาการโหลดช้า)
+
+> 🩹 **hotfix หลัง deploy รอบแรก**: ค่าเริ่มต้นของ "แสดงหน้าละ" อ่านจาก localStorage ด้วย `+localStorage.getItem(...)`
+> ผู้ใช้ใหม่ที่ยังไม่เคยตั้งค่าจะได้ `+null` = **0** ซึ่งบังเอิญเป็นค่าที่ใช้ได้จริง (= ทั้งหมด) → ทุกคนได้ "แสดงทั้งหมด" = ไม่ได้แบ่งหน้าเลย
+> แก้เป็นเช็ก `raw === null` ก่อนแปลงเป็นตัวเลข (Worker version `2a33fcbc`) · เจอตอนเปิดเว็บจริงหลัง deploy ไม่ใช่ตอนทดสอบในเครื่อง (localStorage คนละ origin)
 แผนสะสมหลายร้อยแถว · 1 แถวมี date input + 3 text input + `<select>` 4 ตัวเลือก + 3 ปุ่ม
 วาดทีเดียวหมด = DOM หลายพัน node ต่อการกรอง/ติ๊ก **1 ครั้ง** → หน่วงชัดเจน โดยเฉพาะบนมือถือ
 

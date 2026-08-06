@@ -4693,7 +4693,16 @@ let _planSearchTimer;
    หมายเหตุการเลือก: ติ๊กหัวตาราง = เลือก "ทั้งหน้านี้" · มีปุ่มเลือกครบทุกหน้าที่กรองไว้ให้ในแถบเครื่องมือ
    และคำสั่งกลุ่มทำงานกับ "ทุกแถวที่เลือกไว้ในชุดที่กรอง" ไม่ใช่เฉพาะหน้าที่เปิดอยู่ */
 let _planPage = 1;
-let _planPageSize = (function(){ try{ const v=+localStorage.getItem('vsm4_plan_pagesize'); return [25,50,100,200,0].includes(v)?v:50; }catch(e){ return 50; } })();
+/* ⚠️ ต้องเช็ก "ยังไม่เคยตั้งค่า" ก่อนแปลงเป็นตัวเลข — `+null` = 0 ซึ่งดันเป็นค่าที่ใช้ได้ (= ทั้งหมด)
+   ถ้าไม่เช็ก ผู้ใช้ใหม่จะได้ "แสดงทั้งหมด" ทุกคน = ไม่ได้แบ่งหน้าเลย (ตรงข้ามกับที่ต้องการ) */
+let _planPageSize = (function(){
+  try{
+    const raw = localStorage.getItem('vsm4_plan_pagesize');
+    if (raw === null || raw === '') return 50;                      // ค่าเริ่มต้น = 50 แถว/หน้า
+    const v = +raw;
+    return [25,50,100,200,0].includes(v) ? v : 50;
+  }catch(e){ return 50; }
+})();
 let _planRowsAll = [];       // แถวทั้งหมดหลังกรอง (รอบล่าสุด) — ใช้ทั้งแบ่งหน้าและคำสั่งกลุ่ม
 function setPlanPageSize(v) {
   _planPageSize = +v || 0;
