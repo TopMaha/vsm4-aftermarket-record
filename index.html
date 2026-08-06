@@ -395,6 +395,15 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .pf-cell.pf-remark{background:#FEF3C7;color:#92400E;font-weight:700;font-size:11px;text-align:left;max-width:230px;white-space:normal;line-height:1.4}
 .pf-lg-remark{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
 .pf-lg-remark::before{background:#F59E0B}
+/* ★ 2026-08-06 (req #1) ยอดที่รับเข้า WIP IN 1.5 ของ Lot นั้น — แถวที่ยังไม่มีใครลงยอดผลิต
+   ต้องเห็นได้ว่า "ของมาถึงแล้ว รอผลิตอยู่" ไม่ใช่หายไปจากตารางเหมือนไม่มีข้อมูล */
+.pf-recv{display:block;margin-top:2px;font-size:9.5px;font-weight:800;color:#1D4ED8;
+  background:#DBEAFE;border:1px solid #BFDBFE;border-radius:999px;padding:0 6px;line-height:15px;width:max-content}
+.pf-rowrecv .pf-td-lot{background:#F8FAFF}
+.pf-rowrecv .pf-cell{background:#FCFDFF}
+.pf-rowrecv .pf-cell.pf-next{background:#FDE047}
+.pf-lg-recv{background:#DBEAFE;color:#1D4ED8;border:1px solid #BFDBFE}
+.pf-lg-recv::before{background:#3B82F6}
 /* ★ ป้ายสายบนช่อง — งานล็อตเดียวกันที่ไปผลิตอีกสาย (VSM3 ⇄ VSM4) */
 .pf-lg-cross{background:#F5F3FF;color:#5B21B6;border:1px solid #DDD6FE}
 .pf-lg-cross::before{background:#8B5CF6}
@@ -569,6 +578,21 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 #loadPill .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #loadPill .sub{font-size:10.5px;font-weight:700;opacity:.7;white-space:nowrap;flex:0 0 auto}
 
+/* ★ 2026-08-06 (req #6) แถบ "ยังไม่ขึ้น Cloud" — อยู่จนกว่าจะส่งสำเร็จจริง
+   ทำไมไม่ใช้ toast: toast หายเองใน 3 วิ · พนักงานที่เน็ตหลุดตอนกดบันทึกจึงไม่รู้ตัว
+   fixed + ไม่ดัน layout (กติกาเดียวกับ #loadPill) · กดที่แถบ = ลองส่งใหม่ทันที */
+#syncBar{position:fixed;left:50%;transform:translateX(-50%) translateY(8px);z-index:4950;
+  bottom:calc(84px + env(safe-area-inset-bottom));display:none;align-items:center;gap:9px;
+  max-width:min(94vw,460px);background:linear-gradient(135deg,#B45309,#D97706);color:#fff;
+  border-radius:999px;padding:8px 10px 8px 14px;box-shadow:0 8px 24px rgba(180,83,9,.38);
+  font-size:12.5px;font-weight:800;cursor:pointer;border:none;font-family:inherit;
+  opacity:0;transition:opacity .2s ease,transform .2s ease}
+#syncBar.on{display:flex;opacity:1;transform:translateX(-50%) translateY(0)}
+#syncBar .sb-tx{flex:1;min-width:0;line-height:1.35;text-align:left}
+#syncBar .sb-btn{flex:0 0 auto;background:#fff;color:#B45309;border-radius:999px;padding:5px 11px;
+  font-size:12px;font-weight:800}
+#syncBar.busy{background:linear-gradient(135deg,#1D4ED8,#2563EB);box-shadow:0 8px 24px rgba(37,99,235,.38)}
+#syncBar.busy .sb-btn{color:#1D4ED8}
 /* แถบสถานะแบบวางในหน้า — เลิกใช้แล้ว (ต้นเหตุจอเด้ง) กันไว้เผื่อโค้ดเก่าไปสั่งโชว์ */
 .ldstrip,.ldstrip-r{display:none!important}
 /* กล่อง/แถว "กำลังโหลด" ที่ใช้แทนเนื้อหาซึ่งยังวาดไม่เสร็จ */
@@ -1474,7 +1498,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.45</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.46</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1783,7 +1807,6 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
         <button class="btn btn-green btn-sm" onclick="openPastePlan()">📋 วางแผน (Excel)</button>
         <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteIdsModal()">🆔 วาง IDs (Excel)</button>
         <button class="btn btn-sm" id="planRepairBtn" style="display:none;background:#FEF3C7;color:#B45309;border:1px solid #FDE68A" onclick="repairPlanDates()" title="ซ่อมวันที่ที่ import มาผิดรูป (สลับวัน↔เดือน) แล้วบันทึกขึ้น Cloud">🔧 ซ่อมวันที่</button>
-        <button class="btn btn-outline btn-sm" onclick="autoStatusPlans()" title="ตั้งสถานะทุกแถวที่กรองอยู่ตามการผลิตจริง (มียอดผลิต = กำลังผลิต · จบแล้ว = เสร็จ)">🤖 สถานะอัตโนมัติ</button>
         <button class="btn btn-outline btn-sm" onclick="exportPlans()">⬇️ Export</button>
       </div>
     </div>
@@ -1791,7 +1814,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
     <!-- ★ 2026-08-05 (req) Filter — ช่องค้นหาเดียวจบ + ช่วงวันที่ · ตัวกรองราย "คอลัมน์" ย้ายไปที่หัวตาราง (แบบ Excel) -->
     <div class="fg-auto mb-8" style="background:var(--blue-light);padding:10px;border-radius:10px">
       <div class="fr" style="margin:0;grid-column:span 2;min-width:200px"><label>🔎 ค้นหา (Valve / Lot / หมายเหตุ / วันที่)</label>
-        <input type="search" id="planSearch" placeholder="พิมพ์บางส่วนก็ได้ เช่น VF1349 หรือ 2606S" oninput="planSearchInput(this.value)"></div>
+        <input type="search" id="planSearch" placeholder="พิมพ์บางส่วนก็ได้ เช่น VF1349 หรือ 2606S" oninput="planSearchInput(this.value)"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></div>
       <div class="fr" style="margin:0"><label>วันที่ขาย ตั้งแต่</label><input type="date" id="planFrom" oninput="planFilterChanged()"></div>
       <div class="fr" style="margin:0"><label>ถึง</label><input type="date" id="planTo" oninput="planFilterChanged()"></div>
       <div class="fr" style="margin:0;display:flex;align-items:flex-end">
@@ -1824,7 +1848,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
     <div class="stats-row mb-8" style="grid-template-columns:repeat(4,1fr)">
       <div class="stat" style="background:var(--blue-light);border-color:var(--blue-soft)"><div class="v" style="color:var(--blue);font-size:18px" id="planCntPlanned">0</div><div class="l">📋 วางแผน</div></div>
       <div class="stat orange" style="padding:8px"><div class="v" style="font-size:18px" id="planCntInProgress">0</div><div class="l">⚙️ กำลังผลิต</div></div>
-      <div class="stat green" style="padding:8px"><div class="v" style="font-size:18px" id="planCntDone">0</div><div class="l">✅ เสร็จ</div></div>
+      <div class="stat green" style="padding:8px"><div class="v" style="font-size:18px" id="planCntDone">0</div><div class="l">✅ ผลิตจบแล้ว</div></div>
       <div class="stat" style="background:#FEF2F2;border-color:#FECACA;padding:8px"><div class="v" style="color:#DC2626;font-size:18px" id="planCntCancel">0</div><div class="l">❌ ยกเลิก</div></div>
     </div>
 
@@ -1849,7 +1873,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
           <th class="pl-th" style="width:126px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:138px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="กดเพื่อเรียงตาม Lot">Lot<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:92px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (จริง · แก้เอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (ระบบกำหนดเอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:150px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="center" style="width:116px">จัดการ</th>
         </tr></thead>
@@ -2154,6 +2178,9 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ★ req #6: แถบเตือน "บันทึกแล้วแต่ยังไม่ขึ้น Cloud" — ค้างอยู่จนส่งสำเร็จ (กดเพื่อส่งใหม่) -->
+<button type="button" id="syncBar" onclick="retrySyncNow()"></button>
 
 <!-- ============== BUSY OVERLAY (กำลังบันทึก/แก้ไข) ============== -->
 <div id="busyOverlay" style="position:fixed;inset:0;z-index:5000;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;padding:20px">
@@ -3470,6 +3497,9 @@ async function _heartbeatConn() {
     await api('/api/ping', { silent: true });   // เงียบ ไม่โชว์แถบโหลด
     if (!state.online) setConnBadge('online');   // เชื่อมต่อได้ → online
     flushUnsynced();                             // เชื่อมต่อได้แล้ว → ส่งข้อมูลที่ค้างขึ้น Cloud อัตโนมัติ
+    flushPendingWrites();                        // ★ req #6: รวมข้อมูลอื่น ๆ (แผน/เป้า/วาล์ว/พนักงาน/IDs)
+    try { if (typeof _hoFlush === 'function') _hoFlush(); } catch (e) {}       // ต่อกะ
+    try { if (typeof _wipinFlush === 'function') _wipinFlush(); } catch (e) {} // WIP IN 1.5
     // ★ 2026-07-30: เน็ตกลับมาแล้วแต่ Master Valve ยังไม่ครบ (cache ถูกล้าง + reload ตอนเปิดแอปล้มเหลว)
     //   → ดึงใหม่ให้เอง ไม่ต้องรอผู้ใช้กดปุ่ม · ไม่งั้นยอดแยกกลุ่มลูกค้าเพี้ยนไปทั้งวัน
     if (typeof masterValveLoaded === 'function' && !masterValveLoaded()) reload();
@@ -3477,6 +3507,7 @@ async function _heartbeatConn() {
     if (state.online) setConnBadge('local');     // หลุด → local (ข้อมูลยังเซฟ local ได้ปกติ)
   } finally {
     _hbBusy = false;
+    renderSyncBar();                             // ★ req #6: แถบ "ยังไม่ขึ้น Cloud" ต้องตรงกับความจริงทุกรอบ
   }
 }
 
@@ -3486,7 +3517,7 @@ async function _heartbeatConn() {
    ============================================================ */
 const _stripUnsynced = r => { const { _unsynced, ...rest } = r; return rest; };
 let _flushBusy = false;
-async function flushUnsynced() {
+async function flushUnsynced(quiet) {
   if (!API || _flushBusy) return;
   const kpiPending  = state.kpiRecords.filter(r => r._unsynced);
   const prodPending = state.prodRecords.filter(r => r._unsynced);
@@ -3511,11 +3542,173 @@ async function flushUnsynced() {
     }
   } catch (e) { /* คงธงไว้ */ }
   _flushBusy = false;
-  if (done) { setConnBadge('online'); toast(`☁️ ส่งข้อมูลที่ค้างขึ้น Cloud สำเร็จ ${done} รายการ`, 'green'); }
+  if (done) { setConnBadge('online'); if (!quiet) toast(`☁️ ส่งข้อมูลที่ค้างขึ้น Cloud สำเร็จ ${done} รายการ`, 'green'); }
+  renderSyncBar();
+  return done;
 }
 function _countUnsynced() {
   return state.kpiRecords.filter(r => r._unsynced).length + state.prodRecords.filter(r => r._unsynced).length;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ 2026-08-06 (req #6) — เน็ตหลุดตอนกดบันทึก ต้อง "รู้ตัวทันที"
+   ปัญหาที่แจ้ง: พนักงานกดส่งบันทึกตอนเน็ตหลุด แล้วไม่มีอะไรบอกว่าไม่สำเร็จ
+   ของเดิม: KPI ขึ้น toast สีส้ม 3 วิแล้วหาย (พลาดง่ายมาก) · WIP IN 1.5 แย่กว่า
+   คือ "ยิงแล้วไม่สนผล" — ล้มเหลวเงียบสนิท เครื่องอื่นไม่เห็นของที่เพิ่งรับเข้า
+   ของใหม่ 3 ชั้น (นับของค้างจากที่เดียวกัน = _pendingSyncCount):
+     ① ป๊อปอัปบอกชัดตอนบันทึกไม่ผ่าน + ปุ่ม "ลองส่งอีกครั้ง"
+     ② แถบส้มค้างหน้าจอตราบใดที่ยังมีของค้าง (ปิดแอปเปิดใหม่ก็ยังขึ้น)
+     ③ ส่งซ้ำอัตโนมัติเมื่อเน็ตกลับมา (heartbeat + event 'online') แล้วแถบหายเอง
+   ═══════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   คิว "งานเขียนที่ยังไม่ขึ้น Cloud" — สำหรับข้อมูลอื่น ๆ ทุกชนิด (req #6 รอบ 2)
+   KPI / ยอดผลิต มีระบบ _unsynced ของตัวเองอยู่แล้ว · WIP IN 1.5 กับต่อกะ มีคิวของตัวเอง
+   แต่ที่เหลือ — แผนขาย · เป้า/จบงานหลัง FG · Master Valve · พนักงาน · Valve IDs —
+   เดิมเขียนแบบ `try{ await api(...) }catch(e){}` คือ **เน็ตหลุดแล้วหายเงียบ**
+   หน้าจอขึ้นว่าบันทึกแล้ว (เพราะเก็บ local สำเร็จ) แต่เครื่องอื่นไม่มีวันเห็น
+
+   คิวนี้เก็บลง localStorage → ปิดแอปเปิดใหม่ก็ยังอยู่ · ส่งซ้ำเองเมื่อเน็ตกลับมา
+   ปลอดภัยที่จะส่งซ้ำ เพราะทุก endpoint ที่ใช้คิวเป็น upsert/ลบด้วย id (ไม่ใช่ insert ใหม่)
+   ═══════════════════════════════════════════════════════════════════════ */
+const LS_PENDW = 'vsm4_pending_writes';
+const PENDW_MAX_BODY = 60000;    // ก้อนใหญ่กว่านี้ (เช่น sync วาล์วทั้งตาราง) ไม่เข้าคิว — กิน localStorage เกินจำเป็น
+const PENDW_MAX_N    = 400;      // กันคิวบวมไม่รู้จบเมื่อ offline ยาว ๆ
+let _pendW = (() => { try { const v = JSON.parse(localStorage.getItem(LS_PENDW) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
+function _savePendW() { try { localStorage.setItem(LS_PENDW, JSON.stringify(_pendW)); } catch (e) {} }
+/* เข้าคิว 1 งาน — key ใช้กันคิวซ้ำ (แก้แผนใบเดิม 10 ครั้งตอน offline = เก็บครั้งล่าสุดพอ)
+   คืน false ถ้าเข้าคิวไม่ได้ (ก้อนใหญ่เกิน) → ผู้เรียกต้องบอกผู้ใช้ให้กดใหม่เอง */
+function queueWrite(path, body, label, key) {
+  let raw = '';
+  try { raw = JSON.stringify(body || {}); } catch (e) { return false; }
+  if (raw.length > PENDW_MAX_BODY) return false;
+  const dk = path + '|' + (key || '');
+  const i = key ? _pendW.findIndex(w => (w.path + '|' + (w.key || '')) === dk) : -1;
+  const item = { id: 'w_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                 path, body, label: label || path, key: key || '', ts: new Date().toISOString() };
+  if (i >= 0) { item.id = _pendW[i].id; _pendW[i] = item; }   // ทับที่เดิม → ลำดับก่อน/หลังไม่เพี้ยน
+  else {
+    _pendW.push(item);
+    if (_pendW.length > PENDW_MAX_N) _pendW = _pendW.slice(-PENDW_MAX_N);
+  }
+  _savePendW(); renderSyncBar();
+  return true;
+}
+/* เขียนขึ้น Cloud แบบ "ไม่หายแน่นอน" — สำเร็จ → {ok:true} · ล้มเหลว → เข้าคิวแล้วคืน {ok:false,err}
+   ใช้แทน `try{ await api(path,{body}) }catch(e){}` ทุกที่ที่ข้อมูลถูกเก็บ local ไปแล้ว */
+async function apiSave(path, body, opts = {}) {
+  if (!API) return { ok: false, offline: true };
+  try {
+    const res = await api(path, { body, silent: opts.silent });
+    // ส่งสำเร็จ = เน็ตใช้ได้ → เคลียร์คิวเก่าที่ค้างไปด้วยเลย (ไม่ต้องรอ heartbeat)
+    if (_pendW.length && !opts.noFlush) flushPendingWrites();
+    return { ok: true, res };
+  } catch (e) {
+    const queued = queueWrite(path, body, opts.label, opts.key);
+    return { ok: false, err: e, queued };
+  }
+}
+let _pendWBusy = false;
+async function flushPendingWrites() {
+  if (!API || _pendWBusy || !_pendW.length) return 0;
+  _pendWBusy = true;
+  let done = 0;
+  // ส่งเรียงตามลำดับที่เข้าคิว — สำคัญเมื่อมีทั้ง "แก้" และ "ลบ" ของชิ้นเดียวกัน
+  while (_pendW.length) {
+    const w = _pendW[0];
+    try { await api(w.path, { body: w.body, silent: true }); }
+    catch (e) { break; }                      // ยังส่งไม่ได้ → หยุดไว้ก่อน คงคิวเดิมไว้ทั้งหมด
+    _pendW.shift(); done++; _savePendW();
+  }
+  _pendWBusy = false;
+  if (done) renderSyncBar();
+  return done;
+}
+function _pendingSyncCount() {
+  let n = 0;
+  try { n += _countUnsynced(); } catch (e) {}
+  try { n += (_wipinPending && _wipinPending.size) || 0; } catch (e) {}   // ประกาศทีหลังในไฟล์ → กัน TDZ
+  try { n += (_hoPending && _hoPending.size) || 0; } catch (e) {}         // ต่อกะ
+  n += _pendW.length;                                                     // ข้อมูลอื่น ๆ (แผน/เป้า/วาล์ว/พนักงาน/IDs)
+  return n;
+}
+/* สรุปว่าอะไรค้างอยู่บ้าง — โชว์ในแถบ/ป๊อปอัป ให้รู้ว่าเป็นข้อมูลชนิดไหน ไม่ใช่แค่ตัวเลขลอย ๆ */
+function _pendingSyncBreakdown() {
+  const p = [];
+  try { const n = _countUnsynced(); if (n) p.push(`KPI/${TT('ยอดผลิต','production')} ${nn(n)}`); } catch (e) {}
+  try { if (_wipinPending && _wipinPending.size) p.push(`WIP IN 1.5 ${nn(_wipinPending.size)}`); } catch (e) {}
+  try { if (_hoPending && _hoPending.size) p.push(`${TT('ต่อกะ','handover')} ${nn(_hoPending.size)}`); } catch (e) {}
+  if (_pendW.length) {
+    const by = {};
+    for (const w of _pendW) by[w.label || w.path] = (by[w.label || w.path] || 0) + 1;
+    for (const k in by) p.push(`${k} ${nn(by[k])}`);
+  }
+  return p;
+}
+let _syncBusy = false;
+function renderSyncBar() {
+  const el = $('syncBar'); if (!el) return;
+  const n = _pendingSyncCount();
+  if (!n && !_syncBusy) { el.classList.remove('on'); el.classList.remove('busy'); return; }
+  el.classList.toggle('busy', _syncBusy);
+  const what = _pendingSyncBreakdown().join(' · ');
+  el.innerHTML = _syncBusy
+    ? `<span class="sb-tx">☁️ ${TT('กำลังส่งข้อมูลที่ค้างขึ้น Cloud…','Sending pending data…')}</span>`
+    : `<span class="sb-tx">⚠️ ${TT('ยังไม่ขึ้น Cloud','Not on Cloud yet')} <b>${nn(n)}</b> ${TT('รายการ','items')}<br>
+        <span style="font-weight:700;opacity:.92;font-size:11px">${escapeHtml(what)}${what?' · ':''}${TT('อยู่ในเครื่องนี้ ไม่หาย','saved on this device')}</span></span>
+       <span class="sb-btn">🔁 ${TT('ส่งใหม่','Retry')}</span>`;
+  el.classList.add('on');
+}
+async function retrySyncNow() {
+  if (_syncBusy) return;
+  const before = _pendingSyncCount();
+  if (!before) { renderSyncBar(); return; }
+  _syncBusy = true; renderSyncBar();
+  try { await flushUnsynced(true); } catch (e) {}                              // KPI + ยอดผลิต
+  try { if (typeof _wipinFlush === 'function') await _wipinFlush(); } catch (e) {}   // WIP IN 1.5
+  try { if (typeof _hoFlush === 'function') await _hoFlush(); } catch (e) {}         // ต่อกะ
+  try { await flushPendingWrites(); } catch (e) {}                             // แผน/เป้า/วาล์ว/พนักงาน/IDs
+  _syncBusy = false;
+  const left = _pendingSyncCount();
+  renderSyncBar();
+  if (!left) {
+    setConnBadge('online');
+    toast(`☁️ ${TT('ส่งขึ้น Cloud ครบแล้ว','Everything sent to Cloud')} ${nn(before)} ${TT('รายการ','items')}`, 'green');
+  } else {
+    setConnBadge('local');
+    toast(`⚠️ ${TT('ยังส่งไม่ได้','Still not sent')} ${nn(left)} ${TT('รายการ','items')} — ${TT('ตรวจสัญญาณอินเทอร์เน็ตแล้วลองใหม่','check the connection then retry')}`, 'red');
+  }
+}
+/* ป๊อปอัปตอนบันทึกไม่ขึ้น Cloud — ต้องกดปิดเอง จะได้ไม่พลาด (ต่างจาก toast ที่หายเอง)
+   what = ชื่อสิ่งที่บันทึก (เช่น "KPI 3 record") · detail = ข้อความ error จริง */
+function offlineSaveDialog(what, detail) {
+  const off = (navigator.onLine === false);
+  openModal(TT('⚠️ บันทึกไม่ขึ้น Cloud','⚠️ Not saved to Cloud'), `
+    <div style="font-size:13.5px;line-height:1.75;color:var(--text)">
+      <div style="background:#DCFCE7;border:1.5px solid #86EFAC;border-radius:10px;padding:9px 12px;margin-bottom:10px">
+        ✅ <b>${escapeHtml(what)}</b> — ${TT('เก็บไว้ในเครื่องนี้แล้ว ข้อมูลไม่หาย','saved on this device, nothing is lost')}
+      </div>
+      <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:9px 12px;margin-bottom:10px;color:#7F1D1D">
+        ❌ <b>${TT('แต่ยังส่งขึ้น Cloud ไม่ได้','But it has not reached the Cloud')}</b> —
+        ${off ? TT('เครื่องนี้ไม่ได้ต่ออินเทอร์เน็ต','this device is offline') : TT('เน็ตหลุด / สัญญาณไม่ถึงเซิร์ฟเวอร์','connection dropped / server unreachable')}<br>
+        <span style="font-size:11.5px;opacity:.85">${escapeHtml(String(detail || '').slice(0, 160))}</span><br>
+        <span style="font-size:12px">${TT('ระหว่างนี้เครื่องอื่นจะยังไม่เห็นรายการนี้','other devices will not see this entry yet')}</span>
+      </div>
+      <div style="font-weight:800;margin-bottom:3px">${TT('ทำอย่างไรต่อ','What to do')}</div>
+      <div style="font-size:12.5px;line-height:1.8;margin-bottom:14px">
+        1. ${TT('เช็ก WiFi / สัญญาณ แล้วกด','Check WiFi / signal, then tap')} <b>🔁 ${TT('ลองส่งอีกครั้ง','Retry')}</b><br>
+        2. ${TT('ยังไม่ได้ก็ทำงานต่อได้เลย — ระบบจะส่งให้เองเมื่อเน็ตกลับมา','If it still fails, keep working — it will be sent automatically when the connection returns')}<br>
+        3. <b style="color:#B91C1C">${TT('ห้ามกรอกแล้วกดบันทึกซ้ำ','Do not fill the form and save again')}</b> — ${TT('จะกลายเป็นข้อมูล 2 ชุด','it would create a duplicate')}
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn" style="flex:1;background:var(--blue);color:#fff;border:none" onclick="closeModal();retrySyncNow()">🔁 ${TT('ลองส่งอีกครั้ง','Retry now')}</button>
+        <button class="btn btn-outline" onclick="closeModal()">${TT('ปิด (ส่งอัตโนมัติภายหลัง)','Close (auto-retry later)')}</button>
+      </div>
+    </div>`);
+  renderSyncBar();
+}
+// เน็ตกลับมา (เปลี่ยนจาก offline → online) → ส่งของค้างให้เองทันที ไม่ต้องรอ heartbeat รอบถัดไป
+window.addEventListener('online', () => { renderSyncBar(); retrySyncNow(); });
+window.addEventListener('offline', () => { setConnBadge('local'); renderSyncBar(); });
 /* รวม API records กับ record ที่ยังค้าง (_unsynced) ไว้ — กันถูกลบตอนดึง/replace จาก Cloud */
 function _keepPendingKpi(apiRecords) {
   const ids = new Set(apiRecords.map(r => r.record_id || r.recordId));
@@ -4232,11 +4425,13 @@ function applyScanResult(decoded) {
 /* ============================================================
    PRODUCTION PLAN — วางแผนการผลิต (Valve / Lot / Date / Status)
    ============================================================ */
+/* ★ req #5 (2026-08-06): 3 สถานะแรก "ระบบกำหนดเอง" ทั้งหมด (ดู planEffStatus)
+   เหลือ cancelled อย่างเดียวที่คนกด — ใช้ชุดนี้เป็นป้ายชื่อเวลาแสดง/Export */
 const PLAN_STATUS = {
-  planned:     { label:'📋 วางแผน',    color:'tag-blue' },
-  in_progress: { label:'⚙️ กำลังผลิต', color:'tag-orange' },
-  done:        { label:'✅ เสร็จแล้ว',  color:'tag-green' },
-  cancelled:   { label:'❌ ยกเลิก',     color:'tag-red' },
+  planned:     { label:'📋 วางแผน',      color:'tag-blue' },
+  in_progress: { label:'⚙️ กำลังผลิต',   color:'tag-orange' },
+  done:        { label:'✅ ผลิตจบแล้ว',  color:'tag-green' },
+  cancelled:   { label:'❌ ยกเลิก',       color:'tag-red' },
 };
 
 /* ── วันที่แผนให้ปลอดภัยกับ <input type=date> + เทียบ/เรียง (req #5.1) ──
@@ -4332,12 +4527,17 @@ function planMissingIntake(ym){
   return out;
 }
 
-/* ── สถานะจริงจากการบันทึกผลิต — "ถึงขั้นตอนไหนแล้ว" (req #5.2) ── */
+/* ── สถานะจริงจากการบันทึกผลิต — "ถึงขั้นตอนไหนแล้ว" (req #5.2) ──
+   ★ 2026-08-06 (req #5): ระบบกำหนดสถานะเองทั้งหมด ไม่ให้ผู้ใช้เลือกอีกแล้ว
+     • ยังไม่เข้า WIP IN 1.5 และยังไม่มียอดผลิต → 📋 วางแผน
+     • รับเข้า WIP IN 1.5 แล้ว หรือมียอดผลิตบ้างแล้ว → ⚙️ กำลังผลิต
+     • ผลิตจบ (จบงานหลัง FG / ถึง process สุดท้ายของวาล์ว) → ✅ ผลิตจบแล้ว
+   "ยกเลิกแผน" ยังเป็นของคนกดอยู่ (คนละเรื่องกับความคืบหน้าการผลิต) */
 function _planAutoStatus(p){
   const vk = vKey(p.valve_no||''); if(!vk) return null;
   const lk = lotKey(p.lot||'');
   if(getJobProc(p.valve_no||'', p.lot||'') === 'DONE')
-    return { code:'done', label:'✅ ผลิตเสร็จ', proc:'DONE', color:'#15803d', bg:'#DCFCE7' };
+    return { code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:'DONE', color:'#15803d', bg:'#DCFCE7' };
   const v = (state.valves||[]).find(x => vKey(x.valveNo)===vk);
   const order = (v && Array.isArray(v.processes)) ? v.processes : [];
   const match = r => vKey(r.valve_no||r.valveNo)===vk && (lk ? lotKey(r.lot)===lk : true);
@@ -4346,7 +4546,7 @@ function _planAutoStatus(p){
     let best='', bestIdx=-2, bestTs='';                       // process ที่ไกลสุดตามลำดับของวาล์ว
     for(const r of recs){ const pc=r.last_process||'', i=order.indexOf(pc);
       if(i>bestIdx || (i===bestIdx && (r.saved_at||'')>bestTs)){ best=pc; bestIdx=i; bestTs=r.saved_at||''; } }
-    return { code:'in_progress', label:'⚙️ กำลังผลิต', proc:best||'', color:'#c2410c', bg:'#FFEDD5' };
+    return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:best||'', color:'#c2410c', bg:'#FFEDD5' };
   }
   /* ★ 2026-08-02 (req #7): เดิมดูแค่ KPI — ถ้ามีแต่ "ยอดผลิต" (prodRecords) จะขึ้นว่ายังไม่เริ่ม
      ทั้งที่ของจริงกำลังผลิตอยู่. เพิ่มชั้นนี้เพื่อให้ "ระบบกำหนดสถานะเอง" ได้ถูกต้องกว่าคนกรอก
@@ -4362,22 +4562,72 @@ function _planAutoStatus(p){
     // ถึง process สุดท้ายของวาล์วแล้ว = ถือว่าผลิตเสร็จ
     const last = order[order.length-1] || '';
     if(best && last && _procCanon(best)===_procCanon(last))
-      return { code:'done', label:'✅ ผลิตเสร็จ', proc:best, color:'#15803d', bg:'#DCFCE7' };
-    return { code:'in_progress', label:'⚙️ กำลังผลิต', proc:best||'', color:'#c2410c', bg:'#FFEDD5' };
+      return { code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:best, color:'#15803d', bg:'#DCFCE7' };
+    return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:best||'', color:'#c2410c', bg:'#FFEDD5' };
   }
   if(typeof _producedJobs!=='undefined' && _producedJobs.has(jobKey(p.valve_no||'', p.lot||'')))
-    return { code:'in_progress', label:'⚙️ เริ่มผลิตแล้ว', proc:'', color:'#c2410c', bg:'#FFEDD5' };
-  return { code:'planned', label:'📋 ยังไม่เริ่ม', proc:'', color:'#1d4ed8', bg:'#DBEAFE' };
+    return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:TT('เริ่มผลิตแล้ว','started'), color:'#c2410c', bg:'#FFEDD5' };
+  /* ★ req #5: "เข้า WIP IN 1.5 แล้ว" = ของมาถึงไลน์แล้ว รอผลิตที่ Process แรก → กำลังผลิต
+     (ก่อนหน้านี้ยังขึ้นว่า "ยังไม่เริ่ม" เพราะดูแต่ยอดผลิต ทำให้แผนที่ของเข้ามาแล้วดูเหมือนยังไม่ขยับ) */
+  if(_wipinReceivedQty(p.valve_no||'', p.lot||'') > 0)
+    return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:TT('รับเข้า WIP IN 1.5','received (WIP IN 1.5)'), color:'#c2410c', bg:'#FFEDD5' };
+  return { code:'planned', label:TT('📋 วางแผน','📋 Planned'), proc:'', color:'#1d4ed8', bg:'#DBEAFE' };
+}
+/* สถานะที่ใช้จริงทั้งระบบ (ป้าย · ตัวนับ · ตัวกรอง · เรียง · export)
+   = "ยกเลิก" ถ้าคนกดยกเลิกไว้ · นอกนั้นคิดจากของจริงเสมอ ไม่ใช่ค่าที่เก็บใน DB */
+function planEffStatus(p){
+  if(!p) return 'planned';
+  if(p.status==='cancelled') return 'cancelled';
+  const a = planAutoStatus(p);
+  return (a && a.code) || 'planned';
+}
+/* ยอดที่ "รับเข้า WIP IN 1.5" แล้วของ (valve, lot) — แผนที่ไม่ระบุ Lot = นับทุก Lot ของเบอร์นั้น
+   ทำเป็น index + cache เพราะตารางแผนเรียกทีละหลายร้อยแถว (ไล่ทั้งรายการรับเข้าทุกแถว = ช้ามาก) */
+let _wipinIdxCache=null, _wipinIdxVer=-1;
+function _wipinRecvIndex(){
+  const ver = (typeof _wipinVer!=='undefined') ? _wipinVer : 0;
+  if(_wipinIdxCache && _wipinIdxVer===ver) return _wipinIdxCache;
+  const byJob={}, byValve={};
+  try{
+    for(const e of _wipinListPeer()){          // ★ งานข้ามสาย VSM3⇄VSM4 ก็ถือว่ารับเข้าแล้ว
+      const vk=vKey(e.valve); if(!vk) continue;
+      const q=Number(e.qty)||0;
+      byValve[vk]=(byValve[vk]||0)+q;
+      const jk=jobKey(e.valve,e.lot);
+      byJob[jk]=(byJob[jk]||0)+q;
+    }
+  }catch(err){ /* _wipin ยังไม่ถูกประกาศ (ตอนบูต) → ถือว่ายังไม่มีของรับเข้า */ }
+  _wipinIdxCache={byJob,byValve}; _wipinIdxVer=ver;
+  return _wipinIdxCache;
+}
+function _wipinReceivedQty(valve, lot){
+  const vk=vKey(valve||''); if(!vk) return 0;
+  const idx=_wipinRecvIndex();
+  return lotKey(lot||'') ? (idx.byJob[jobKey(valve,lot)]||0) : (idx.byValve[vk]||0);
 }
 
+/* ── บันทึกแผน 1 ใบขึ้น Cloud แบบ "ไม่หายแน่นอน" (req #6) ──
+   ทุกที่ที่แก้แผนต้องผ่านตรงนี้ · ล้มเหลว = เข้าคิว ส่งใหม่เองเมื่อเน็ตกลับมา
+   คีย์คิว = plan_id → แก้ใบเดิมซ้ำ ๆ ตอน offline เก็บแค่ครั้งล่าสุด (ไม่บวมและไม่ทับกันเอง) */
+function _planSave(p, del) {
+  return del
+    ? apiSave('/api/plans/delete', { plan_id: p }, { label: TT('ลบแผนขาย','delete plan'), key: 'del:' + p })
+    : apiSave('/api/plans', p, { label: TT('แผนขาย','sales plan'), key: p && p.plan_id });
+}
+// ข้อความต่อท้าย toast เมื่อยังไม่ขึ้น Cloud — ผู้ใช้ต้องรู้ทันทีว่า "เก็บในเครื่องก่อน"
+function _planSaveNote(r) {
+  if (!r || r.ok !== false) return '';
+  return ' · ⚠️ ' + (r.queued ? TT('ยังไม่ขึ้น Cloud (จะส่งให้เองเมื่อเน็ตกลับมา)','not on Cloud yet (will retry automatically)')
+                              : TT('ยังไม่ขึ้น Cloud — กดส่งใหม่ที่แถบด้านล่าง','not on Cloud — use the retry bar below'));
+}
 /* ── ปุ่มช่วยจัดการแผน (req #5.3): ยกเลิก / กู้คืน / เลื่อน +1 เดือน ── */
 async function cancelPlan(planId){
   const idx = state.plans.findIndex(p=>p.plan_id===planId); if(idx<0) return;
   const to = state.plans[idx].status==='cancelled' ? 'planned' : 'cancelled';
   state.plans[idx].status = to;
   lsSave(LS.PLANS, state.plans); renderPlans();
-  if(API){ try{ await api('/api/plans',{ body: state.plans[idx] }); }catch(e){} }
-  toast(to==='cancelled' ? '❌ ยกเลิกแผนแล้ว' : '↩️ กู้คืนแผนแล้ว', to==='cancelled'?'orange':'green');
+  const _r = await _planSave(state.plans[idx]);            // ★ req #6: เน็ตหลุด → เข้าคิวส่งใหม่ ไม่หายเงียบ
+  toast((to==='cancelled' ? '❌ ยกเลิกแผนแล้ว' : '↩️ กู้คืนแผนแล้ว') + _planSaveNote(_r), _r.ok===false?'orange':(to==='cancelled'?'orange':'green'));
 }
 async function reschedulePlan(planId){
   const idx = state.plans.findIndex(p=>p.plan_id===planId); if(idx<0) return;
@@ -4387,8 +4637,8 @@ async function reschedulePlan(planId){
   state.plans[idx].plan_date = next;
   if(state.plans[idx].status==='cancelled') state.plans[idx].status='planned';   // เลื่อนไปขายใหม่ → กลับมา active
   lsSave(LS.PLANS, state.plans); renderPlans();
-  if(API){ try{ await api('/api/plans',{ body: state.plans[idx] }); }catch(e){} }
-  toast(`📅 เลื่อนแผนไป ${next}`, 'green');
+  const _r = await _planSave(state.plans[idx]);            // ★ req #6
+  toast(`📅 เลื่อนแผนไป ${next}` + _planSaveNote(_r), _r.ok===false?'orange':'green');
 }
 /* ซ่อมวันที่ผิดรูปทั้งหมด แล้วบันทึกกลับ Cloud (req #5.1) */
 async function repairPlanDates(){
@@ -4397,8 +4647,9 @@ async function repairPlanDates(){
   if(!(await confirmModal(`พบวันที่ผิดรูป ${bad.length} รายการ (เช่น "2026-30-07")\nซ่อมเป็นรูปแบบที่ถูกต้องแล้วบันทึกขึ้น Cloud?`))) return;
   for(const p of bad) p.plan_date = _planDateISO(p.plan_date);
   lsSave(LS.PLANS, state.plans); renderPlans();
-  let ok=0; if(API){ for(const p of bad){ try{ await api('/api/plans',{ body:p }); ok++; }catch(e){} } }
-  toast(`🔧 ซ่อม ${bad.length} รายการ${API?` · บันทึก Cloud ${ok}`:''}`,'green');
+  let ok=0, fail=0;
+  if(API){ for(const p of bad){ const r=await _planSave(p); if(r.ok) ok++; else fail++; } }   // ★ req #6: ที่ส่งไม่ได้เข้าคิว
+  toast(`🔧 ซ่อม ${bad.length} รายการ${API?` · บันทึก Cloud ${ok}`:''}${fail?` · ⚠️ ยังไม่ขึ้น Cloud ${fail} (เข้าคิวส่งใหม่แล้ว)`:''}`, fail?'orange':'green');
 }
 
 /* ── มุมมองรายเดือน (req #6): เลือกปี + ดูยอดขายแต่ละเดือน กดเดือนเพื่อกรอง ── */
@@ -4514,7 +4765,7 @@ function renderPlanRollover() {
         <button class="btn btn-sm btn-outline" style="padding:4px 10px;font-size:11.5px" onclick="togglePlanRollover()">${_planRolloverOpen ? '▴ ซ่อนรายการ' : '▾ ดูรายการ'}</button>
       </div>
       <button class="btn btn-block btn-sm" style="margin-top:9px;background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;font-weight:800;padding:9px"
-        onclick="applyPlanRollovers()">🔀 ย้ายงานทั้งหมดไปเดือนถัดไป (ลบเดือนเก่า ${oldN} แถว · ตั้งสถานะให้อัตโนมัติ)</button>
+        onclick="applyPlanRollovers()">🔀 ย้ายงานทั้งหมดไปเดือนถัดไป (ลบเดือนเก่า ${oldN} แถว)</button>
       ${_planRolloverOpen ? `<div style="margin-top:8px;max-height:260px;overflow:auto">${rows}</div>` : ''}
     </div>`;
 }
@@ -4531,13 +4782,12 @@ async function applyPlanRollovers() {
     { danger: true, yes: 'ย้ายทั้งหมด' });
   if (!okGo) return;
 
-  // 1) ตั้งสถานะแถวเดือนใหม่ตามของจริง (มียอดผลิตแล้ว = กำลังผลิต · จบแล้ว = เสร็จ)
+  // 1) ★ req #5: ไม่ต้องเขียนสถานะแล้ว — ระบบคิดจากของจริงให้เองทุกครั้งที่แสดงผล
+  //    (เดิมเขียนทับ p.status ตรงนี้ ซึ่งมีผลข้างเคียงคือปลด "ยกเลิกแผน" ให้กลับมา active เอง)
   const touched = [];
   for (const r of list) {
     const np = state.plans.find(p => p.plan_id === r.toId);
     if (!np) continue;
-    const auto = planAutoStatus(np);
-    if (auto && auto.code && np.status !== auto.code) { np.status = auto.code; touched.push(np); }
     // ยกหมายเหตุของเดือนเก่ามาให้ ถ้าแถวใหม่ยังว่าง (ไม่ให้ข้อมูลที่พิมพ์ไว้หายไปพร้อมแถวเก่า)
     if (!(np.note || '').trim()) {
       const oldNote = r.fromIds.map(id => (state.plans.find(p => p.plan_id === id) || {}).note || '').find(n => n.trim());
@@ -4557,33 +4807,17 @@ async function applyPlanRollovers() {
     let done = 0;
     const tick = () => busyMsg(`กำลังย้าย ${done}/${delIds.length + touched.length}…`);
     try {
-      await _chunkRun(touched, p => api('/api/plans', { body: p }).catch(() => { fail++; }), 6, n => { done = n; tick(); });
-      await _chunkRun(delIds, id => api('/api/plans/delete', { body: { plan_id: id } }).catch(() => { fail++; }), 6, n => { done = touched.length + n; tick(); });
+      // ★ req #6: ที่ส่งไม่สำเร็จเข้าคิวอัตโนมัติ (_planSave) → ระบบส่งซ้ำให้เองเมื่อเน็ตกลับมา
+      await _chunkRun(touched, p  => _planSave(p).then(r => { if (!r.ok) fail++; }), 6, n => { done = n; tick(); });
+      await _chunkRun(delIds, id => _planSave(id, true).then(r => { if (!r.ok) fail++; }), 6, n => { done = touched.length + n; tick(); });
     } catch (e) { }
     hideBusy();
   }
-  toast(fail ? `ย้ายแล้ว ${list.length} รายการ — Cloud ไม่สำเร็จ ${fail}` : `🔀 ย้าย ${list.length} รายการไปเดือนถัดไปแล้ว (ลบเดือนเก่า ${delIds.length} แถว)`,
+  toast(fail ? `ย้ายแล้ว ${list.length} รายการ — ⚠️ ยังไม่ขึ้น Cloud ${fail} (เข้าคิวส่งใหม่แล้ว)` : `🔀 ย้าย ${list.length} รายการไปเดือนถัดไปแล้ว (ลบเดือนเก่า ${delIds.length} แถว)`,
         fail ? 'orange' : 'green');
 }
-/* ตั้งสถานะ "ตามของจริง" ให้ทุกแถวที่กรองอยู่ — ระบบรู้ดีกว่า (req #7) */
-async function autoStatusPlans() {
-  const rows = filteredPlans().filter(p => p.status !== 'cancelled');
-  const changed = [];
-  for (const p of rows) {
-    const auto = planAutoStatus(p);
-    if (auto && auto.code && p.status !== auto.code) { p.status = auto.code; changed.push(p); }
-  }
-  if (!changed.length) { toast('สถานะตรงกับของจริงอยู่แล้ว', 'blue'); return; }
-  lsSave(LS.PLANS, state.plans);
-  renderPlans();
-  let fail = 0;
-  if (API) {
-    showBusy(`กำลังบันทึก 0/${changed.length}…`, true);
-    await _chunkRun(changed, p => api('/api/plans', { body: p }).catch(() => { fail++; }), 6, n => busyMsg(`กำลังบันทึก ${n}/${changed.length}…`));
-    hideBusy();
-  }
-  toast(fail ? `ตั้งสถานะ ${changed.length} แถว — Cloud ไม่สำเร็จ ${fail}` : `🤖 ตั้งสถานะตามของจริง ${changed.length} แถว`, fail ? 'orange' : 'green');
-}
+/* ★ req #5 (2026-08-06): ปุ่ม "🤖 สถานะอัตโนมัติ" ถูกถอดออกแล้ว —
+   สถานะคิดจากของจริงทุกครั้งที่แสดงผล (planEffStatus) ไม่มีอะไรให้กดตั้งอีก */
 
 function planNewId() { return 'P-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -4604,7 +4838,7 @@ function _planSortVal(p, key) {
     case 'qty':    return Number(p.quantity) || 0;
     case 'note':   return (p.note || '').toUpperCase();
     // "สถานะ" เรียงตามสถานะจริงจากการผลิต (ที่ผู้ใช้เห็นเป็นป้ายสี) ไม่ใช่ค่า override
-    case 'status': { const a = planAutoStatus(p); return _PLAN_STATUS_RANK[(a && a.code) || p.status] ?? 9; }
+    case 'status': return _PLAN_STATUS_RANK[planEffStatus(p)] ?? 9;
     default:       return _planDateISO(p.plan_date);
   }
 }
@@ -4627,9 +4861,12 @@ let _planQ    = '';      // คำค้นรวมทุกคอลัมน�
 
 /* สถานะจริงคำนวณหนัก (ไล่ดู kpiRecords/prodRecords ทุกครั้ง) — ตารางเรียกซ้ำต่อแถว ต่อการกรอง ต่อการเรียง
    → memo ต่อรอบข้อมูล (_fvVer เปลี่ยนเมื่อข้อมูลเปลี่ยน) ไม่งั้นตารางไม่กี่ร้อยแถวก็หน่วงแล้ว */
-let _planAutoMemo = new Map(), _planAutoMemoVer = -1;
+let _planAutoMemo = new Map(), _planAutoMemoVer = '';
 function planAutoStatus(p) {
-  if (_planAutoMemoVer !== _fvVer) { _planAutoMemo.clear(); _planAutoMemoVer = _fvVer; }
+  // ★ req #5: สถานะขึ้นกับ "รายการรับเข้า WIP IN 1.5" ด้วย → รวม _wipinVer ในคีย์ล้าง cache
+  //   ไม่งั้นเข้ายอดรับเข้าแล้วสถานะแผนยังค้างเป็น "วางแผน" จนกว่าข้อมูลชุดอื่นจะเปลี่ยน
+  const ver = _fvVer + '/' + ((typeof _wipinVer !== 'undefined') ? _wipinVer : 0);
+  if (_planAutoMemoVer !== ver) { _planAutoMemo.clear(); _planAutoMemoVer = ver; }
   const k = p.plan_id || `${p.valve_no}§${p.lot}§${p.plan_date}`;
   let v = _planAutoMemo.get(k);
   if (v === undefined) { v = _planAutoStatus(p); _planAutoMemo.set(k, v); }
@@ -4645,10 +4882,9 @@ const PLAN_COLS = {
             disp:v=>v || TT('(ไม่มี Lot)','(no lot)') },
   qty:    { lbl:["Q'ty","Q'ty"], key:p=>String(Math.round(Number(p.quantity)||0)),
             disp:v=>nn(+v)+' '+TT('ชิ้น','pcs'), num:true },
-  status: { lbl:['สถานะ','Status'], key:p=>{ if(p.status==='cancelled') return 'cancelled';
-              const a=planAutoStatus(p); return (a && a.code) || p.status || 'planned'; },
-            disp:v=>({planned:TT('📋 ยังไม่เริ่ม','📋 Not started'), in_progress:TT('⚙️ กำลังผลิต','⚙️ In production'),
-                      done:TT('✅ ผลิตเสร็จ','✅ Finished'), cancelled:TT('❌ ยกเลิก','❌ Cancelled')}[v] || v) },
+  status: { lbl:['สถานะ','Status'], key:p=>planEffStatus(p),
+            disp:v=>({planned:TT('📋 วางแผน','📋 Planned'), in_progress:TT('⚙️ กำลังผลิต','⚙️ In production'),
+                      done:TT('✅ ผลิตจบแล้ว','✅ Finished'), cancelled:TT('❌ ยกเลิก','❌ Cancelled')}[v] || v) },
   note:   { lbl:['หมายเหตุ','Note'], key:p=>(p.note||'').trim(),
             disp:v=>v || TT('(ว่าง)','(blank)') },
 };
@@ -4841,29 +5077,21 @@ function closePlanFilter() {
   const pop = $('planColPop'); if (pop) pop.classList.remove('open');
   _pcpCol = ''; _pcpAnchor = null;
 }
-function renderPlanFilterPop(col) {
-  const pop = $('planColPop');
-  col = col || _pcpCol;
-  if (!pop || !PLAN_COLS[col]) return;
-  const keepScroll = pop.querySelector('.pcp-list')?.scrollTop || 0;   // ติ๊กแล้วรายการต้องไม่ดีดกลับหัวลิสต์
-  const sel = _planColF[col];
+/* ═══ ★ 2026-08-06 (req #3) — วาดใหม่ "เฉพาะลิสต์" ไม่แตะช่องค้นหา ═══════════
+   อาการที่แจ้ง: พิมพ์เลขในช่องกรอง Valve No บนมือถือ พอพิมพ์ไป 1 ตัว คีย์บอร์ด
+   สลับกลับไปชั้นตัวอักษรเอง — พิมพ์เลขต่อไม่ได้ ต้องกด "?123" ใหม่ทุกตัว
+   สาเหตุ: ทุก keystroke เรียก renderPlanFilterPop() ซึ่ง set innerHTML ทั้งก้อน
+   → <input> ตัวเดิม "ถูกทำลายแล้วสร้างใหม่" · เบราว์เซอร์มือถือถือว่าเป็นช่องใหม่
+   จึงรีเซ็ตคีย์บอร์ดกลับชั้นเริ่มต้น (ตัวอักษร) แม้จะ .focus() คืนให้ก็ตาม
+   แก้: แยกส่วนที่เปลี่ยนตามการพิมพ์/ติ๊ก (ปุ่ม "เอาเฉพาะที่ค้นเจอ" + คำอธิบาย + ลิสต์)
+   ไว้ใน .pcp-dyn แล้วอัปเดตเฉพาะก้อนนั้น — ช่องค้นหาอยู่นิ่ง ไม่เคยถูกสร้างใหม่ */
+function _pcpDynHtml(col) {
   const q = _pcpQ.trim().toLowerCase();
   const searching = !!q;
   const shown = _pcpShown(col);
   const isOn = v => _pcpIsOn(col, v);
   const allOn = shown.length > 0 && shown.every(([v]) => isOn(v));
-  pop.innerHTML = `
-    ${_planRangeNarrow() ? `<div class="pcp-warn">
-      ⚠️ ${TT('เห็นเฉพาะช่วงวันที่ขาย','Only sale dates')} <b>${_fmtThDate($('planFrom')?.value||'')} – ${_fmtThDate($('planTo')?.value||'')}</b>
-      ${TT('· ของนอกช่วงยังไม่ถูกเอามาให้เลือก','· values outside it are not listed yet')}
-      <button type="button" onclick="planFilterAllDates('${col}')">📅 ${TT('ดูทุกวันที่','Show all dates')}</button>
-    </div>` : ''}
-    <div class="pcp-sort">
-      <button type="button" onclick="planFilterSort('${col}',1)">▲ ${TT('น้อย→มาก','A→Z')}</button>
-      <button type="button" onclick="planFilterSort('${col}',-1)">▼ ${TT('มาก→น้อย','Z→A')}</button>
-    </div>
-    <input type="search" class="pcp-search" id="pcpSearch" value="${escapeHtml(_pcpQ)}"
-      placeholder="${TT('ค้นหาในคอลัมน์นี้','Search this column')}" oninput="planFilterSearch('${col}',this.value)">
+  return `
     ${searching && shown.length ? `<button type="button" class="pcp-only" onclick="planFilterOnlyFound('${col}')">
       ✅ ${TT(`เอาเฉพาะที่ค้นเจอ (${nn(shown.length)} ค่า)`, `Keep only the ${nn(shown.length)} match${shown.length>1?'es':''}`)}
     </button>` : ''}
@@ -4876,7 +5104,39 @@ function renderPlanFilterPop(col) {
           <input type="checkbox" ${isOn(v)?'checked':''} onclick="planFilterPick('${col}','${encodeURIComponent(v)}',this.checked)">
           <span title="${escapeHtml(String(PLAN_COLS[col].disp(v)))}">${escapeHtml(String(PLAN_COLS[col].disp(v)))}</span><b>${nn(n)}</b>
         </label>`).join('') : `<div class="pcp-empty">${TT('ไม่พบค่าที่ตรงคำค้น','No matching values')}</div>`}
+    </div>`;
+}
+/* อัปเดตเฉพาะลิสต์ (ใช้ตอนพิมพ์ค้นหา / ติ๊กเลือก) — คืน true ถ้าอัปเดตได้จริง */
+function _pcpRenderList(col) {
+  const pop = $('planColPop');
+  const dyn = pop && pop.querySelector('.pcp-dyn');
+  if (!pop || !dyn || !PLAN_COLS[col] || !pop.classList.contains('open')) return false;
+  const keepScroll = pop.querySelector('.pcp-list')?.scrollTop || 0;
+  dyn.innerHTML = _pcpDynHtml(col);
+  const lst = pop.querySelector('.pcp-list'); if (lst) lst.scrollTop = keepScroll;
+  _pcpPlace(_pcpAnchor);
+  return true;
+}
+function renderPlanFilterPop(col) {
+  const pop = $('planColPop');
+  col = col || _pcpCol;
+  if (!pop || !PLAN_COLS[col]) return;
+  const keepScroll = pop.querySelector('.pcp-list')?.scrollTop || 0;   // ติ๊กแล้วรายการต้องไม่ดีดกลับหัวลิสต์
+  pop.innerHTML = `
+    ${_planRangeNarrow() ? `<div class="pcp-warn">
+      ⚠️ ${TT('เห็นเฉพาะช่วงวันที่ขาย','Only sale dates')} <b>${_fmtThDate($('planFrom')?.value||'')} – ${_fmtThDate($('planTo')?.value||'')}</b>
+      ${TT('· ของนอกช่วงยังไม่ถูกเอามาให้เลือก','· values outside it are not listed yet')}
+      <button type="button" onclick="planFilterAllDates('${col}')">📅 ${TT('ดูทุกวันที่','Show all dates')}</button>
+    </div>` : ''}
+    <div class="pcp-sort">
+      <button type="button" onclick="planFilterSort('${col}',1)">▲ ${TT('น้อย→มาก','A→Z')}</button>
+      <button type="button" onclick="planFilterSort('${col}',-1)">▼ ${TT('มาก→น้อย','Z→A')}</button>
     </div>
+    ${/* inputmode/autocapitalize: มือถือจะได้ไม่ดันตัวพิมพ์ใหญ่/แก้คำอัตโนมัติกับรหัสวาล์ว-ล็อต */''}
+    <input type="search" class="pcp-search" id="pcpSearch" value="${escapeHtml(_pcpQ)}"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+      placeholder="${TT('ค้นหาในคอลัมน์นี้','Search this column')}" oninput="planFilterSearch('${col}',this.value)">
+    <div class="pcp-dyn">${_pcpDynHtml(col)}</div>
     <div class="pcp-ft">
       <button type="button" class="pcp-clr" onclick="planFilterClear('${col}')">${TT('ล้างตัวกรอง','Clear filter')}</button>
       <button type="button" class="pcp-ok" onclick="closePlanFilter()">${TT('เสร็จ','Done')}</button>
@@ -4888,8 +5148,10 @@ function renderPlanFilterPop(col) {
 function planFilterSearch(col, v) {
   if (!_pcpEnsure(col)) return;
   _pcpQ = v || '';
-  renderPlanFilterPop(col);
-  const s = $('pcpSearch'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  // ★ req #3: วาดใหม่เฉพาะลิสต์ — ห้ามแตะ <input> ที่กำลังพิมพ์อยู่
+  //   (ถ้าสร้าง input ใหม่ คีย์บอร์ดมือถือจะเด้งกลับชั้นตัวอักษรทุกตัวอักษรที่พิมพ์)
+  //   ไม่ต้อง .focus() คืนแล้ว เพราะโฟกัสไม่เคยหลุดตั้งแต่แรก
+  if (!_pcpRenderList(col)) renderPlanFilterPop(col);
 }
 function planFilterSort(col, dir) {
   if (!PLAN_COLS[col]) return;
@@ -4920,14 +5182,14 @@ function _pcpCommit(col, sel) {
   if (sel.size >= _pcpVals.length) delete _planColF[col]; else _planColF[col] = sel;
   _planPage = 1;
   renderPlans();
-  renderPlanFilterPop(col);
+  if (!_pcpRenderList(col)) renderPlanFilterPop(col);   // ★ req #3: ติ๊กแล้วช่องค้นหาต้องไม่ถูกสร้างใหม่
 }
 function planFilterClear(col) {
   col = col || _pcpCol;
   delete _planColF[col];
   _planPage = 1;
   renderPlans();
-  if (PLAN_COLS[col] && $('planColPop')?.classList.contains('open')) renderPlanFilterPop(col);
+  if (PLAN_COLS[col] && $('planColPop')?.classList.contains('open')) _pcpRenderList(col);
 }
 function clearAllPlanFilters() {
   _planColF = {};
@@ -5089,7 +5351,6 @@ function renderPlanBulk() {
     <button type="button" onclick="planBulkShiftMonth(1)"  title="${TT('เลื่อนวันที่ขายไปเดือนถัดไป (+1 เดือน)','Push sale date to next month (+1)')}">📅⁺ ${TT('เดือนถัดไป','Next month')}</button>
     <button type="button" onclick="planBulkShiftMonth(-1)" title="${TT('ย้อนวันที่ขายกลับ 1 เดือน','Pull sale date back one month')}">📅⁻ ${TT('เดือนก่อน','Prev month')}</button>
     <button type="button" onclick="planBulkMoveTo()" title="${TT('ระบุเดือน/วันที่ปลายทางเอง','Choose the target month/date')}">🗓️ ${TT('ย้ายไปเดือน/วันที่…','Move to month/date…')}</button>
-    <button type="button" onclick="planBulkStatus()" title="${TT('ตั้งสถานะให้ทุกรายการที่เลือก','Set status for every selected row')}">🏷️ ${TT('ตั้งสถานะ…','Set status…')}</button>
     <button type="button" onclick="planBulkCancel()" title="${TT('ยกเลิก/กู้คืนแผนที่เลือก','Cancel/restore selected plans')}">${nCancel === rows.length ? '↩️ '+TT('กู้คืน','Restore') : '❌ '+TT('ยกเลิกแผน','Cancel plans')}</button>
     <button type="button" onclick="planBulkExport()">⬇️ Export</button>
     <button type="button" class="pb-del" onclick="planBulkDelete()">🗑️ ${TT('ลบที่เลือก','Delete selected')}</button>
@@ -5104,7 +5365,7 @@ async function _planPushMany(list, verb) {
   let fail = 0;
   const show = list.length > 3;
   if (show) { showBusy(`${verb} 0/${list.length}…`, true); await yieldUI(); }
-  await _chunkRun(list, p => api('/api/plans', { body: p }).catch(() => { fail++; }), 6,
+  await _chunkRun(list, p => _planSave(p).then(r => { if (!r.ok) fail++; }), 6,   // ★ req #6: ล้มเหลว → เข้าคิว
                   n => { if (show) busyMsg(`${verb} ${n}/${list.length}…`); });
   if (show) hideBusy();
   return fail;
@@ -5169,35 +5430,8 @@ async function planBulkApplyMove(mode) {
   toast(fail ? TT(`ย้ายแล้ว ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Moved ${rows.length} — ${fail} failed on Cloud`)
              : TT(`🗓️ ย้าย ${rows.length} รายการแล้ว`, `🗓️ Moved ${rows.length} plans`), fail ? 'orange' : 'green');
 }
-function planBulkStatus() {
-  const rows = planSelRows(); if (!rows.length) return;
-  openModal(TT('🏷️ ตั้งสถานะที่เลือก','🏷️ Set status'), `
-    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--blue-dark);margin-bottom:11px">
-      ${TT('ตั้งสถานะให้','Set status for')} <b>${nn(rows.length)}</b> ${TT('รายการที่เลือก','selected plans')}
-    </div>
-    ${Object.entries(PLAN_STATUS).map(([k,v]) => `<button class="btn btn-block btn-outline mb-8" style="justify-content:flex-start" onclick="planBulkApplyStatus('${k}')">${v.label}</button>`).join('')}
-    <button class="btn btn-block btn-blue" onclick="planBulkAutoStatus()">🤖 ${TT('ตั้งตามการผลิตจริง (ระบบรู้ดีกว่า)','Set from actual production (system knows best)')}</button>
-    <div class="row mt-12" style="justify-content:flex-end"><button class="btn btn-outline" onclick="closeModal()">${TT('ยกเลิก','Cancel')}</button></div>`);
-}
-async function planBulkApplyStatus(code) {
-  const rows = planSelRows(); closeModal(); if (!rows.length) return;
-  for (const p of rows) p.status = code;
-  const fail = await _planPushMany(rows, TT('กำลังบันทึก','Saving'));
-  toast(fail ? TT(`ตั้งสถานะ ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Set ${rows.length} — ${fail} failed on Cloud`)
-             : TT(`🏷️ ตั้งสถานะ ${rows.length} รายการแล้ว`, `🏷️ Status set on ${rows.length} plans`), fail ? 'orange' : 'green');
-}
-async function planBulkAutoStatus() {
-  const rows = planSelRows(); closeModal(); if (!rows.length) return;
-  const changed = [];
-  for (const p of rows) {
-    const auto = planAutoStatus(p);
-    if (auto && auto.code && p.status !== auto.code) { p.status = auto.code; changed.push(p); }
-  }
-  if (!changed.length) { toast(TT('สถานะตรงกับของจริงอยู่แล้ว','Statuses already match reality'),'blue'); return; }
-  const fail = await _planPushMany(changed, TT('กำลังบันทึก','Saving'));
-  toast(fail ? TT(`ตั้งสถานะ ${changed.length} แถว — Cloud ไม่สำเร็จ ${fail}`, `Set ${changed.length} — ${fail} failed on Cloud`)
-             : TT(`🤖 ตั้งสถานะตามของจริง ${changed.length} แถว`, `🤖 Set ${changed.length} rows from actual production`), fail ? 'orange' : 'green');
-}
+/* ★ req #5 (2026-08-06): คำสั่ง "ตั้งสถานะ" แบบกลุ่มถูกถอดออก —
+   สถานะมาจากของจริงเสมอ · เหลือแค่ ยกเลิก/กู้คืนแผน (planBulkCancel) ที่ยังเป็นการตัดสินใจของคน */
 async function planBulkCancel() {
   const rows = planSelRows(); if (!rows.length) return;
   const toCancel = rows.some(p => p.status !== 'cancelled');       // มีที่ยังไม่ยกเลิก → ยกเลิกทั้งชุด
@@ -5230,11 +5464,11 @@ async function planBulkDelete() {
   if (API) {
     const show = ids.length > 3;
     if (show) { showBusy(TT(`กำลังลบ 0/${ids.length}…`,`Deleting 0/${ids.length}…`), true); await yieldUI(); }
-    await _chunkRun(ids, id => api('/api/plans/delete', { body:{ plan_id:id } }).catch(() => { fail++; }), 6,
+    await _chunkRun(ids, id => _planSave(id, true).then(r => { if (!r.ok) fail++; }), 6,   // ★ req #6
                     n => { if (show) busyMsg(TT(`กำลังลบ ${n}/${ids.length}…`,`Deleting ${n}/${ids.length}…`)); });
     if (show) hideBusy();
   }
-  toast(fail ? TT(`ลบแล้ว ${ids.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Deleted ${ids.length} — ${fail} failed on Cloud`)
+  toast(fail ? TT(`ลบแล้ว ${ids.length} รายการ — ⚠️ ยังไม่ขึ้น Cloud ${fail} (เข้าคิวส่งใหม่แล้ว)`, `Deleted ${ids.length} — ${fail} not on Cloud yet (queued)`)
              : TT(`🗑️ ลบ ${ids.length} รายการแล้ว`, `🗑️ Deleted ${ids.length} plans`), fail ? 'orange' : 'green');
 }
 function planBulkExport() {
@@ -5252,7 +5486,7 @@ function renderPlans() {
   if (!tbody) return;
   // count by status
   const cnt = { planned:0, in_progress:0, done:0, cancelled:0 };
-  for (const p of rows) if (cnt[p.status] !== undefined) cnt[p.status]++;
+  for (const p of rows) { const s = planEffStatus(p); if (cnt[s] !== undefined) cnt[s]++; }   // ★ req #5: นับตามสถานะจริง
   if ($('planCntPlanned'))    $('planCntPlanned').textContent    = cnt.planned;
   if ($('planCntInProgress')) $('planCntInProgress').textContent = cnt.in_progress;
   if ($('planCntDone'))       $('planCntDone').textContent       = cnt.done;
@@ -5385,9 +5619,9 @@ function openAddPlanFor(valveEnc, lotEnc, qty){
       <div class="fr"><label>วันที่ขาย</label><input type="date" id="napDate" value="${escapeHtml(todayISO())}"></div>
       <div class="fr"><label>จำนวน (Q'ty)</label><input type="text" id="napQty" value="${escapeHtml(String(qty||0))}" inputmode="text" onblur="evalFormula(this)"></div>
     </div>
-    <div class="fr"><label>สถานะแผน</label><select id="napStatus">
-      ${Object.entries(PLAN_STATUS).map(([k,v])=>`<option value="${k}" ${k==='planned'?'selected':''}>${v.label}</option>`).join('')}
-    </select></div>
+    ${/* ★ req #5: ไม่ต้องเลือกสถานะแล้ว — ระบบจะขยับเป็น "กำลังผลิต / ผลิตจบแล้ว" ให้เองตามของจริง */''}
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:-2px 0 10px">🤖 ${TT('สถานะจะถูกกำหนดเองโดยระบบ','Status is set automatically')} —
+      ${TT('วางแผน → กำลังผลิต (พอรับเข้า WIP IN 1.5 หรือมียอดผลิต) → ผลิตจบแล้ว','Planned → In production (once received or produced) → Finished')}</div>
     <div class="row mt-12" style="gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
       <button class="btn btn-green" onclick="saveAddPlanFor()">💾 บันทึกแผน</button>
@@ -5402,14 +5636,18 @@ async function saveAddPlanFor(){
   if(!date){ toast('เลือกวันที่ขาย','orange'); return; }
   if(!(qty>0)){ toast('กรอกจำนวน','orange'); return; }
   const p={ plan_id:planNewId(), valve_no:valve, lot, plan_date:date, quantity:qty,
-            status:$('napStatus')?.value||'planned', note:'เพิ่มจากแผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"',
+            status:'planned', note:'เพิ่มจากแผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"',
             created_by:CURRENT_USER?.id||'', vsm:viewVsm() };
   state.plans.unshift(p);
   lsSave(LS.PLANS, state.plans);
   closeModal();
   if(API){
-    try{ await api('/api/plans',{ body:p }); toast(`✅ เพิ่มแผน ${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น แล้ว`,'green'); }
-    catch(e){ toast('บันทึก Local แล้ว — Cloud ไม่สำเร็จ: '+e.message,'orange'); }
+    const r = await _planSave(p);                 // ★ req #6: ล้มเหลว → เข้าคิว + ป๊อปอัปบอกชัด
+    if(r.ok) toast(`✅ เพิ่มแผน ${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น แล้ว`,'green');
+    else {
+      toast(`⚠️ เพิ่มแผน ${valve} แล้ว (ในเครื่อง) — ยังไม่ขึ้น Cloud`,'orange');
+      offlineSaveDialog(`${TT('แผนขาย','Sales plan')} ${valve}${lot?' / '+lot:''} · ${nn(qty)} ${TT('ชิ้น','pcs')}`, (r.err&&r.err.message)||'network error');
+    }
   } else toast(`เพิ่มแผน ${valve} แล้ว (local)`,'green');
   renderPlans();
   if(typeof renderWipBuckets==='function') renderWipBuckets();
@@ -5492,7 +5730,7 @@ async function _applyLotRewrite(pairs) {   // pairs = [{valve, wrong, correct}]
       if (allKpi.length)  { await api('/api/kpi', { body: { records: allKpi } });          done = allKpi.length; tick(); }
       if (allProd.length) { await api('/api/records/bulk', { body: { records: allProd } }); done = total; tick(); }
       hideBusy();
-    } catch (e) { hideBusy(); allKpi.forEach(r => r._unsynced = true); allProd.forEach(r => r._unsynced = true); toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange'); return total; }
+    } catch (e) { hideBusy(); allKpi.forEach(r => r._unsynced = true); allProd.forEach(r => r._unsynced = true); toast('แก้ Local แล้ว — Cloud บางส่วนไม่สำเร็จ: ' + e.message, 'orange'); renderSyncBar(); return total; }
   }
   return total;
 }
@@ -5670,9 +5908,11 @@ async function applyRegisterAllLots() {
   if (API && rows.length) {
     showBusy(`กำลังลงทะเบียน 0/${rows.length}…`, true);
     let fail = 0;
-    try { await _chunkRun(rows, r => api('/api/ids', { body: r }).catch(() => { fail++; }), 8, n => busyMsg(`กำลังลงทะเบียน ${n}/${rows.length}…`)); } catch (e) {}
+    // ★ req #6: ที่ส่งไม่สำเร็จเข้าคิว → ระบบส่งซ้ำเองเมื่อเน็ตกลับมา
+    try { await _chunkRun(rows, r => apiSave('/api/ids', r, { label: 'Valve ID', key: r.id_code }).then(x => { if (!x.ok) fail++; }), 8,
+                          n => busyMsg(`กำลังลงทะเบียน ${n}/${rows.length}…`)); } catch (e) {}
     hideBusy();
-    if (fail) { toast(`ลงทะเบียน Local ครบ ${rows.length} Lot — แต่ขึ้น Cloud ไม่สำเร็จ ${fail} รายการ`, 'orange'); return; }
+    if (fail) { toast(`ลงทะเบียน Local ครบ ${rows.length} Lot — ⚠️ ยังไม่ขึ้น Cloud ${fail} รายการ (เข้าคิวส่งใหม่แล้ว)`, 'orange'); return; }
   }
   toast(`✅ ลงทะเบียนแล้ว ${rows.length} Lot (ID อัตโนมัติ)`, 'green');
 }
@@ -5703,14 +5943,19 @@ function planRowHtml(p) {
   const cancelled = p.status==='cancelled';
   const auto = planAutoStatus(p);
   const picked = _planSel.has(p.plan_id);
-  // ป้ายสถานะจริง (จากการบันทึกผลิต) + process ที่ถึง
-  const autoBadge = auto
-    ? `<span title="สถานะจริงจากการบันทึกผลิต" style="display:inline-block;font-size:10.5px;font-weight:800;color:${auto.color};background:${auto.bg};border-radius:6px;padding:2px 7px;white-space:nowrap">${auto.label}${auto.proc?` · ${escapeHtml(auto.proc)}`:''}</span>`
-    : '';
-  // dropdown แก้เอง (override) — เล็กลง เพราะสถานะจริงเด่นอยู่แล้ว
-  const sel = `<select onchange="updatePlan('${pid}','status',this.value)" title="แก้สถานะเอง (override)" style="border:1px solid var(--blue-soft);padding:3px 5px;border-radius:6px;font-weight:700;font-size:11px;width:100%;background:#fff;margin-top:3px">
-      ${Object.entries(PLAN_STATUS).map(([k,v]) => `<option value="${k}"${p.status===k?' selected':''}>${v.label}</option>`).join('')}
-    </select>`;
+  /* ★ 2026-08-06 (req #5) — สถานะเป็นของ "ระบบกำหนดเอง" ล้วน ๆ ไม่มี dropdown ให้เลือกอีกแล้ว
+     เหตุผล: สถานะที่คนกดเองเพี้ยนจากของจริงตลอด (ลืมกด/กดผิด) ทั้งที่ระบบรู้อยู่แล้วว่า
+     ของเข้า WIP IN 1.5 หรือยัง · มียอดผลิตหรือยัง · จบงานหรือยัง
+     ยกเลิกแผน = คนละเรื่อง (ลูกค้ายกเลิก) → ยังกดได้ที่ปุ่ม ❌ ท้ายแถวเหมือนเดิม */
+  const stTitle = cancelled ? TT('แผนถูกยกเลิก — กด ↩️ เพื่อกู้คืน','Plan cancelled — tap ↩️ to restore')
+                            : TT('ระบบกำหนดเองจากของจริง: รับเข้า WIP IN 1.5 / ยอดผลิต / จบงาน','Set automatically from real data: WIP IN 1.5 intake / production / completion');
+  const stBadge = cancelled
+    ? `<span style="display:inline-block;font-size:11px;font-weight:800;color:var(--red);background:var(--red-bg);border-radius:6px;padding:3px 8px;white-space:nowrap">${TT('❌ ยกเลิกแผน','❌ Cancelled')}</span>`
+    : (auto ? `<span title="${escapeHtml(stTitle)}" style="display:inline-block;font-size:11px;font-weight:800;color:${auto.color};background:${auto.bg};border-radius:6px;padding:3px 8px;white-space:nowrap">${auto.label}</span>
+               ${auto.proc?`<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(auto.proc)}</div>`:''}` : '');
+  // หมายเหตุ "ระบบกำหนดเอง" อยู่ที่หัวคอลัมน์ + tooltip แล้ว — ไม่ต้องซ้ำทุกแถวให้ตารางสูงขึ้นเปล่า ๆ
+  const autoBadge = `<div title="${escapeHtml(stTitle)}">${stBadge}</div>`;
+  const sel = '';
   return `<tr data-pid="${pid}" class="${picked?'sel':''}"${cancelled?' style="opacity:.55"':''}>
     <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
     <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
@@ -5743,7 +5988,7 @@ async function dedupePlanRow(keepId) {
   lsSave(LS.PLANS, state.plans);
   renderPlans();
   toast(`ลบแผนซ้ำ ${dupIds.length} รายการ — ใช้ข้อมูลใหม่`, 'green');
-  if (API) for (const id of dupIds) { try { await api('/api/plans/delete', { body: { plan_id: id } }); } catch (e) {} }
+  if (API) for (const id of dupIds) await _planSave(id, true);   // ★ req #6: ลบไม่สำเร็จ → เข้าคิวส่งใหม่
 }
 
 let planSaveTimer;
@@ -5757,17 +6002,18 @@ async function updatePlan(planId, field, value) {
   // อัพเดต stat counts ทันทีเมื่อเปลี่ยน status / date (ไม่ทำ full render เพื่อไม่ blur input)
   if (field === 'status' || field === 'plan_date') {
     const cnt = { planned:0, in_progress:0, done:0, cancelled:0 };
-    for (const p of filteredPlans()) if (cnt[p.status] !== undefined) cnt[p.status]++;
+    for (const p of filteredPlans()) { const s = planEffStatus(p); if (cnt[s] !== undefined) cnt[s]++; }
     if ($('planCntPlanned'))    $('planCntPlanned').textContent    = cnt.planned;
     if ($('planCntInProgress')) $('planCntInProgress').textContent = cnt.in_progress;
     if ($('planCntDone'))       $('planCntDone').textContent       = cnt.done;
     if ($('planCntCancel'))     $('planCntCancel').textContent     = cnt.cancelled;
   }
-  // debounce push API
+  /* debounce push API — ★ req #6: เดิม `catch(e){}` เงียบสนิท
+     พิมพ์แก้แผนตอนเน็ตหลุด = หายทันที ไม่มีอะไรบอก (local มี แต่ Cloud ไม่มี)
+     ตอนนี้เข้าคิว (คีย์ = plan_id → แก้ซ้ำกี่ครั้งก็เก็บครั้งล่าสุด) + ขึ้นแถบส้ม
+     ไม่เด้งป๊อปอัประหว่างพิมพ์ — แถบพอ ไม่งั้นรบกวนตอนกรอกงาน */
   clearTimeout(planSaveTimer);
-  planSaveTimer = setTimeout(async () => {
-    if (API) { try { await api('/api/plans', { body: state.plans[idx] }); } catch (e) {} }
-  }, 600);
+  planSaveTimer = setTimeout(() => { _planSave(state.plans[idx]); }, 600);
 }
 
 async function addPlanRow() {
@@ -5786,7 +6032,7 @@ async function addPlanRow() {
   state.plans.unshift(newPlan);
   lsSave(LS.PLANS, state.plans);
   renderPlans();
-  if (API) { try { await api('/api/plans', { body: newPlan }); } catch (e) {} }
+  if (API) await _planSave(newPlan);        // ★ req #6
 }
 
 async function deletePlanRow(planId) {
@@ -5794,7 +6040,7 @@ async function deletePlanRow(planId) {
   state.plans = state.plans.filter(p => p.plan_id !== planId);
   lsSave(LS.PLANS, state.plans);
   renderPlans();
-  if (API) { try { await api('/api/plans/delete', { body: { plan_id: planId } }); } catch (e) {} }
+  if (API) { const r = await _planSave(planId, true); if (!r.ok) toast('⚠️ ' + TT('ลบในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Deleted locally — not on Cloud yet (queued)'), 'orange'); }
 }
 
 function openPastePlan() {
@@ -6035,9 +6281,15 @@ async function confirmPaste() {
   const batchKeys = new Set(Object.keys(seen));
   const replacedCount = state.plans.filter(p => batchKeys.has(planKey(p))).length;
   // 1) push ขึ้น D1 ก่อน (ถ้ามี API) — กัน race condition กับ auto-pull
+  let _bulkFail = null;
   if (API) {
     try { await api('/api/plans/bulk', { body: { plans } }); }
-    catch (e) { toast('Sync ไม่สำเร็จ — เก็บ Local แล้ว', 'orange'); }
+    catch (e) {
+      /* ★ req #6: เดิมแค่ toast แล้วจบ — แผนที่วางจาก Excel ไม่เคยขึ้น Cloud เลย
+         ตอนนี้เข้าคิวรายใบ (ก้อนรวมอาจใหญ่เกินโควตา localStorage) แล้วส่งใหม่ให้เอง */
+      _bulkFail = e;
+      for (const p of plans) queueWrite('/api/plans', p, TT('แผนขาย','sales plan'), p.plan_id);
+    }
   }
   // 2) อัพเดต state local: เอาของเดิมที่ซ้ำออก แล้วใส่ข้อมูลใหม่
   const kept = state.plans.filter(p => !batchKeys.has(planKey(p)));
@@ -6045,7 +6297,8 @@ async function confirmPaste() {
   lsSave(LS.PLANS, state.plans);
   closeModal();
   renderPlans();
-  toast(`เพิ่ม ${plans.length} แผน${replacedCount ? ` · แทนที่ซ้ำ ${replacedCount}` : ''}`, 'green');
+  toast(`เพิ่ม ${plans.length} แผน${replacedCount ? ` · แทนที่ซ้ำ ${replacedCount}` : ''}${_bulkFail ? ' · ⚠️ ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่แล้ว)' : ''}`, _bulkFail ? 'orange' : 'green');
+  if (_bulkFail) offlineSaveDialog(`${TT('แผนขายจาก Excel','Plans pasted from Excel')} ${nn(plans.length)} ${TT('รายการ','rows')}`, _bulkFail.message);
 }
 
 function resetPlanFilter() {
@@ -6086,8 +6339,9 @@ function _exportPlanRows(rows, tag) {
     'Valve No': p.valve_no,
     'Lot': p.lot,
     'Qty': p.quantity,
-    'สถานะ': PLAN_STATUS[p.status]?.label || p.status,
-    'สถานะจริง': (planAutoStatus(p) || {}).label || '',
+    // ★ req #5: สถานะ = ของจริงที่ระบบคิด (ยกเลิก = คนกด) · เพิ่ม process ล่าสุดเป็นอีกคอลัมน์
+    'สถานะ': PLAN_STATUS[planEffStatus(p)]?.label || planEffStatus(p),
+    'ถึง Process': (planAutoStatus(p) || {}).proc || '',
     'หมายเหตุ': p.note,
     'ผู้สร้าง': p.created_by,
   }));
@@ -6236,6 +6490,8 @@ async function init() {
   if (API) { reload(); startAutoSync(); }
   else migratePdacTarget();   // โหมด local ไม่เรียก reload() → migrate เป้า PDAC ที่นี่
   startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (รอบเดียวกับ AUTO_REFRESH_MS) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
+  // ★ req #6: เปิดแอปมาแล้วยังมีของค้างจากเมื่อวาน (เน็ตหลุดตอนบันทึก) ต้องเห็นแถบเตือนทันที
+  renderSyncBar();
 }
 
 /* ── Quick Win #2: cache /api/init (master data โหลดหนัก + เปลี่ยนน้อย) ──
@@ -6268,7 +6524,7 @@ function migratePdacTarget() {
   if (Object.keys(changed).length) {
     state.targets = { ...state.targets, ...changed };
     lsSave(LS.TARGETS, state.targets);
-    if (API) api('/api/targets', { body: changed }).catch(()=>{});
+    if (API) apiSave('/api/targets', changed, { label: TT('เป้า (Targets)','targets'), key: 'targets:pdac-migrate', silent: true });   // ★ req #6
   }
   localStorage.setItem(PDAC_TGT_MIGRATED, '1');
 }
@@ -7567,7 +7823,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.45":"Production Record + KPI · v3.45",
+"ระบบบันทึกผลิต + KPI · v3.46":"Production Record + KPI · v3.46",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7856,7 +8112,8 @@ const I18N_X = {
 "ปีก่อนหน้า":"Previous year","ปีถัดไป":"Next year","ทั้งปี":"Whole year",
 "เรียงตามวันที่ขาย":"Sort by sale date","เรียงตาม Valve No":"Sort by Valve No","เรียงตาม Lot":"Sort by Lot",
 "เรียงตามจำนวน":"Sort by quantity","เรียงตามสถานะจริง":"Sort by real status","เรียงตาม ID Code":"Sort by ID code",
-"สถานะ (จริง · แก้เอง)":"Status (real · override)","สถานะจริงจากการบันทึกผลิต":"Real status from production records",
+"สถานะ (ระบบกำหนดเอง)":"Status (set by system)","สถานะจริงจากการบันทึกผลิต":"Real status from production records",
+"✅ ผลิตจบแล้ว":"✅ Finished","📋 วางแผน":"📋 Planned","⚙️ กำลังผลิต":"⚙️ In production",
 "แก้สถานะเอง (override)":"Set status manually (override)","เลื่อนไปขายเดือนหน้า (+1 เดือน)":"Push to next month (+1 month)",
 "ยกเลิกแผน (ลูกค้ายกเลิก)":"Cancel plan (customer cancelled)","กู้คืนแผน":"Restore plan","ลบแผน":"Delete plan",
 "📋 ยังไม่เริ่ม":"📋 Not started","📋 รับเข้าแล้ว แต่ไม่มีในแผนขาย":"📋 Received but not in the sales plan",
@@ -10702,32 +10959,49 @@ function addHandover(type, text, cat, task){
     task:task?1:0, done:0, doneBy:'', doneByName:'', doneAt:null,
   };
   _handover[entry.id]=entry; _saveHandover();
-  _hoPush(entry);                                 // ดันขึ้น cloud (ล้มเหลว → เข้าคิว)
+  _hoPush(entry);                                 // ดันขึ้น cloud (ล้มเหลว → เข้าคิว) · ผลอยู่ใน _hoPushProm[id]
   return entry;
 }
 
 /* ── cloud sync (Worker+D1 เฉพาะต่อกะ · แยกจาก api() หลัก จึงไม่โชว์แถบโหลด) ── */
 async function hoApi(path, opts={}){
-  const res=await fetch(HANDOVER_API.replace(/\/+$/,'')+path,{
-    method:opts.body?'POST':'GET',
-    headers:opts.body?{'Content-Type':'application/json'}:undefined,
-    body:opts.body?JSON.stringify(opts.body):undefined,
-  });
-  const data=await res.json().catch(()=>({ok:false}));
-  if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
-  return data;
+  // ★ req #6: ต้องมีเวลาตัด — ไม่งั้นเน็ตหลุดกลางทางจะค้างเงียบไม่รู้ผล
+  const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  const ms=opts.timeout||20000;
+  const timer=ctl?setTimeout(()=>ctl.abort(),ms):null;
+  try{
+    const res=await fetch(HANDOVER_API.replace(/\/+$/,'')+path,{
+      method:opts.body?'POST':'GET',
+      headers:opts.body?{'Content-Type':'application/json'}:undefined,
+      body:opts.body?JSON.stringify(opts.body):undefined,
+      signal:ctl?ctl.signal:undefined,
+    });
+    const data=await res.json().catch(()=>({ok:false}));
+    if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+    return data;
+  }catch(e){
+    if(e && e.name==='AbortError') throw new Error(TT(`หมดเวลารอเซิร์ฟเวอร์ (${Math.round(ms/1000)} วิ)`,`server timeout (${Math.round(ms/1000)}s)`));
+    throw e;
+  }finally{ if(timer) clearTimeout(timer); }
 }
+/* ★ req #6: โน้ตต่อกะที่ยังไม่ขึ้น Cloud ต้องถูกนับในแถบ "ยังไม่ขึ้น Cloud" ด้วย
+   (เดิมล้มเหลวเงียบ ๆ — กะถัดไปไม่เห็นโน้ตที่เพิ่งจด แล้วไม่มีใครรู้ว่าไม่ขึ้น) */
+const _hoPushProm={};   // id → Promise<boolean> · เก็บแยกจาก entry เพราะ entry ถูก JSON.stringify ลง localStorage/D1
 function _hoPush(entry){
-  _hoPending.add(entry.id); _saveHoPending();
-  hoApi('/put',{body:entry})
-    .then(()=>{ _hoPending.delete(entry.id); _saveHoPending(); })
-    .catch(()=>{ /* ค้างในคิว → flush ครั้งถัดไป */ });
+  _hoPending.add(entry.id); _saveHoPending(); renderSyncBar();
+  const p=hoApi('/put',{body:entry})
+    .then(()=>{ _hoPending.delete(entry.id); _saveHoPending(); renderSyncBar(); return true; })
+    .catch(()=>{ renderSyncBar(); return false; });   // ค้างในคิว → flush ครั้งถัดไป
+  _hoPushProm[entry.id]=p;
+  return p;
 }
+function _hoAwaitPush(id){ return _hoPushProm[id] || Promise.resolve(!_hoPending.has(id)); }
 async function _hoFlush(){
-  if(!_hoPending.size) return;
+  if(!_hoPending.size) return 0;
   const entries=[..._hoPending].map(id=>_handover[id]).filter(Boolean);
-  if(!entries.length){ _hoPending.clear(); _saveHoPending(); return; }
-  try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); }catch(e){}
+  if(!entries.length){ _hoPending.clear(); _saveHoPending(); renderSyncBar(); return 0; }
+  try{ await hoApi('/bulk',{body:{entries}}); _hoPending.clear(); _saveHoPending(); renderSyncBar(); return entries.length; }
+  catch(e){ renderSyncBar(); return 0; }
 }
 // บวก bucket รายชั่วโมง → รายการที่พ้นช่วง "ล่าสุด" ถูกวาดย้ายไปย้อนหลังเองภายใน ≤1 ชม. (poll เทียบ sig ทุก 15 วิ)
 function _hoSigNow(){ return JSON.stringify(HO_ORDER.map(t=>_hoList(t).map(e=>[e.id,e.text,e.editedAt,e.ts,_hoCat(e),e.task?1:0,e.done?1:0,_hoSeqOf(e)])))+'|'+Math.floor(Date.now()/3600000); }
@@ -11223,7 +11497,7 @@ function _hoPickCat(c){
   const seg=document.getElementById('hoCatSeg');
   if(seg) seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.c===_hoAddCat));
 }
-function submitHandover(){
+async function submitHandover(){
   const text=_hoReadInput().trim();
   if(!text){ _hoFocusInput(); toast(TT('พิมพ์ข้อความก่อนบันทึก','Type a message first'),'orange'); return; }
   if(_hoEditId){
@@ -11235,12 +11509,19 @@ function submitHandover(){
     const isChk=_hoAddCat==='note';
     // checklist: คั่นข้อด้วย HO_ITEM_SEP · แต่ละข้อเก็บบรรทัดในตัวไว้ (trim แค่หัว-ท้าย)
     const items=isChk?text.split(HO_ITEM_SEP).map(s=>s.trim()).filter(Boolean):[text];
-    items.forEach(tx=>addHandover(_hoAddType, tx, _hoAddCat, isChk?1:0));
+    const pushes=items.map(tx=>addHandover(_hoAddType, tx, _hoAddCat, isChk?1:0));
     _hoDrafts[_hoDraftKey()]='';                      // บันทึกแล้ว → ล้างร่างเฉพาะช่องนี้
     closeHandoverAdd(); renderHandoverPanels();      // อัปเดตแผงทันที (ถ้าเปิดเต็มจออยู่)
     const cl=_hoCatLabel(HO_CATS[_hoAddCat]), tl=_hoTypeMeta(_hoAddType).label;   // VSM1/2 → "Forge" (P1-20)
     toast(isChk?TT('เพิ่ม '+items.length+' ข้อ ☑ ('+tl+') แล้ว','Added '+items.length+' checklist item(s) ('+tl+')')
                :TT('บันทึกต่อกะ '+cl+' ('+tl+') แล้ว','Saved '+cl+' ('+tl+') note'),'green');
+    /* ★ req #6: รอผลขึ้น Cloud จริง — โน้ตต่อกะที่ค้างอยู่เครื่องเดียว = กะถัดไปไม่เห็น */
+    const oks=await Promise.all(pushes.map(e=>e?_hoAwaitPush(e.id):Promise.resolve(true)));
+    if(oks.some(ok=>!ok)){
+      toast('⚠️ '+TT('บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Cloud','Saved locally, not on Cloud yet'),'orange');
+      offlineSaveDialog(TT('บันทึกต่อกะ','Handover note')+' — '+cl+' ('+tl+') · '+nn(items.length)+' '+TT('ข้อ','item(s)'),
+                        TT('ส่งขึ้นเซิร์ฟเวอร์ต่อกะไม่สำเร็จ','handover server unreachable'));
+    }
   }
 }
 
@@ -11290,7 +11571,10 @@ const LS_WIPIN_PEND  = 'vsm4_wipin_pending';
 let _wipin      = _loadWipin();                        // { <id>: entry }
 let _wipinPending= _loadWipinPending();                // Set<id> ที่ยังไม่ push ขึ้น cloud
 function _loadWipin(){ try{ const v=JSON.parse(localStorage.getItem(LS_WIPIN)||'null'); return (v&&typeof v==='object')?v:{}; }catch(e){ return {}; } }
-function _saveWipin(){ try{ localStorage.setItem(LS_WIPIN, JSON.stringify(_wipin)); }catch(e){} }
+/* เลขรุ่นของข้อมูลรับเข้า — ขยับทุกครั้งที่ชุดข้อมูลเปลี่ยน ใช้ล้าง cache ที่อ้างอิงรายการรับเข้า
+   (สถานะแผน/ตารางค้นหา Process) · ประกาศเป็น var เพราะฟังก์ชันที่อยู่ก่อนหน้าไฟล์นี้เรียก typeof เช็ก */
+var _wipinVer = 0;
+function _saveWipin(){ _wipinVer++; try{ localStorage.setItem(LS_WIPIN, JSON.stringify(_wipin)); }catch(e){} }
 function _loadWipinPending(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_WIPIN_PEND)||'[]')); }catch(e){ return new Set(); } }
 function _saveWipinPending(){ try{ localStorage.setItem(LS_WIPIN_PEND, JSON.stringify([..._wipinPending])); }catch(e){} }
 // VSM ของ entry — สืบจากรหัสผู้บันทึก (byId) เหมือน _hoVsm → แต่ละ VSM เห็นเฉพาะของตัวเอง (Admin เห็นทีละสายที่เลือก)
@@ -11312,26 +11596,51 @@ function _wipinListPeer(){
   return Object.values(_wipin).filter(e=>e && !e.deleted && peers.has(_wipinVsm(e)));
 }
 async function wipinApi(path, opts={}){
-  const res=await fetch(WIPIN_API.replace(/\/+$/,'')+path,{
-    method:opts.body?'POST':'GET',
-    headers:opts.body?{'Content-Type':'application/json'}:undefined,
-    body:opts.body?JSON.stringify(opts.body):undefined,
-  });
-  const data=await res.json().catch(()=>({ok:false}));
-  if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
-  return data;
+  /* ★ req #6: ต้องมีเวลาตัด — เน็ตโรงงานหลุดกลางทาง fetch ไม่ timeout เอง
+     ถ้าไม่ตัด ปุ่มบันทึกจะค้างเป็นสิบ ๆ วินาทีโดยไม่บอกอะไรเลย */
+  const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  const ms=opts.timeout||20000;
+  const timer=ctl?setTimeout(()=>ctl.abort(),ms):null;
+  try{
+    const res=await fetch(WIPIN_API.replace(/\/+$/,'')+path,{
+      method:opts.body?'POST':'GET',
+      headers:opts.body?{'Content-Type':'application/json'}:undefined,
+      body:opts.body?JSON.stringify(opts.body):undefined,
+      signal:ctl?ctl.signal:undefined,
+    });
+    const data=await res.json().catch(()=>({ok:false}));
+    if(!res.ok || data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+    return data;
+  }catch(e){
+    if(e && e.name==='AbortError') throw new Error(TT(`หมดเวลารอเซิร์ฟเวอร์ (${Math.round(ms/1000)} วิ)`,`server timeout (${Math.round(ms/1000)}s)`));
+    throw e;
+  }finally{ if(timer) clearTimeout(timer); }
 }
+/* ผลการส่งของแต่ละรายการ — ให้ฟอร์มบันทึก "รอผลจริง" ได้ (ไม่ใช่ยิงแล้วเงียบ)
+   เก็บ error ล่าสุดไว้ด้วย เพื่อบอกสาเหตุในป๊อปอัปแทนคำว่า "ไม่สำเร็จ" ลอย ๆ */
+const _wipinPushProm={};
+let _wipinLastErr='';
 function _wipinPush(entry){
-  _wipinPending.add(entry.id); _saveWipinPending();
-  wipinApi('/wipin/put',{body:entry})
-    .then(()=>{ _wipinPending.delete(entry.id); _saveWipinPending(); })
-    .catch(()=>{ /* ค้างในคิว → flush ครั้งถัดไป */ });
+  _wipinPending.add(entry.id); _saveWipinPending(); renderSyncBar();
+  const p=wipinApi('/wipin/put',{body:entry})
+    .then(()=>{ _wipinPending.delete(entry.id); _saveWipinPending(); renderSyncBar(); return true; })
+    .catch(e=>{ _wipinLastErr=(e&&e.message)||'network error'; renderSyncBar(); return false; });  // ค้างในคิว → flush ครั้งถัดไป
+  _wipinPushProm[entry.id]=p;
+  return p;
+}
+// รอผลการส่งของรายการที่เพิ่งบันทึก (true = ถึง Cloud แล้ว)
+function _wipinAwaitPush(id){
+  return _wipinPushProm[id] || Promise.resolve(!_wipinPending.has(id));
 }
 async function _wipinFlush(){
-  if(!_wipinPending.size) return;
+  if(!_wipinPending.size) return 0;
   const entries=[..._wipinPending].map(id=>_wipin[id]).filter(Boolean);
-  if(!entries.length){ _wipinPending.clear(); _saveWipinPending(); return; }
-  try{ await wipinApi('/wipin/bulk',{body:{entries}}); _wipinPending.clear(); _saveWipinPending(); }catch(e){}
+  if(!entries.length){ _wipinPending.clear(); _saveWipinPending(); renderSyncBar(); return 0; }
+  try{
+    await wipinApi('/wipin/bulk',{body:{entries}});
+    _wipinPending.clear(); _saveWipinPending(); renderSyncBar();
+    return entries.length;
+  }catch(e){ _wipinLastErr=(e&&e.message)||'network error'; renderSyncBar(); return 0; }
 }
 // เพิ่มงานรับเข้า 1 รายการ (valve, lot, qty[, note[, prodDate]]) — ประทับ VSM/ผู้บันทึกจาก Lock-in
 // note = เหตุผล กรณีบันทึกซ้ำ/เกินแผน (P1-18) — Worker เก็บลงคอลัมน์ note
@@ -11669,6 +11978,14 @@ function computeWipBuckets(){
     const started = lotKey(e.lot)
       ? (producedKeys.has(k)||reachedFgAny.has(k))
       : (producedValves.has(vk)||fgValves.has(vk)||producedKeys.has(k)||reachedFgAny.has(k));
+    /* ★ 2026-08-06 (req #2) — "เริ่มผลิตแล้ว" มาจากหลักฐานคนละตาราง ต้องแยกให้ออก
+       • groups[k] = มี "ยอดผลิต" (production_records) จริง → หน้าค้นหา Process เห็นแน่นอน
+       • _producedJobs = มีแต่ KPI (kpi_records) ที่ยังไม่มีแถวยอดผลิตคู่กัน
+         → การ์ดนี้ขึ้น "เริ่มผลิตแล้ว" แต่หน้าค้นหา Process ว่างเปล่า (เคสที่แจ้งมา)
+         มักเกิดตอนบันทึกแล้ว KPI ขึ้น Cloud สำเร็จ แต่ /api/records/bulk ล้มเหลว
+       เช็คได้เฉพาะตอนโหลดข้อมูลครบ (_wipDataComplete) ไม่งั้น cache ไม่ครบจะฟ้องผิด */
+    const hasProdRec = !!groups[k];
+    const startedNoProd = started && !hasProdRec && !reachedFgAny.has(k) && _wipDataComplete();
     const cust=custOf(vKey(e.valve));
     const bad=_wipinIssues(e.valve,e.lot);          // ★ ตรวจความถูกต้องของ Valve/Lot (ดู _wipinIssues)
     const unknown=bad.length>0;
@@ -11680,7 +11997,7 @@ function computeWipBuckets(){
     let machines=[];
     const g=groups[k];
     if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
-    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan});
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan,startedNoProd});
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -11713,6 +12030,19 @@ function _wipOutRange(b, from, to){
 function _wipOutCurMonth(b){
   const t=todayISO();
   return _wipOutRange(b, t.slice(0,7)+'-01', t);
+}
+/* ★ 2026-08-06 (req #4) — ยอดผ่าน FG แยก "กลุ่มลูกค้า" ตามช่วงวันที่
+   ใช้ fgByDate รายวันชุดเดียวกับ _wipOutRange → ยอดรวมทุกกลุ่ม = ตัวเลขบนการ์ดเป๊ะเสมอ
+   (ห้ามคิดจากยอดทั้งล็อต ไม่งั้นล็อตที่ผ่าน FG คร่อมเดือนจะถูกนับซ้ำ) */
+const CUST_GROUPS = ['MSI','SWE','OES&OEM','Other'];
+function _wipOutRangeByGroup(b, from, to){
+  const out={}; for(const g of CUST_GROUPS) out[g]=0;
+  for(const i of (b.wipOut.items||[])){
+    const g=CUST_GROUPS.includes(i.customer)?i.customer:'Other';
+    const m=i.fgByDate||{};
+    for(const d in m){ if(d>=from && d<=to) out[g]+=Number(m[d])||0; }
+  }
+  return out;
 }
 /* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
 function renderWipBuckets(){
@@ -11793,12 +12123,30 @@ function renderIotWipStrip(b){
     ${Object.entries(_byGrp).map(([g,q])=>`<button type="button" class="tag tag-blue" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit" title="${TT('กดดูรายการ Valve ที่รับเข้า/ยังขาด','tap: received / missing valve list')} — ${escapeHtml(g)}" onclick="showCustInMonth('${encodeURIComponent(g)}')">${escapeHtml(g)}: <b>${nn(q)}</b> ›</button>`).join('')}
     <span style="font-size:9.5px;color:var(--muted)">${TT('กดที่กลุ่มเพื่อดูรายการ','tap a group for details')}</span>
   </div>`;
+  /* ★ 2026-08-06 (req #4) — ยอด FG (WIP OUT) แยกกลุ่มลูกค้า: เมื่อวาน + รวมทั้งเดือน
+     ของเดิมมีแต่ยอดรวม → ดูไม่ออกว่าที่ผ่าน FG ไปเป็นของลูกค้ากลุ่มไหนเท่าไร
+     กดที่ชิป = เปิดรายการ WIP OUT ที่กรองเฉพาะกลุ่มนั้นให้เลย */
+  const _yISO=yesterdayISO(), _tISO=todayISO();
+  const _fgY=_wipOutRangeByGroup(b,_yISO,_yISO);
+  const _fgM=_wipOutRangeByGroup(b,_tISO.slice(0,7)+'-01',_tISO);
+  const fgChips = `<div class="iot-cust-strip" style="flex:1 1 100%;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;font-weight:800;color:var(--muted)">✓ ${TT('ผ่าน FG แยกลูกค้า','FG by customer')}:</span>
+    ${CUST_GROUPS.map(g=>`<button type="button" class="tag tag-green" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit"
+        title="${TT('กดดูรายการที่ผ่าน FG ของกลุ่มนี้','tap: FG list for this group')} — ${escapeHtml(g)}" onclick="showWipOutGroup('${encodeURIComponent(g)}')"
+      >${escapeHtml(g)}: <b>${nn(_fgM[g]||0)}</b> <span style="opacity:.75;font-weight:700">${TT('เดือนนี้','month')}</span> · <b>${nn(_fgY[g]||0)}</b> <span style="opacity:.75;font-weight:700">${TT('เมื่อวาน','yest.')}</span> ›</button>`).join('')}
+  </div>`;
   host.innerHTML =
     card('in','📥','WIP IN 1.5',TT('รับจาก VSM2','from VSM2'),'in',
          b.wipIn.total,TT('รอผลิต','waiting'),_wipInYesterday(b),_wipInCurMonth(b)) +
     card('out','✓','WIP OUT',TT('ผ่าน FG','past FG'),'out',
          _wipOutToday(b),TT('วันนี้','today'),_wipOutYesterday(b),_wipOutCurMonth(b)) +
-    grpChips;   // P2-22: ยอดรับเข้าแยก 4 กลุ่มลูกค้า
+    grpChips +   // P2-22: ยอดรับเข้าแยก 4 กลุ่มลูกค้า
+    fgChips;     // ★ req #4: ยอดผ่าน FG แยก 4 กลุ่มลูกค้า (เมื่อวาน / เดือนนี้)
+}
+/* กดชิปกลุ่มลูกค้าใต้การ์ด WIP OUT → เปิดป๊อปอัป WIP OUT ที่กรองเฉพาะกลุ่มนั้น (req #4) */
+function showWipOutGroup(grp){
+  _wipOutCust=decodeURIComponent(grp||'');
+  showWipDetail('out', true, true);
 }
 /* ═══ P2-23: ป๊อปอัปรายการรับเข้าเดือนนี้ ราย "กลุ่มลูกค้า" (กดจากชิปใต้การ์ด IN บนหน้า IOT) ═══
    ① รับเข้าแล้ว = รายการ WIP IN 1.5 ของเดือนนี้ รวมยอดต่อ Valve No (นับ "เบอร์" = จำนวน Valve ไม่ซ้ำ)
@@ -12045,7 +12393,14 @@ async function applyWipinMissingEdit(){
       if(prod.length) await api('/api/records/bulk', { body: { records: prod } });
       hideBusy();
       toast(`✅ แก้ ${kpi.length+prod.length} record เป็น ${newV}${newL?(' / '+newL):''} สำเร็จ`,'green');
-    }catch(e){ hideBusy(); toast('แก้ Local แล้ว — Cloud ไม่สำเร็จ: '+e.message,'orange'); }
+    }catch(e){
+      // ★ req #6: หมาย _unsynced → ระบบส่งซ้ำเองเมื่อเน็ตกลับมา + ขึ้นแถบ "ยังไม่ขึ้น Cloud"
+      hideBusy();
+      kpi.forEach(r=>r._unsynced=true); prod.forEach(r=>r._unsynced=true);
+      lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
+      renderSyncBar();
+      toast('⚠️ แก้ในเครื่องแล้ว — ยังไม่ขึ้น Cloud (จะส่งให้เองเมื่อเน็ตกลับมา)','orange');
+    }
   } else {
     toast(`แก้ ${kpi.length+prod.length} record แล้ว (local)`,'green');
   }
@@ -12124,7 +12479,7 @@ async function submitWipIn(){
     //     ใช่ → บังคับกรอกเหตุผลก่อนบันทึก (เก็บลง note ของรายการรับเข้า) · ไม่ → ยกเลิก
     let reason='';
     const _planQty=(state.plans||[])
-      .filter(p=>(p.status==='planned'||p.status==='in_progress')
+      .filter(p=>p.status!=='cancelled'                      // ★ req #5: แผนที่ยังไม่ถูกยกเลิก = ยอดสั่งที่ยังนับ
         && vKey(p.valve_no||'')===vKey(valve)
         && (!p.lot || lotKey(p.lot)===lotKey(lot)))
       .reduce((s,p)=>s+(Number(p.quantity)||0),0);
@@ -12138,11 +12493,23 @@ async function submitWipIn(){
         `${valve}${lot?' / '+lot:''}\nOrder: ${nn(_planQty)} pcs · received: ${nn(_recvQty)} pcs\nAdding ${nn(qty)} → total ${nn(_recvQty+qty)} pcs (+${overPct}% over plan)`));
       if(reason===null) return;
     }
-    addWipin(valve, lot, qty, reason);
+    const _entry=addWipin(valve, lot, qty, reason);
     if(vEl) vEl.value=''; if(lEl) lEl.value=''; if(qEl) qEl.value='';
     vEl?.focus();
     renderWipInSummary(); renderWipBuckets();
-    toast(TT('เข้ายอด WIP IN 1.5 แล้ว','WIP IN 1.5 saved')+` · ${escapeHtml(valve)} ${lot?('/'+escapeHtml(lot)):''} · ${nn(qty)}`,'green');
+    const _line=`${escapeHtml(valve)} ${lot?('/'+escapeHtml(lot)):''} · ${nn(qty)}`;
+    /* ★ req #6: เดิมขึ้น toast เขียว "บันทึกแล้ว" ทันทีโดยไม่รอผลจาก Cloud เลย
+       (การส่งเป็นแบบยิงแล้วไม่สนผล) → เน็ตหลุดก็ยังขึ้นเขียว พนักงานเดินจากไปโดยที่
+       ของยังไม่ถึงเซิร์ฟเวอร์ · ตอนนี้รอผลจริงก่อน แล้วค่อยบอกว่าถึง Cloud หรือยัง */
+    loadOn('wipin-push', TT('☁️ กำลังส่งขึ้น Cloud…','☁️ Sending to Cloud…'));
+    let _ok=false;
+    try{ _ok=_entry?await _wipinAwaitPush(_entry.id):false; }catch(e){}
+    loadOff('wipin-push');
+    if(_ok) toast('✅ '+TT('เข้ายอด WIP IN 1.5 แล้ว (ขึ้น Cloud เรียบร้อย)','WIP IN 1.5 saved to Cloud')+' · '+_line,'green');
+    else {
+      toast('⚠️ '+TT('บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Cloud','Saved locally, not on Cloud yet')+' · '+_line,'orange');
+      offlineSaveDialog(TT('เข้ายอด WIP IN 1.5','WIP IN 1.5 entry')+' — '+valve+(lot?' / '+lot:'')+' · '+nn(qty)+TT(' ชิ้น',' pcs'), _wipinLastErr);
+    }
   } finally {
     _savingWipin=false; if(btn){ btn.disabled=false; btn.style.opacity=''; }   // คืนปุ่มเสมอ (รวมกรณียกเลิก/ error)
   }
@@ -12214,6 +12581,7 @@ function _wipGoPage(btn,p){
 let _wipDetailBucket='wip';
 let _wipInFilter={month:null,customer:'',status:''};   // month:null = ยังไม่ตั้ง (default เดือนล่าสุด) · '' = ทุกเดือน · status: ''/waiting/started
 let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
+let _wipOutCust='';                           // ★ req #4: กรองกลุ่มลูกค้าใน WIP OUT ('' = ทุกกลุ่ม)
 function _wipMonthsFromItems(items){
   const set=new Set();
   for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
@@ -12226,7 +12594,9 @@ function _wipPlanRows(){
   const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve) && (lot?lotKey(e.lot)===lotKey(lot):true))
                                .reduce((s,e)=>s+(Number(e.qty)||0),0);
   return (state.plans||[])
-    .filter(p=>p.status==='planned'||p.status==='in_progress')
+    // ★ req #5: สถานะเป็นของระบบแล้ว — "แผนที่ยังนับ" = ทุกแผนที่ไม่ได้ถูกยกเลิก
+    //   (ของเดิมเช็ค planned/in_progress ซึ่งเป็นค่าที่คนกดเอง จะหล่นหายทันทีที่ไม่มีใครกด)
+    .filter(p=>p.status!=='cancelled')
     .map(p=>{
       const planned=Number(p.quantity)||0, received=recvOf(p.valve_no||'', p.lot||'');
       const v=(state.valves||[]).find(x=>vKey(x.valveNo)===vKey(p.valve_no||''));
@@ -12310,12 +12680,22 @@ function _wipInPlanHtml(){
 function editPlanFromWip(planId){
   const p=(state.plans||[]).find(x=>x.plan_id===planId);
   if(!p){ toast(TT('ไม่พบแผนนี้','Plan not found'),'red'); return; }
-  const stsOpts=Object.entries(PLAN_STATUS).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v.label}</option>`).join('');
+  /* ★ req #5: สถานะไม่ให้เลือกเองแล้ว — โชว์สถานะจริงที่ระบบคิดให้ + เหลือสวิตช์ "ยกเลิกแผน" */
+  const _auto=planAutoStatus(p)||{};
+  const _cancelled=p.status==='cancelled';
   openModal('✏️ '+TT('แก้ไขแผนขาย','Edit sales plan'),`
     <input type="hidden" id="wpEditId" value="${escapeHtml(planId)}">
     <div class="fg">
       <div class="fr"><label>${TT('วันที่ขาย','Sell date')}</label><input type="date" id="wpEditDate" value="${escapeHtml(p.plan_date||'')}"></div>
-      <div class="fr"><label>${TT('สถานะแผน','Plan status')}</label><select id="wpEditStatus">${stsOpts}</select></div>
+      <div class="fr"><label>${TT('สถานะ (ระบบกำหนดเอง)','Status (set by system)')}</label>
+        <div style="padding:6px 2px;font-size:12.5px;font-weight:800;color:${_cancelled?'var(--red)':(_auto.color||'var(--text)')}">
+          ${_cancelled?TT('❌ ยกเลิกแผน','❌ Cancelled'):escapeHtml((_auto.label||'')+(_auto.proc?' · '+_auto.proc:''))}
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px">
+          <input type="checkbox" id="wpEditCancel" ${_cancelled?'checked':''} style="width:16px;height:16px;accent-color:#DC2626">
+          ${TT('ยกเลิกแผนนี้ (ลูกค้ายกเลิก)','Cancel this plan (customer cancelled)')}
+        </label>
+      </div>
     </div>
     <div class="fg">
       <div class="fr"><label>Valve No</label><input type="text" id="wpEditValve" value="${escapeHtml(p.valve_no||'')}" style="text-transform:uppercase;font-weight:700"></div>
@@ -12340,7 +12720,8 @@ async function savePlanFromWip(){
     valve_no:  ($('wpEditValve').value||'').trim().toUpperCase(),
     lot:       ($('wpEditLot').value||'').trim(),
     quantity:  fnum($('wpEditQty').value),
-    status:    $('wpEditStatus').value,
+    // ★ req #5: เก็บได้แค่ "ยกเลิก/ไม่ยกเลิก" — ความคืบหน้าการผลิตระบบคิดเองตอนแสดงผล
+    status:    ($('wpEditCancel')?.checked ? 'cancelled' : (state.plans[idx].status==='cancelled' ? 'planned' : (state.plans[idx].status||'planned'))),
     note:      ($('wpEditNote').value||'').trim(),
     created_by:state.plans[idx].created_by||'',
   };
@@ -12417,7 +12798,12 @@ function _wipInWaitDiag(items){
      เพราะของที่เริ่มผลิตไปแล้วแต่ไม่มีแผน ก็คือของที่ "ผลิตออกมาโดยไม่มีใครสั่ง" — ต้องรู้เหมือนกัน */
   const np=(items||[]).filter(i=>i.noPlan);
   const npBy={}; for(const i of np) npBy[i.noPlan]=(npBy[i.noPlan]||0)+1;
-  return {waitN:wait.length,totQty,dupGroups,dupExtraQty,stuckN:stuck.length,stuckQty:stuck.reduce((s,i)=>s+(Number(i.qty)||0),0),
+  /* ★ req #2 — "เริ่มผลิตแล้ว" แต่ไม่มีแถวยอดผลิต (มีแต่ KPI)
+     คือเคสที่ทำให้หน้าค้นหา Process ว่างเปล่าทั้งที่การ์ดนี้บอกว่าเริ่มผลิตแล้ว */
+  const nop=(items||[]).filter(i=>i.startedNoProd);
+  return {nopN:nop.length,nopQty:nop.reduce((s,i)=>s+(Number(i.qty)||0),0),
+          nopList:nop.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`),
+          waitN:wait.length,totQty,dupGroups,dupExtraQty,stuckN:stuck.length,stuckQty:stuck.reduce((s,i)=>s+(Number(i.qty)||0),0),
           unkN:bad.length,unkQty:bad.reduce((s,i)=>s+(Number(i.qty)||0),0),
           unkList:bad.map(i=>`${i.valve}${i.lot?' / '+i.lot:''}`),
           npN:np.length,npQty:np.reduce((s,i)=>s+(Number(i.qty)||0),0),npBy,
@@ -12482,7 +12868,11 @@ function wipDetailBody(bucket){
         <td>${escapeHtml(i.lot||'-')}</td>
         <td class="center"><b>${nn(i.qty)}</b></td>
         <td class="center">${_wipMcCell(i.machines)}</td>
-        <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}</td>
+        <td class="center">${i.started?`<span class="tag tag-green">${TT('เริ่มผลิตแล้ว','started')}</span>`:`<span class="tag tag-orange">${TT('รอผลิต','waiting')}</span>`}
+          ${/* ★ req #2: บอกให้รู้ว่าทำไมหน้าค้นหา Process ถึงไม่มีข้อมูล ทั้งที่ตรงนี้ขึ้น "เริ่มผลิตแล้ว" */''}
+          ${i.startedNoProd?`<div style="margin-top:3px"><span class="tag tag-red" style="font-size:9.5px;white-space:normal;line-height:1.4"
+             title="${escapeHtml(TT('มี KPI ของงานนี้ แต่ไม่มีแถว "ยอดผลิต" (production record) คู่กัน — หน้าค้นหา Process อ่านจากยอดผลิต จึงยังว่าง มักเกิดตอนบันทึกแล้วเน็ตหลุดครึ่งทาง (KPI ขึ้นแล้ว ยอดผลิตยังไม่ขึ้น) หรือแถวยอดผลิตถูกลบ',
+                                     'KPI exists for this job but there is no matching production record — the Process search reads production records, so it looks empty. Usually a half-finished save (KPI uploaded, production rows not) or the production rows were deleted'))}">⚠️ ${TT('มี KPI · ไม่มียอดผลิต','KPI only · no production row')}</span></div>`:''}</td>
         <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${(i.started&&!i.unknown)?'':`<button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}')">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
       </tr>`;
     _wipDet={items:sorted,rowFn,colspan:8};
@@ -12500,6 +12890,14 @@ function wipDetailBody(bucket){
         <div style="font-size:11px;color:#92400E;margin-top:3px">${TT('ตรวจว่า: ลืมวางแผน? · ลง Valve/Lot ผิด? · แผนอยู่คนละสาย? — แล้วแก้ที่หน้า 📅 วางแผน หรือแก้รายการรับเข้าด้วย ✏️','Check: plan forgotten? wrong valve/lot? plan on another line? — fix on 📅 Planning or edit the intake with ✏️')}
           <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#92400E;border-color:#FCD34D" onclick="wipinShowNoPlan()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>
       </div>`:'';
+    /* ★ req #2 — แถบอธิบายเคส "ขึ้นว่าเริ่มผลิตแล้ว แต่หน้าค้นหา Process ไม่มีข้อมูล" */
+    const _nopHtml=_dg.nopN?`
+      <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
+        <div style="font-weight:800;color:#B91C1C">🔗 ${TT('ขึ้นว่า "เริ่มผลิตแล้ว" แต่ไม่มีแถวยอดผลิต','Marked "started" but has no production row')} — <b>${nn(_dg.nopN)}</b> ${TT('รายการ','items')} · <b>${nn(_dg.nopQty)}</b> ${TT('ชิ้น','pcs')}</div>
+        <div style="color:#7F1D1D">${TT('งานพวกนี้มี KPI แล้ว แต่ยังไม่มี "ยอดผลิต" คู่กัน — หน้า 🔍 ค้นหา Process จาก Valve No อ่านจากยอดผลิต จึงยังว่างเปล่า','These have KPI rows but no matching production rows — the Process search reads production rows, so it looks empty')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(_dg.nopList.slice(0,4).join(' · '))}${_dg.nopList.length>4?` +${_dg.nopList.length-4}`:''}</div>
+        <div style="font-size:11px;color:#B91C1C;margin-top:3px">${TT('สาเหตุที่พบบ่อย: บันทึกตอนเน็ตหลุด (KPI ขึ้นแล้ว ยอดผลิตยังไม่ขึ้น) → ถ้าเครื่องที่บันทึกยังมีของค้าง จะมีแถบส้ม "ยังไม่ขึ้น Cloud" ให้กดส่งใหม่','Common cause: a half-finished save while the connection dropped — the device that saved will show the orange "not on Cloud yet" bar to retry')}</div>
+      </div>`:'';
     const diagHtml=(_dg.dupGroups||_dg.stuckN||_dg.unkN)?`
       <div style="background:var(--orange-bg,#FFF7ED);border:1.5px solid var(--orange-bd,#FED7AA);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
         <div style="font-weight:800;color:var(--orange,#C2410C);margin-bottom:2px">🔎 ${TT('ตรวจสอบยอด "รอผลิต"','Check the "waiting" total')} — ${nn(_dg.waitN)} ${TT('รายการ','items')} · ${nn(_dg.totQty)} ${TT('ชิ้น','pcs')}</div>
@@ -12512,6 +12910,7 @@ function wipDetailBody(bucket){
     return `
      <div data-wipbody>
       ${_npHtml}
+      ${_nopHtml}
       ${diagHtml}
       ${_wipInPlanHtml()}
       <div class="fg-auto mb-8">
@@ -12534,7 +12933,7 @@ function wipDetailBody(bucket){
             <option value="noplan" ${statusF==='noplan'?'selected':''}>📋 ${TT('ไม่มีในแผนขาย','Not in any sales plan')}</option>
           </select></div>
       </div>
-      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
+      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
         style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
       <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
@@ -12547,6 +12946,7 @@ function wipDetailBody(bucket){
   const bucket2=isOut?b.wipOut:b.wip;
   let items=bucket2.items.slice();
   let monthCtrl='';
+  if(isOut && _wipOutCust) items=items.filter(i=>(CUST_GROUPS.includes(i.customer)?i.customer:'Other')===_wipOutCust);   // ★ req #4
   if(isOut){
     // WIP OUT: กรองตามเดือน · default = เดือนปัจจุบัน · เปลี่ยนเดือนได้เฉพาะ Admin (ผู้ใช้ทั่วไปเห็นเดือนปัจจุบัน)
     // ★ ตัดยอดตาม "วันที่ผ่าน FG จริง" รายวัน (fgByDate): ล็อตที่ผ่าน FG คร่อม 2 เดือน จะโชว์เฉพาะส่วนของเดือนนั้น
@@ -12567,6 +12967,12 @@ function wipDetailBody(bucket){
     } else {
       monthCtrl=`<div class="muted mb-8" style="font-size:12px">📅 ${TT('เดือน','Month')}: <b>${eff}</b></div>`;
     }
+    // ★ req #4: ตัวกรองกลุ่มลูกค้า (ตั้งมาจากชิปใต้การ์ด WIP OUT บนหน้า IOT ได้ด้วย)
+    monthCtrl+=`<div class="fr mb-8" style="margin:0 0 8px"><label>${TT('กลุ่มลูกค้า','Customer group')}</label>
+      <select onchange="_wipOutCust=this.value;_wipPg.page=1;_refreshWipDetail()">
+        <option value="">${TT('ทุกกลุ่ม','All groups')}</option>
+        ${CUST_GROUPS.map(g=>`<option value="${escapeHtml(g)}" ${_wipOutCust===g?'selected':''}>${escapeHtml(g)}</option>`).join('')}
+      </select></div>`;
   }
   items.sort((a,c)=>c.qty-a.qty);
   const total=items.reduce((s,i)=>s+i.qty,0);
@@ -12591,7 +12997,7 @@ function wipDetailBody(bucket){
   return `
    <div data-wipbody>
     ${monthCtrl}
-    <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off"
+    <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
       style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
     ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
@@ -12601,10 +13007,11 @@ function wipDetailBody(bucket){
    </div>`;
 }
 function _wipTitle(bucket){ return bucket==='in'?'📥 WIP IN 1.5':bucket==='out'?('✓ WIP OUT — '+TT('ผ่าน FG','past FG')):('▶ WIP — '+TT('กำลังผลิต','in production')); }
-function showWipDetail(bucket, fromIot){
+function showWipDetail(bucket, fromIot, keepCust){
   _wipDetailBucket=bucket;
   _wipPg={q:'',page:1};                        // เปิดป๊อปอัปใหม่ = เริ่มหน้า 1 คำค้นว่าง
   _wipInOnlyUnknown=false;                     // ล้างโหมด "ดูเฉพาะเบอร์ที่ไม่มีใน Master"
+  if(!keepCust) _wipOutCust='';                // ★ req #4: เปิดจากการ์ด = เห็นทุกกลุ่ม (กรองเฉพาะตอนกดชิปกลุ่ม)
   const title=_wipTitle(bucket), body=`<div class="wip-detail-box">${wipDetailBody(bucket)}</div>`;
   if(fromIot && document.getElementById('iotCard')?.classList.contains('iot-fs')){
     _openIotPop(title, body, false, true);     // กว้างพิเศษ — ช่อง/ตารางอ่านง่าย
@@ -13928,7 +14335,8 @@ async function _saveKpiImpl() {
   lsSave(LS.KPI,      state.kpiRecords);
   lsSave(LS.PROD_REC, state.prodRecords);
   // FIX P0-4: รายงานจำนวน "ช่วงเวลา" ที่บันทึกให้ผู้ใช้เห็นชัด — เทียบกับที่กรอกได้ทันที
-  toast(`บันทึก ${slotsRead} ช่วงเวลา → KPI ${records.length} record + Production ${prodRecs.length}`, 'green');
+  // ★ req #6: บอกให้ตรงว่านี่คือ "ลงเครื่องแล้ว" ยังไม่ใช่ขึ้น Cloud (ผลจริงจะบอกอีกทีหลังส่งเสร็จ)
+  toast(`💾 ${API?'บันทึกลงเครื่องแล้ว':'บันทึกแล้ว'} ${slotsRead} ช่วงเวลา → KPI ${records.length} record + Production ${prodRecs.length}`, 'green');
   // แจ้งเตือน Valve No ที่ไม่มีในระบบ — บันทึกได้ตามปกติ แต่ส่งให้ Admin ตรวจสอบ
   const _unknownV = [...new Set(records.filter(r => r.valve_unknown).map(r => r.valve_no))];
   if (_unknownV.length) toast(`⚠️ Valve No ไม่มีในระบบ: ${_unknownV.join(', ')} — บันทึกแล้ว & แจ้ง Admin`, 'orange');
@@ -13961,7 +14369,11 @@ async function _saveKpiImpl() {
       prodRecs.forEach(r => r._unsynced = true);
       lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
       setConnBadge('local');    // ขึ้น Cloud ไม่ได้ → badge = local (ข้อมูลเก็บใน Local แล้ว ไม่หาย)
-      toast('บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา', 'orange');
+      /* ★ req #6: เดิมมีแค่ toast 3 วิ ซึ่งพนักงานพลาดง่ายมาก (ยิ่งหน้าจอเด้งไป Dashboard
+         อัตโนมัติหลังบันทึก) → เปลี่ยนเป็นป๊อปอัปที่ต้องกดปิดเอง + แถบส้มค้างไว้จนส่งสำเร็จ */
+      toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Cloud','Saved locally, not on Cloud yet'), 'orange');
+      offlineSaveDialog(`KPI ${records.length} record` + (prodRecs.length ? ` + ${TT('ยอดผลิต','production')} ${prodRecs.length}` : '')
+                        + ` (${slotsRead} ${TT('ช่วงเวลา','slots')})`, (e && e.message) || 'network error');
     }
   }
 }
@@ -14339,7 +14751,8 @@ async function _saveSlotsImpl() {
       records.forEach(r => r._unsynced = true);
       lsSave(LS.PROD_REC, state.prodRecords);
       setConnBadge('local');
-      toast('บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา', 'orange');
+      toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว แต่ยังไม่ขึ้น Cloud','Saved locally, not on Cloud yet'), 'orange');
+      offlineSaveDialog(`${TT('ยอดผลิต','Production')} ${records.length} record`, (e && e.message) || 'network error');   // ★ req #6
     }
   }
 }
@@ -14401,6 +14814,27 @@ function _mergeProdFreshest(cloudRecs, localRecs){
   (localRecs||[]).forEach(put);     // ใส่ local ทีหลัง → ค่าที่ updated_at ≥ ทับ (local ที่เพิ่งแก้ชนะตอนเสมอ)
   return [...byId.values()];
 }
+/* ═══ ★ 2026-08-06 (req #1) — Lot ที่ "รับเข้า WIP IN 1.5" แล้วของเบอร์นี้ ═══════
+   ทำไมต้องมี: หน้าค้นหา Process อ่านจาก production_records อย่างเดียว
+   งานที่เพิ่งรับเข้ามาแต่ยังไม่มีใครลงยอดผลิต จึงขึ้นว่า "ยังไม่มี Production records"
+   ทั้งที่พนักงานเพิ่งเข้ายอด WIP IN 1.5 ไป — ดูเหมือนข้อมูลหาย
+   ที่ถูกคือ: ต้องเห็นแถว Lot นั้น โดย Process แรกเป็น "สีเหลือง = รอผลิต" ยังไม่มียอด
+   (พอเริ่มผลิตจริง ยอดจะไปเติมช่องนั้นเอง แล้วเหลืองเลื่อนไป Process ถัดไป)
+   คืน: { <lotKey|'(no lot)'>: {lot, qty, ts} }  — รวมสาย VSM3⇄VSM4 เหมือนตัวค้นหา */
+function _wipinLotsOfValve(vno){
+  const out={}; const vk=vKey(vno); if(!vk) return out;
+  let list=[];
+  try{ list=_wipinListPeer(); }catch(e){ return out; }
+  for(const e of list){
+    if(vKey(e.valve)!==vk) continue;
+    const lk=lotKey(e.lot)||'(no lot)';
+    const g=out[lk]||(out[lk]={lot:e.lot||'', qty:0, ts:''});
+    g.qty+=Number(e.qty)||0;
+    if(String(e.ts||'')>g.ts) g.ts=String(e.ts||'');
+    if(!g.lot && e.lot) g.lot=e.lot;
+  }
+  return out;
+}
 async function searchProcess() {
   const q = $('searchValve').value.trim();
   if (!q) return;
@@ -14423,10 +14857,12 @@ async function searchProcess() {
       } catch (e) { /* fallback to local */ }
       await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
     }
+    // ★ req #1: Lot ที่รับเข้า WIP IN 1.5 แล้ว (ยังไม่ผลิตก็ต้องเห็น)
+    const _recvLots = _wipinLotsOfValve(q);
     // ถ้าเบอร์นี้ไม่มีใน Master valve (เช่นรายการวาล์วยังไม่โหลด) แต่มีข้อมูลผลิตจริง
     //   → สร้างวาล์วชั่วคราวจาก process ที่พบในงาน เพื่อให้ยังค้นหา/แสดงผลได้
     if (!valve) {
-      if (!records.length) {
+      if (!records.length && !Object.keys(_recvLots).length) {
         $('searchResult').innerHTML = `<div class="muted center">ไม่พบ Valve "${escapeHtml(q)}"${state.valves.length ? '' : ' — ยังไม่ได้โหลดรายการวาล์ว ลองกด “☁️ ดึงจาก Cloud” หรือเข้าสู่ระบบใหม่'}</div>`;
         return;
       }
@@ -14454,6 +14890,13 @@ async function searchProcess() {
       if (new Date(r.timestamp) > new Date(g.ts)) { g.ts = r.timestamp; g.status = r.status; g.lot = r.lot || g.lot; }
       const lm = lotMeta[lk] || (lotMeta[lk] = { ts: r.timestamp, lot: r.lot, valveNo: r.valveNo || r.valve_no || valve.valveNo });
       if (new Date(r.timestamp) > new Date(lm.ts)) { lm.ts = r.timestamp; lm.lot = r.lot || lm.lot; }
+    }
+    /* ★ req #1: เติม Lot ที่ "รับเข้า WIP IN 1.5 แล้ว" เข้าไปในชุดเดียวกัน
+       - Lot ที่มียอดผลิตอยู่แล้ว → แค่แปะยอดรับเข้าไว้ให้เทียบ
+       - Lot ที่ยังไม่มียอดผลิตเลย → สร้างแถวใหม่ (ทุกช่องว่าง → Process แรกจะเป็นสีเหลืองเอง) */
+    for (const lk in _recvLots) {
+      if (lotMeta[lk]) continue;
+      lotMeta[lk] = { ts: _recvLots[lk].ts || '', lot: _recvLots[lk].lot || '', valveNo: valve.valveNo, recvOnly: true };
     }
     // เรียง lot ตามความเคลื่อนไหวล่าสุด, ภายใน lot เรียงตามลำดับสายการผลิต (PROC_ORDER)
     const lotOrder = Object.keys(lotMeta).sort((a, b) => new Date(lotMeta[b].ts) - new Date(lotMeta[a].ts));
@@ -14484,7 +14927,9 @@ async function searchProcess() {
         else if (q > 0)               offByProc[c] = (offByProc[c] || 0) + q;   // เก็บ '-' (ไม่ระบุ) ด้วย กันยอดหาย
       }
       if (Object.keys(offByProc).length) hasRemark = true;
-      lotData.push({ lk, lot: lotLabel, qtyByProc, offByProc, valveNo: lm.valveNo, vsmByProc, crossVsm: lotVsms.size > 1, vsms: [...lotVsms] });
+      const recv = _recvLots[lk];                                   // ★ req #1: ยอดที่รับเข้า WIP IN 1.5
+      lotData.push({ lk, lot: lotLabel, qtyByProc, offByProc, valveNo: lm.valveNo, vsmByProc, crossVsm: lotVsms.size > 1, vsms: [...lotVsms],
+                     recvQty: recv ? recv.qty : 0, recvTs: recv ? recv.ts : '', recvOnly: !groups.length && !!recv });
     }
     const cols = procSeq.slice();
     const myV = viewVsm();                                   // สายที่กำลังดู — ช่องของสายอื่นจะติดป้ายกำกับ
@@ -14545,12 +14990,24 @@ async function searchProcess() {
         const od = getJobProcDate(ld.valveNo, ld.lot);
         postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${procDept(ovp) ? ' · ' + procDept(ovp) : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
       }
-      return `<tr><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}</td>${tds}${remarkTd}</tr>`;
+      /* ★ req #1: ป้ายยอดรับเข้า WIP IN 1.5 ใต้เลข Lot — บอกว่า "ของมาถึงแล้วกี่ชิ้น"
+         แถวที่ยังไม่มียอดผลิตเลยจะเป็นสีอ่อน + คำว่า "รอผลิต" ให้เห็นชัดว่ายังไม่มีใครลงยอด */
+      const recvTag = ld.recvQty > 0
+        ? `<div class="pf-recv" title="${TT('ยอดที่รับเข้า WIP IN 1.5','received into WIP IN 1.5')}${ld.recvTs?' · '+String(ld.recvTs).slice(0,10):''}">📥 ${nn(ld.recvQty)}${ld.recvOnly?' · '+TT('รอผลิต','waiting'):''}</div>`
+        : '';
+      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}${recvTag}</td>${tds}${remarkTd}</tr>`;
     }).join('');
+    const _recvOnlyN = lotData.filter(l => l.recvOnly).length;
     const tableHtml = lotData.length
       ? `<div class="tbl-wrap pf-tblwrap"><table class="pf-table">${head}${rowsHtml}</table></div>${postFgNotes.join('')}`
-      : '<div class="muted mt-8">ยังไม่มี Production records</div>';
-    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}</div>` : '';
+      : `<div class="muted mt-8">${TT('ยังไม่มี Production records — และยังไม่มีรายการรับเข้า WIP IN 1.5 ของเบอร์นี้','No production records — and no WIP IN 1.5 intake for this valve either')}</div>`;
+    /* ★ req #1/#2: บอกตรง ๆ ว่ามีของรับเข้ามาแล้วกี่ล็อตที่ยังไม่มีใครลงยอดผลิต
+       (เคสที่แจ้ง: WIP IN 1.5 มีของ แต่หน้านี้ว่างเปล่า จนคิดว่าข้อมูลหาย) */
+    const recvNote = _recvOnlyN ? `<div style="font-size:11.5px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:5px 9px;margin:0 0 6px">
+        📥 ${TT('รับเข้า WIP IN 1.5 แล้ว','Received into WIP IN 1.5')} <b>${nn(_recvOnlyN)}</b> Lot ${TT('ที่ยังไม่มีใครลงยอดผลิต','with no production recorded yet')} —
+        ${TT('แถวสีอ่อนด้านล่าง · Process แรกเป็นสีเหลือง = รอผลิต','the pale rows below · first process in yellow = waiting')}
+      </div>` : '';
+    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${_recvOnlyN ? `<span class="pf-lg pf-lg-recv">📥 ${TT('รับเข้าแล้ว · ยังไม่ลงยอดผลิต','received · no production yet')}</span>` : ''}${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}</div>` : '';
     const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}</div>` : '';
     // ★ บอกให้ชัดว่าตารางนี้รวม VSM3+VSM4 (ต่างจากหน้าอื่นที่แยกสาย) เพื่อไม่ให้เข้าใจผิดว่ายอดปน
     const crossNote = hasVsmPeers()
@@ -14562,6 +15019,7 @@ async function searchProcess() {
         <div class="muted" style="font-size:12px;margin-bottom:6px">${escapeHtml(valve.description||'')}</div>
         ${crossNote}
         <div style="margin-top:4px;font-size:12px;font-weight:800;color:var(--blue)">📦 Lot · Process · ยอด OPR</div>
+        ${recvNote}
         ${legend}
         ${hint}
         ${tableHtml}
@@ -14620,11 +15078,12 @@ async function searchProcessMulti(toks) {
 }
 // สรุปข้อมูล 1 Valve: ลำดับ Process ของวาล์ว + ยอดต่อ (lot, process) — กติกาเดียวกับโหมดเดี่ยว
 function _spmBuildValve(vno, recs) {
+  const recvLots = _wipinLotsOfValve(vno);        // ★ req #1: Lot ที่รับเข้า WIP IN 1.5 แล้ว
   let valve = state.valves.find(v => (v.valveNo || '').toLowerCase() === vno.toLowerCase());
   if (!valve) {
     const procs = [...new Set(recs.map(r => _procCanon(((r.currentProcess || '') + '').trim())).filter(Boolean))]
       .sort((a, b) => _procRank(a) - _procRank(b));
-    valve = recs.length ? { valveNo: vno, customer: 'ไม่มีใน Master', description: '', processes: procs } : null;
+    valve = (recs.length || Object.keys(recvLots).length) ? { valveNo: vno, customer: 'ไม่มีใน Master', description: '', processes: procs } : null;
   }
   if (!valve) return { vno, valve: null, procSeq: [], lots: [], recs: [] };
   const procSeq = procsOf(valve).map(p => _procCanon(String(p).trim())).filter(Boolean);
@@ -14637,16 +15096,21 @@ function _spmBuildValve(vno, recs) {
     const lm = lotMeta[lk] || (lotMeta[lk] = { ts: r.timestamp, lot: r.lot });
     if (new Date(r.timestamp) > new Date(lm.ts)) { lm.ts = r.timestamp; lm.lot = r.lot || lm.lot; }
   }
+  // Lot ที่รับเข้าแล้วแต่ยังไม่มียอดผลิต → ใส่เป็นแถวของตัวเอง (ทุก process ยังว่าง = Process แรกเหลือง)
+  for (const lk in recvLots) if (!lotMeta[lk]) lotMeta[lk] = { ts: recvLots[lk].ts || '', lot: recvLots[lk].lot || '' };
   const lots = Object.keys(lotMeta)
     .sort((a, b) => new Date(lotMeta[b].ts) - new Date(lotMeta[a].ts))
     .map(lk => {
       const qtyByProc = {}, offByProc = {};
+      let hasProd = false;
       for (const key in byLotProc) {
         const g = byLotProc[key]; if (g.lk !== lk) continue;
+        hasProd = true;
         if (procSeq.includes(g.proc)) qtyByProc[g.proc] = (qtyByProc[g.proc] || 0) + g.qty;
         else if (g.qty > 0)           offByProc[g.proc] = (offByProc[g.proc] || 0) + g.qty;
       }
-      return { lk, lot: lotMeta[lk].lot || '-', qtyByProc, offByProc };
+      const rc = recvLots[lk];
+      return { lk, lot: lotMeta[lk].lot || '-', qtyByProc, offByProc, recvQty: rc ? rc.qty : 0, recvOnly: !hasProd && !!rc };
     });
   return { vno, valve, procSeq, lots, recs };
 }
@@ -14667,7 +15131,10 @@ function _spmRender(out) {
       }).join('');
       const offChip = Object.keys(L.offByProc || {}).length
         ? `<span class="spm-chip spm-r" onclick="spmRemark(${vi},${li})" title="process ที่พนักงานพิมพ์เอง — แตะดู/แก้">📝 หมายเหตุ</span>` : '';
-      return `<div class="spm-lot"><span class="spm-lotno">${escapeHtml(L.lot)}</span><span class="spm-chips">${chips}${offChip}</span></div>`;
+      // ★ req #1: ยอดที่รับเข้า WIP IN 1.5 (แถวที่ยังไม่มีใครลงยอดผลิต จะเห็นชิปนี้กับ Process แรกสีเหลือง)
+      const recvChip = L.recvQty > 0
+        ? `<span class="spm-chip" style="background:#DBEAFE;color:#1D4ED8;border:1px solid #BFDBFE;cursor:default" title="${TT('รับเข้า WIP IN 1.5 แล้ว','received into WIP IN 1.5')}">📥 ${nn(L.recvQty)}${L.recvOnly?' · '+TT('รอผลิต','waiting'):''}</span>` : '';
+      return `<div class="spm-lot"><span class="spm-lotno">${escapeHtml(L.lot)}</span><span class="spm-chips">${recvChip}${chips}${offChip}</span></div>`;
     }).join('') : `<div class="muted" style="font-size:11px;padding:2px 0 4px">ยังไม่มี Production records</div>`;
     return `<div class="spm-v">
       <div class="spm-vh"><b style="color:var(--blue)">${escapeHtml(V.vno)}</b><span class="muted" style="font-size:11px">${escapeHtml(V.valve.customer || '')}</span></div>
@@ -16441,8 +16908,12 @@ async function applyFixUnknownValve() {
       hideBusy();
       toast(`✅ แก้ ${kpi.length + prod.length} record เป็น ${correct} สำเร็จ`, 'green');
     } catch (e) {
+      // ★ req #6: หมาย _unsynced → ส่งซ้ำเองเมื่อเน็ตกลับมา + ขึ้นแถบ "ยังไม่ขึ้น Cloud"
       hideBusy();
-      toast('แก้ Local แล้ว — Cloud ไม่สำเร็จ: ' + e.message, 'orange');
+      kpi.forEach(r => r._unsynced = true); prod.forEach(r => r._unsynced = true);
+      lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
+      renderSyncBar();
+      toast('⚠️ แก้ในเครื่องแล้ว — ยังไม่ขึ้น Cloud (จะส่งให้เองเมื่อเน็ตกลับมา)', 'orange');
     }
   } else {
     toast(`แก้ ${kpi.length + prod.length} record แล้ว (local)`, 'green');
@@ -16822,8 +17293,13 @@ async function saveTargets() {
   }
   state.targets = {...state.targets, ...payload};
   lsSave(LS.TARGETS, state.targets);
-  toast('💾 บันทึก Targets แล้ว', 'green');
-  if (API) { try { await api('/api/targets', { body: payload }); } catch (e) {} }
+  // ★ req #6: เดิมเงียบสนิทเมื่อเน็ตหลุด — เป้าถูกแก้แค่ในเครื่องนี้ เครื่องอื่นยังใช้เป้าเก่า
+  const r = API ? await apiSave('/api/targets', payload, { label: TT('เป้า (Targets)','targets'), key: 'targets' }) : { ok: true };
+  if (r.ok) toast('💾 บันทึก Targets แล้ว', 'green');
+  else {
+    toast('⚠️ ' + TT('บันทึกเป้าในเครื่องแล้ว — ยังไม่ขึ้น Cloud','Targets saved locally — not on Cloud yet'), 'orange');
+    offlineSaveDialog(TT('เป้า (Targets)','Targets'), (r.err && r.err.message) || 'network error');
+  }
 }
 /* ── แบ่งหน้า 20 แถว/หน้า (Master Data: Valve / พนักงาน / เครื่องจักร) — โหลดทีละหน้า เครื่องไม่ช้า ── */
 const LIST_PAGE = 20;
@@ -17010,8 +17486,9 @@ async function saveIdModal() {
   lsSave(LS.IDS, state.ids);
   renderIdList(); renderValveList();
   closeModal();
-  toast('💾 บันทึก', 'green');
-  if (API) { try { await api('/api/ids', { body: rec }); } catch (e) {} }
+  // ★ req #6: บอกผลจริง ไม่ใช่ขึ้น "บันทึก" เขียวทั้งที่ยังไม่ถึง Cloud
+  const r = API ? await apiSave('/api/ids', rec, { label: 'Valve ID', key: id }) : { ok: true };
+  toast(r.ok ? '💾 บันทึก' : '⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Saved locally — not on Cloud yet (queued)'), r.ok ? 'green' : 'orange');
 }
 
 async function delIdEntry(idCode) {
@@ -17019,8 +17496,8 @@ async function delIdEntry(idCode) {
   state.ids = (state.ids||[]).filter(x => x.id_code !== idCode);
   lsSave(LS.IDS, state.ids);
   renderIdList(); renderValveList();
-  toast('ลบแล้ว', 'orange');
-  if (API) { try { await api('/api/ids/delete', { body: { id_code: idCode } }); } catch (e) {} }
+  const r = API ? await apiSave('/api/ids/delete', { id_code: idCode }, { label: TT('ลบ Valve ID','delete Valve ID'), key: 'del:' + idCode }) : { ok: true };   // ★ req #6
+  toast(r.ok ? 'ลบแล้ว' : '⚠️ ' + TT('ลบในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Deleted locally — not on Cloud yet (queued)'), 'orange');
 }
 
 function openPasteIdsModal() {
@@ -17437,11 +17914,15 @@ async function saveValve(orig) {
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
   setVsmProc(valveNo, _mProcStore.v1, _mProcStore.v2);   // Process Master VSM1/VSM2 (เก็บ local แยกจาก valve)
   lsSave(LS.VALVES, state.valves);
-  toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
   closeModal(); renderValveList(); renderUnknownValves(); renderUnknownProcs();
   // admin เพิ่งแก้/ตั้ง Process ของวาล์วนี้ → เสนอแก้ record เก่าที่พนักงานพิมพ์ process ใกล้เคียงให้เลย (เงียบถ้าไม่มี)
   setTimeout(() => { try { autoMatchUnknownProcs(entry.valveNo, true); } catch (e) {} }, 80);
-  if (API) { try { await api('/api/valves', { body: entry }); } catch (e) {} }
+  const r = API ? await apiSave('/api/valves', entry, { label: 'Master Valve', key: vKey(entry.valveNo) }) : { ok: true };   // ★ req #6
+  if (r.ok) toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
+  else {
+    toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud','Saved locally — not on Cloud yet'), 'orange');
+    offlineSaveDialog(`Master Valve ${entry.valveNo}`, (r.err && r.err.message) || 'network error');
+  }
 }
 async function delValve(valveNo) {
   if (!(await confirmModal(`ลบ ${valveNo}?`))) return;
@@ -17450,8 +17931,8 @@ async function delValve(valveNo) {
   if (state.vProc && state.vProc[vKey(valveNo)]) { delete state.vProc[vKey(valveNo)]; lsSave(LS.VPROC, state.vProc); }   // ลบ Process Master VSM1/2 ที่ผูกกับวาล์วนี้ด้วย
   if (state.valveVsm && state.valveVsm[vKey(valveNo)]) { delete state.valveVsm[vKey(valveNo)]; lsSave(LS.VVSM, state.valveVsm); }   // ลบการผูก Valve Master VSM ด้วย
   renderValveList();
-  toast('ลบแล้ว', 'green');
-  if (API) { try { await api('/api/valves/delete', { body: { valveNo } }); } catch (e) {} }
+  const r = API ? await apiSave('/api/valves/delete', { valveNo }, { label: TT('ลบ Master Valve','delete valve'), key: 'del:' + vKey(valveNo) }) : { ok: true };   // ★ req #6
+  toast(r.ok ? 'ลบแล้ว' : '⚠️ ' + TT('ลบในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Deleted locally — not on Cloud yet (queued)'), r.ok ? 'green' : 'orange');
 }
 
 function importValves(ev) {
@@ -17473,8 +17954,14 @@ function importValves(ev) {
     for (const v of valves) upsertValve(v);
     lsSave(LS.VALVES, state.valves);
     renderValveList();
-    toast(`Import ${valves.length} valves`, 'green');
-    if (API) { try { await api('/api/valves/bulk', { body: { valves } }); } catch (e) {} }
+    // ★ req #6: ก้อน bulk ใหญ่เกินจะเข้าคิว → ถ้าส่งไม่ได้ต้องบอกให้ import ใหม่ ไม่ใช่เงียบ
+    if (API) {
+      try { await api('/api/valves/bulk', { body: { valves } }); toast(`Import ${valves.length} valves`, 'green'); }
+      catch (e) {
+        toast(`⚠️ Import ${valves.length} valves ${TT('ลงเครื่องแล้ว — ยังไม่ขึ้น Cloud','locally — not on Cloud')}`, 'orange');
+        offlineSaveDialog(`Import Master Valve ${nn(valves.length)} ${TT('เบอร์','valves')} — ${TT('ก้อนใหญ่เกินกว่าจะเข้าคิว กรุณา Import ใหม่เมื่อเน็ตกลับมา','too large to queue — please import again once online')}`, e.message);
+      }
+    } else toast(`Import ${valves.length} valves`, 'green');
   };
   r.readAsArrayBuffer(f);
   ev.target.value = '';
@@ -17728,7 +18215,8 @@ async function setEmployeeVsm(id, vsmRaw) {
   }
   toast(`ตั้ง ${id} เป็น ${VSM_LABEL[vsm]||vsm} (เครื่องนี้)`, 'green');
   if (typeof refreshVsmViews === 'function') refreshVsmViews();
-  if (API) { try { await api('/api/employees', { body: { id, name: e.name||'', vsm } }); } catch (e) {} }
+  if (API) { const r = await apiSave('/api/employees', { id, name: e.name||'', vsm }, { label: TT('พนักงาน','employee'), key: id });   // ★ req #6
+             if (!r.ok) toast('⚠️ ' + TT('ยังไม่ขึ้น Cloud — เข้าคิวส่งใหม่แล้ว','Not on Cloud yet — queued'), 'orange'); }
 }
 async function addEmployee() {
   const id = $('newEmpId').value.trim();
@@ -17749,7 +18237,8 @@ async function addEmployee() {
   $('newEmpId').value=''; $('newEmpName').value='';
   renderEmployeeList();
   if (typeof refreshVsmViews === 'function') refreshVsmViews();
-  if (API) { try { await api('/api/employees', { body: { id, name, vsm: inCode || vsm } }); } catch (e) {} }
+  if (API) { const r = await apiSave('/api/employees', { id, name, vsm: inCode || vsm }, { label: TT('พนักงาน','employee'), key: id });   // ★ req #6
+             if (!r.ok) toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Saved locally — not on Cloud yet (queued)'), 'orange'); }
 }
 async function delEmployee(id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
@@ -17758,8 +18247,8 @@ async function delEmployee(id) {
   state.employees = state.employees.filter(e => e.id !== id);
   lsSave(LS.EMPLOYEES, state.employees);
   renderEmployeeList();
-  toast('ลบแล้ว', 'green');
-  if (API) { try { await api('/api/employees/delete', { body: { id } }); } catch (e) {} }
+  const r = API ? await apiSave('/api/employees/delete', { id }, { label: TT('ลบพนักงาน','delete employee'), key: 'del:' + id }) : { ok: true };   // ★ req #6
+  toast(r.ok ? 'ลบแล้ว' : '⚠️ ' + TT('ลบในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Deleted locally — not on Cloud yet (queued)'), r.ok ? 'green' : 'orange');
 }
 
 // process ของเครื่อง (ค่าที่ผลิตออก ถือเป็น process นั้น) — เครื่องที่ไม่กำหนด = SSG
@@ -17804,7 +18293,7 @@ function pushMcProcCloud(id, process) {
   const body = {}; body[MCPROC_PREFIX + id] = procCode(process);   // เก็บเป็น "เลข" (string ถูกทิ้ง)
   state.targets = { ...state.targets, ...body };
   lsSave(LS.TARGETS, state.targets);
-  if (API) { api('/api/targets', { body }).catch(()=>{}); }
+  if (API) apiSave('/api/targets', body, { label: TT('Process ของเครื่อง','machine process'), key: 'mcproc:' + id, silent: true });   // ★ req #6
 }
 // รับ targets จาก cloud → ถอดเลขเป็นชื่อ process แล้วทำให้ _machineProc ตรงกับส่วนกลาง (cloud = แหล่งความจริง)
 // แล้วดัน entry ที่ยังมีแต่ในเครื่องนี้ขึ้น cloud (migrate ครั้งแรกหลังอัปเดต) เพื่อให้เครื่องอื่นเห็นด้วย
@@ -17828,7 +18317,7 @@ function syncMcProcFromCloud(targets) {
   if (Object.keys(migrate).length) {
     state.targets = { ...state.targets, ...migrate };
     lsSave(LS.TARGETS, state.targets);
-    if (API) { api('/api/targets', { body: migrate }).catch(()=>{}); }
+    if (API) apiSave('/api/targets', migrate, { label: TT('Process ของเครื่อง','machine process'), key: 'mcproc:migrate', silent: true });   // ★ req #6
   }
 }
 
@@ -18619,10 +19108,10 @@ async function addMachine() {
   _machineProc[id] = process;
   localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
   pushMcProcCloud(id, process);   // แชร์ไปทุกเครื่องผ่าน targets store
-  toast('บันทึกเครื่องจักร', 'green');
   $('newMcId').value=''; $('newMcTgt').value=''; $('newMcStd').value=''; $('newMcProc').value='';
   renderMachineList(); renderZone();
-  if (API) { try { await api('/api/machines', { body: { zone, id, target, man_std: std, process } }); } catch (e) {} }
+  const r = API ? await apiSave('/api/machines', { zone, id, target, man_std: std, process }, { label: TT('เครื่องจักร','machine'), key: zone + '/' + id }) : { ok: true };   // ★ req #6
+  toast(r.ok ? 'บันทึกเครื่องจักร' : '⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Saved locally — not on Cloud yet (queued)'), r.ok ? 'green' : 'orange');
 }
 async function delMachine(zone, id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
@@ -18632,8 +19121,8 @@ async function delMachine(zone, id) {
   localStorage.setItem(LS.MC_PROC, JSON.stringify(_machineProc));
   pushMcProcCloud(id, '');   // เคลียร์ค่าใน targets store ให้ทุกเครื่อง
   renderMachineList(); renderZone();
-  toast('ลบแล้ว', 'green');
-  if (API) { try { await api('/api/machines/delete', { body: { zone, id } }); } catch (e) {} }
+  const r = API ? await apiSave('/api/machines/delete', { zone, id }, { label: TT('ลบเครื่องจักร','delete machine'), key: 'del:' + zone + '/' + id }) : { ok: true };   // ★ req #6
+  toast(r.ok ? 'ลบแล้ว' : '⚠️ ' + TT('ลบในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Deleted locally — not on Cloud yet (queued)'), r.ok ? 'green' : 'orange');
 }
 
 /* ============================================================
