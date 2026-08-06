@@ -417,6 +417,103 @@ tr.hv-detail.hv-done>td{opacity:.55}
 #planTable th.ps-on,#idTable th.ps-on{color:var(--blue);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
 #planTable th .ps-ar,#idTable th .ps-ar{font-size:10px}
 
+/* ===== ★ 2026-08-05 (req) หน้าวางแผน — Filter แบบ Excel ที่หัวคอลัมน์ + เลือกหลายรายการ ===== */
+#planTable thead th{padding:6px 8px;vertical-align:middle}
+.pl-th{white-space:nowrap}
+.pl-thi{display:flex;align-items:center;gap:4px;min-width:0}
+.pl-thl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:rgba(37,99,235,.2)}
+.pl-thl:hover{color:var(--blue);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.pl-fb{flex:none;width:22px;height:22px;line-height:1;border:1px solid var(--blue-soft);background:#fff;color:var(--blue);
+  border-radius:5px;cursor:pointer;font-size:12px;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:rgba(37,99,235,.2)}
+.pl-fb:hover{background:var(--blue-light);color:var(--blue)}
+.pl-fb.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 0 2px rgba(37,99,235,.18)}
+/* ป๊อปอัปกรอง (ลอยเหนือทุกอย่าง · วางตำแหน่งด้วย JS) */
+.pcp{position:fixed;z-index:9999;width:264px;max-width:calc(100vw - 16px);background:#fff;border:1.5px solid var(--blue-soft);
+  border-radius:11px;box-shadow:0 12px 34px rgba(15,23,42,.22);padding:8px;display:none;font-size:12.5px}
+.pcp.open{display:block}
+.pcp-sort{display:flex;gap:5px;margin-bottom:6px}
+.pcp-sort button{flex:1;border:1px solid var(--blue-soft);background:var(--blue-light);color:var(--blue-dark);border-radius:7px;
+  padding:5px 4px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.pcp-sort button:hover{background:var(--blue-soft)}
+.pcp-search{width:100%;border:1.5px solid var(--blue-soft);border-radius:8px;padding:6px 8px;font-size:12.5px;font-family:inherit;margin-bottom:6px}
+.pcp-list{max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:3px}
+.pcp-it{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:6px;cursor:pointer;line-height:1.35}
+.pcp-it:hover{background:var(--blue-light)}
+.pcp-it input{flex:none;width:15px;height:15px;accent-color:var(--blue);margin:0}
+.pcp-it span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcp-it b{font-weight:800;color:var(--muted);font-size:10.5px;flex:none}
+.pcp-it.all{border-bottom:1px solid var(--border);border-radius:0;margin-bottom:2px;font-weight:800;color:var(--blue-dark)}
+.pcp-ft{display:flex;gap:6px;margin-top:7px}
+.pcp-ft button{flex:1;border-radius:8px;padding:6px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;border:1px solid var(--blue-soft)}
+.pcp-clr{background:#fff;color:var(--muted2)}
+.pcp-ok{background:var(--blue);color:#fff;border-color:var(--blue)}
+.pcp-empty{padding:12px 6px;text-align:center;color:var(--muted);font-size:12px}
+/* ปุ่มลัด "เอาเฉพาะที่ค้นเจอ" + บรรทัดอธิบายความหมายของการติ๊ก */
+.pcp-only{width:100%;border:none;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border-radius:8px;
+  padding:7px 6px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px}
+.pcp-only:hover{filter:brightness(1.06)}
+.pcp-hint{font-size:10.5px;color:var(--muted);font-weight:700;padding:0 2px 5px}
+/* ★ 2026-08-05 มือถือ: ป๊อปอัปลอยใต้หัวคอลัมน์ตกขอบจอตลอด (ตารางอยู่ล่างหน้า)
+   → เปลี่ยนเป็น "แผ่นเลื่อนขึ้นจากขอบล่าง" เต็มความกว้าง แตะง่าย ไม่มีทางตกจอ */
+@media (max-width:700px){
+  .pcp{left:6px!important;right:6px;top:auto!important;bottom:0;width:auto;max-width:none;
+    border-radius:15px 15px 0 0;padding:10px 10px 14px;box-shadow:0 -10px 34px rgba(15,23,42,.28);
+    max-height:82vh;overflow:auto;-webkit-overflow-scrolling:touch}
+  .pcp.open{animation:pcpUp .16s ease-out}
+  .pcp-list{max-height:44vh}
+  .pcp-it{padding:9px 6px}          /* นิ้วแตะได้พอดี */
+  .pcp-it input{width:18px;height:18px}
+  .pcp-ft button,.pcp-only{padding:10px 6px;font-size:13px}
+  .pcp-search{padding:9px 10px;font-size:13px}
+}
+@keyframes pcpUp{from{transform:translateY(14px);opacity:.4}to{transform:none;opacity:1}}
+/* คำเตือน "ยังเห็นเฉพาะช่วงวันที่นี้" ในป๊อปอัปกรอง */
+.pcp-warn{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:8px;padding:6px 8px;font-size:11px;
+  line-height:1.55;margin-bottom:6px}
+.pcp-warn b{font-weight:800;white-space:nowrap}
+.pcp-warn button{display:block;width:100%;margin-top:5px;border:1px solid #F59E0B;background:#F59E0B;color:#fff;
+  border-radius:7px;padding:4px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.pfchip-date{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+.pfchip-date button{background:rgba(217,119,6,.16);color:#B45309}
+.pfchip-date button:hover{background:#D97706;color:#fff}
+/* ชิปบอก filter ที่เปิดอยู่ */
+.pfchips{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:8px}
+.pfchip{display:inline-flex;align-items:center;gap:5px;background:var(--blue-light);border:1.5px solid var(--blue-soft);
+  color:var(--blue-dark);border-radius:999px;padding:3px 6px 3px 10px;font-size:11.5px;font-weight:800;max-width:100%}
+.pfchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pfchip button{border:none;background:rgba(37,99,235,.14);color:var(--blue);border-radius:50%;width:17px;height:17px;
+  line-height:1;cursor:pointer;font-size:11px;font-family:inherit;flex:none;padding:0}
+.pfchip button:hover{background:var(--blue);color:#fff}
+/* แถบเครื่องมือ "เลือกหลายรายการ" */
+.pbulk{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;padding:8px 11px;
+  border-radius:11px;background:linear-gradient(135deg,#EFF6FF,#EDE9FE);border:1.5px solid var(--blue-soft);box-shadow:var(--shadow)}
+.pbulk .pb-n{font-size:13px;font-weight:900;color:var(--blue-dark);white-space:nowrap}
+.pbulk .pb-n b{background:var(--blue);color:#fff;border-radius:999px;padding:1px 9px;margin-right:5px}
+.pbulk button{border-radius:8px;padding:5px 9px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;
+  border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark)}
+.pbulk button:hover{background:var(--blue-light)}
+.pbulk button.pb-del{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+.pbulk button.pb-x{border-color:var(--border);background:#fff;color:var(--muted2);margin-left:auto}
+.pbulk button.pb-more{border-color:#16A34A;background:#DCFCE7;color:#15803D}
+.pbulk button.pb-more:hover{background:#16A34A;color:#fff}
+.pl-ck{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;margin:0;vertical-align:middle}
+/* ===== ★ 2026-08-05 (req) แถบแบ่งหน้าตารางแผน ===== */
+.ppg{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:9px;padding:7px 10px;border-radius:10px;
+  background:var(--blue-light);border:1.5px solid var(--blue-soft)}
+.ppg-nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.ppg-b{border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:7px;padding:4px 9px;
+  font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;min-width:30px}
+.ppg-b:hover:not(:disabled){background:var(--blue-soft)}
+.ppg-b.cur{background:var(--blue);border-color:var(--blue);color:#fff}
+.ppg-b:disabled{opacity:.4;cursor:default}
+.ppg-gap{color:var(--muted);font-weight:800;padding:0 2px}
+.ppg-info{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--muted)}
+.ppg-warn{font-size:11px;font-weight:700;color:#B45309}
+@media (max-width:700px){ .ppg{gap:7px} .ppg-info{margin-left:0} .ppg-b{padding:6px 10px;font-size:12.5px} }
+#planTable tbody tr.sel{background:#EFF6FF!important;box-shadow:inset 3px 0 0 var(--blue)}
+
 /* ===== ค้นหาหลาย Valve พร้อมกัน (วางจาก Excel) — ชิปสถานะ Process: เขียว=มียอด เหลือง=ขั้นถัดไป/ค้าง ขาว=ยังไม่ถึง ===== */
 .spm-v{border:1.5px solid var(--border);border-radius:11px;padding:8px 11px;margin-bottom:8px;background:var(--card)}
 .spm-vh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;margin-bottom:2px}
@@ -1377,7 +1474,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.44</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.45</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -1691,25 +1788,18 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
       </div>
     </div>
 
-    <!-- Filter -->
+    <!-- ★ 2026-08-05 (req) Filter — ช่องค้นหาเดียวจบ + ช่วงวันที่ · ตัวกรองราย "คอลัมน์" ย้ายไปที่หัวตาราง (แบบ Excel) -->
     <div class="fg-auto mb-8" style="background:var(--blue-light);padding:10px;border-radius:10px">
-      <div class="fr" style="margin:0"><label>วันที่ขาย ตั้งแต่</label><input type="date" id="planFrom" oninput="renderPlans()"></div>
-      <div class="fr" style="margin:0"><label>ถึง</label><input type="date" id="planTo" oninput="renderPlans()"></div>
-      <div class="fr" style="margin:0"><label>สถานะ</label>
-        <select id="planStatus" oninput="renderPlans()">
-          <option value="">ทั้งหมด</option>
-          <option value="planned">📋 วางแผน</option>
-          <option value="in_progress">⚙️ กำลังผลิต</option>
-          <option value="done">✅ เสร็จแล้ว</option>
-          <option value="cancelled">❌ ยกเลิก</option>
-        </select>
-      </div>
-      <div class="fr" style="margin:0"><label>Valve No</label><input type="search" id="planValve" placeholder="ค้นหา" oninput="renderPlans()"></div>
-      <div class="fr" style="margin:0"><label>Lot</label><input type="search" id="planLot" placeholder="ค้นหา" oninput="renderPlans()"></div>
+      <div class="fr" style="margin:0;grid-column:span 2;min-width:200px"><label>🔎 ค้นหา (Valve / Lot / หมายเหตุ / วันที่)</label>
+        <input type="search" id="planSearch" placeholder="พิมพ์บางส่วนก็ได้ เช่น VF1349 หรือ 2606S" oninput="planSearchInput(this.value)"></div>
+      <div class="fr" style="margin:0"><label>วันที่ขาย ตั้งแต่</label><input type="date" id="planFrom" oninput="planFilterChanged()"></div>
+      <div class="fr" style="margin:0"><label>ถึง</label><input type="date" id="planTo" oninput="planFilterChanged()"></div>
       <div class="fr" style="margin:0;display:flex;align-items:flex-end">
         <button class="btn btn-outline btn-sm btn-block" onclick="resetPlanFilter()" style="padding:8px">↺ ล้าง Filter</button>
       </div>
     </div>
+    <!-- ตัวกรองที่เปิดอยู่ (ชิป กด ✕ เพื่อปลดทีละอัน) — เห็นตลอดว่าที่เห็นอยู่ถูกกรองด้วยอะไร -->
+    <div id="planChips"></div>
 
     <!-- มุมมองรายเดือน (req #6): เลือกปี + ยอดขายรายเดือน กดเดือนเพื่อกรอง -->
     <div class="card" style="padding:10px 12px;margin-bottom:10px;background:linear-gradient(135deg,#F8FAFF,#F5F3FF);border:1.5px solid var(--blue-soft)">
@@ -1744,26 +1834,39 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
     <!-- ★ 2026-08-03 (req): งานที่รับเข้า WIP IN 1.5 แล้ว แต่ไม่มีแผนขายรองรับ (โชว์เฉพาะเมื่อเจอ) -->
     <div id="planNoPlan"></div>
 
+    <!-- ★ 2026-08-05 (req) แถบเครื่องมือ "เลือกหลายรายการ" — โผล่เมื่อมีการติ๊กเลือก -->
+    <div id="planBulk"></div>
+
     <div class="tbl-wrap" style="max-height:70vh">
       <!-- ★ 2026-08-02 UX: Lot / Q'ty เดิมแคบจนตัวเลขโดนตัด · "หมายเหตุ" เดิม min-width กินพื้นที่ที่เหลือทั้งหมด
            → กำหนดความกว้างให้พอดีเนื้อหาจริง (Lot = 11 ตัวอักษร) แล้วให้ทุกคอลัมน์แชร์ที่ว่างเท่า ๆ กัน
-           หัวตารางกดเพื่อเรียงได้ (วันที่ / Valve / Lot / Qty / สถานะ) -->
-      <table id="planTable" style="min-width:880px">
+           ★ 2026-08-05 (req): หัวตาราง = ชื่อคอลัมน์ (กด = เรียง) + ปุ่ม ▾ (กด = ตัวกรองแบบ Excel)
+           คอลัมน์แรก = ช่องติ๊กเลือกหลายรายการ (ติ๊กบนหัว = เลือกทุกแถวที่กรองอยู่) -->
+      <table id="planTable" style="min-width:920px">
         <thead><tr>
-          <th class="plan-sort" style="width:120px" onclick="setPlanSort('date')"   title="เรียงตามวันที่ขาย">📅 วันที่ขาย<span class="ps-ar" data-psk="date"></span></th>
-          <th class="plan-sort" style="width:124px" onclick="setPlanSort('valve')"  title="เรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></th>
-          <th class="plan-sort" style="width:136px" onclick="setPlanSort('lot')"    title="เรียงตาม Lot">Lot<span class="ps-ar" data-psk="lot"></span></th>
-          <th class="center plan-sort" style="width:82px" onclick="setPlanSort('qty')" title="เรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></th>
-          <th class="plan-sort" style="width:156px" onclick="setPlanSort('status')" title="เรียงตามสถานะจริง">สถานะ (จริง · แก้เอง)<span class="ps-ar" data-psk="status"></span></th>
-          <th style="width:150px">หมายเหตุ</th>
+          <th class="center" style="width:36px"><input type="checkbox" class="pl-ck" id="planSelAll" onclick="planSelAll(this.checked)" title="เลือกทุกแถวที่กรองอยู่"></th>
+          <th class="pl-th" style="width:122px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('date')" title="กดเพื่อเรียงตามวันที่ขาย">📅 วันที่ขาย<span class="ps-ar" data-psk="date"></span></span><button type="button" class="pl-fb" data-pfc="date" onclick="openPlanFilter(event,'date')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:126px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:138px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="กดเพื่อเรียงตาม Lot">Lot<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:92px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (จริง · แก้เอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:150px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="center" style="width:116px">จัดการ</th>
         </tr></thead>
         <tbody></tbody>
       </table>
     </div>
+    <!-- ★ 2026-08-05 (req) แบ่งหน้า — วาดเฉพาะแถวที่เห็น ตารางใหญ่แค่ไหนก็ไม่หน่วง -->
+    <div id="planPager"></div>
+    <div class="row mt-8" style="justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11.5px">
+      <span id="planCountLbl" class="muted" style="font-weight:700"></span>
+      <span class="muted">💡 ติ๊กช่องหน้าแถวเพื่อเลือกหลายรายการ · กด Shift ค้างเพื่อเลือกเป็นช่วง</span>
+    </div>
     <div class="muted center mt-8" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:8px;border-radius:9px">
       ☁️ แผนทุกรายการ sync ลง D1 — ทุกคนที่ login จะเห็นและแก้ไขร่วมกันได้
     </div>
+    <!-- ป๊อปอัปตัวกรองรายคอลัมน์ (ใช้ร่วมกันทุกคอลัมน์ · วางตำแหน่งด้วย JS) -->
+    <div id="planColPop" class="pcp"></div>
   </div>
 </section>
 
@@ -4302,9 +4405,13 @@ async function repairPlanDates(){
 let _planYear = null;        // ปีที่เลือก (null = ปีปัจจุบัน)
 let _planMonthSel = '';      // 'YYYY-MM' ที่เลือก ('' = ทั้งปี)
 const _TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const _EN_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/* ชื่อเดือนตามภาษาที่เลือก — ปุ่มเดือนสร้างเป็น "ม.ค. 26" ก้อนเดียว พจนานุกรมจับไม่ได้ จึงต้องเลือกตั้งแต่ตอนวาด */
+const monName = (i0) => (VSM_LANG === 'en' ? _EN_MON : _TH_MON)[i0] || '';
 function planYearShift(d){ _planYear = (_planYear || new Date().getFullYear()) + d; renderPlanMonths(); }
 function selectPlanMonth(ym){
   _planMonthSel = ym;
+  _planPage = 1;
   if(ym){
     const [y,m] = ym.split('-').map(Number); const last = new Date(y, m, 0).getDate();
     if($('planFrom')) $('planFrom').value = `${y}-${P(m)}-01`;
@@ -4327,7 +4434,7 @@ function renderPlanMonths(){
   }
   if($('planYearTotal')) $('planYearTotal').textContent = yTot ? `รวมทั้งปี ${nn(yTot)} ชิ้น` : 'ยังไม่มีแผนปีนี้';
   const grid = $('planMonthGrid'); if(grid){
-    grid.innerHTML = _TH_MON.map((mn,i)=>{
+    grid.innerHTML = _TH_MON.map((_thMn,i)=>{ const mn = monName(i);
       const ym = `${y}-${P(i+1)}`, q = tot[i], active = _planMonthSel===ym, has = q>0;
       return `<button onclick="selectPlanMonth('${ym}')" style="text-align:center;border:1.5px solid ${active?'var(--blue)':has?'var(--blue-soft)':'#E5E7EB'};background:${active?'var(--blue)':has?'#fff':'#F9FAFB'};color:${active?'#fff':has?'var(--blue-dark)':'#9CA3AF'};border-radius:9px;padding:7px 4px;cursor:pointer;font-family:inherit;transition:.12s">
         <div style="font-size:11px;font-weight:800">${mn} ${String(y).slice(2)}</div>
@@ -4376,7 +4483,7 @@ function findPlanRollovers() {
   return out.sort((a, b) => String(a.valve).localeCompare(String(b.valve)) || String(a.lot).localeCompare(String(b.lot)));
 }
 const _fmtThDate = iso => { if (!iso) return '-'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
-const _fmtThMonth = ym => { if (!ym) return '-'; const [y,m] = ym.split('-'); return `${_TH_MON[+m-1]||m} ${String(y).slice(2)}`; };
+const _fmtThMonth = ym => { if (!ym) return '-'; const [y,m] = ym.split('-'); return `${monName(+m-1)||m} ${String(y).slice(2)}`; };
 
 let _planRolloverOpen = false;
 function togglePlanRollover() { _planRolloverOpen = !_planRolloverOpen; renderPlanRollover(); }
@@ -4429,7 +4536,7 @@ async function applyPlanRollovers() {
   for (const r of list) {
     const np = state.plans.find(p => p.plan_id === r.toId);
     if (!np) continue;
-    const auto = _planAutoStatus(np);
+    const auto = planAutoStatus(np);
     if (auto && auto.code && np.status !== auto.code) { np.status = auto.code; touched.push(np); }
     // ยกหมายเหตุของเดือนเก่ามาให้ ถ้าแถวใหม่ยังว่าง (ไม่ให้ข้อมูลที่พิมพ์ไว้หายไปพร้อมแถวเก่า)
     if (!(np.note || '').trim()) {
@@ -4463,7 +4570,7 @@ async function autoStatusPlans() {
   const rows = filteredPlans().filter(p => p.status !== 'cancelled');
   const changed = [];
   for (const p of rows) {
-    const auto = _planAutoStatus(p);
+    const auto = planAutoStatus(p);
     if (auto && auto.code && p.status !== auto.code) { p.status = auto.code; changed.push(p); }
   }
   if (!changed.length) { toast('สถานะตรงกับของจริงอยู่แล้ว', 'blue'); return; }
@@ -4487,6 +4594,7 @@ const _PLAN_STATUS_RANK = { planned: 0, in_progress: 1, done: 2, cancelled: 3 };
 function setPlanSort(key) {
   if (_planSort.key === key) _planSort.dir *= -1;
   else _planSort = { key, dir: 1 };
+  _planPage = 1;
   renderPlans();
 }
 function _planSortVal(p, key) {
@@ -4494,27 +4602,74 @@ function _planSortVal(p, key) {
     case 'valve':  return (p.valve_no || '').toUpperCase();
     case 'lot':    return (p.lot || '').toUpperCase();
     case 'qty':    return Number(p.quantity) || 0;
+    case 'note':   return (p.note || '').toUpperCase();
     // "สถานะ" เรียงตามสถานะจริงจากการผลิต (ที่ผู้ใช้เห็นเป็นป้ายสี) ไม่ใช่ค่า override
-    case 'status': { const a = _planAutoStatus(p); return _PLAN_STATUS_RANK[(a && a.code) || p.status] ?? 9; }
+    case 'status': { const a = planAutoStatus(p); return _PLAN_STATUS_RANK[(a && a.code) || p.status] ?? 9; }
     default:       return _planDateISO(p.plan_date);
   }
 }
-function filteredPlans() {
-  const f = {
-    from:   $('planFrom')?.value || '',
-    to:     $('planTo')?.value   || '',
-    status: $('planStatus')?.value || '',
-    valve:  ($('planValve')?.value || '').toLowerCase(),
-    lot:    ($('planLot')?.value || '').toLowerCase(),
-  };
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ 2026-08-05 (req) — ตัวกรองรายคอลัมน์ "แบบ Excel" หน้าวางแผน
+   ทำไม: ของเดิมมีแค่ช่องค้นหา Valve/Lot + กดหัวคอลัมน์เพื่อเรียง — หาชิ้นงานทีต้อง
+   ไล่พิมพ์/ไล่เรียงเอง. แบบ Excel = กด ▾ ที่หัวคอลัมน์ → เห็น "ค่าที่มีจริงทั้งหมด"
+   ในคอลัมน์นั้น พร้อมจำนวนแถว ติ๊กเลือกได้หลายค่า → เจอของที่ต้องการในคลิกเดียว
+   กติกาแบบ Excel ที่ยึดตาม:
+     • รายการค่าที่โชว์ = ค่าที่ "เหลืออยู่หลังกรองคอลัมน์อื่น" (ไม่โชว์ค่าที่กรองแล้วไม่มีแถว)
+     • คอลัมน์ที่ถูกกรองอยู่ ปุ่ม ▾ เป็นสีน้ำเงินทึบ + มีชิปบอกด้านบนตาราง
+     • ไม่ติ๊กอะไรเลย = ไม่กรอง (เท่ากับเลือกทั้งหมด)
+   ═══════════════════════════════════════════════════════════════════════ */
+/* col → Set(ค่าที่ติ๊กไว้) · "ไม่มีคีย์" = ไม่กรองคอลัมน์นั้น (ติ๊กครบทุกค่า)
+   เซ็ตว่าง = กรองอยู่แต่ยังไม่ติ๊กอะไรเลย → ไม่มีแถวไหนผ่าน (ท่าเดียวกับ Excel:
+   กด "(เลือกทั้งหมด)" ออกก่อน แล้วค่อยติ๊กเฉพาะตัวที่ต้องการ) */
+let _planColF = {};
+let _planQ    = '';      // คำค้นรวมทุกคอลัมน์ (ช่องเดียวจบ)
+
+/* สถานะจริงคำนวณหนัก (ไล่ดู kpiRecords/prodRecords ทุกครั้ง) — ตารางเรียกซ้ำต่อแถว ต่อการกรอง ต่อการเรียง
+   → memo ต่อรอบข้อมูล (_fvVer เปลี่ยนเมื่อข้อมูลเปลี่ยน) ไม่งั้นตารางไม่กี่ร้อยแถวก็หน่วงแล้ว */
+let _planAutoMemo = new Map(), _planAutoMemoVer = -1;
+function planAutoStatus(p) {
+  if (_planAutoMemoVer !== _fvVer) { _planAutoMemo.clear(); _planAutoMemoVer = _fvVer; }
+  const k = p.plan_id || `${p.valve_no}§${p.lot}§${p.plan_date}`;
+  let v = _planAutoMemo.get(k);
+  if (v === undefined) { v = _planAutoStatus(p); _planAutoMemo.set(k, v); }
+  return v;
+}
+/* นิยามคอลัมน์: ป้าย · ค่าที่ใช้กรอง (คีย์) · วิธีแสดงคีย์ให้คนอ่าน */
+const PLAN_COLS = {
+  date:   { lbl:['📅 วันที่ขาย','📅 Sale date'], key:p=>_planDateISO(p.plan_date),
+            disp:v=>v ? _fmtThDate(v) : TT('(ไม่ระบุวันที่)','(no date)') },
+  valve:  { lbl:['Valve No','Valve No'], key:p=>(p.valve_no||'').trim().toUpperCase(),
+            disp:v=>v || TT('(ว่าง)','(blank)') },
+  lot:    { lbl:['Lot','Lot'], key:p=>(p.lot||'').trim(),
+            disp:v=>v || TT('(ไม่มี Lot)','(no lot)') },
+  qty:    { lbl:["Q'ty","Q'ty"], key:p=>String(Math.round(Number(p.quantity)||0)),
+            disp:v=>nn(+v)+' '+TT('ชิ้น','pcs'), num:true },
+  status: { lbl:['สถานะ','Status'], key:p=>{ if(p.status==='cancelled') return 'cancelled';
+              const a=planAutoStatus(p); return (a && a.code) || p.status || 'planned'; },
+            disp:v=>({planned:TT('📋 ยังไม่เริ่ม','📋 Not started'), in_progress:TT('⚙️ กำลังผลิต','⚙️ In production'),
+                      done:TT('✅ ผลิตเสร็จ','✅ Finished'), cancelled:TT('❌ ยกเลิก','❌ Cancelled')}[v] || v) },
+  note:   { lbl:['หมายเหตุ','Note'], key:p=>(p.note||'').trim(),
+            disp:v=>v || TT('(ว่าง)','(blank)') },
+};
+const planColLbl = c => { const m = PLAN_COLS[c]; return m ? TT(m.lbl[0], m.lbl[1]) : c; };
+
+/* แถวที่ผ่านตัวกรองทั้งหมด — skipCol = ข้ามคอลัมน์นั้น (ใช้ตอนสร้างรายการค่าให้ป๊อปอัป แบบ Excel) */
+function filteredPlans(skipCol, ignoreRange) {
+  const from = ignoreRange ? '' : ($('planFrom')?.value || '');
+  const to   = ignoreRange ? '' : ($('planTo')?.value   || '');
+  const q    = _planQ.trim().toLowerCase();
+  const cols = Object.keys(_planColF).filter(c => c !== skipCol && _planColF[c] && PLAN_COLS[c]);
   const k = _planSort.key, dir = _planSort.dir;
   return filterVsm(state.plans).filter(p => {
     const d = _planDateISO(p.plan_date);   // normalize ก่อนเทียบ (กันวันที่ผิดรูปหลุด filter)
-    if (f.from && d && d < f.from) return false;
-    if (f.to   && d && d > f.to)   return false;
-    if (f.status && p.status !== f.status) return false;
-    if (f.valve && !(p.valve_no||'').toLowerCase().includes(f.valve)) return false;
-    if (f.lot   && !(p.lot||'').toLowerCase().includes(f.lot)) return false;
+    if (from && d && d < from) return false;
+    if (to   && d && d > to)   return false;
+    if (q) {
+      const hay = `${p.valve_no||''} ${p.lot||''} ${p.note||''} ${d} ${_fmtThDate(d)} ${p.quantity||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    for (const c of cols) if (!_planColF[c].has(PLAN_COLS[c].key(p))) return false;
     return true;
   }).sort((a,b) => {
     const va = _planSortVal(a,k), vb = _planSortVal(b,k);
@@ -4522,6 +4677,560 @@ function filteredPlans() {
     if (c === 0 && k !== 'date') c = _planDateISO(a.plan_date).localeCompare(_planDateISO(b.plan_date));  // ตัวตัดสินรอง = วันที่ขาย
     return c * dir;
   });
+}
+function planSearchInput(v) {
+  _planQ = v || '';
+  _planPage = 1;
+  clearTimeout(_planSearchTimer);
+  _planSearchTimer = setTimeout(renderPlans, 180);   // debounce — ตารางใหญ่พิมพ์แล้วไม่สะดุด
+}
+let _planSearchTimer;
+
+/* ═══ ★ 2026-08-05 (req) แบ่งหน้าตารางแผน ═══════════════════════════════
+   ทำไม: แผนสะสมหลายร้อยแถว · 1 แถว = date input + 3 text input + select 4 ตัวเลือก + 3 ปุ่ม
+   วาดทีเดียวหมดทุกแถว = DOM หลายพัน node ต่อการกรอง/ติ๊ก 1 ครั้ง → หน้าหน่วงชัดเจน
+   แบ่งหน้าแล้ววาดเท่าที่เห็น ต้นทุนคงที่ไม่ว่าข้อมูลจะโตแค่ไหน
+   หมายเหตุการเลือก: ติ๊กหัวตาราง = เลือก "ทั้งหน้านี้" · มีปุ่มเลือกครบทุกหน้าที่กรองไว้ให้ในแถบเครื่องมือ
+   และคำสั่งกลุ่มทำงานกับ "ทุกแถวที่เลือกไว้ในชุดที่กรอง" ไม่ใช่เฉพาะหน้าที่เปิดอยู่ */
+let _planPage = 1;
+let _planPageSize = (function(){ try{ const v=+localStorage.getItem('vsm4_plan_pagesize'); return [25,50,100,200,0].includes(v)?v:50; }catch(e){ return 50; } })();
+let _planRowsAll = [];       // แถวทั้งหมดหลังกรอง (รอบล่าสุด) — ใช้ทั้งแบ่งหน้าและคำสั่งกลุ่ม
+function setPlanPageSize(v) {
+  _planPageSize = +v || 0;
+  _planPage = 1;
+  try{ localStorage.setItem('vsm4_plan_pagesize', String(_planPageSize)); }catch(e){}
+  renderPlans();
+}
+function planGoPage(n) {
+  const size = _planPageSize > 0 ? _planPageSize : Math.max(1, _planRowsAll.length);
+  const pages = Math.max(1, Math.ceil(_planRowsAll.length / size));
+  _planPage = Math.min(Math.max(1, +n || 1), pages);
+  renderPlans();
+  const w = $('planTable')?.closest('.tbl-wrap');
+  if (w) { w.scrollTop = 0; w.scrollIntoView({ block: 'nearest' }); }   // เปลี่ยนหน้าแล้วต้องเห็นแถวแรก
+}
+/* ตัวกรอง/การเรียงเปลี่ยน = กลับไปหน้า 1 เสมอ (ไม่งั้นค้างอยู่หน้า 7 ของผลลัพธ์ที่เหลือ 3 แถว) */
+function planFilterChanged() { _planPage = 1; renderPlans(); }
+
+/* ── ป๊อปอัปตัวกรองรายคอลัมน์ ─────────────────────────────────────────── */
+let _pcpCol = '';          // คอลัมน์ที่เปิดอยู่
+let _pcpVals = [];         // รายการค่า (แช่ไว้ตอนเปิด — ติ๊กแล้วรายการต้องไม่กระโดด)
+let _pcpValsCol = '';      // _pcpVals ชุดนี้เป็นของคอลัมน์ไหน (กันหยิบชุดผิดคอลัมน์)
+let _pcpQ = '';            // ค้นหาในรายการค่า
+let _pcpAnchor = null;     // ปุ่ม ▾ ที่กดเปิด — ใช้วางตำแหน่งใหม่ตอนจอเปลี่ยนขนาด/เลื่อน
+
+/* ★ 2026-08-05 (แก้ตามที่แจ้ง: "เลือกเป็นรายการไม่ได้ มันแสดงข้อมูลทั้งหมดตลอดเวลา")
+   ต้นเหตุ: ตัวจัดการติ๊กทุกตัวอ่านคอลัมน์จากตัวแปรกลาง `_pcpCol` ซึ่ง `closePlanFilter()` ล้างเป็น ''
+   และมี `window.addEventListener('resize', closePlanFilter)` อยู่
+   → **บนมือถือ**: เปิดป๊อปอัปแล้วโค้ดสั่ง focus ช่องค้นหา → คีย์บอร์ดเด้งขึ้น → viewport เปลี่ยนขนาด
+     → resize → closePlanFilter() → `_pcpCol = ''` ตั้งแต่ยังไม่ทันติ๊กอะไร
+   → พอติ๊ก ค่าถูกเขียนลง `_planColF['']` ซึ่ง `filteredPlans()` มองข้าม (ไม่มีใน PLAN_COLS)
+     ผลคือ **ติ๊กเท่าไหร่ก็ไม่กรอง เห็นข้อมูลครบทุกแถวตลอด** (ยืนยันแล้ว: ยิง resize 1 ครั้ง อาการเกิดทันที)
+   แก้ที่ราก: ส่งชื่อคอลัมน์ไปกับทุกปุ่มโดยตรง ไม่พึ่งตัวแปรกลางอีก · resize/scroll = ย้ายตำแหน่งไม่ใช่ปิด
+   · ไม่ focus ช่องค้นหาบนจอสัมผัส (ตัวการที่ทำให้คีย์บอร์ดเด้ง) · กันเขียนคีย์ที่ไม่มีจริงลง _planColF */
+function _pcpEnsure(col) {
+  if (!PLAN_COLS[col]) return false;
+  _pcpCol = col;                                   // ถูกล้างไปด้วยเหตุใดก็ตาม → ตั้งกลับจากปุ่มที่กดจริง
+  if (_pcpValsCol !== col || !_pcpVals.length) _pcpBuild(col);
+  return true;
+}
+/* ★ 2026-08-05 (แก้ตามที่แจ้ง: "กด filter แล้วข้อมูลไม่แสดงตาม filter")
+   ช่วง "วันที่ขาย ตั้งแต่–ถึง" ตั้งค่าเริ่มต้นเป็น วันนี้ → +60 วัน ตั้งแต่ตอนเปิดแอป
+   → แผนของเดือนก่อน ๆ ถูกตัดออก "ก่อน" จะสร้างรายการค่าในป๊อปอัปด้วยซ้ำ
+     (ของจริงที่เจอ: ตัดทิ้ง 93 จาก 269 แผน · เบอร์วาล์วหายไป 80 จาก 220)
+   คนใช้จึงกดกรองแล้วหาของที่รู้ว่ามีไม่เจอ โดยไม่มีอะไรบนจอบอกเลยว่าถูกจำกัดช่วงวันอยู่
+   แก้ 2 ทาง: ① ทำช่วงวันที่ให้ "มองเห็นได้" เป็นชิปกดปลดได้ ② ในป๊อปอัปบอกตรง ๆ + ปุ่มดูทุกวันที่ */
+function _planRangeNarrow() {
+  const from = $('planFrom')?.value || '', to = $('planTo')?.value || '';
+  return (!!from && from > '2020-01-01') || (!!to && to < '2099-12-31');
+}
+/* ★ 2026-08-05 (แก้ตามที่แจ้ง: "พอเลือกแล้วเหมือนระบบเลือกทั้งหมด แสดงข้อมูลมาหมดเลย")
+   ต้นเหตุ = ตรรกะ "ยังไม่กรอง → ติ๊กครบทุกค่า" แบบ Excel ดิบ ๆ ชนกับวิธีที่คนใช้จริง
+     พิมพ์ค้น "2629" → เจอ VV2629M0 ซึ่ง "ติ๊กอยู่แล้ว" → กดเพราะคิดว่ากดแล้วได้ตัวนี้
+     แต่การกดคือ "เอาติ๊กออก" → ระบบเข้าใจว่า "เอาทุกค่ายกเว้น VV2629M0" = 139 ค่า
+     → ตารางโชว์ทุกอย่างยกเว้นตัวที่ต้องการ (ตรงกับที่เห็นในภาพ: ชิป "Valve No: 139 ค่า")
+     และกด "(เลือกทั้งหมด)" ออกก็ไม่เปลี่ยน เพราะตอนค้นหาอยู่มันปลดเฉพาะ 1 ค่าที่ค้นเจอ
+   กติกาใหม่ — แยกตามเจตนาที่ชัดเจนของผู้ใช้:
+     • ไม่ได้พิมพ์ค้นหา = โหมด Excel เดิม (ติ๊กครบ → เอาที่ไม่เอาออก)
+     • กำลังพิมพ์ค้นหา = "กำลังตามหาของชิ้นนี้" → เริ่มจาก "ยังไม่ติ๊กอะไร" กดตัวไหนคือ "เอาตัวนั้น"
+   ผลคือท่าที่คนทำจริง (พิมพ์ → กด) ได้ผลลัพธ์ตามที่คิดเสมอ */
+function _pcpSearching() { return !!_pcpQ.trim(); }
+/* ค่าที่ตรงคำค้นในลิสต์ตอนนี้ */
+function _pcpShown(col) {
+  const q = _pcpQ.trim().toLowerCase();
+  if (!q) return _pcpVals;
+  return _pcpVals.filter(([v]) => String(PLAN_COLS[col].disp(v)).toLowerCase().includes(q)
+                               || String(v).toLowerCase().includes(q));
+}
+/* ค่านี้ถูกติ๊กอยู่ไหม (ยังไม่มีตัวกรอง: ไม่ได้ค้นหา = ติ๊กครบ · ค้นหาอยู่ = ยังไม่ติ๊ก) */
+function _pcpIsOn(col, v) {
+  const sel = _planColF[col];
+  if (sel) return sel.has(v);
+  return !_pcpSearching();
+}
+/* ชุดตั้งต้นก่อนติ๊ก/ปลด — ตามกติกาเดียวกับ _pcpIsOn */
+function _pcpBaseSet() {
+  return _pcpSearching() ? new Set() : new Set(_pcpVals.map(x => x[0]));
+}
+/* จำนวนค่าทั้งหมดของคอลัมน์ (ไว้บอกบนชิปว่าเลือกกี่จากกี่) */
+const _pcpTot = {};
+/* สร้างรายการค่าของคอลัมน์ = ค่าที่เหลือหลังกรองคอลัมน์อื่น (แบบ Excel) + ค่าที่ติ๊กไว้แล้ว (จะได้ปลดออกได้เสมอ) */
+function _pcpBuild(col) {
+  const cnt = new Map();
+  for (const p of filteredPlans(col)) {
+    const v = PLAN_COLS[col].key(p);
+    cnt.set(v, (cnt.get(v) || 0) + 1);
+  }
+  for (const v of (_planColF[col] || [])) if (!cnt.has(v)) cnt.set(v, 0);
+  _pcpVals = [...cnt.entries()].sort((a,b) => PLAN_COLS[col].num
+    ? (+a[0]) - (+b[0])
+    : String(a[0]).localeCompare(String(b[0]), 'th'));
+  _pcpValsCol = col;
+  _pcpTot[col] = _pcpVals.length;
+}
+/* ปลดช่วงวันที่ทิ้ง แล้วเติมรายการค่าในป๊อปอัปให้ครบทุกช่วงเวลา (ไม่ต้องปิด-เปิดใหม่) */
+function planFilterAllDates(col) {
+  _planPage = 1;
+  if ($('planFrom')) $('planFrom').value = '2020-01-01';
+  if ($('planTo'))   $('planTo').value   = '2099-12-31';
+  _planMonthSel = '';
+  renderPlans();
+  col = col || _pcpCol;
+  if (PLAN_COLS[col]) { _pcpBuild(col); renderPlanFilterPop(col); }
+  toast(TT('ดูทุกวันที่แล้ว — เลิกจำกัดช่วงวันที่ขาย','Showing all dates — sale-date range cleared'), 'green');
+}
+function openPlanFilter(ev, col) {
+  if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+  const pop = $('planColPop'); if (!pop || !PLAN_COLS[col]) return;
+  if (_pcpCol === col && pop.classList.contains('open')) { closePlanFilter(); return; }
+  _pcpQ = '';
+  _pcpValsCol = '';                       // บังคับสร้างรายการค่าใหม่ทุกครั้งที่เปิด (ข้อมูลอาจเปลี่ยนไปแล้ว)
+  _pcpEnsure(col);
+  renderPlanFilterPop(col);
+  pop.classList.add('open');                       // ต้องเปิดก่อนวัดขนาด ไม่งั้น offsetHeight = 0
+  _pcpAnchor = (ev && ev.currentTarget) || document.querySelector(`#planTable .pl-fb[data-pfc="${col}"]`);
+  _pcpPlace(_pcpAnchor);
+  // จอสัมผัส/จอแคบ: ห้าม focus เอง — คีย์บอร์ดจะเด้งขึ้นมาบังลิสต์ (และเคยทำให้ป๊อปอัปปิดตัวเอง)
+  if (!_isTouchUI()) setTimeout(() => { const s = $('pcpSearch'); if (s) s.focus(); }, 30);
+}
+function _isTouchUI() {
+  return (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0) || window.innerWidth < 900;
+}
+function _pcpPlace(anchor) {
+  const pop = $('planColPop'); if (!pop) return;
+  if (window.innerWidth <= 700) { pop.style.left = ''; pop.style.top = ''; return; }   // มือถือ = แผ่นขอบล่าง (จัดด้วย CSS)
+  const r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+  /* วัดขนาดจริงหลังเปิดแล้วเท่านั้น — ตอนยังซ่อนอยู่ offsetHeight = 0 จะคำนวณพลิกขึ้นบนผิด */
+  const w = pop.offsetWidth || 264, h = pop.offsetHeight || 320;
+  let left = r ? r.left : 12, top = r ? r.bottom + 5 : 60;
+  left = Math.max(8, Math.min(left, window.innerWidth  - w - 8));
+  if (top + h > window.innerHeight - 8) top = Math.max(8, (r ? r.top : 60) - h - 5);   // ไม่พอด้านล่าง → เปิดขึ้นบน
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+}
+function closePlanFilter() {
+  const pop = $('planColPop'); if (pop) pop.classList.remove('open');
+  _pcpCol = ''; _pcpAnchor = null;
+}
+function renderPlanFilterPop(col) {
+  const pop = $('planColPop');
+  col = col || _pcpCol;
+  if (!pop || !PLAN_COLS[col]) return;
+  const keepScroll = pop.querySelector('.pcp-list')?.scrollTop || 0;   // ติ๊กแล้วรายการต้องไม่ดีดกลับหัวลิสต์
+  const sel = _planColF[col];
+  const q = _pcpQ.trim().toLowerCase();
+  const searching = !!q;
+  const shown = _pcpShown(col);
+  const isOn = v => _pcpIsOn(col, v);
+  const allOn = shown.length > 0 && shown.every(([v]) => isOn(v));
+  pop.innerHTML = `
+    ${_planRangeNarrow() ? `<div class="pcp-warn">
+      ⚠️ ${TT('เห็นเฉพาะช่วงวันที่ขาย','Only sale dates')} <b>${_fmtThDate($('planFrom')?.value||'')} – ${_fmtThDate($('planTo')?.value||'')}</b>
+      ${TT('· ของนอกช่วงยังไม่ถูกเอามาให้เลือก','· values outside it are not listed yet')}
+      <button type="button" onclick="planFilterAllDates('${col}')">📅 ${TT('ดูทุกวันที่','Show all dates')}</button>
+    </div>` : ''}
+    <div class="pcp-sort">
+      <button type="button" onclick="planFilterSort('${col}',1)">▲ ${TT('น้อย→มาก','A→Z')}</button>
+      <button type="button" onclick="planFilterSort('${col}',-1)">▼ ${TT('มาก→น้อย','Z→A')}</button>
+    </div>
+    <input type="search" class="pcp-search" id="pcpSearch" value="${escapeHtml(_pcpQ)}"
+      placeholder="${TT('ค้นหาในคอลัมน์นี้','Search this column')}" oninput="planFilterSearch('${col}',this.value)">
+    ${searching && shown.length ? `<button type="button" class="pcp-only" onclick="planFilterOnlyFound('${col}')">
+      ✅ ${TT(`เอาเฉพาะที่ค้นเจอ (${nn(shown.length)} ค่า)`, `Keep only the ${nn(shown.length)} match${shown.length>1?'es':''}`)}
+    </button>` : ''}
+    <div class="pcp-hint">${searching
+      ? TT('ติ๊กตัวที่ต้องการ = เอาเฉพาะตัวนั้น','Tick what you want = keep only those')
+      : TT('ติ๊ก = แสดง · เอาติ๊กออก = ซ่อน','Ticked = shown · unticked = hidden')}</div>
+    <div class="pcp-list">
+      ${shown.length ? `<label class="pcp-it all"><input type="checkbox" ${allOn?'checked':''} onclick="planFilterAll('${col}',this.checked)"><span>${searching?TT('(เลือกผลค้นหาทั้งหมด)','(Select all search results)'):TT('(เลือกทั้งหมด)','(Select all)')}</span><b>${nn(shown.length)}</b></label>` : ''}
+      ${shown.length ? shown.map(([v,n]) => `<label class="pcp-it">
+          <input type="checkbox" ${isOn(v)?'checked':''} onclick="planFilterPick('${col}','${encodeURIComponent(v)}',this.checked)">
+          <span title="${escapeHtml(String(PLAN_COLS[col].disp(v)))}">${escapeHtml(String(PLAN_COLS[col].disp(v)))}</span><b>${nn(n)}</b>
+        </label>`).join('') : `<div class="pcp-empty">${TT('ไม่พบค่าที่ตรงคำค้น','No matching values')}</div>`}
+    </div>
+    <div class="pcp-ft">
+      <button type="button" class="pcp-clr" onclick="planFilterClear('${col}')">${TT('ล้างตัวกรอง','Clear filter')}</button>
+      <button type="button" class="pcp-ok" onclick="closePlanFilter()">${TT('เสร็จ','Done')}</button>
+    </div>`;
+  const lst = pop.querySelector('.pcp-list'); if (lst) lst.scrollTop = keepScroll;
+  // เนื้อหาเปลี่ยน (ค้นหา/ติ๊ก) = ความสูงเปลี่ยน → วางตำแหน่งใหม่ ไม่งั้นตกขอบจอ
+  if (pop.classList.contains('open')) _pcpPlace(_pcpAnchor);
+}
+function planFilterSearch(col, v) {
+  if (!_pcpEnsure(col)) return;
+  _pcpQ = v || '';
+  renderPlanFilterPop(col);
+  const s = $('pcpSearch'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+}
+function planFilterSort(col, dir) {
+  if (!PLAN_COLS[col]) return;
+  _planSort = { key: col, dir };
+  renderPlans();
+}
+/* ติ๊ก/ปลดค่าหนึ่งค่า — ติ๊กครบทุกค่า = ถือว่า "ไม่กรอง" (เหมือน Excel) */
+function planFilterPick(col, encVal, on) {
+  if (!_pcpEnsure(col)) return;
+  const v = decodeURIComponent(encVal);
+  const sel = _planColF[col] || _pcpBaseSet();   // ค้นหาอยู่ = เริ่มจากว่าง · ไม่ได้ค้น = เริ่มจากติ๊กครบ
+  if (on) sel.add(v); else sel.delete(v);
+  _pcpCommit(col, sel);
+}
+function planFilterAll(col, on) {
+  if (!_pcpEnsure(col)) return;
+  const sel = _planColF[col] || _pcpBaseSet();
+  for (const [v] of _pcpShown(col)) { if (on) sel.add(v); else sel.delete(v); }
+  _pcpCommit(col, sel);
+}
+/* ปุ่มลัด "เอาเฉพาะที่ค้นเจอ" — พิมพ์แล้วกดทีเดียวจบ (ท่าที่เร็วที่สุดในการหาชิ้นงาน) */
+function planFilterOnlyFound(col) {
+  if (!_pcpEnsure(col)) return;
+  _pcpCommit(col, new Set(_pcpShown(col).map(x => x[0])));
+}
+/* เก็บผลลง _planColF — ติ๊กครบทุกค่า = เลิกกรองไปเลย (ไม่งั้นชิปจะขึ้นทั้งที่ไม่ได้กรองอะไร) */
+function _pcpCommit(col, sel) {
+  if (sel.size >= _pcpVals.length) delete _planColF[col]; else _planColF[col] = sel;
+  _planPage = 1;
+  renderPlans();
+  renderPlanFilterPop(col);
+}
+function planFilterClear(col) {
+  col = col || _pcpCol;
+  delete _planColF[col];
+  _planPage = 1;
+  renderPlans();
+  if (PLAN_COLS[col] && $('planColPop')?.classList.contains('open')) renderPlanFilterPop(col);
+}
+function clearAllPlanFilters() {
+  _planColF = {};
+  _planPage = 1;
+  if ($('planFrom')) $('planFrom').value = '2020-01-01';    // ช่วงวันที่ก็เป็นตัวกรอง — "ล้างทั้งหมด" ต้องล้างด้วย
+  if ($('planTo'))   $('planTo').value   = '2099-12-31';
+  _planMonthSel = '';
+  closePlanFilter();
+  renderPlans();
+}
+/* ปิดป๊อปอัปเมื่อกดที่อื่น / กด Esc — ★ 2026-08-05 รับ pointerdown ด้วย (มือถือบางตัวไม่ยิง mousedown)
+   ★ จอเปลี่ยนขนาด/เลื่อน = "ย้ายตำแหน่งตาม" ไม่ใช่ปิดทิ้ง
+     (เดิมปิดทิ้ง → บนมือถือคีย์บอร์ดเด้งขึ้นก็ resize แล้ว ป๊อปอัปปิดเอง + ตัวกรองที่ติ๊กหลังจากนั้นตกหล่นทั้งหมด) */
+function _pcpOutside(e) {
+  const pop = $('planColPop');
+  if (!pop || !pop.classList.contains('open')) return;
+  if (pop.contains(e.target) || (e.target.closest && e.target.closest('.pl-fb'))) return;
+  closePlanFilter();
+}
+document.addEventListener('mousedown', _pcpOutside);
+document.addEventListener('touchstart', _pcpOutside, { passive: true });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlanFilter(); });
+function _pcpReplace() {
+  const pop = $('planColPop');
+  if (!pop || !pop.classList.contains('open')) return;
+  if (!_pcpAnchor || !_pcpAnchor.isConnected) { closePlanFilter(); return; }
+  _pcpPlace(_pcpAnchor);
+}
+window.addEventListener('resize', _pcpReplace);
+window.addEventListener('scroll', _pcpReplace, true);   // เลื่อนจอ/เลื่อนในกรอบตาราง → ป๊อปอัปตามหัวคอลัมน์ไป
+
+/* แถบเปลี่ยนหน้า + เลือกจำนวนแถวต่อหน้า (ใต้ตาราง) */
+function renderPlanPager(totalRows, pgCount, pgStart, pageLen) {
+  const box = $('planPager'); if (!box) return;
+  const sizeSel = `<label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--muted)">
+      ${TT('แสดงหน้าละ','Rows per page')}
+      <select onchange="setPlanPageSize(this.value)" style="border:1.5px solid var(--blue-soft);border-radius:7px;padding:4px 6px;font-size:12px;font-weight:800;background:#fff;font-family:inherit">
+        ${[25,50,100,200].map(n=>`<option value="${n}"${_planPageSize===n?' selected':''}>${n}</option>`).join('')}
+        <option value="0"${_planPageSize===0?' selected':''}>${TT('ทั้งหมด','All')}</option>
+      </select></label>`;
+  if (!totalRows || _planPageSize === 0 || pgCount <= 1) {
+    box.innerHTML = `<div class="ppg">${sizeSel}${totalRows && _planPageSize===0 && totalRows>200
+      ? `<span class="ppg-warn">${TT('⚠️ แสดงทุกแถวพร้อมกันจะช้าเมื่อข้อมูลเยอะ','⚠️ Showing every row at once gets slow with lots of data')}</span>` : ''}</div>`;
+    return;
+  }
+  const btn = (n, txt, dis, cur) => `<button type="button" class="ppg-b${cur?' cur':''}" ${dis?'disabled':''} onclick="planGoPage(${n})">${txt}</button>`;
+  // เลขหน้าแบบย่อ: 1 … (หน้าปัจจุบัน±1) … หน้าสุดท้าย
+  const nums = [];
+  const push = n => { if (n>=1 && n<=pgCount && !nums.includes(n)) nums.push(n); };
+  push(1); push(_planPage-1); push(_planPage); push(_planPage+1); push(pgCount);
+  nums.sort((a,b)=>a-b);
+  let numHtml = '', prev = 0;
+  for (const n of nums) { if (prev && n - prev > 1) numHtml += '<span class="ppg-gap">…</span>'; numHtml += btn(n, n, false, n===_planPage); prev = n; }
+  box.innerHTML = `<div class="ppg">
+    ${sizeSel}
+    <div class="ppg-nav">
+      ${btn(_planPage-1, '‹ '+TT('ก่อนหน้า','Prev'), _planPage<=1)}
+      ${numHtml}
+      ${btn(_planPage+1, TT('ถัดไป','Next')+' ›', _planPage>=pgCount)}
+    </div>
+    <span class="ppg-info">${TT(`หน้า ${_planPage}/${pgCount}`, `Page ${_planPage}/${pgCount}`)}</span>
+  </div>`;
+}
+
+/* ชิปสรุป "กำลังกรองด้วยอะไรอยู่" — กด ✕ ปลดทีละคอลัมน์ */
+function renderPlanChips() {
+  const box = $('planChips'); if (!box) return;
+  const cols = Object.keys(_planColF).filter(c => _planColF[c] && PLAN_COLS[c]);
+  const hasQ = !!_planQ.trim();
+  const narrow = _planRangeNarrow();
+  if (!cols.length && !hasQ && !narrow) { box.innerHTML = ''; return; }
+  const chip = (txt, onclick, title, cls) => `<span class="pfchip ${cls||''}"><span title="${escapeHtml(title||txt)}">${escapeHtml(txt)}</span><button type="button" onclick="${onclick}" title="${TT('เอาตัวกรองนี้ออก','Remove this filter')}">✕</button></span>`;
+  const parts = [];
+  /* ★ ช่วงวันที่ขายเป็นตัวกรองที่ "ตั้งไว้ให้ตั้งแต่เปิดแอป" (วันนี้ → +60 วัน) — ต้องเห็นเสมอ
+     ไม่งั้นคนกดกรองคอลัมน์แล้วหาแผนเดือนก่อนไม่เจอ โดยไม่รู้ว่าโดนช่วงวันตัดไปแล้ว */
+  if (narrow) parts.push(chip(`📅 ${_fmtThDate($('planFrom')?.value||'')} – ${_fmtThDate($('planTo')?.value||'')}`,
+    `planFilterAllDates()`, TT('ช่วงวันที่ขายที่กำลังดู — กด ✕ เพื่อดูทุกวันที่','Sale-date range in view — tap ✕ to show all dates'), 'pfchip-date'));
+  if (hasQ) parts.push(chip(`🔎 "${_planQ.trim()}"`, `planSearchInput('');if($('planSearch'))$('planSearch').value=''`));
+  for (const c of cols) {
+    const vals = [...(_planColF[c])];
+    const full = vals.map(v => String(PLAN_COLS[c].disp(v))).join(', ');
+    const tot = _pcpTot[c] || 0;
+    /* บอกให้ครบว่า "เลือกกี่จากกี่" — เดิมขึ้นแค่ "139 ค่า" ซึ่งดูไม่ออกว่ากรองอะไรอยู่ */
+    const short = !vals.length ? TT('(ยังไม่ได้ติ๊กค่าใดเลย)','(nothing ticked)')
+                : vals.length <= 2 ? full
+                : (tot ? TT(`เลือก ${nn(vals.length)} จาก ${nn(tot)} ค่า`, `${nn(vals.length)} of ${nn(tot)} values`)
+                       : `${nn(vals.length)} ${TT('ค่า','values')}`);
+    parts.push(chip(`${planColLbl(c)}: ${short}`, `planFilterClear('${c}')`, full || short));
+  }
+  if (parts.length > 1) parts.push(`<button type="button" class="btn btn-sm btn-outline" style="padding:3px 10px;font-size:11px" onclick="clearAllPlanFilters()">${TT('ล้างทั้งหมด','Clear all')}</button>`);
+  box.innerHTML = `<div class="pfchips">${parts.join('')}</div>`;
+}
+
+/* ═══ ★ 2026-08-05 (req) เลือกหลายรายการ + สั่งงานพร้อมกัน ═══════════════
+   เก็บเป็น Set ของ plan_id (ไม่ผูกกับ index ของตาราง) → กรอง/เรียงใหม่แล้วสิ่งที่เลือกไว้ไม่หลุด
+   งานที่ทำพร้อมกันได้: ลบ · เลื่อนเดือน ±1 · ย้ายไปวันที่/เดือนที่ระบุ · ตั้งสถานะ · ยกเลิก/กู้คืน · Export */
+let _planSel = new Set();
+let _planSelAnchor = '';     // แถวล่าสุดที่ติ๊ก — ใช้ทำ Shift+คลิก เลือกเป็นช่วง
+/* id ของแถวที่ "เห็นอยู่บนตารางตอนนี้" ตามลำดับที่เห็น — อ่านจาก DOM ตรง ๆ
+   (ถูกกว่าการ filter+sort ใหม่ทุกครั้งที่ติ๊ก และตรงกับสิ่งที่ผู้ใช้เห็นเป๊ะ ๆ) */
+function _planVisibleIds() {
+  const tb = $('planTable')?.querySelector('tbody');
+  if (!tb) return filteredPlans().map(p => p.plan_id);
+  return [...tb.querySelectorAll('tr[data-pid]')].map(tr => tr.dataset.pid).filter(Boolean);
+}
+/* อัปเดตเฉพาะสิ่งที่เกี่ยวกับ "การเลือก" — ไม่วาดตารางใหม่ทั้งใบ (176 แถว ≈ 70ms ต่อคลิก ถ้าวาดใหม่) */
+function _planSelPaint() {
+  const tb = $('planTable')?.querySelector('tbody');
+  let nVis = 0, nSel = 0;
+  if (tb) for (const tr of tb.querySelectorAll('tr[data-pid]')) {
+    const on = _planSel.has(tr.dataset.pid);
+    nVis++; if (on) nSel++;
+    tr.classList.toggle('sel', on);
+    const ck = tr.querySelector('.pl-ck'); if (ck) ck.checked = on;
+  }
+  const sa = $('planSelAll');
+  if (sa) { sa.checked = nVis > 0 && nSel === nVis; sa.indeterminate = nSel > 0 && nSel < nVis; }
+  renderPlanBulk();
+}
+function planSelToggle(pid, on, ev) {
+  if (ev && ev.shiftKey && _planSelAnchor) {
+    const rows = _planVisibleIds();
+    const i = rows.indexOf(_planSelAnchor), j = rows.indexOf(pid);
+    if (i >= 0 && j >= 0) {
+      for (let k = Math.min(i,j); k <= Math.max(i,j); k++) { if (on) _planSel.add(rows[k]); else _planSel.delete(rows[k]); }
+    }
+  }
+  if (on) _planSel.add(pid); else _planSel.delete(pid);
+  _planSelAnchor = pid;
+  _planSelPaint();
+}
+function planSelAll(on) {
+  for (const id of _planVisibleIds()) { if (on) _planSel.add(id); else _planSel.delete(id); }
+  _planSelPaint();
+}
+function planSelClear() { _planSel.clear(); _planSelAnchor = ''; _planSelPaint(); }
+/* เฉพาะที่เลือก "และยังอยู่ในชุดที่กรองอยู่" — กันสั่งงานโดนแถวที่ถูกกรองซ่อนไว้
+   ★ หลังมีการแบ่งหน้า: ยึด "ทุกแถวที่กรองได้" (ข้ามหน้าได้) ไม่ใช่เฉพาะหน้าที่เปิดอยู่
+     เพราะมีปุ่ม "เลือกทุกหน้า" ให้ผู้ใช้สั่งงานข้ามหน้าอย่างตั้งใจ */
+function planSelRows() {
+  return (_planRowsAll.length ? _planRowsAll : filteredPlans()).filter(p => _planSel.has(p.plan_id));
+}
+/* เลือกทุกแถวที่กรองได้ (ทุกหน้า) — ใช้จากปุ่มในแถบเครื่องมือ */
+function planSelAllFiltered(on) {
+  for (const p of (_planRowsAll.length ? _planRowsAll : filteredPlans())) { if (on) _planSel.add(p.plan_id); else _planSel.delete(p.plan_id); }
+  renderPlans();
+}
+function renderPlanBulk() {
+  const box = $('planBulk'); if (!box) return;
+  const rows = planSelRows();
+  if (!rows.length) { box.innerHTML = ''; return; }
+  const qty = rows.reduce((s,p) => s + (Number(p.quantity)||0), 0);
+  const nCancel = rows.filter(p => p.status === 'cancelled').length;
+  const nAll = (_planRowsAll.length ? _planRowsAll : filteredPlans()).length;
+  box.innerHTML = `<div class="pbulk">
+    <span class="pb-n"><b>${nn(rows.length)}</b> ${TT('รายการที่เลือก','selected')} · ${nn(qty)} ${TT('ชิ้น','pcs')}</span>
+    ${rows.length < nAll ? `<button type="button" class="pb-more" onclick="planSelAllFiltered(true)"
+      title="${TT('เลือกทุกแถวที่กรองไว้ รวมหน้าอื่นด้วย','Select every filtered row, including other pages')}">☑️ ${TT(`เลือกทั้งหมด ${nn(nAll)} รายการ (ทุกหน้า)`, `Select all ${nn(nAll)} (all pages)`)}</button>` : ''}
+    <button type="button" onclick="planBulkShiftMonth(1)"  title="${TT('เลื่อนวันที่ขายไปเดือนถัดไป (+1 เดือน)','Push sale date to next month (+1)')}">📅⁺ ${TT('เดือนถัดไป','Next month')}</button>
+    <button type="button" onclick="planBulkShiftMonth(-1)" title="${TT('ย้อนวันที่ขายกลับ 1 เดือน','Pull sale date back one month')}">📅⁻ ${TT('เดือนก่อน','Prev month')}</button>
+    <button type="button" onclick="planBulkMoveTo()" title="${TT('ระบุเดือน/วันที่ปลายทางเอง','Choose the target month/date')}">🗓️ ${TT('ย้ายไปเดือน/วันที่…','Move to month/date…')}</button>
+    <button type="button" onclick="planBulkStatus()" title="${TT('ตั้งสถานะให้ทุกรายการที่เลือก','Set status for every selected row')}">🏷️ ${TT('ตั้งสถานะ…','Set status…')}</button>
+    <button type="button" onclick="planBulkCancel()" title="${TT('ยกเลิก/กู้คืนแผนที่เลือก','Cancel/restore selected plans')}">${nCancel === rows.length ? '↩️ '+TT('กู้คืน','Restore') : '❌ '+TT('ยกเลิกแผน','Cancel plans')}</button>
+    <button type="button" onclick="planBulkExport()">⬇️ Export</button>
+    <button type="button" class="pb-del" onclick="planBulkDelete()">🗑️ ${TT('ลบที่เลือก','Delete selected')}</button>
+    <button type="button" class="pb-x" onclick="planSelClear()">✕ ${TT('ล้างการเลือก','Clear selection')}</button>
+  </div>`;
+}
+/* บันทึกแผนที่แก้เป็นชุดขึ้น Cloud พร้อมป้ายบอกความคืบหน้า (งานสั้นไม่ต้องโชว์ป้าย) */
+async function _planPushMany(list, verb) {
+  lsSave(LS.PLANS, state.plans);
+  renderPlans();
+  if (!API || !list.length) return 0;
+  let fail = 0;
+  const show = list.length > 3;
+  if (show) { showBusy(`${verb} 0/${list.length}…`, true); await yieldUI(); }
+  await _chunkRun(list, p => api('/api/plans', { body: p }).catch(() => { fail++; }), 6,
+                  n => { if (show) busyMsg(`${verb} ${n}/${list.length}…`); });
+  if (show) hideBusy();
+  return fail;
+}
+function _planShiftMonth(iso, delta) {
+  const d = new Date((iso || todayISO()) + 'T00:00:00');
+  const day = d.getDate();
+  d.setDate(1); d.setMonth(d.getMonth() + delta);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, last));                       // 31 ม.ค. +1 เดือน → 28/29 ก.พ. (ไม่เด้งข้ามเดือน)
+  return `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+}
+async function planBulkShiftMonth(delta) {
+  const rows = planSelRows(); if (!rows.length) return;
+  const ok = await confirmModal(
+    TT(`เลื่อนวันที่ขายของ ${rows.length} รายการ ${delta>0?'ไปข้างหน้า':'ย้อนกลับ'} ${Math.abs(delta)} เดือน?`,
+       `Shift the sale date of ${rows.length} plans ${delta>0?'forward':'back'} by ${Math.abs(delta)} month?`),
+    { danger:false, yes:TT('เลื่อนเลย','Shift') });
+  if (!ok) return;
+  for (const p of rows) {
+    p.plan_date = _planShiftMonth(_planDateISO(p.plan_date), delta);
+    if (p.status === 'cancelled') p.status = 'planned';        // เลื่อนไปขายใหม่ = กลับมา active
+  }
+  const fail = await _planPushMany(rows, TT('กำลังเลื่อน','Shifting'));
+  toast(fail ? TT(`เลื่อนแล้ว ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Shifted ${rows.length} — ${fail} failed on Cloud`)
+             : TT(`📅 เลื่อน ${rows.length} รายการแล้ว`, `📅 Shifted ${rows.length} plans`), fail ? 'orange' : 'green');
+}
+function planBulkMoveTo() {
+  const rows = planSelRows(); if (!rows.length) return;
+  const y = new Date().getFullYear();
+  openModal(TT('🗓️ ย้ายวันที่ขาย','🗓️ Move sale date'), `
+    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--blue-dark);margin-bottom:11px">
+      ${TT('ย้าย','Moving')} <b>${nn(rows.length)}</b> ${TT('รายการที่เลือก','selected plans')}
+    </div>
+    <div class="fr"><label>${TT('ย้ายไปเดือน (คงวันที่เดิม)','Move to month (keep day of month)')}</label>
+      <input type="month" id="pbMonth" value="${y}-${P(new Date().getMonth()+1)}"></div>
+    <button class="btn btn-blue btn-block mt-8" onclick="planBulkApplyMove('month')">📆 ${TT('ย้ายเป็นเดือนนี้','Move to this month')}</button>
+    <div class="muted center" style="font-size:11px;margin:11px 0 7px">— ${TT('หรือ','or')} —</div>
+    <div class="fr"><label>${TT('กำหนดวันที่ขายเป็นวันเดียวกันทั้งหมด','Set every row to the same sale date')}</label>
+      <input type="date" id="pbDate" value="${todayISO()}"></div>
+    <button class="btn btn-green btn-block mt-8" onclick="planBulkApplyMove('date')">📅 ${TT('ใช้วันที่นี้ทั้งหมด','Use this date for all')}</button>
+    <div class="row mt-12" style="justify-content:flex-end"><button class="btn btn-outline" onclick="closeModal()">${TT('ยกเลิก','Cancel')}</button></div>`);
+}
+async function planBulkApplyMove(mode) {
+  const rows = planSelRows(); if (!rows.length) { closeModal(); return; }
+  if (mode === 'month') {
+    const ym = $('pbMonth')?.value || ''; if (!ym) { toast(TT('เลือกเดือนก่อน','Pick a month first'),'orange'); return; }
+    const [y,m] = ym.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    for (const p of rows) {
+      const cur = _planDateISO(p.plan_date) || todayISO();
+      const day = Math.min(+cur.slice(8,10) || 1, last);      // คงวันที่เดิม ถ้าเดือนใหม่ไม่มีวันนั้น → วันสุดท้ายของเดือน
+      p.plan_date = `${y}-${P(m)}-${P(day)}`;
+      if (p.status === 'cancelled') p.status = 'planned';
+    }
+  } else {
+    const d = $('pbDate')?.value || ''; if (!d) { toast(TT('เลือกวันที่ก่อน','Pick a date first'),'orange'); return; }
+    for (const p of rows) { p.plan_date = d; if (p.status === 'cancelled') p.status = 'planned'; }
+  }
+  closeModal();
+  const fail = await _planPushMany(rows, TT('กำลังย้าย','Moving'));
+  toast(fail ? TT(`ย้ายแล้ว ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Moved ${rows.length} — ${fail} failed on Cloud`)
+             : TT(`🗓️ ย้าย ${rows.length} รายการแล้ว`, `🗓️ Moved ${rows.length} plans`), fail ? 'orange' : 'green');
+}
+function planBulkStatus() {
+  const rows = planSelRows(); if (!rows.length) return;
+  openModal(TT('🏷️ ตั้งสถานะที่เลือก','🏷️ Set status'), `
+    <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--blue-dark);margin-bottom:11px">
+      ${TT('ตั้งสถานะให้','Set status for')} <b>${nn(rows.length)}</b> ${TT('รายการที่เลือก','selected plans')}
+    </div>
+    ${Object.entries(PLAN_STATUS).map(([k,v]) => `<button class="btn btn-block btn-outline mb-8" style="justify-content:flex-start" onclick="planBulkApplyStatus('${k}')">${v.label}</button>`).join('')}
+    <button class="btn btn-block btn-blue" onclick="planBulkAutoStatus()">🤖 ${TT('ตั้งตามการผลิตจริง (ระบบรู้ดีกว่า)','Set from actual production (system knows best)')}</button>
+    <div class="row mt-12" style="justify-content:flex-end"><button class="btn btn-outline" onclick="closeModal()">${TT('ยกเลิก','Cancel')}</button></div>`);
+}
+async function planBulkApplyStatus(code) {
+  const rows = planSelRows(); closeModal(); if (!rows.length) return;
+  for (const p of rows) p.status = code;
+  const fail = await _planPushMany(rows, TT('กำลังบันทึก','Saving'));
+  toast(fail ? TT(`ตั้งสถานะ ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Set ${rows.length} — ${fail} failed on Cloud`)
+             : TT(`🏷️ ตั้งสถานะ ${rows.length} รายการแล้ว`, `🏷️ Status set on ${rows.length} plans`), fail ? 'orange' : 'green');
+}
+async function planBulkAutoStatus() {
+  const rows = planSelRows(); closeModal(); if (!rows.length) return;
+  const changed = [];
+  for (const p of rows) {
+    const auto = planAutoStatus(p);
+    if (auto && auto.code && p.status !== auto.code) { p.status = auto.code; changed.push(p); }
+  }
+  if (!changed.length) { toast(TT('สถานะตรงกับของจริงอยู่แล้ว','Statuses already match reality'),'blue'); return; }
+  const fail = await _planPushMany(changed, TT('กำลังบันทึก','Saving'));
+  toast(fail ? TT(`ตั้งสถานะ ${changed.length} แถว — Cloud ไม่สำเร็จ ${fail}`, `Set ${changed.length} — ${fail} failed on Cloud`)
+             : TT(`🤖 ตั้งสถานะตามของจริง ${changed.length} แถว`, `🤖 Set ${changed.length} rows from actual production`), fail ? 'orange' : 'green');
+}
+async function planBulkCancel() {
+  const rows = planSelRows(); if (!rows.length) return;
+  const toCancel = rows.some(p => p.status !== 'cancelled');       // มีที่ยังไม่ยกเลิก → ยกเลิกทั้งชุด
+  const ok = await confirmModal(
+    toCancel ? TT(`ยกเลิกแผน ${rows.length} รายการ?`, `Cancel ${rows.length} plans?`)
+             : TT(`กู้คืนแผน ${rows.length} รายการ?`, `Restore ${rows.length} plans?`),
+    { danger: toCancel, yes: toCancel ? TT('ยกเลิกแผน','Cancel plans') : TT('กู้คืน','Restore') });
+  if (!ok) return;
+  for (const p of rows) p.status = toCancel ? 'cancelled' : 'planned';
+  const fail = await _planPushMany(rows, TT('กำลังบันทึก','Saving'));
+  toast(fail ? TT(`ทำแล้ว ${rows.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Done ${rows.length} — ${fail} failed on Cloud`)
+             : (toCancel ? TT(`❌ ยกเลิก ${rows.length} รายการแล้ว`, `❌ Cancelled ${rows.length} plans`)
+                         : TT(`↩️ กู้คืน ${rows.length} รายการแล้ว`, `↩️ Restored ${rows.length} plans`)), fail ? 'orange' : 'green');
+}
+async function planBulkDelete() {
+  const rows = planSelRows(); if (!rows.length) return;
+  const qty = rows.reduce((s,p) => s + (Number(p.quantity)||0), 0);
+  const preview = rows.slice(0,8).map(p => `• ${_fmtThDate(_planDateISO(p.plan_date))} · ${p.valve_no||'-'} / ${p.lot||'-'} · ${nn(p.quantity||0)}`).join('\n');
+  const ok = await confirmModal(
+    TT(`ลบแผน ${rows.length} รายการ (รวม ${nn(qty)} ชิ้น)?\nลบแล้วเอากลับไม่ได้\n\n${preview}${rows.length>8?`\n…และอีก ${rows.length-8} รายการ`:''}`,
+       `Delete ${rows.length} plans (${nn(qty)} pcs)?\nThis cannot be undone.\n\n${preview}${rows.length>8?`\n…and ${rows.length-8} more`:''}`),
+    { danger:true, yes: TT('ลบทั้งหมด','Delete all') });
+  if (!ok) return;
+  const ids = rows.map(p => p.plan_id), dset = new Set(ids);
+  state.plans = state.plans.filter(p => !dset.has(p.plan_id));
+  for (const id of ids) _planSel.delete(id);
+  lsSave(LS.PLANS, state.plans);
+  renderPlans();
+  let fail = 0;
+  if (API) {
+    const show = ids.length > 3;
+    if (show) { showBusy(TT(`กำลังลบ 0/${ids.length}…`,`Deleting 0/${ids.length}…`), true); await yieldUI(); }
+    await _chunkRun(ids, id => api('/api/plans/delete', { body:{ plan_id:id } }).catch(() => { fail++; }), 6,
+                    n => { if (show) busyMsg(TT(`กำลังลบ ${n}/${ids.length}…`,`Deleting ${n}/${ids.length}…`)); });
+    if (show) hideBusy();
+  }
+  toast(fail ? TT(`ลบแล้ว ${ids.length} รายการ — Cloud ไม่สำเร็จ ${fail}`, `Deleted ${ids.length} — ${fail} failed on Cloud`)
+             : TT(`🗑️ ลบ ${ids.length} รายการแล้ว`, `🗑️ Deleted ${ids.length} plans`), fail ? 'orange' : 'green');
+}
+function planBulkExport() {
+  const rows = planSelRows(); if (!rows.length) return;
+  _exportPlanRows(rows, 'selected');
 }
 
 // pure render — ไม่ดึง API (กันชน state)
@@ -4540,14 +5249,60 @@ function renderPlans() {
   if ($('planCntDone'))       $('planCntDone').textContent       = cnt.done;
   if ($('planCntCancel'))     $('planCntCancel').textContent     = cnt.cancelled;
 
-  tbody.innerHTML = rows.length ? rows.map(p => planRowHtml(p)).join('')
-    : '<tr><td colspan="7" class="center muted" style="padding:20px">ยังไม่มีแผนผลิต — กด <b>➕ เพิ่มแผน</b> หรือ <b>📋 วางจาก Excel</b></td></tr>';
+  const allPlans = filterVsm(state.plans || []).length;
+  const filtering = !!(_planQ.trim() || Object.keys(_planColF).some(c => _planColF[c])
+                       || ($('planFrom')?.value || '') > '2020-01-01' || ($('planTo')?.value || '') < '2099-12-31');
+  /* ★ แบ่งหน้า — วาดเฉพาะแถวของหน้าที่เปิดอยู่ */
+  _planRowsAll = rows;
+  const pgSize  = _planPageSize > 0 ? _planPageSize : Math.max(1, rows.length);
+  const pgCount = Math.max(1, Math.ceil(rows.length / pgSize));
+  if (_planPage > pgCount) _planPage = pgCount;
+  const pgStart = (_planPage - 1) * pgSize;
+  const pageRows = _planPageSize > 0 ? rows.slice(pgStart, pgStart + pgSize) : rows;
+  /* กรองแล้วไม่เจอ: ถ้าของที่หาอยู่ "มีจริงแต่อยู่นอกช่วงวันที่ขาย" ต้องบอกตรง ๆ + กดดูได้ทันที
+     (ไม่งั้นคนจะคิดว่าตัวกรองเสีย ทั้งที่โดนช่วงวันที่ตั้งไว้ตั้งแต่เปิดแอปตัดไป) */
+  let emptyMsg = '';
+  if (!rows.length) {
+    if (!filtering) emptyMsg = 'ยังไม่มีแผนผลิต — กด <b>➕ เพิ่มแผน</b> หรือ <b>📋 วางจาก Excel</b>';
+    else {
+      const outside = _planRangeNarrow() ? filteredPlans('', true).length : 0;
+      emptyMsg = `${TT('ไม่พบแผนที่ตรงกับตัวกรอง','No plans match the current filters')} — `
+        + (outside ? `<button class="btn btn-sm" style="padding:3px 10px;background:#F59E0B;color:#fff;border:none" onclick="planFilterAllDates()">📅 ${TT(`ดูทุกวันที่ (มีอีก ${nn(outside)} รายการนอกช่วงวันที่ขาย)`, `Show all dates (${nn(outside)} more outside the sale-date range)`)}</button> `
+                  : '')
+        + `<button class="btn btn-sm btn-outline" style="padding:3px 10px" onclick="resetPlanFilter()">↺ ${TT('ล้าง Filter','Clear filter')}</button>`;
+    }
+  }
+  tbody.innerHTML = rows.length ? pageRows.map(p => planRowHtml(p)).join('')
+    : `<tr><td colspan="8" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
   // ลูกศรบอกคอลัมน์ที่กำลังเรียง (req #5)
   for (const el of document.querySelectorAll('#planTable .ps-ar')) {
     const on = el.dataset.psk === _planSort.key;
-    el.textContent = on ? (_planSort.dir > 0 ? ' ▲' : ' ▼') : '';
+    el.textContent = on ? ' ▲' : '';
+    if (on) el.textContent = _planSort.dir > 0 ? ' ▲' : ' ▼';
     el.parentElement.classList.toggle('ps-on', on);
   }
+  // ★ 2026-08-05 (req) ปุ่มกรองที่ "ติดสี" = คอลัมน์นั้นกำลังกรองอยู่ (เห็นทันทีว่าทำไมแถวหาย)
+  for (const b of document.querySelectorAll('#planTable .pl-fb')) {
+    const c = b.dataset.pfc, on = !!_planColF[c];
+    b.classList.toggle('on', on);
+    b.textContent = on ? '▼' : '▾';
+  }
+  renderPlanChips();
+  renderPlanBulk();
+  // ช่องติ๊กบนหัวตาราง: ติ๊กครบทั้งหน้า = ✓ · ติ๊กบางส่วน = ขีดกลาง
+  const nSel = pageRows.filter(p => _planSel.has(p.plan_id)).length;
+  const sa = $('planSelAll');
+  if (sa) { sa.checked = pageRows.length > 0 && nSel === pageRows.length; sa.indeterminate = nSel > 0 && nSel < pageRows.length; }
+  const cl = $('planCountLbl');
+  if (cl) {
+    const scope = rows.length === allPlans
+      ? TT(`ทั้งหมด ${nn(rows.length)} รายการ`, `${nn(rows.length)} plans in total`)
+      : TT(`กรองได้ ${nn(rows.length)} จาก ${nn(allPlans)} รายการ`, `${nn(rows.length)} of ${nn(allPlans)} plans match`);
+    const shownRange = (_planPageSize > 0 && rows.length)
+      ? ` · ${TT('แสดง','showing')} ${nn(pgStart+1)}–${nn(pgStart+pageRows.length)}` : '';
+    cl.textContent = scope + shownRange;
+  }
+  renderPlanPager(rows.length, pgCount, pgStart, pageRows.length);
   // ปุ่มซ่อมวันที่ผิดรูป — โชว์เฉพาะเมื่อมี (req #5.1)
   const badN = filterVsm(state.plans||[]).filter(p=>_planDateBad(p.plan_date)).length;
   const rb = $('planRepairBtn');
@@ -4937,7 +5692,8 @@ function planRowHtml(p) {
   const dISO = _planDateISO(p.plan_date);
   const dateBad = _planDateBad(p.plan_date);
   const cancelled = p.status==='cancelled';
-  const auto = _planAutoStatus(p);
+  const auto = planAutoStatus(p);
+  const picked = _planSel.has(p.plan_id);
   // ป้ายสถานะจริง (จากการบันทึกผลิต) + process ที่ถึง
   const autoBadge = auto
     ? `<span title="สถานะจริงจากการบันทึกผลิต" style="display:inline-block;font-size:10.5px;font-weight:800;color:${auto.color};background:${auto.bg};border-radius:6px;padding:2px 7px;white-space:nowrap">${auto.label}${auto.proc?` · ${escapeHtml(auto.proc)}`:''}</span>`
@@ -4946,7 +5702,8 @@ function planRowHtml(p) {
   const sel = `<select onchange="updatePlan('${pid}','status',this.value)" title="แก้สถานะเอง (override)" style="border:1px solid var(--blue-soft);padding:3px 5px;border-radius:6px;font-weight:700;font-size:11px;width:100%;background:#fff;margin-top:3px">
       ${Object.entries(PLAN_STATUS).map(([k,v]) => `<option value="${k}"${p.status===k?' selected':''}>${v.label}</option>`).join('')}
     </select>`;
-  return `<tr data-pid="${pid}"${cancelled?' style="opacity:.55"':''}>
+  return `<tr data-pid="${pid}" class="${picked?'sel':''}"${cancelled?' style="opacity:.55"':''}>
+    <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
     <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
     <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:800;color:var(--blue);font-size:12.5px;width:100%;text-transform:uppercase"></td>
     <td><input type="text" class="pl-in pl-lot" value="${escapeHtml(p.lot||'')}" oninput="updatePlan('${pid}','lot',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="2606S070028" title="${escapeHtml(p.lot||'')}"></td>
@@ -5283,12 +6040,14 @@ async function confirmPaste() {
 }
 
 function resetPlanFilter() {
-  $('planFrom').value = '2020-01-01';
-  $('planTo').value   = '2099-12-31';
-  $('planStatus').value = '';
-  $('planValve').value = '';
-  $('planLot').value = '';
+  if ($('planFrom')) $('planFrom').value = '2020-01-01';
+  if ($('planTo'))   $('planTo').value   = '2099-12-31';
+  if ($('planSearch')) $('planSearch').value = '';
+  _planQ = '';
+  _planColF = {};       // ★ 2026-08-05 ล้างตัวกรองรายคอลัมน์ (แบบ Excel) ด้วย
   _planMonthSel = '';   // เลิกเลือกเดือน (req #6)
+  _planPage = 1;
+  closePlanFilter();
   renderPlans();
   toast('ล้าง Filter — ดูแผนทั้งหมด', 'green');
 }
@@ -5309,21 +6068,24 @@ document.addEventListener('paste', (ev) => {
   }, 250);
 });
 
-function exportPlans() {
-  const rows = filteredPlans();
-  if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+function exportPlans() { _exportPlanRows(filteredPlans(), 'filtered'); }
+/* ★ 2026-08-05 — แยกตัว export ออกมา ใช้ร่วมกับ "Export เฉพาะที่เลือก" ในแถบเลือกหลายรายการ */
+function _exportPlanRows(rows, tag) {
+  if (!rows || !rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
   const data = rows.map(p => ({
     'วันที่ขาย': _planDateISO(p.plan_date),
     'Valve No': p.valve_no,
     'Lot': p.lot,
     'Qty': p.quantity,
     'สถานะ': PLAN_STATUS[p.status]?.label || p.status,
+    'สถานะจริง': (planAutoStatus(p) || {}).label || '',
     'หมายเหตุ': p.note,
     'ผู้สร้าง': p.created_by,
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Plans');
-  XLSX.writeFile(wb, `vsm4-plans-${todayISO()}.xlsx`);
+  XLSX.writeFile(wb, `vsm4-plans-${tag === 'selected' ? 'selected-' : ''}${todayISO()}.xlsx`);
+  toast(`⬇️ Export ${nn(rows.length)} รายการ`, 'green');
 }
 
 /* ============================================================
@@ -6076,37 +6838,64 @@ function zoneTargetsObj(zoneKey) {
 }
 
 /* ============================================================
-   PDAC HELPER — คำนวณ PDAC แบบ count(pass)/total ตามสูตรที่ถูกต้อง
-   pass = เครื่องที่มี record อย่างน้อย 1 record ที่ pdac_val >= 0.883
-   total = จำนวนเครื่องทั้งหมดใน zone (จาก state.machines)
-   ============================================================ */
-function calcZonePdac(krecs, zoneKey) {
-  // Group records by machine_id (only machines with records = เปิดผลิต)
-  const byMc = {};
-  for (const r of krecs) {
-    const mc = r.machine_id;
-    if (!byMc[mc]) byMc[mc] = [];
-    byMc[mc].push(r);
-  }
+   PDAC HELPER — สัดส่วน "หน่วยที่ทำได้ถึงเกณฑ์" (OPR ≥ 88.3% ของ Target×85%)
 
-  const openMachines = Object.keys(byMc); // เฉพาะเครื่องที่เปิดผลิต
-  const totalOpen = openMachines.length;
-  if (!totalOpen) return { pass:0, total:0, ratio:0, str:'0/0' };
+   ★ 2026-08-05 (req) — แก้บั๊ก "ดูรวมทั้ง 2 กะ ได้ค่าสูงกว่าทั้งกะกลางวันและกลางคืน"
+   ของจริงที่เจอ: กลางวัน 8/13 = 61.54% · กลางคืน 12/14 = 85.71% · แต่รวม 2 กะ = 14/15 = 93.33%
+   ต้นเหตุ: เดิมนับผ่านด้วย `recs.some(...)` = "เครื่องนี้มี record ใดผ่าน ก็ถือว่าผ่าน"
+     → พอรวม 2 กะ เครื่องที่ตกกลางวันแต่ผ่านกลางคืนกลายเป็น "ผ่าน" ทันที
+       ตัวเศษ = ยูเนียนของเครื่องที่ผ่าน (โตขึ้น) แต่ตัวหาร = เครื่องเดิม (เกือบเท่าเดิม)
+       ผลรวมจึงพุ่งเกินทุกกะ "โดยโครงสร้าง" ไม่ว่าข้อมูลจะเป็นอย่างไร
+   ใหม่: 1 หน่วยตัดสิน = 1 เครื่อง × 1 วันผลิต × 1 กะ (ตรงกับที่หน้างานตัดสินจริง)
+     รวมยอดในหน่วยนั้นก่อนแล้วค่อยตัดสิน → ΣOPR ÷ Σ(Target×85%) ≥ 88.3%
+     • ดูกะเดียว/วันเดียว = 1 หน่วยต่อเครื่อง → ค่าเท่าเดิมทุกประการ (8/13, 12/14)
+     • ดูรวม = เอาหน่วยของทุกกะมากองรวมกัน → ได้ 20/27 = 74.07% ซึ่ง "อยู่ระหว่าง" 2 กะเสมอ
+       (เป็นค่าเฉลี่ยถ่วงน้ำหนักของกะย่อยจริง ๆ ไม่ใช่ยูเนียน)
+     • หลายวัน = เฉลี่ยผลรายวันจริง ไม่ใช่ "เคยผ่านสักครั้งก็ผ่านตลอด" แบบเดิม
+   ============================================================ */
+const PDAC_PASS = 0.883;   // เกณฑ์ผ่านต่อหน่วย 88.3%
+const PDAC_CAP  = 0.85;    // ฐานคิด PDAC = Target × 85%
+/* PDAC ของ record ชุดหนึ่ง — รวมยอดก่อนหาร (ไม่เฉลี่ยอัตราส่วน) · null = ไม่มีฐานให้คิด */
+function _pdacRatio(recs) {
+  let opr = 0, base = 0;
+  for (const r of (recs || [])) {
+    opr  += Number(r.opr) || 0;
+    base += Number(r.opr_pdac) || (Number(r.target) || 0) * PDAC_CAP;   // ใช้ฐานที่บันทึกไว้ก่อน แล้วค่อย fallback
+  }
+  return base > 0 ? opr / base : null;
+}
+/* คีย์ 1 หน่วยตัดสิน = โซน × เครื่อง × วันผลิต × กะ
+   (ต้องมีโซนด้วย — รหัสเครื่องซ้ำกันได้ระหว่างโซน/สาย ถ้าไม่ใส่ ตอนดู "รวมทุก Zone" จะยุบเป็นตัวเดียวกัน) */
+function _pdacUnitKey(r) {
+  return `${r.zone || '-'}§${r.machine_id || '-'}§${r.shift_date || r.record_date || ''}§${r.shift_type || ''}`;
+}
+function calcZonePdac(krecs, zoneKey) {
+  const byUnit = {};
+  for (const r of (krecs || [])) {
+    const k = _pdacUnitKey(r);
+    (byUnit[k] = byUnit[k] || []).push(r);
+  }
+  const keys = Object.keys(byUnit);
+  const unitLbl = (nSpan) => nSpan > 1 ? TT('เครื่อง·กะ', 'machine-shifts') : TT('เครื่อง', 'machines');
+  if (!keys.length) return { pass:0, total:0, ratio:0, str:'0/0', machines:0, spans:0, unit:unitLbl(0) };
 
   let passing = 0;
-  for (const [mcId, recs] of Object.entries(byMc)) {
-    // คำนวณ PDAC per machine = OPR / (Target * 0.85)
-    // ใช้ pdac_val ที่บันทึกไว้แล้ว (คำนวณตอน save)
-    // ผ่านถ้า pdac_val >= 0.883 (88.3%)
-    const hasPassed = recs.some(r => (r.pdac_val || 0) >= 0.883 || r.pdac_pass === 'PASS');
-    if (hasPassed) passing++;
+  const mcs = new Set(), spans = new Set();
+  for (const k of keys) {
+    const recs = byUnit[k];
+    const v = _pdacRatio(recs);
+    if (v != null ? (v >= PDAC_PASS) : recs.some(r => r.pdac_pass === 'PASS')) passing++;   // ไม่มีฐาน → ยึดผลที่บันทึกไว้
+    mcs.add((recs[0].zone || '-') + '§' + (recs[0].machine_id || '-'));
+    spans.add(k.split('§').slice(2).join('§'));  // 'วันผลิต§กะ' — ใช้บอกว่ากำลังดูคร่อมกี่กะ
   }
-
   return {
     pass:  passing,
-    total: totalOpen,
-    ratio: totalOpen > 0 ? passing / totalOpen : 0,
-    str:   passing + '/' + totalOpen
+    total: keys.length,
+    ratio: keys.length > 0 ? passing / keys.length : 0,
+    str:   passing + '/' + keys.length,
+    machines: mcs.size,          // จำนวนเครื่องที่เปิดผลิตจริง (ไว้โชว์เสริม)
+    spans: spans.size,           // จำนวน (วัน×กะ) ที่กำลังดูรวมกัน — 1 = กะเดียว
+    unit:  unitLbl(spans.size),
   };
 }
 
@@ -6209,7 +6998,7 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
       <div class="zkpi-box">
         <div class="zkpi-l">PDAC</div>
         <div class="zkpi-v ${cls(pdac, t.pdac)}">${pct(pdac)}</div>
-        <div class="zkpi-t">${pdacInfo.str} เครื่อง · เป้า ${pct(t.pdac)}</div>
+        <div class="zkpi-t">${pdacInfo.str} ${pdacInfo.unit} · ${TT('เป้า','target')} ${pct(t.pdac)}</div>
         <div class="zkpi-bar"><div class="zkpi-bf" style="width:${Math.min(100, pdac/Math.max(t.pdac,0.001)*100)}%"></div></div>
       </div>
       <div class="zkpi-box">
@@ -6568,7 +7357,7 @@ function zoneMachineCard(mc, records) {
       <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(avg('pdac_val'), t.pdac)}">${avg('pdac_val')>=t.pdac?'✓':'✗'}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${_pdacRatio(records)!=null?cls(_pdacRatio(records), PDAC_PASS):'warn'}">${(()=>{const v=_pdacRatio(records); return v==null?'—':`${v>=PDAC_PASS?'✓':'✗'} <span style="font-size:10px;opacity:.75">${pct(v)}</span>`;})()}</div></div>
     </div>
     <div class="row mt-8" style="gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted)">
       <span>Scrap: <b style="color:var(--orange)">${nn(sum('scrap'))}</b></span>
@@ -6706,6 +7495,7 @@ function setLang(l){
   applyLangStatic();
   renderMachineStatusChecker();           // แถบวันที่ + OAE + ผัง/legend วาดใหม่ตามภาษา
   renderHandoverPanels();                 // แผงต่อกะ (+ ป๊อปอัปย้อนหลัง refresh ในตัว)
+  try{ closePlanFilter(); renderPlans(); }catch(e){}   // ชื่อเดือน/ป้ายบนหน้าวางแผน เลือกภาษาตั้งแต่ตอนวาด (พจนานุกรมจับ "ม.ค. 26" ไม่ได้)
   _hoRelangModal();                       // modal เพิ่ม/แก้ไขเปิดค้าง → เปิดใหม่ภาษาใหม่ คงข้อความที่พิมพ์
   if(_iotMcId && document.getElementById('iotMcPop')) iotShowMcPop(_iotMcId);  // ป๊อปอัปเครื่องเปิดค้าง → วาดใหม่
   // แปลทั้งแอป (นิยามอยู่ถัดลงไป — เรียกตอนกดปุ่มเท่านั้น จึงพร้อมเสมอ)
@@ -6768,7 +7558,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.44":"Production Record + KPI · v3.44",
+"ระบบบันทึกผลิต + KPI · v3.45":"Production Record + KPI · v3.45",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -7021,6 +7811,91 @@ const I18N_X = {
 "📋 วางแผน":"📋 Planning",
 "🔄 โหลดข้อมูลใหม่":"🔄 Reload data",
 "🔎 ค้นหา ID / Valve / Lot":"🔎 Search ID / Valve / Lot",
+/* ★ 2026-08-05 (req) — เก็บตกรอบ 2: เดินสแกน DOM จริงทุกหน้าในโหมด EN แล้วเก็บทุกข้อความที่ยังเป็นไทย */
+// header / IOT
+"เลือกภาษา / Language":"Language","ไทย":"TH","เวลาปัจจุบัน (ประเทศไทย)":"Current time (Thailand)",
+"สลับหน้า IOT":"Switch IOT page","ผังเครื่องจักร":"Floor map","ผัง":"Map",
+"รายการงานขายเดือนนี้ (จากการวางแผนขาย)":"This month's sales jobs (from the sales plan)","งานขายเดือนนี้":"Sales this month",
+"IOT รวมทุก VSM (ต้องใช้รหัสพิเศษ)":"IOT for all VSMs (special code required)","IOT รวมทุก VSM":"IOT — all VSMs",
+"🌐 รวม 4 VSM":"🌐 All 4 VSMs","สรุป WIP IN 1.5 / WIP OUT + TOP ปัญหา":"WIP IN 1.5 / WIP OUT summary + top issues",
+"📈 กำลังเตรียม Dashboard…":"📈 Preparing dashboard…","กำลังอัปเดตหน้าจอ…":"Updating the screen…",
+"👷 กำลังคน:":"👷 Headcount:",
+// หน้าติดตามงาน — WIP IN 1.5
+"เข้ายอด WIP IN 1.5":"Add to WIP IN 1.5","➕ เข้ายอด WIP IN 1.5":"➕ Add to WIP IN 1.5",
+"• งานรับเข้าจาก VSM2":"• items received from VSM2","▸ เปิด":"▸ Open","▾ ปิด":"▾ Close",
+"บันทึกงานที่รับเข้ามา → รอผลิตที่ Process แรก · พอเริ่มลงยอดผลิตจะย้ายไปเป็น WIP อัตโนมัติ":"Log incoming jobs → they wait at the first process · once production is recorded they move to WIP automatically",
+"เช่น VF1349M0":"e.g. VF1349M0","เช่น 1000 หรือ 100+100":"e.g. 1000 or 100+100","เช่น V78701A0":"e.g. V78701A0",
+"เช่น VF1349M0 · วางหลาย Valve จาก Excel ได้เลย":"e.g. VF1349M0 · paste several valves from Excel",
+"แปลงเป็นตัวพิมพ์ใหญ่ทั้งหมด":"Convert to all caps","🔠 ตัวใหญ่":"🔠 Upper",
+"ตัด /1 /2 … ท้ายเลข Lot":"Strip /1 /2 … from the end of the lot","✂️ ตัด /":"✂️ Strip /",
+"ตัด /1 /2 … ท้ายเลข Lot (เก็บเป็นเลข Lot เดียว)":"Strip /1 /2 … from the end of the lot (keep one lot number)",
+"Q'ty (จำนวน)":"Q'ty","คำนวณได้ + - * /":"supports + - * /","รับเข้าที่ยังไม่เริ่มผลิต":"Received, not started",
+"สถานะงานในพื้นที่":"Job status on the floor",
+"WIP IN 1.5 = งานรับเข้ารอผลิต · WIP = กำลังผลิต · WIP OUT = ผ่าน FG แล้ว — กดการ์ดเพื่อดู Valve / ยอด / Process / ประวัติ":"WIP IN 1.5 = received, waiting · WIP = in production · WIP OUT = passed FG — tap a card for valves / qty / process / history",
+"▶ WIP กำลังผลิต":"▶ WIP in production","✓ WIP OUT เดือนนี้ (ผ่าน FG)":"✓ WIP OUT this month (passed FG)",
+"ยอด FG ตรงกับการ์ด WIP OUT (ผ่าน FG) ช่วงเดียวกัน":"FG matches the WIP OUT card (passed FG) for the same period",
+// หน้าประวัติ
+"ยุบรายการ Valve+Lot เดียวกันที่ลงคละช่วงเวลา ให้เหลือบรรทัดเดียว + ยอดรวม · ติ๊กตรวจแล้วได้":"Collapse the same Valve+Lot logged across time ranges into one line + total · tick when verified",
+"🔍 โหมดตรวจสอบ":"🔍 Verify mode","เรียงตาม":"Sort by","🏭 เครื่อง":"🏭 Machine","ตรวจแล้ว":"Verified","กลุ่ม":"Groups",
+"ล้างการติ๊ก 'ตรวจแล้ว' ของช่วงที่เห็นอยู่":"Clear 'verified' ticks for the visible period","↺ ล้างติ๊ก":"↺ Clear ticks",
+"ค้นด้วย":"Search by","คำค้น":"Keyword","‹ ก่อนหน้า":"‹ Prev","ถัดไป ›":"Next ›",
+// หน้าวางแผน
+"ซ่อมวันที่ที่ import มาผิดรูป (สลับวัน↔เดือน) แล้วบันทึกขึ้น Cloud":"Repair malformed imported dates (day↔month swapped) and save to Cloud",
+"🔧 ซ่อมวันที่":"🔧 Fix dates",
+"ตั้งสถานะทุกแถวที่กรองอยู่ตามการผลิตจริง (มียอดผลิต = กำลังผลิต · จบแล้ว = เสร็จ)":"Set every filtered row's status from actual production (has output = in production · finished = done)",
+"🤖 สถานะอัตโนมัติ":"🤖 Auto status","📆 ยอดขายรายเดือน":"📆 Sales by month",
+"ปีก่อนหน้า":"Previous year","ปีถัดไป":"Next year","ทั้งปี":"Whole year",
+"เรียงตามวันที่ขาย":"Sort by sale date","เรียงตาม Valve No":"Sort by Valve No","เรียงตาม Lot":"Sort by Lot",
+"เรียงตามจำนวน":"Sort by quantity","เรียงตามสถานะจริง":"Sort by real status","เรียงตาม ID Code":"Sort by ID code",
+"สถานะ (จริง · แก้เอง)":"Status (real · override)","สถานะจริงจากการบันทึกผลิต":"Real status from production records",
+"แก้สถานะเอง (override)":"Set status manually (override)","เลื่อนไปขายเดือนหน้า (+1 เดือน)":"Push to next month (+1 month)",
+"ยกเลิกแผน (ลูกค้ายกเลิก)":"Cancel plan (customer cancelled)","กู้คืนแผน":"Restore plan","ลบแผน":"Delete plan",
+"📋 ยังไม่เริ่ม":"📋 Not started","📋 รับเข้าแล้ว แต่ไม่มีในแผนขาย":"📋 Received but not in the sales plan",
+"· ของเข้ามาแล้วแต่ไม่มีแผนรองรับ — กดเพื่อดูว่าทำไมถึงไม่มี":"· goods arrived with no plan to match — tap to see why",
+"วันที่รับเข้า":"Received on","ทำไมไม่มีในแผน":"Why it's not in the plan",
+"💡 ถ้าเบอร์/Lot ถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด":"💡 If the valve/lot was logged wrong on intake, fix it on the card",
+"(หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่":"(Track page) with the ✏️ button instead of adding a new plan",
+"ℹ️ ข้ามการตรวจ":"ℹ️ Skipped",
+"รายการ — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนให้เทียบเลย (ตารางแผนเก็บย้อนหลังไม่กี่เดือน)":"items — received in months that have no plan data to compare against (plans are kept only a few months back)",
+// หน้าตั้งค่า — เครื่องมือแก้ข้อมูล
+"🔧 เครื่องมือแก้ข้อมูล (เฉพาะ VSM ที่ดูอยู่)":"🔧 Data repair tools (current VSM only)",
+"Export ไปแก้ใน Excel แล้ว Import กลับ · ยอดผลิตใช้":"Export to Excel, edit, then import back · production rows use",
+"เป็นตัวอ้างอิง (ห้ามแก้/ลบคอลัมน์นี้)":"as the reference key (never edit/delete that column)",
+"⬇️ Export ยอดผลิต":"⬇️ Export production","📥 Import ยอดที่แก้แล้ว":"📥 Import edited rows",
+"⬇️ Export Valve ยังไม่มี Process":"⬇️ Export valves with no process",
+"🔗 ตรวจ/ซ่อมความสอดคล้อง (ประวัติ ↔ ติดตามงาน)":"🔗 Check/repair consistency (History ↔ Track)",
+"ยอดผลิตที่บันทึกก่อน":"Production rows recorded before","ไม่มีคีย์เชื่อมกับ KPI และเก็บ":"have no key linking them to KPI and store",
+"เวลาที่กดบันทึก":"the save timestamp","แทน":"instead of","วันผลิตจริง":"the real production date",
+"→ งานกะดึกที่ลงตอนเช้าจะไปโผล่คนละวันกับหน้าประวัติ และการลบ/แก้ที่ประวัติไม่ตามไปถึงหน้าติดตามงาน":"→ night-shift work logged in the morning lands on a different day than the History page, and deletes/edits in History don't reach the Track page",
+"กด":"Tap","ตรวจสอบ":"Check","เพื่อดูรายงานก่อน (ไม่แก้อะไร) แล้วค่อยกด":"to see the report first (changes nothing), then tap",
+"ซ่อม":"Repair","📅 \"คนละวัน\" ส่วนใหญ่ไม่ใช่ข้อมูลผิด":"📅 A \"different day\" is usually not wrong data",
+"— กติกาวันทำงานของโรงงานคือ":"— the plant's working-day rule is",
+"• 08:00–19:59 = กะกลางวัน → วันทำงาน = วันที่เริ่มงาน":"• 08:00–19:59 = day shift → working day = the day work started",
+"• 20:00–23:59 = กะกลางคืน → วันทำงาน = วันที่เริ่มงาน":"• 20:00–23:59 = night shift → working day = the day work started",
+"• 00:00–07:59 = กะกลางคืน → วันทำงาน =":"• 00:00–07:59 = night shift → working day =",
+"วันก่อนหน้า":"the previous day","(หางกะดึกของเมื่อวาน)":"(the tail of yesterday's night shift)",
+"หน้าประวัติยึดวันทำงานนี้ซึ่ง":"History uses this working day, which is","ถูกอยู่แล้ว":"already correct",
+"· หน้าติดตามงานเดิมไม่มีวันทำงานเก็บไว้ เลยไปโชว์วันที่กดบันทึกแทน":"· Track had no working day stored, so it showed the save date instead",
+"ปุ่มซ่อมแค่คัดลอกวันทำงานจาก KPI มาใส่ ไม่เปลี่ยนการจัดกะใด ๆ ทั้งสิ้น":"The repair button only copies the working day from KPI — it never changes any shift assignment",
+"🔍 ตรวจสอบ":"🔍 Check","🔧 ซ่อมความสอดคล้อง":"🔧 Repair consistency",
+"ยอดผลิตที่ผูกกับ KPI แล้ว แต่เลข Valve/Lot ไม่ตรงกัน (เกิดจากแก้ที่หน้าประวัติข้างเดียวก่อนมีระบบเชื่อม) — ดันเลขจาก KPI ลงมาให้ตรงกัน":"Production rows linked to KPI whose Valve/Lot don't match (from editing only History before the link existed) — push the KPI values down to match",
+"🔄 ดัน Valve/Lot จาก KPI":"🔄 Push Valve/Lot from KPI",
+"ℹ️ การตั้ง VSM ที่นี่":"ℹ️ Setting the VSM here","บันทึกลงฐานข้อมูล (D1)":"saves to the database (D1)",
+"แล้ว — ทุกเครื่องเห็นเหมือนกัน · รหัสที่อยู่ใน":"— every device sees the same thing · codes listed in",
+"(โค้ด) ถือเป็นกฎกลาง แก้ที่นี่ไม่มีผล":"(in code) are the master rule — editing here has no effect",
+"🔎 ค้นหารหัส / Process":"🔎 Search code / process",
+// ── หน้าวางแผน: ตัวกรองแบบ Excel + เลือกหลายรายการ (ป้ายที่อยู่ใน HTML คงที่) ──
+"🔎 ค้นหา (Valve / Lot / หมายเหตุ / วันที่)":"🔎 Search (Valve / Lot / Note / Date)",
+"พิมพ์บางส่วนก็ได้ เช่น VF1349 หรือ 2606S":"partial is fine — e.g. VF1349 or 2606S",
+"เลือกทุกแถวที่กรองอยู่":"Select every filtered row","เลือกรายการนี้":"Select this row",
+"ตัวกรอง / เรียง":"Filter / sort","กดเพื่อเรียงตามวันที่ขาย":"Tap to sort by sale date",
+"กดเพื่อเรียงตาม Valve No":"Tap to sort by Valve No","กดเพื่อเรียงตาม Lot":"Tap to sort by Lot",
+"กดเพื่อเรียงตามจำนวน":"Tap to sort by quantity","กดเพื่อเรียงตามสถานะจริง":"Tap to sort by real status",
+"กดเพื่อเรียงตามหมายเหตุ":"Tap to sort by note",
+"💡 ติ๊กช่องหน้าแถวเพื่อเลือกหลายรายการ · กด Shift ค้างเพื่อเลือกเป็นช่วง":"💡 Tick the box on a row to select many · hold Shift to select a range",
+"⚙️ เริ่มผลิตแล้ว":"⚙️ Production started","รายการ ·":"items ·",
+"กำลังคำนวณจากข้อมูลในเครื่อง":"Calculating from local data",
+"ยังไม่มี Lot สำหรับวาล์วนี้ — ลงทะเบียน Valve ID ที่หน้าตั้งค่าก่อน":"No lots for this valve yet — register a Valve ID in Settings first",
 };
 /* template: § = ค่าแปรผัน (จับด้วย regex คงค่าเดิมไว้) */
 const I18N_T = [
@@ -7104,6 +7979,23 @@ const I18N_T = [
 ["🕐 ช่วง §","🕐 Range §"],
 ["Page § (§ รายการ)","Page § (§ items)"],
 ["Page § / § (§ รายการ)","Page § / § (§ items)"],
+/* ★ 2026-08-05 (req) — เก็บตกข้อความที่แปลได้ "ครึ่งเดียว" (ตัวแปรอยู่กลางประโยค)
+   หมายเหตุ: I18N_TC เรียงตามความยาว pattern มาก→น้อย ตัวที่เจาะจงกว่าจึงถูกลองก่อนเสมอ
+   ถ้าไม่ใส่ตัวเจาะจง ประโยคจะไปโดน "§ ชิ้น" จับทั้งก้อนแล้วเหลือไทยค้างอยู่ข้างหน้า */
+["รวมทั้งปี § ชิ้น","Year total § pcs"],
+["§ รายการ · § ชิ้น","§ items · § pcs"],
+["§ รายการ ·","§ items ·"],
+["ชิ้น · § process ·","pcs · § processes ·"],
+["✓ FG § ตรงกับ WIP OUT","✓ FG § matches WIP OUT"],
+["⚙️ กำลังผลิต · §","⚙️ In production · §"],
+["⚙️ เริ่มผลิตแล้ว · §","⚙️ Production started · §"],
+["✅ ผลิตเสร็จ · §","✅ Finished · §"],
+["✅ เสร็จแล้ว · §","✅ Done · §"],
+["📋 ยังไม่เริ่ม · §","📋 Not started · §"],
+["… และอีก §","… and § more"],
+["🔧 ซ่อมวันที่ (§)","🔧 Fix dates (§)"],
+["แสดง §–§","Showing §–§"],
+["ยังไม่มีแผนปีนี้","No plans for this year"],
 ];
 const _I18N_THRE = /[฀-๿]/;
 const I18N_TC = I18N_T.map(([th,en])=>{
@@ -7141,9 +8033,15 @@ function _i18nDoText(n){
   const p = n.parentNode;
   if(p && p.nodeName==='OPTION' && !p.hasAttribute('value')) return;   // option ไร้ value: text = ค่า submit ห้ามแปล
   const tr = _i18nTr(v);
-  if(tr == null || tr === v) return;
+  if(tr == null) return;
+  /* ★ 2026-08-05 (req) — คงช่องว่างหัว/ท้ายของ text node เดิมไว้
+     คีย์ในพจนานุกรมเก็บแบบ trim → เดิมเขียนทับด้วยคำแปลล้วน ช่องว่างที่คั่นกับ <b>ตัวเลข</b> หายไปหมด
+     เช่น "<b>36,359</b> ชิ้น" (node = " ชิ้น") กลายเป็น "36,359pcs" · "OPR รวม: " → "Total OPR:36,359"
+     ไทยอ่านได้เพราะคำติดกันเป็นปกติ แต่อังกฤษต้องมีช่องว่าง — คืนช่องว่างเดิมกลับไปตามเดิมทุก node */
+  const out = (/^\s*/.exec(v)[0]) + tr + (/\s*$/.exec(v)[0]);
+  if(out === v) return;
   if(!_i18nOrigText.has(n)) _i18nOrigText.set(n, v);
-  n.nodeValue = tr;
+  n.nodeValue = out;
 }
 function _i18nDoAttrs(el){
   if(!el.getAttribute) return;
@@ -9309,7 +10207,7 @@ function _iahVal(recs,metric,zoneKey){
     case 'oae':  return sum('target')>0?sum('opr')/sum('target'):0;   // ΣOPR ÷ ΣTarget
     case 'dle':  return avg('dle');
     case 'pplh': return sum('wt')>0?sum('opr')/sum('wt'):0;            // ΣOPR ÷ ΣWT
-    case 'pdac': return calcZonePdac(recs,zoneKey).ratio;             // เครื่องผ่าน ÷ เครื่องเปิด
+    case 'pdac': return calcZonePdac(recs,zoneKey).ratio;             // (เครื่อง×กะ) ที่ผ่าน ÷ ทั้งหมดที่เปิด
     case 'scrap':return avg('scrap_rate');
   }
   return null;
@@ -12855,10 +13753,10 @@ async function _saveKpiImpl() {
         const oae     = sTarget > 0 ? sOpr / sTarget : 0;
         const dle     = (cap > 0 && sCT > 0) ? (sOpr * sCT * mObj.man_std) / cap : 0;
         const pplh    = sWT > 0 ? sOpr / sWT : 0;
-        const oprPdac = sTarget * 0.85;
+        const oprPdac = sTarget * PDAC_CAP;
         const pdac    = oprPdac > 0 ? sOpr / oprPdac : 0;
         const scrapRate = (sOpr + sScrap) > 0 ? sScrap / (sOpr + sScrap) : 0;
-        const pdacPass  = pdac >= 0.883 ? 'PASS' : 'FAIL';
+        const pdacPass  = pdac >= PDAC_PASS ? 'PASS' : 'FAIL';
         const shiftEntry = { si: slot.si, opr:sOpr, scrap:sScrap, target:sTarget, ct:sCT, ts:sTs, te:sTe, wt:sWT,
           emp: empIdPrimary, valve: slot.valve, lot: slot.lot, proc: lastProc };
         records.push({
