@@ -863,6 +863,15 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .wipcard .wv b{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.3px;line-height:1.1;opacity:.92}
 .wipcard .wv.main b{font-size:18px;font-weight:900;opacity:1}
 .wipcard .wv small{font-size:9px;font-weight:700;opacity:.78;white-space:nowrap}
+/* ★ 2026-08-06 — ตัวเลขบนการ์ด WIP OUT กดได้รายช่อง (วันนี้ / เมื่อวาน / รวมทั้งเดือน)
+   = ดูว่ายอดนั้นเป็นของลูกค้าไหน Valve No อะไร · เส้นประใต้ตัวเลข = สัญญาณว่ากดได้ */
+.wipcard .wv-click{cursor:pointer;border-radius:8px;padding:2px 6px;margin:-2px -6px;transition:background .12s}
+.wipcard .wv-click:hover,.wipcard .wv-click:focus-visible{background:rgba(255,255,255,.2);outline:none}
+.wipcard .wv-click b{opacity:1;text-decoration:underline;text-decoration-style:dotted;text-decoration-thickness:1.5px;text-underline-offset:3px}
+/* ป๊อปอัป "ผ่าน FG ช่วงนี้" — ปุ่มสลับช่วงวันที่ด้านบน */
+.fgr-tab{border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:999px;
+  padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer}
+.fgr-tab.on{background:var(--blue,#1A56DB);border-color:var(--blue,#1A56DB);color:#fff}
 /* ── แผง TOP ปัญหา — 5 เครื่อง OAE ต่ำสุดของช่วงที่เลือก (กดรายการ = ไฮไลต์เครื่องบนผัง) ── */
 #iotTop5{flex:1 1 280px;min-width:250px;display:flex;min-height:0}
 .top5-wrap{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;border:1.5px solid #FCA5A5;background:#FEF2F2;
@@ -1498,7 +1507,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.46</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.47</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7823,7 +7832,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.46":"Production Record + KPI · v3.46",
+"ระบบบันทึกผลิต + KPI · v3.47":"Production Record + KPI · v3.47",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -12031,18 +12040,18 @@ function _wipOutCurMonth(b){
   const t=todayISO();
   return _wipOutRange(b, t.slice(0,7)+'-01', t);
 }
-/* ★ 2026-08-06 (req #4) — ยอดผ่าน FG แยก "กลุ่มลูกค้า" ตามช่วงวันที่
-   ใช้ fgByDate รายวันชุดเดียวกับ _wipOutRange → ยอดรวมทุกกลุ่ม = ตัวเลขบนการ์ดเป๊ะเสมอ
-   (ห้ามคิดจากยอดทั้งล็อต ไม่งั้นล็อตที่ผ่าน FG คร่อมเดือนจะถูกนับซ้ำ) */
 const CUST_GROUPS = ['MSI','SWE','OES&OEM','Other'];
-function _wipOutRangeByGroup(b, from, to){
-  const out={}; for(const g of CUST_GROUPS) out[g]=0;
+/* ★ 2026-08-06 (req) — รายการงานที่ผ่าน FG ในช่วงวันที่หนึ่ง แยกเป็นราย "ล็อต"
+   ตัดยอดด้วย fgByDate รายวันชุดเดียวกับ _wipOutRange → Σ ของรายการที่คืนมา
+   = ตัวเลขบนการ์ดที่ผู้ใช้กดเป๊ะเสมอ (ห้ามใช้ยอดทั้งล็อต จะเกินจริงตอนคร่อมวัน/เดือน) */
+function _wipOutRangeRows(b, from, to){
+  const rows=[];
   for(const i of (b.wipOut.items||[])){
-    const g=CUST_GROUPS.includes(i.customer)?i.customer:'Other';
-    const m=i.fgByDate||{};
-    for(const d in m){ if(d>=from && d<=to) out[g]+=Number(m[d])||0; }
+    let q=0; const days=[]; const m=i.fgByDate||{};
+    for(const d in m){ if(d>=from && d<=to){ const v=Number(m[d])||0; if(v){ q+=v; days.push(d); } } }
+    if(q>0) rows.push({...i, qty:q, days:days.sort(), group:(CUST_GROUPS.includes(i.customer)?i.customer:'Other')});
   }
-  return out;
+  return rows;
 }
 /* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
 function renderWipBuckets(){
@@ -12090,16 +12099,32 @@ function renderIotWipStrip(b){
   const host=$('iotWipCards'); if(!host) return;
   b=b||getWipBuckets();
   const L={cur:TT('ปัจจุบัน','Now'),y:TT('เมื่อวาน','Yesterday'),m:TT('รวมทั้งเดือน','Month total')};
-  const card=(cls,icon,label,hint,bucket,cur,curHint,yv,mv)=>`
+  /* ★ 2026-08-06 (req) — แต่ละช่องตัวเลขกดได้เอง (ส่ง rangeKey มา = เปิดรายการของช่วงนั้น)
+     ถ้าไม่ส่ง rangeKey มา ช่องตัวเลขเป็นข้อความเฉย ๆ เหมือนเดิม (การ์ด WIP IN)
+     ใช้ span role=button ไม่ใช่ <button> เพราะการ์ดทั้งใบเป็น <button> อยู่แล้ว (ซ้อนปุ่มไม่ได้)
+     — stopPropagation กันไม่ให้ทะลุไปเปิดป๊อปอัปของทั้งการ์ด */
+  const card=(cls,icon,label,hint,bucket,cur,curHint,yv,mv,rangeKey)=>{
+    const tip=TT('กดดูรายการ — ลูกค้า / Valve No','tap for details — customer / Valve No');
+    const val=(k,v,lab,main)=>{
+      const inner=`<b>${nn(v)}</b><small>${lab}</small>`;
+      if(!rangeKey) return `<span class="wv${main?' main':''}">${inner}</span>`;
+      const go=`${rangeKey}('${k}')`;
+      return `<span class="wv${main?' main':''} wv-click" role="button" tabindex="0" title="${tip}"
+        onclick="event.stopPropagation();${go}"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();${go}}"
+        >${inner}</span>`;
+    };
+    return `
     <button type="button" class="wipcard ${cls}" onclick="showWipDetail('${bucket}',true)"
       aria-label="${label} — ${L.cur} ${nn(cur)} · ${L.y} ${nn(yv)} · ${L.m} ${nn(mv)}">
       <span class="wipcard-k">${icon} ${label} <small>· ${hint}</small></span>
       <span class="wipcard-vals">
-        <span class="wv main"><b>${nn(cur)}</b><small>${L.cur}${curHint?' · '+curHint:''}</small></span>
-        <span class="wv"><b>${nn(yv)}</b><small>${L.y}</small></span>
-        <span class="wv"><b>${nn(mv)}</b><small>${L.m}</small></span>
+        ${val('today',cur,L.cur+(curHint?' · '+curHint:''),true)}
+        ${val('yest',yv,L.y)}
+        ${val('month',mv,L.m)}
       </span>
     </button>`;
+  };
   // P2-22: ยอดรับเข้า "เดือนนี้" แยกตาม 4 กลุ่มลูกค้า (MSI / SWE / OES&OEM / Other) — โชว์ใต้การ์ด IN
   const _m=todayISO().slice(0,7);
   const _byGrp={ 'MSI':0, 'SWE':0, 'OES&OEM':0, 'Other':0 };
@@ -12123,31 +12148,117 @@ function renderIotWipStrip(b){
     ${Object.entries(_byGrp).map(([g,q])=>`<button type="button" class="tag tag-blue" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit" title="${TT('กดดูรายการ Valve ที่รับเข้า/ยังขาด','tap: received / missing valve list')} — ${escapeHtml(g)}" onclick="showCustInMonth('${encodeURIComponent(g)}')">${escapeHtml(g)}: <b>${nn(q)}</b> ›</button>`).join('')}
     <span style="font-size:9.5px;color:var(--muted)">${TT('กดที่กลุ่มเพื่อดูรายการ','tap a group for details')}</span>
   </div>`;
-  /* ★ 2026-08-06 (req #4) — ยอด FG (WIP OUT) แยกกลุ่มลูกค้า: เมื่อวาน + รวมทั้งเดือน
-     ของเดิมมีแต่ยอดรวม → ดูไม่ออกว่าที่ผ่าน FG ไปเป็นของลูกค้ากลุ่มไหนเท่าไร
-     กดที่ชิป = เปิดรายการ WIP OUT ที่กรองเฉพาะกลุ่มนั้นให้เลย */
-  const _yISO=yesterdayISO(), _tISO=todayISO();
-  const _fgY=_wipOutRangeByGroup(b,_yISO,_yISO);
-  const _fgM=_wipOutRangeByGroup(b,_tISO.slice(0,7)+'-01',_tISO);
-  const fgChips = `<div class="iot-cust-strip" style="flex:1 1 100%;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-    <span style="font-size:10px;font-weight:800;color:var(--muted)">✓ ${TT('ผ่าน FG แยกลูกค้า','FG by customer')}:</span>
-    ${CUST_GROUPS.map(g=>`<button type="button" class="tag tag-green" style="font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit"
-        title="${TT('กดดูรายการที่ผ่าน FG ของกลุ่มนี้','tap: FG list for this group')} — ${escapeHtml(g)}" onclick="showWipOutGroup('${encodeURIComponent(g)}')"
-      >${escapeHtml(g)}: <b>${nn(_fgM[g]||0)}</b> <span style="opacity:.75;font-weight:700">${TT('เดือนนี้','month')}</span> · <b>${nn(_fgY[g]||0)}</b> <span style="opacity:.75;font-weight:700">${TT('เมื่อวาน','yest.')}</span> ›</button>`).join('')}
+  /* ★ 2026-08-06 (req) — เดิมมีแถบชิป "ผ่าน FG แยกลูกค้า" ใต้การ์ด → เอาออกแล้ว
+     ย้ายไปกดที่ตัวเลขบนการ์ด WIP OUT ตรง ๆ (วันนี้ / เมื่อวาน / รวมทั้งเดือน)
+     ได้รายการลูกค้า + Valve No ของ "ยอดตัวนั้น" เป๊ะ ๆ ไม่ต้องเดาว่าชิปหมายถึงช่วงไหน */
+  const fgHint = `<div class="iot-cust-strip" style="flex:1 1 100%;font-size:9.5px;color:var(--muted);line-height:1.5">
+    ✓ ${TT('กดที่ตัวเลขบนการ์ด WIP OUT (วันนี้ / เมื่อวาน / รวมทั้งเดือน) เพื่อดูว่ายอดนั้นเป็นของลูกค้าไหน Valve No อะไร',
+           'tap a number on the WIP OUT card (today / yesterday / month) to see its customers and valve numbers')}
   </div>`;
   host.innerHTML =
     card('in','📥','WIP IN 1.5',TT('รับจาก VSM2','from VSM2'),'in',
          b.wipIn.total,TT('รอผลิต','waiting'),_wipInYesterday(b),_wipInCurMonth(b)) +
     card('out','✓','WIP OUT',TT('ผ่าน FG','past FG'),'out',
-         _wipOutToday(b),TT('วันนี้','today'),_wipOutYesterday(b),_wipOutCurMonth(b)) +
+         _wipOutToday(b),TT('วันนี้','today'),_wipOutYesterday(b),_wipOutCurMonth(b),'showFgRange') +
     grpChips +   // P2-22: ยอดรับเข้าแยก 4 กลุ่มลูกค้า
-    fgChips;     // ★ req #4: ยอดผ่าน FG แยก 4 กลุ่มลูกค้า (เมื่อวาน / เดือนนี้)
+    fgHint;      // ★ req: บอกวิธีดูรายการผ่าน FG (แทนแถบชิปเดิม)
 }
-/* กดชิปกลุ่มลูกค้าใต้การ์ด WIP OUT → เปิดป๊อปอัป WIP OUT ที่กรองเฉพาะกลุ่มนั้น (req #4) */
-function showWipOutGroup(grp){
-  _wipOutCust=decodeURIComponent(grp||'');
-  showWipDetail('out', true, true);
+/* ═══ ★ 2026-08-06 (req) — ป๊อปอัป "ผ่าน FG ช่วงนี้ เป็นของใคร เบอร์อะไร" ═══════════
+   กดตัวเลขบนการ์ด WIP OUT: วันนี้ / เมื่อวาน / รวมทั้งเดือน → รายการแยกตามกลุ่มลูกค้า
+   กางดูได้ว่าแต่ละกลุ่มมี Valve No / Lot อะไร กี่ชิ้น ทำที่เครื่องไหน (สไตล์เดียวกับ
+   ป๊อปอัป "Process — งานที่อยู่ขั้นนี้" ในหน้าติดตามงาน)
+   ยอดรวมในป๊อปอัป = ตัวเลขที่กดเสมอ เพราะตัดยอดจาก fgByDate ชุดเดียวกัน */
+function _fgRangeOf(kind){
+  const t=todayISO(), y=yesterdayISO();
+  if(kind==='yest')  return {from:y, to:y, label:TT('เมื่อวาน','Yesterday')+' · '+y};
+  if(kind==='month') return {from:t.slice(0,7)+'-01', to:t, label:TT('รวมทั้งเดือน','Month total')+' · '+t.slice(0,7)};
+  return {from:t, to:t, label:TT('วันนี้','Today')+' · '+t};
 }
+function showFgRange(kind){
+  kind=(kind==='yest'||kind==='month')?kind:'today';
+  const R=_fgRangeOf(kind);
+  const rows=_wipOutRangeRows(getWipBuckets(), R.from, R.to);
+  const total=rows.reduce((s,r)=>s+r.qty,0);
+  const nValve=new Set(rows.map(r=>vKey(r.valve))).size;
+  // จัดกลุ่มตามลูกค้า — เรียงกลุ่มที่ยอดเยอะขึ้นก่อน (เหมือนป๊อปอัป Process)
+  const byG={};
+  for(const r of rows){ const g=byG[r.group]||(byG[r.group]={qty:0,items:[]}); g.qty+=r.qty; g.items.push(r); }
+  const groups=Object.entries(byG).sort((a,c)=>c[1].qty-a[1].qty);
+  const multiDay=R.from!==R.to;                       // เดือนนี้ = มีหลายวัน → โชว์คอลัมน์วันที่ผ่าน FG
+  const openAll=rows.length<=30;                      // รายการน้อย กางให้เลย ไม่ต้องกดทีละกลุ่ม
+  const dayCell=r=>{
+    const d=r.days||[];
+    if(!d.length) return '-';
+    if(d.length===1) return escapeHtml(d[0]);
+    return `${escapeHtml(d[0])} – ${escapeHtml(d[d.length-1])} <span class="muted">(${d.length} ${TT('วัน','days')})</span>`;
+  };
+  const html=groups.length ? groups.map(([g,gr])=>{
+    const items=gr.items.slice().sort((a,c)=>c.qty-a.qty);
+    return `
+    <details data-g ${openAll?'open':''} style="border:1.5px solid #84E1BC;border-radius:9px;margin-bottom:6px;overflow:hidden">
+      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:#057A55;background:#F3FAF7;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>👥 ${escapeHtml(g)}</span>
+        <span style="font-size:12px;color:#057A55;white-space:nowrap">${TT('ผ่าน FG','FG')} <b>${nn(gr.qty)}</b> ${TT('ชิ้น','pcs')} · <b data-gn>${items.length}</b> ${TT('รายการ','items')} ▾</span>
+      </summary>
+      <div class="tbl-wrap" style="padding:4px 8px 8px">
+        <table><thead><tr>
+          <th style="white-space:nowrap">Valve No</th><th style="white-space:nowrap">Lot</th>
+          <th class="center" style="white-space:nowrap">${TT('ยอดผ่าน FG','FG qty')}</th>
+          ${multiDay?`<th style="white-space:nowrap">${TT('วันที่ผ่าน FG','FG date')}</th>`:''}
+          <th class="center" style="white-space:nowrap">${TT('อยู่ที่','Now at')}</th>
+          <th style="white-space:nowrap">${TT('เครื่องจักร','Machine')}</th><th class="center">-</th>
+        </tr></thead><tbody>
+        ${items.map(r=>`<tr data-v="${escapeHtml(((r.valve||'')+' '+(r.lot||'')).toLowerCase())}">
+          <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b>${r.unknown?` <span class="tag tag-red" style="font-size:10px" title="${TT('ไม่มีเบอร์นี้ใน Master Valve','not in Master Valve')}">⚠</span>`:''}</td>
+          <td style="font-size:11.5px">${escapeHtml(r.lot||'-')}</td>
+          <td class="center"><b>${nn(r.qty)}</b></td>
+          ${multiDay?`<td style="font-size:11.5px;white-space:nowrap">${dayCell(r)}</td>`:''}
+          <td class="center"><span class="tag tag-green">${escapeHtml(r.curProc||'FG')}</span></td>
+          <td style="white-space:nowrap">${_wipMcCell(r.machines)}</td>
+          <td class="center"><button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="showWipHistory('${encodeURIComponent(r.valve)}','${encodeURIComponent(r.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </details>`;
+  }).join('') : `<div class="center muted" style="padding:14px 0;font-size:13px">${TT('ช่วงนี้ยังไม่มีงานผ่าน FG','No job reached FG in this range')}</div>`;
+  const tab=(k,txt)=>`<button type="button" class="fgr-tab ${kind===k?'on':''}" onclick="showFgRange('${k}')">${txt}</button>`;
+  const body=`<div class="wip-detail-box" data-fgrange>
+    <div class="row mb-8" style="gap:6px;flex-wrap:wrap">
+      ${tab('today',TT('วันนี้','Today'))}${tab('yest',TT('เมื่อวาน','Yesterday'))}${tab('month',TT('รวมทั้งเดือน','Month total'))}
+    </div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">
+      📅 ${escapeHtml(R.label)} · ${TT('ผ่าน FG รวม','FG total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')} ·
+      ${groups.length} ${TT('ลูกค้า','customers')} · ${nn(nValve)} ${TT('เบอร์','valves')} · ${nn(rows.length)} ${TT('รายการ (เบอร์ × lot)','items (valve × lot)')} ·
+      ${TT('กดที่ลูกค้าเพื่อดูรายละเอียด','tap a customer for details')}
+    </div>
+    ${rows.length?`<div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" oninput="_fgRangeSearch(this)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+      style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>`:''}
+    ${html}
+    <div class="center muted" data-fgempty style="display:none;padding:12px 0;font-size:13px">${TT('ไม่พบรายการที่ค้นหา','No match')}</div>
+  </div>`;
+  const title=`✓ ${TT('ผ่าน FG','Past FG')} — ${escapeHtml(R.label)}`;
+  if(document.getElementById('iotCard')?.classList.contains('iot-fs')) _openIotPop(title, body, false, true);
+  else openModal(title, body, {wide:true});
+}
+/* ค้นหาในป๊อปอัป — ซ่อนแถวที่ไม่ตรง + ซ่อนกลุ่มที่ไม่เหลือแถว (กางกลุ่มที่เจอให้เอง) */
+function _fgRangeSearch(inp){
+  const root=inp.closest('[data-fgrange]'); if(!root) return;
+  const q=String(inp.value||'').trim().toLowerCase();
+  let shown=0;
+  root.querySelectorAll('details[data-g]').forEach(dt=>{
+    let n=0;
+    dt.querySelectorAll('tr[data-v]').forEach(tr=>{
+      const hit=!q || tr.dataset.v.indexOf(q)>=0;
+      tr.style.display=hit?'':'none'; if(hit) n++;
+    });
+    dt.style.display=n?'':'none';
+    if(q && n) dt.open=true;
+    const c=dt.querySelector('[data-gn]'); if(c) c.textContent=nn(n);
+    shown+=n;
+  });
+  const em=root.querySelector('[data-fgempty]'); if(em) em.style.display=shown?'none':'';
+}
+
 /* ═══ P2-23: ป๊อปอัปรายการรับเข้าเดือนนี้ ราย "กลุ่มลูกค้า" (กดจากชิปใต้การ์ด IN บนหน้า IOT) ═══
    ① รับเข้าแล้ว = รายการ WIP IN 1.5 ของเดือนนี้ รวมยอดต่อ Valve No (นับ "เบอร์" = จำนวน Valve ไม่ซ้ำ)
    ② ยังขาดจ่าย = แผนขายที่ยัง active (planned/in_progress) ของกลุ่มนั้น ที่รับเข้ายังไม่ครบ (_wipPlanRows) */
