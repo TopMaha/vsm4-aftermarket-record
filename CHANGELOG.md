@@ -1,8 +1,14 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.47 — 2026-08-07 — ยอดผ่าน FG: กดที่ตัวเลขบนการ์ดแล้วรู้เลยว่าเป็นของลูกค้าไหน Valve No อะไร  ⏳ ยังไม่ deploy
+## v3.47 — 2026-08-07 — ยอดผ่าน FG: กดที่ตัวเลขบนการ์ดแล้วรู้เลยว่าเป็นของลูกค้าไหน Valve No อะไร  ✅ deployed
 
-แก้ที่ `index.html` อย่างเดียว (Worker ไม่แตะ)
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `db661728-f161-4c43-9ae6-3006d3aa75c5` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `1aacc11` (run `31133070500` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> เช็กหน้าเว็บจริงแล้วทั้งสองที่ขึ้น `v3.47` + มี `showFgRange` + ไม่มี `showWipOutGroup` เหลือ
+> ⚠️ curl รอบแรกที่ Worker ยังได้ `v3.46` — เป็น **edge cache** ไม่ใช่ deploy ไม่ขึ้น · ต่อ `?cb=<timestamp>` แล้วได้ v3.47 ทันที
+
+แก้ที่ `index.html` อย่างเดียว (โค้ด Worker ไม่แตะ — deploy ใหม่แค่เพื่อ bundle หน้าแอปเวอร์ชันล่าสุด)
 
 ### ❌ เอาออก — แถบชิป "✓ ผ่าน FG แยกลูกค้า" ใต้การ์ด WIP OUT (ของ v3.46 ④)
 
