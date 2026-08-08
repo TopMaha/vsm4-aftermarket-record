@@ -803,13 +803,16 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
         width:auto!important;height:auto!important;max-width:none!important;
         background:#fff!important;padding:14px 16px max(14px,env(safe-area-inset-bottom))!important;
         display:flex!important;flex-direction:column!important;overflow:hidden!important;box-shadow:none!important}
-.iot-fs .iot-zoom-ctrls{display:none!important}
 .iot-fs #iotDateInfo{flex:0 0 auto}
 .iot-fs #mcViewFloor{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 .iot-fs #iotViewport{flex:1 1 auto;min-height:0;height:auto!important;display:flex;overflow:auto}
+/* safe center = พอผังใหญ่กว่ากรอบ (ซูมเข้า) ให้ชิดมุมบนซ้ายแทนการจัดกลาง — ไม่งั้นขอบบน/ซ้ายจะเลื่อนไปหาไม่ได้ */
 .iot-fs #iotScaleWrap{transform:none!important;flex:1 1 auto;min-height:0;width:100%;
-        display:flex;align-items:center;justify-content:center}
-.iot-fs #iotSvg{width:100%!important;height:100%!important;max-height:100%}
+        display:flex;align-items:safe center;justify-content:safe center}
+/* เต็มจอ: ผังยืดพอดีกรอบเสมอ (z=1 = เท่าเดิมทุกประการ) · ซูมเข้าคือคูณขนาด SVG แล้วเลื่อนดูส่วนที่ล้น
+   flex:none จำเป็น — ไม่งั้น flex-shrink จะบีบ SVG กลับมาพอดีกรอบ ซูมไม่ขึ้นเลย */
+.iot-fs #iotSvg{width:calc(100% * var(--iotfs-z,1))!important;height:calc(100% * var(--iotfs-z,1))!important;
+        max-height:none;flex:none}
 
 /* ── แตะที่เครื่องเพื่อดูงาน: เปิดเฉพาะตอนเต็มจอ ── */
 .iot-mc{cursor:default}
@@ -818,6 +821,15 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .iot-fs .iot-mc:hover,.iot-fs .iot-mc:focus-visible{filter:brightness(1.06) drop-shadow(0 0 3px rgba(15,23,42,.5))}
 .iot-hint{display:none}
 .iot-fs .iot-hint{display:inline-flex}
+
+/* ── ลากพื้นที่ว่างเพื่อเลื่อนผัง (ใช้ร่วมกัน "IOT แยกแผนก" #iotViewport · "IOT รวม" #iotAllVp) ──
+   .vp-pannable = ผังใหญ่กว่ากรอบจริง ๆ ถึงจะขึ้นมือ grab (ไม่ชวนให้ลากทั้งที่ลากไปไหนไม่ได้) */
+#iotViewport,#iotAllVp{user-select:none;-webkit-user-select:none}
+#iotViewport.vp-pannable,#iotAllVp.vp-pannable{cursor:grab}
+#iotViewport.vp-panning,#iotAllVp.vp-panning{cursor:grabbing;scroll-behavior:auto}
+#iotViewport.vp-panning *,#iotAllVp.vp-panning *{cursor:grabbing!important}
+/* กำลังลาก = ปิด transition ซูม ไม่งั้นผังไล่ตามมือช้ากว่าเคอร์เซอร์ */
+#iotViewport.vp-panning #iotScaleWrap{transition:none}
 
 /* ── ป๊อปอัปรายละเอียดเครื่อง (เป็นลูกของ #iotCard เพื่อให้แสดงได้ใน native fullscreen) ── */
 .iotpop-bg{position:absolute;inset:0;z-index:1600;background:rgba(13,17,23,.55);
@@ -1545,7 +1557,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.48</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.49</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7923,7 +7935,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.48":"Production Record + KPI · v3.48",
+"ระบบบันทึกผลิต + KPI · v3.49":"Production Record + KPI · v3.49",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9821,6 +9833,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       </span>
       <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
+      <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#475569;background:#F1F5F9;border:1px solid #E2E8F0;padding:3px 9px;border-radius:999px">✋ ${TT('ลากพื้นที่ว่าง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space to pan · wheel to zoom')}</span>
       <span class="jb-tgls">
         <button type="button" class="jb-tgl${_iotJobLbl?' on':''}" onclick="iotToggleJobLbl()" aria-pressed="${_iotJobLbl}"
           title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
@@ -9846,18 +9859,31 @@ function iotToggleJobLbl(){
 
 let _iotScale=1.0;
 let _iotData=null;
+/* ซูมของ "โหมดเต็มจอ" แยกตัวแปรจาก _iotScale — เพราะเต็มจอ CSS บังคับ transform:none และผัง
+   ยืดพอดีกรอบอยู่แล้ว ถ้าเอา _iotScale (ที่ renderFloorPlan ปรับอัตโนมัติให้ป้ายอ่านออก) มาใช้ต่อ
+   พอกดเต็มจอผังจะเด้งซูมเองทันที · เริ่มที่ 1 = พอดีกรอบเสมอ */
+let _iotFsScale=1;
+function _iotIsFs(){ const c=document.getElementById('iotCard'); return !!(c&&c.classList.contains('iot-fs')); }
 function _applyIotZoom(){
+  const card=document.getElementById('iotCard');
   const w=document.getElementById('iotScaleWrap');
-  if(w) w.style.transform=`scale(${_iotScale})`;
   const vp=document.getElementById('iotViewport');
   const svg=document.getElementById('iotSvg');
-  if(vp&&svg){
-    // ความสูง = ที่ SVG เรนเดอร์จริง (width:100%) = กว้าง × อัตราส่วน viewBox — ไม่ใช่หน่วย viewBox (กันช่องว่างเปล่า req #1)
-    const vb=svg.viewBox.baseVal;
-    const baseW=(w&&w.clientWidth)||vp.clientWidth||vb.width;
-    const renderedH=baseW*(vb.height/vb.width);
-    vp.style.height=Math.round(renderedH*_iotScale+4)+'px';
+  if(_iotIsFs()){
+    // เต็มจอ: ซูมด้วยตัวคูณขนาด SVG (--iotfs-z) แล้วเลื่อนดูส่วนที่ล้นกรอบเอา
+    if(card) card.style.setProperty('--iotfs-z',_iotFsScale.toFixed(3));
+  } else {
+    if(card) card.style.removeProperty('--iotfs-z');
+    if(w) w.style.transform=`scale(${_iotScale})`;
+    if(vp&&svg){
+      // ความสูง = ที่ SVG เรนเดอร์จริง (width:100%) = กว้าง × อัตราส่วน viewBox — ไม่ใช่หน่วย viewBox (กันช่องว่างเปล่า req #1)
+      const vb=svg.viewBox.baseVal;
+      const baseW=(w&&w.clientWidth)||vp.clientWidth||vb.width;
+      const renderedH=baseW*(vb.height/vb.width);
+      vp.style.height=Math.round(renderedH*_iotScale+4)+'px';
+    }
   }
+  iotPanSync();
 }
 /* ผู้ใช้กด +/− เอง = หยุดปรับซูมอัตโนมัติ (เคารพค่าที่เขาตั้ง) · กด ⊙ = คืนค่าให้ปรับอัตโนมัติอีกครั้ง */
 let _iotUserZoom=false;
@@ -9865,6 +9891,11 @@ function iotZoomBtn(dir){
   // ★ 2026-08-03 — อยู่หน้า 2 (บอร์ดงานขาย) ไม่มีผังให้ซูม → ปุ่มชุดนี้ปรับขนาดตัวอักษรบอร์ดแทน
   //   (เดิมกดแล้วไม่มีอะไรเกิดขึ้นเลย = ปุ่มตาย ผู้ใช้กดแล้วงง)
   if(_iotPage===2){ islZoom(dir); return; }
+  if(_iotIsFs()){                       // เต็มจอ = ซูมผังที่ยืดเต็มกรอบ (คนละตัวกับซูมตอนอยู่ในหน้า)
+    _iotFsScale = dir===0 ? 1 : Math.min(IOT_FSZ_MAX,Math.max(1,+(_iotFsScale+dir*0.25).toFixed(2)));
+    _applyIotZoom();
+    return;
+  }
   if(dir===0){
     _iotUserZoom=false; _iotScale=1.0;
     if(_iotData){ renderFloorPlan(_iotData.active,_iotData.oae); return; }   // วาดใหม่เพื่อคิดซูมอัตโนมัติ
@@ -9874,6 +9905,112 @@ function iotZoomBtn(dir){
   }
   _applyIotZoom();
 }
+
+/* ============================================================
+   ผังเครื่องจักร — ลาก/ซูมเหมือนแผนที่  (ใช้ร่วมกัน 2 ผัง)
+     · "IOT แยกแผนก" = #iotViewport   · "IOT รวมทุก VSM" = #iotAllVp
+   ------------------------------------------------------------
+   • ลากที่ "พื้นที่ว่าง" (ช่องระหว่างเครื่อง) = เลื่อนผังไปได้ทุกทิศ — เริ่มขยับที่ 2px
+   • ลากที่ "กล่องเครื่อง" ก็เลื่อนได้เหมือนกัน แต่ต้องเกิน 8px ก่อน แล้วกลืน click ทิ้ง
+     → กดดูรายละเอียดเครื่องยังได้เหมือนเดิม แต่ตั้งใจลากแล้วป๊อปอัปจะไม่เด้งใส่
+   • ล้อเมาส์ = ซูมเข้า/ออกที่ตำแหน่งเคอร์เซอร์ (จุดใต้เมาส์อยู่กับที่)
+     จอแคบ (≤860px) หรืออยู่ในหน้า (ไม่เต็มจอ) ต้องกด Ctrl ร่วม — ไม่งั้นไปแย่งการเลื่อนหน้าเว็บ
+   • นิ้ว/ปากกา ไม่แตะต้องเลย — ปล่อยให้ระบบเลื่อน/หนีบซูมเองตามเดิม (มือถือเป็นหลัก ห้ามชน gesture ของ OS)
+   ============================================================ */
+const IOT_VP_SEL='#iotAllVp,#iotViewport';
+const IOT_VP_HIT='.ia-mc,.iot-mc,button,a,input,select,textarea,[role="button"]';
+const IOT_FSZ_MAX=4;
+let _vpPan=null, _vpEatClick=false;
+
+function _vpPannable(vp){ return vp.scrollWidth>vp.clientWidth+1 || vp.scrollHeight>vp.clientHeight+1; }
+function _vpOf(t){ return (t&&t.closest) ? t.closest(IOT_VP_SEL) : null; }
+/* อัปเดตหน้าตาเคอร์เซอร์ให้ตรงกับความจริง — เรียกหลังวาดผัง/ซูม/ปรับขนาดกรอบ */
+function iotPanSync(){
+  document.querySelectorAll(IOT_VP_SEL).forEach(vp=>vp.classList.toggle('vp-pannable',_vpPannable(vp)));
+}
+
+function _vpDown(e){
+  if(e.pointerType&&e.pointerType!=='mouse') return;      // นิ้ว/ปากกา = เลื่อนแบบ native เหมือนเดิม
+  if(e.button!==0) return;
+  const vp=_vpOf(e.target); if(!vp||!_vpPannable(vp)) return;
+  const onHit=!!e.target.closest(IOT_VP_HIT);
+  _vpPan={vp,id:e.pointerId,x:e.clientX,y:e.clientY,sl:vp.scrollLeft,st:vp.scrollTop,th:onHit?8:2,live:false};
+  _vpEatClick=false;
+  try{ vp.setPointerCapture(e.pointerId); }catch(_){}
+  if(!onHit) e.preventDefault();                          // กันลากแล้วกลายเป็นเลือกข้อความ/ลากรูป
+}
+function _vpMove(e){
+  const p=_vpPan; if(!p||e.pointerId!==p.id) return;
+  const dx=e.clientX-p.x, dy=e.clientY-p.y;
+  if(!p.live){
+    if(Math.abs(dx)<p.th&&Math.abs(dy)<p.th) return;      // ยังไม่ถึงระยะ = ถือว่าตั้งใจกด ไม่ใช่ลาก
+    p.live=true; p.vp.classList.add('vp-panning');
+  }
+  p.vp.scrollLeft=p.sl-dx;
+  p.vp.scrollTop =p.st-dy;
+  e.preventDefault();
+}
+function _vpUp(e){
+  const p=_vpPan; if(!p||(e&&e.pointerId!=null&&e.pointerId!==p.id)) return;
+  try{ p.vp.releasePointerCapture(p.id); }catch(_){}
+  p.vp.classList.remove('vp-panning');
+  _vpEatClick=p.live;        // ลากจริง → กลืน click ที่ตามมา 1 ครั้ง (ป๊อปอัปเครื่องจะไม่เด้ง)
+  _vpPan=null;
+}
+document.addEventListener('pointerdown',_vpDown,true);
+document.addEventListener('pointermove',_vpMove,true);
+document.addEventListener('pointerup',_vpUp,true);
+document.addEventListener('pointercancel',_vpUp,true);
+document.addEventListener('click',e=>{
+  if(!_vpEatClick) return;
+  _vpEatClick=false;
+  if(!e.detail) return;      // detail=0 = click ที่มาจากคีย์บอร์ด (Enter/Space) — ไม่ใช่ปลายทางของการลาก ห้ามกลืน
+  e.stopPropagation(); e.preventDefault();
+},true);
+document.addEventListener('keydown',()=>{ _vpEatClick=false; },true);
+/* เข้ากรอบผังเมื่อไหร่ค่อยคิดว่าลากได้ไหม (ขยับในกรอบเดิมไม่ต้องคิดซ้ำ — กันบังคับ layout รัว ๆ) */
+document.addEventListener('pointerover',e=>{
+  const vp=_vpOf(e.target); if(!vp) return;
+  if(e.relatedTarget&&vp.contains(e.relatedTarget)) return;
+  vp.classList.toggle('vp-pannable',_vpPannable(vp));
+},true);
+
+/* ล้อเมาส์ = ซูมโดยตรึงจุดใต้เคอร์เซอร์ไว้กับที่
+   หลักการ: พิกัดในผังของจุดใต้เมาส์ (scroll + ระยะจากขอบกรอบ) พอผังโตขึ้น k เท่า ก็คูณ k
+            แล้วหักระยะจากขอบกรอบออก = scroll ใหม่ที่ทำให้จุดเดิมอยู่ตำแหน่งเดิมบนจอ */
+function _vpWheel(e){
+  const vp=_vpOf(e.target); if(!vp) return;
+  const isAll=(vp.id==='iotAllVp'), fs=_iotIsFs();
+  const wide=window.innerWidth>860;
+  if(!e.ctrlKey&&!e.metaKey&&!(wide&&(isAll||fs))) return;   // นอกจากนี้ปล่อยให้ล้อเลื่อนหน้าตามปกติ
+  e.preventDefault();
+  const r=vp.getBoundingClientRect();
+  const px=e.clientX-r.left, py=e.clientY-r.top;
+  const cx=vp.scrollLeft+px, cy=vp.scrollTop+py;
+  const step=e.deltaY<0?1.15:1/1.15;
+  let k=1;
+  if(isAll){
+    const old=_iotAllScale||1;
+    _iotAllScale=Math.min(3,Math.max(0.15,old*step));
+    k=_iotAllScale/old;
+    _iotAllRenderMap(true);          // ผังรวมวาดใหม่ทั้งก้อน (คืน scroll เดิมให้ก่อน แล้วเราทับด้วยค่าที่ถูก)
+  } else if(fs){
+    const old=_iotFsScale;
+    _iotFsScale=Math.min(IOT_FSZ_MAX,Math.max(1,old*step));
+    k=_iotFsScale/old;
+    _applyIotZoom();
+  } else {
+    const old=_iotScale;
+    _iotUserZoom=true;
+    _iotScale=Math.min(2.5,Math.max(0.3,old*step));
+    k=_iotScale/old;
+    _applyIotZoom();
+  }
+  vp.scrollLeft=cx*k-px;
+  vp.scrollTop =cy*k-py;
+  iotPanSync();
+}
+document.addEventListener('wheel',_vpWheel,{passive:false,capture:true});
 
 /* ===== IoT FLOOR PLAN — แตะที่เครื่องเพื่อดูงาน (เฉพาะตอนเต็มจอ) =====
    ป๊อปอัปแสดง Valve No / Lot / OPR แยกกะ + (ถ้าเครื่องสีส้ม = OAE<75%) แสดงคำขอความช่วยเหลือ
@@ -10046,6 +10183,7 @@ function iotEnterFs(card){
     document.body.appendChild(card);
   }
   card.classList.add('iot-fs');
+  _iotFsScale=1; card.style.removeProperty('--iotfs-z');   // เข้าเต็มจอ = เริ่มที่พอดีกรอบเสมอ
   _iotSplitApplySaved(card);                    // คืนสัดส่วน ต่อกะ⇄ผัง ที่ผู้ใช้เคยลากปรับไว้
   document.documentElement.style.overflow='hidden';
   const b=document.getElementById('iotFsBtn'); if(b){b.textContent='✕';b.title=TT('ออกจากเต็มจอ','Exit fullscreen');}
@@ -10067,6 +10205,7 @@ function iotExitFs(card){
   _iotMapReset(card);                            // เก็บสถานะกางผัง (มือถือ) กลับค่าเริ่มต้น
   card.removeEventListener('keydown',_iotMcKey);
   card.classList.remove('iot-fs');
+  _iotFsScale=1; card.style.removeProperty('--iotfs-z');
   document.documentElement.style.overflow='';
   const b=document.getElementById('iotFsBtn'); if(b){b.textContent='⛶';b.title=TT('เต็มจอ','Fullscreen');}
   if(document.fullscreenElement&&document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
@@ -10184,6 +10323,7 @@ function _iotAllShow(){
         <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></span>${TT('ปิดเครื่อง','Off')}</span>
         <span>🆘 SOS</span>
         <span>👆 ${TT('กดที่เครื่อง/การ์ด VSM เพื่อดูรายละเอียด','Tap a machine / VSM card for details')}</span>
+        <span>✋ ${TT('ลากพื้นที่ว่างในผัง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space in the map to pan · wheel to zoom')}</span>
         <button type="button" id="iotAllLblBtn" class="ia-lbltgl${_iotJobLbl?' on':''}" onclick="iotAllToggleLbl()" aria-pressed="${_iotJobLbl}"
           title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่ · ชี้ที่เครื่องเพื่อดู Valve/Lot เต็ม','Print the valve no. inside every running machine box · hover a machine for full Valve/Lot')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
       </span>
@@ -10790,6 +10930,7 @@ function _iotAllRenderMap(keepScroll){
   if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
   vp.innerHTML=`<svg id="iotAllSvg" viewBox="-14 -14 ${(W+28).toFixed(0)} ${(H+28).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="width:${Math.round((W+28)*_iotAllScale)}px;height:auto">${out.join('')}</svg>`;
   vp.scrollLeft=sl; vp.scrollTop=st;
+  iotPanSync();
   const info=document.getElementById('iotAllInfo');
   if(info){
     const tot=VSM_KEYS.reduce((s,v)=>s+D.per[v].recs.length,0);
@@ -10809,6 +10950,7 @@ function _iotAllRefit(){
     svg.style.width=Math.round((_iotAllWH.W+28)*_iotAllScale)+'px';
   }
   _iotAllFitKpi();
+  iotPanSync();
 }
 function _iotAllQueueRefit(){
   if(_iotAllRefitRaf) return;
