@@ -1,6 +1,15 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.48 — 2026-08-08 — เปิดแอปเร็วขึ้น + เลิกอาการยิ่งใช้ยิ่งช้า (โหลดข้อมูลแบบส่วนต่าง)
+## v3.48 — 2026-08-08 — เปิดแอปเร็วขึ้น + เลิกอาการยิ่งใช้ยิ่งช้า (โหลดข้อมูลแบบส่วนต่าง)  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `8818fce7-8866-4487-8ae4-509068c67e8d` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `734a2c2` (run `31230728775` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> เช็กหน้าเว็บจริงแล้วทั้งสองที่ขึ้น `v3.48` + มี `renderWipCustTable` / `_mergeDelta` / `slim=1` / `window.__PF` ครบ
+> เปิดจริงบน GitHub Pages: รอบแรกโหลดเต็ม → รอบสองเข้าโหมดส่วนต่าง (ก้อนประวัติมี `since=` ทั้งสองคำขอ) ตารางลูกค้าตรงกับค่าคำนวณ
+
+**Schema D1 ที่เพิ่ม** (migration รันอัตโนมัติ + ปั๊ม `schema_meta.ver = 2026-08-07-incremental`):
+คอลัมน์ `updated_at` ทั้ง kpi_records/production_records · trigger 4 ตัว · ตาราง `deleted_records` (tombstone) · index `idx_kpi_saved_at` / `idx_kpi_updated_at` / `idx_prod_updated_at`
 
 ### ที่มา — วัดก่อนแก้
 
