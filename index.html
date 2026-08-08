@@ -33,6 +33,44 @@
   });
 })();
 </script>
+<!-- ⚡ 2026-08-07 — ยิงคำขอก้อนใหญ่ "ตั้งแต่ยังแปลงไฟล์ไม่เสร็จ"
+     วัดจริง: คำขอแรกของแอปเกิดที่ 1,051 ms เพราะต้องรอเบราว์เซอร์อ่าน+แปลง HTML/JS 1.5 MB ให้จบก่อน
+     ระหว่างนั้นเน็ตว่างเปล่า ทั้งที่รู้ล่วงหน้าอยู่แล้วว่าต้องขออะไรบ้าง
+     สคริปต์นี้เล็กและอยู่บนสุด → เริ่มโหลดข้อมูลทับซ้อนกับเวลาแปลงไฟล์ ประหยัดไปตรง ๆ ~1 วินาที
+     • ถ้าอะไรผิดพลาดคืน null → แอปยิงใหม่ตามปกติ (ไม่มีทางทำให้เสีย แค่ไม่ได้เร็วขึ้น)
+     • ใช้ครั้งเดียวแล้วทิ้ง (consume) → การรีเฟรชรอบถัดไปได้ข้อมูลสดเสมอ -->
+<script>
+(function () {
+  try {
+    var API = localStorage.getItem('vsm4_api_url') || 'https://vsm4-api.wiphawas-sketchup.workers.dev';
+    if (!API) return;
+    var d = new Date(), P = function (n) { return String(n).padStart(2, '0'); };
+    var today = d.getFullYear() + '-' + P(d.getMonth() + 1) + '-' + P(d.getDate());   // ต้องตรงกับ todayISO()
+    var get = function (p) {
+      return fetch(API.replace(/\/+$/, '') + p)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return (j && j.ok !== false) ? j : null; })
+        .catch(function () { return null; });
+    };
+    /* ก้อนประวัติมี 2 โหมด (เต็ม / เฉพาะส่วนต่าง) ต้องเดาให้ตรงกับที่แอปจะเลือกใช้จริง
+       ตัวก้อนใหญ่อยู่ใน IndexedDB (อ่านแบบ async ไม่ทันตรงนี้) จึงมิเรอร์ "จุดอ้างอิงเวลา"
+       ไว้ใน localStorage ด้วย (ไม่กี่สิบไบต์ อ่านได้ทันที)
+       ระบุ mode กลับไปให้แอปเทียบ — ถ้าแอปตัดสินใจคนละโหมด จะไม่หยิบของ prefetch ไปใช้ */
+    var sync = '', mode = 'full';
+    try {
+      var mm = JSON.parse(localStorage.getItem('vsm4_allsync') || 'null');
+      if (mm && mm.ver === 1 && mm.day === today && mm.sync) { sync = mm.sync; mode = 'delta'; }
+    } catch (e) {}
+    var q = sync ? '&since=' + encodeURIComponent(sync) : '';
+    window.__PF = {
+      today: today, mode: mode,
+      init:    get('/api/init'),
+      kpiAll:  get('/api/kpi?from=2020-01-01&to=' + today + '&limit=100000&slim=1' + q),
+      prodAll: get('/api/records?from=2020-01-01T00:00:00&to=' + today + '&limit=100000' + q),
+    };
+  } catch (e) { /* prefetch พลาด = แอปทำงานปกติทุกอย่าง แค่ไม่ได้ head start */ }
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!-- โหลดแบบ defer: ไม่บล็อกการแสดงผล/สคริปต์หลัก ถ้าเน็ตช้าหรือบล็อก CDN หน้าจอยังใช้งานได้ (สองตัวนี้ใช้ตอน export/สแกนเท่านั้น) -->
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -3928,8 +3966,45 @@ function _lotFmtBtnsHtml(lotId, valveId) {
   </div>`;
 }
 
+/* ── ⚡ 2026-08-07 — ยุบคำขอ GET ที่ "ซ้ำกันเป๊ะและกำลังวิ่งอยู่พร้อมกัน" ให้เหลือรอบเดียว ──
+   วัดจากของจริง (ดักทุก fetch ตอนเปิดแอป): ยิง 19 คำขอ แต่ URL ไม่ซ้ำแค่ 11
+     /api/kpi?from=วันนี้&to=วันนี้&limit=50000  ยิง 8 ครั้ง จาก 3 จุดที่บังเอิญขอ URL เดียวกัน
+       ① renderHome()      → kRange (ช่วง dashboard = วันนี้)
+       ② renderHome()      → kToday (วันนี้)          ← ①② อยู่ใน Promise.all ก้อนเดียวกันด้วยซ้ำ
+       ③ refreshProcOutput() ← _paintHome() และ ← callback ของ ensureFgMonthLoaded
+     แล้วทั้งชุดเกิดซ้ำอีกรอบ เพราะ renderHome() ถูกเรียก 2 ครั้งตอน boot
+   ⇒ ยุบเฉพาะ "ช่วงที่ยังวิ่งค้างอยู่" ไม่ได้ทำ cache ตามเวลา
+     คำขอที่ยิงทีหลัง (คนละรอบ) ยังได้ข้อมูลสดใหม่เสมอ → ยอดบนจอไม่มีทางเก่ากว่าเดิม
+
+   ❗ต้องแจกสำเนาให้ผู้เรียกที่มาทีหลัง ห้ามแจก object เดียวกัน:
+     mergeRecords() เรียก mcRenameRecs(out) ซึ่ง "แก้ชื่อเครื่องในตัว record เลย" (mutate)
+     และ _syncKpiFromApi() ก็เอา object จาก API ยัดเข้า state.kpiRecords ตรง ๆ
+     ถ้าแชร์ก้อนเดียวกัน ผู้เรียกสองฝั่งจะแก้ของกันเอง — เดิมต่างคนต่างได้ก้อนใหม่จากเน็ต
+     การ clone จึงทำให้ "ผลลัพธ์ที่ผู้เรียกแต่ละคนได้" เหมือนเดิมทุกประการ
+   หมายเหตุ: ถ้า URL เดียวกันถูกเรียกพร้อมกันด้วย opts.timeout ต่างกัน จะยึดของคนแรก
+     ตอนนี้ไม่มีเคสแบบนั้น (URL ที่ตั้ง timeout พิเศษ — ก้อนทั้งหมด/ก้อนเดือน — มีผู้เรียกเจ้าเดียว) */
+const _apiInflight = new Map();   // url → Promise ที่ยังไม่จบ
+function _apiClone(d) {
+  try { return (typeof structuredClone === 'function') ? structuredClone(d) : JSON.parse(JSON.stringify(d)); }
+  catch (e) { return JSON.parse(JSON.stringify(d)); }
+}
 async function api(path, opts = {}) {
   if (!API) throw new Error('ยังไม่ตั้งค่า API URL');
+  const _method = opts.method || (opts.body ? 'POST' : 'GET');
+  // ยุบได้เฉพาะ GET ล้วน ๆ (ไม่มี body) — POST คือการเขียนข้อมูล ห้ามยุบเด็ดขาด
+  if (_method === 'GET' && !opts.body && _apiInflight.has(path)) {
+    if (!opts.silent) _tbStart();                       // แถบโหลดยังนับเหมือนเดิม หน้าจอไม่เปลี่ยนพฤติกรรม
+    try { return _apiClone(await _apiInflight.get(path)); }
+    finally { if (!opts.silent) _tbDone(); }
+  }
+  if (_method === 'GET' && !opts.body) {
+    const p = _apiRaw(path, opts).finally(() => { _apiInflight.delete(path); });
+    _apiInflight.set(path, p);
+    return p;
+  }
+  return _apiRaw(path, opts);
+}
+async function _apiRaw(path, opts = {}) {
   const url = API.replace(/\/+$/, '') + path;
   // silent: ไม่โชว์แถบโหลดด้านบน — ใช้กับการรีเฟรชเบื้องหลัง (auto-sync) เพื่อไม่ให้หน้าจอกระพริบ
   if (!opts.silent) _tbStart();
@@ -6490,7 +6565,10 @@ async function init() {
   ensureValidZone();
   renderZoneTabs();
   populateZoneSelects();
-  renderHome();
+  // ⚡ 2026-08-07 — paint แรกจาก state ในเครื่องเท่านั้น (ไม่ยิง Cloud)
+  //   ถัดไปอีก 2 บรรทัด reload() จะดึงของสดแล้วเรียก renderHome() เต็มรูปแบบให้อยู่แล้ว
+  //   เดิมทั้งสองรอบยิง /api/kpi (วันนี้) + /api/records (วันนี้) ชุดเดียวกันคนละรอบ
+  renderHome({ localOnly: true });
   renderZone();
   // หน้าตั้งค่า render เฉพาะตอนเปิด (setPane) — เลี่ยงสร้างตารางวาล์ว/พนักงานหนักๆ ทุกครั้งที่โหลด
   if (document.querySelector('section.pane.active')?.id === 'pane-settings') renderSettings();
@@ -6508,11 +6586,22 @@ async function init() {
    • reload() → apiInit(0)   บังคับ fresh (แต่ยัง coalesce ถ้ามีคำขอค้าง)
    • refreshProcOutput/pullJobProcTargets → apiInit(15000) ใช้ cache 15 วิ
      (auto-sync รอบ 2 ชม. หรือกดปุ่ม 🔄 ยังรีเฟรช targets/หน้าอื่นให้อยู่) */
+/* ⚡ ดึงผลจาก prefetch หัวไฟล์มาใช้ (ครั้งเดียวแล้วทิ้ง) — ได้ null = ไม่มี/พลาด → ยิงใหม่ตามปกติ */
+async function _pfTake(key) {
+  try {
+    const pf = window.__PF;
+    if (!pf || !pf[key]) return null;
+    const p = pf[key];
+    pf[key] = null;                       // consume: รอบถัดไปต้องไปเอาของสดเสมอ
+    if (pf.today !== todayISO()) return null;   // เปิดแอปคาบเกี่ยงเที่ยงคืน → URL คนละวัน ทิ้งไปเลย
+    return await p;
+  } catch (e) { return null; }
+}
 let _initCache = null, _initCacheAt = 0, _initInflight = null;
 async function apiInit(maxAgeMs = 0) {
   if (_initCache && (Date.now() - _initCacheAt) < maxAgeMs) return _initCache;
   if (_initInflight) return _initInflight;   // มีคำขอค้างอยู่ → ใช้ตัวเดียวกัน (ไม่ยิงซ้ำ)
-  _initInflight = api('/api/init')
+  _initInflight = _pfTake('init').then(r => r || api('/api/init'))
     .then(r => { _initCache = r; _initCacheAt = Date.now(); _initInflight = null; return r; })
     .catch(e => { _initInflight = null; throw e; });
   return _initInflight;
@@ -6809,7 +6898,7 @@ function onProcDateInput() {
   _markProcPreset(null); // ช่วงกำหนดเอง — ไม่ตรงกับปุ่มลัดใด
   refreshProcOutput();
 }
-async function refreshProcOutput() {
+async function refreshProcOutput(localOnly) {
   const f = $('procFrom')?.value || todayISO();
   const t = $('procTo')?.value   || f;
   const inRange = r => {
@@ -6818,7 +6907,9 @@ async function refreshProcOutput() {
   };
   // local ก่อน (รองรับ offline)
   let recs = (state.kpiRecords || []).filter(inRange);
-  if (API) {
+  // ⚡ localOnly (มาจาก _paintHome รอบ init) → วาดตารางจาก state ตามปกติ แต่ข้ามการดึง Cloud
+  //    เพราะ reload() ที่วิ่งอยู่พร้อมกันจะดึงชุดเดียวกันแล้ววาดทับให้เองอยู่แล้ว
+  if (API && !localOnly) {
     try {
       // ดึง records + targets (สถานะงานที่ admin ขยับ) พร้อมกัน → ทุกเครื่องเห็น process ล่าสุดตรงกัน
       const [k, init] = await Promise.all([
@@ -11765,6 +11856,97 @@ async function ensureFgMonthLoaded(force){
    เก็บใน memory ล้วน ไม่ลง localStorage (ก้อนดิบ ~14 MB เกินโควตา) */
 let _allKpi = null, _allProd = null, _allAt = 0, _allBusy = false;
 const ALLJOBS_TTL = 600000;   // 10 นาที — WIP ไม่ต้องสด ๆ ทุกวินาที (WIP OUT มี ensureFgMonthLoaded ดูแลรายเดือนอยู่แล้ว)
+
+/* ══ โหลดแบบ incremental (2026-08-07) ═══════════════════════════════════════
+   ปัญหาเดิม: เปิดแอปทุกครั้ง = ลากประวัติทั้งชีวิตลงมาใหม่หมด และก้อนนี้โตขึ้นเรื่อย ๆ
+     (KPI 9,400 แถวเมื่อ ก.ค. → 15,600 แถวเมื่อ 7 ส.ค.) = ยิ่งใช้ยิ่งช้าโดยธรรมชาติ
+   ตอนนี้: เก็บก้อนล่าสุดไว้ใน IndexedDB + จำ "เวลาที่ซิงก์ล่าสุด" แล้วรอบถัดไปขอเฉพาะส่วนต่าง
+     • แถวใหม่/แถวที่ถูกแก้ → มาจาก ?since= (Worker ดูจาก updated_at ที่ trigger ประทับให้)
+     • แถวที่ถูกลบ         → มาจาก deleted[] (ทะเบียน tombstone ใน D1)
+   ใช้ IndexedDB ไม่ใช่ localStorage เพราะก้อนนี้หลาย MB (localStorage เต็ม 6.5 MB อยู่แล้ว)
+   และ IndexedDB เขียนแบบไม่บล็อกจอ
+
+   ⚠️ กติกาความปลอดภัย — ผิดเงื่อนไขข้อใดข้อหนึ่ง ให้กลับไปโหลดเต็มทันที ไม่เดา:
+     ① Worker ไม่คืน sync_time (รุ่นเก่ายังไม่ deploy) → ไม่มีจุดอ้างอิง = โหลดเต็ม
+     ② cache คนละเวอร์ชัน (CACHE_VER) → shape ข้อมูลอาจเปลี่ยน = โหลดเต็ม
+     ③ cache เก่าเกิน 24 ชม. → โหลดเต็มกันเหนียว (เผื่อมีการลบก่อนมีระบบ tombstone
+        หรือ tombstone เขียนไม่สำเร็จสักครั้ง) — วันละครั้งไม่กระทบความเร็วที่ผู้ใช้รู้สึก
+     ④ IndexedDB ใช้ไม่ได้ (โหมดส่วนตัว/โควตาเต็ม) → โหลดเต็ม เหมือนเดิมทุกประการ  */
+const ALLCACHE_KEY = 'alljobs', ALLCACHE_VER = 1, ALLCACHE_MAXAGE = 24*60*60*1000;
+let _allSync = '';            // sync_time ล่าสุดจาก Worker (ใช้เป็นจุดตั้งต้นรอบหน้า)
+let _allFromCache = false;    // รอบนี้เริ่มจาก cache หรือโหลดเต็ม (ไว้บอกใน log/ตรวจสอบ)
+
+function _idbOpen(){
+  return new Promise((res, rej) => {
+    try {
+      const q = indexedDB.open('vsm4cache', 1);
+      q.onupgradeneeded = () => { try { q.result.createObjectStore('kv'); } catch(e){} };
+      q.onsuccess = () => res(q.result);
+      q.onerror   = () => rej(q.error);
+    } catch (e) { rej(e); }
+  });
+}
+function _idbGet(key){
+  return _idbOpen().then(db => new Promise((res, rej) => {
+    const r = db.transaction('kv','readonly').objectStore('kv').get(key);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  })).catch(() => null);
+}
+function _idbSet(key, val){
+  return _idbOpen().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(val, key);
+    tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error);
+  })).catch(() => false);
+}
+/* เก็บก้อนใหญ่ลง IndexedDB + มิเรอร์ "จุดอ้างอิงเวลา" ลง localStorage
+   ตัวมิเรอร์มีไว้ให้สคริปต์ prefetch หัวไฟล์อ่านได้ทันทีแบบ sync (IndexedDB อ่านไม่ทัน)
+   ❗เขียนมิเรอร์ "หลัง" IndexedDB สำเร็จเท่านั้น — ถ้าสลับกันแล้ว IndexedDB พัง
+     prefetch จะขอ delta ทั้งที่ไม่มีก้อนตั้งต้น = ได้ข้อมูลไม่ครบ */
+function _saveAllCache(day, sync, kpi, prod){
+  return _idbSet(ALLCACHE_KEY, { ver:ALLCACHE_VER, day, at:Date.now(), sync, kpi, prod })
+    .then(okSaved => {
+      try {
+        if (okSaved) localStorage.setItem('vsm4_allsync', JSON.stringify({ ver:ALLCACHE_VER, day, sync }));
+        else localStorage.removeItem('vsm4_allsync');
+      } catch (e) {}
+      return okSaved;
+    });
+}
+
+/* ── เตือนเมื่อ Cloud ตัดข้อมูลเพราะชนเพดานแถว ────────────────────────────────
+   Worker คืน truncated:true เมื่อจำนวนแถวเท่ากับ limit พอดี = น่าจะยังมีต่อแต่ถูกตัด
+   ถ้าเกิดกับ "ก้อนประวัติทั้งหมด" แปลว่ายอด WIP/FG ที่เห็นต่ำกว่าจริง — ต้องบอกให้เห็นทันที
+   (บทเรียน LIMIT 500: ตัดเงียบ ๆ ทำยอดต่ำกว่าจริง 20-25 เท่า กว่าจะจับได้ก็นานมาก)
+   ❗เช็คเฉพาะก้อนประวัติเท่านั้น — query แบบ "เอา 500 ล่าสุด" ตั้งใจให้ได้ 500 พอดีอยู่แล้ว
+     ถ้าเตือนทุกที่จะกลายเป็นเสียงรบกวนจนไม่มีใครอ่าน */
+function _warnIfTruncated(k, p) {
+  const hit = [];
+  if (k && k.truncated) hit.push('KPI ' + nn(k.limit));
+  if (p && p.truncated) hit.push('ยอดผลิต ' + nn(p.limit));
+  if (!hit.length) return false;
+  const msg = 'ข้อมูลย้อนหลังถูกตัดที่เพดาน ' + hit.join(' · ') + ' แถว — ยอด WIP/FG ที่เห็นต่ำกว่าความจริง แจ้งผู้ดูแลให้ขยายเพดาน';
+  console.error('[alljobs] TRUNCATED:', { kpi: k && k.limit, prod: p && p.limit });
+  try { toast(msg, 'red'); } catch (e) {}
+  return true;
+}
+
+/* รวมส่วนต่างเข้ากับก้อนเดิม — แถวที่ถูกลบเอาออก · แถวที่ถูกแก้ทับของเดิม (ไม่ใช่บวกเพิ่ม)
+   ยึด record_id เป็นคีย์เดียว → ยิงซ้ำ/ได้แถวซ้ำมากี่รอบก็ได้ผลลัพธ์เดิมเสมอ (idempotent) */
+function _mergeDelta(base, incoming, deletedIds){
+  const inc = new Map();
+  for (const r of (incoming || [])) { const id = r.record_id; if (id) inc.set(id, r); }
+  /* ❗แถวที่ "ส่งมาใน records" = ยังมีอยู่จริง ณ ตอนนี้ → ต้องชนะทะเบียนลบเสมอ
+     กันเคสลบแล้วบันทึกใหม่ด้วย record_id เดิม (id เป็น idempotency key ที่ client ตั้งเอง)
+     ฝั่ง Worker กรองให้แล้วชั้นหนึ่ง อันนี้เป็นชั้นสำรอง — ผิดพลาดทางนี้ = ข้อมูลหายเงียบ */
+  const del = new Set();
+  for (const id of (deletedIds || [])) if (id && !inc.has(id)) del.add(id);
+  const out = [];
+  for (const r of (base || [])) { const id = r.record_id; if (!del.has(id) && !inc.has(id)) out.push(r); }
+  for (const r of inc.values()) out.push(r);
+  return out;
+}
+
 async function ensureAllJobsLoaded(force){
   if (!API || _allBusy) return false;
   if (!force && _allKpi && (Date.now() - _allAt) < ALLJOBS_TTL) return false;
@@ -11778,21 +11960,105 @@ async function ensureAllJobsLoaded(force){
     { at: force ? 'prodLoading' : '', sub: TT('ยอด WIP ที่เห็นตอนนี้ยังไม่ครบ','WIP figures not complete yet') });
   try {
     const t = todayISO();
+    const KPI_URL  = '/api/kpi?from=2020-01-01&to=' + t + '&limit=100000&slim=1';
+    const PROD_URL = '/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000';
+    const _normProd = r => ({ ...r, record_id:r.record_id||r.recordId, valve_no:r.valveNo||r.valve_no, current_process:r.currentProcess||r.current_process });
+
+    /* ค่าที่คืนออกไป = "ต้องวาดจอใหม่ไหม" — ผู้เรียกใช้ตัดสินใจว่าจะ renderWipBuckets() หรือไม่
+       ❗ต้องนับ "เพิ่งยกก้อนใหญ่ขึ้นมาจาก cache" เป็นการเปลี่ยนแปลงด้วย ไม่ใช่ดูแค่ส่วนต่างจาก Cloud
+         ตอน paint แรก _allKpi ยังว่าง → การ์ด WIP วาดจาก state.kpiRecords (cache 30 วัน) = ตัวเลขไม่ครบ
+         ถ้ารอบนี้หยิบ cache ขึ้นมาแล้วบังเอิญไม่มีอะไรเปลี่ยนเลย แล้วคืน false
+         → จอจะค้างที่ตัวเลขไม่ครบทั้งวัน (ของเดิมโหลดเต็มเสร็จคืน true เสมอ จึงวาดทับให้ทุกครั้ง) */
+    let justLoadedCache = false;
+    // ① ยังไม่มีอะไรใน memory → ลองหยิบก้อนล่าสุดจาก IndexedDB
+    if (!_allKpi) {
+      const c = await _idbGet(ALLCACHE_KEY);
+      /* cache ใช้ได้เฉพาะ "วันเดียวกับที่สร้าง" เท่านั้น — เพราะทั้งสอง URL ล็อก to=<วันนี้>
+         ถ้าข้ามวันแล้วยังต่อ delta ของเมื่อวาน แถวที่ลงวันที่ล่วงหน้า (เลยขอบ to ของเมื่อวาน)
+         จะไม่อยู่ทั้งใน cache และใน since → หายเงียบ ๆ · ข้ามวัน = โหลดเต็มรอบเดียวจบ */
+      if (c && c.ver === ALLCACHE_VER && c.sync && c.day === t
+          && Array.isArray(c.kpi) && Array.isArray(c.prod)
+          && (Date.now() - (c.at || 0)) < ALLCACHE_MAXAGE) {
+        /* ❗กรองด้วยทะเบียนลบฝั่งเครื่องทุกครั้งที่หยิบ cache ออกมาใช้
+           _deletedKpiIds/_deletedProdIds = record ที่ผู้ใช้ลบจากเครื่องนี้ แต่ยังไม่ขึ้น Cloud
+           (ลบตอนออฟไลน์ / ลบแล้ว POST ไม่สำเร็จ) — Cloud จึงไม่มีทางรายงานมาใน deleted[]
+           ถ้าไม่กรองตรงนี้ แถวที่ผู้ใช้ลบไปแล้วจะยังถูกนับใน WIP ต่อไปจนกว่าจะโหลดเต็มรอบหน้า
+           (ของเดิมโหลดเต็มทุกครั้งเลยกรองทิ้งอยู่แล้ว — เป็นพฤติกรรมที่ต้องรักษาไว้) */
+        _allKpi  = c.kpi.filter(r => !_deletedKpiIds.has(r.record_id));
+        _allProd = c.prod.filter(r => !_deletedProdIds.has(r.record_id));
+        _allSync = c.sync; _allFromCache = true;
+        justLoadedCache = true;
+      }
+    }
+
+    // ② มีก้อนเดิม + จุดอ้างอิงเวลา → ขอเฉพาะส่วนต่าง · ไม่มี → โหลดเต็มแบบเดิมทุกประการ
+    let delta = !!(_allKpi && _allProd && _allSync);
+    if (delta) {
+      loadStep('alljobs', null, TT('กำลังตรวจข้อมูลที่เปลี่ยน…','checking changes…'));
+      const q = '&since=' + encodeURIComponent(_allSync);
+      // หยิบของ prefetch ได้เฉพาะเมื่อมันเดาโหมดตรงกับที่เราตัดสินใจจริง (ดูสคริปต์หัวไฟล์)
+      const _pfOk = (window.__PF && window.__PF.mode === 'delta');
+      const [k, p] = await Promise.all([
+        (_pfOk ? _pfTake('kpiAll')  : Promise.resolve(null)).then(r => r || api(KPI_URL  + q, { silent:true, timeout:150000 }).catch(()=>null)),
+        (_pfOk ? _pfTake('prodAll') : Promise.resolve(null)).then(r => r || api(PROD_URL + q, { silent:true, timeout:150000 }).catch(()=>null)),
+      ]);
+      /* ❗ห้ามล้าง _allKpi/_allProd ทิ้งตรงนี้เด็ดขาด (เคยเขียนพลาดมาแล้ว)
+         ทั้งสองตัวคือ "ข้อมูลครบทุกช่วง" ที่ยอด WIP/WIP IN ยึดเป็นหลัก
+         ถ้าล้างทิ้ง getWipBuckets จะตกไปใช้ state.kpiRecords (cache 30 วัน) → ยอดแกว่งทันที
+         ซึ่งคือบั๊กเดิมที่เคยแก้ไปแล้ว (WIP ได้ 502,077 / 749,013 / 1,163,120 แล้วแต่ cache)
+
+         ① ดึงส่วนต่างไม่สำเร็จ (เน็ตสะดุด / timeout → api() ถูก catch เป็น null)
+            → เก็บก้อนเดิมไว้ใช้ต่อ แล้วลองใหม่รอบหน้า ยอดยังถูกเหมือนเดิมทุกประการ
+         ② ได้คำตอบแต่ไม่มี sync_time = คุยกับ Worker รุ่นเก่า (เช่นย้อน deploy กลับ)
+            → เลิกใช้โหมด delta ทิ้งจุดอ้างอิงเวลา + ล้างมิเรอร์ แล้วตกไปโหลดเต็มในรอบนี้เลย */
+      if (!k || !p) return false;                       // ①
+      if (!k.sync_time || !p.sync_time) {               // ② → ตกไปโหลดเต็มข้างล่าง
+        _allSync = '';
+        try { localStorage.removeItem('vsm4_allsync'); } catch (e) {}
+        delta = false;
+      } else {
+        const kRecs = (k.records || []).filter(r => !_deletedKpiIds.has(r.record_id));
+        const pRecs = (p.records || []).map(_normProd).filter(r => !_deletedProdIds.has(r.record_id));
+        mcRenameRecs(kRecs); mcRenameRecs(pRecs);
+        const changed = kRecs.length + pRecs.length + (k.deleted||[]).length + (p.deleted||[]).length;
+        // กรองทะเบียนลบฝั่งเครื่องซ้ำหลัง merge ด้วย (เผื่อผู้ใช้กดลบระหว่างรอบซิงก์)
+        _allKpi  = _mergeDelta(_allKpi,  kRecs, k.deleted).filter(r => !_deletedKpiIds.has(r.record_id));
+        _allProd = _mergeDelta(_allProd, pRecs, p.deleted).filter(r => !_deletedProdIds.has(r.record_id));
+        _allSync = k.sync_time < p.sync_time ? k.sync_time : p.sync_time;   // ยึดอันเก่ากว่า = ไม่มีทางข้ามแถว
+        _allAt = Date.now();
+        _wbCache = null;
+        _postFgRecs = _allKpi;
+        _saveAllCache(t, _allSync, _allKpi, _allProd);
+        // เพิ่งยกก้อนใหญ่ขึ้นจาก cache = ต้องวาดทับตัวเลขไม่ครบเสมอ · ไม่งั้นดูแค่ส่วนต่างพอ
+        return justLoadedCache || changed > 0;
+      }
+    }
+
+    /* ⚡ 2026-08-07 — slim=1: ขอเฉพาะ 12 คอลัมน์ที่การคิด WIP + กล่องงานหลัง FG ใช้จริง
+       (จาก 32 คอลัมน์) → raw 16.26 MB → 3.91 MB · gzip 1,360 → 363 KB
+       ตัวหนักคือ shifts/shift_detail/operator/ค่า KPI รายแถว ซึ่งเส้นทางนี้ไม่ได้อ่านเลย
+       พิสูจน์แล้วว่ายอดทุกตัวเท่าเดิม (ลบคอลัมน์ออกจาก _allKpi แล้วคำนวณใหม่ = ต่างกัน 0 รายการ)
+       Worker รุ่นเก่าที่ยังไม่รู้จัก slim จะคืน 32 คอลัมน์เหมือนเดิม → ปล่อยหน้าแอปก่อนได้ ไม่พัง
+       ❗prod ไม่ตัด: ตัดแล้วยอด WIP เพี้ยน (completedProcesses จำเป็น) แถมประหยัดแค่ 1% */
+    const _pfFull = (window.__PF && window.__PF.mode === 'full');
     const [k, p] = await Promise.all([
-      api('/api/kpi?from=2020-01-01&to=' + t + '&limit=100000', { silent:true, timeout:150000 }),
-      api('/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000', { silent:true, timeout:150000 }),
+      (_pfFull ? _pfTake('kpiAll')  : Promise.resolve(null)).then(r => r || api(KPI_URL,  { silent:true, timeout:150000 })),
+      (_pfFull ? _pfTake('prodAll') : Promise.resolve(null)).then(r => r || api(PROD_URL, { silent:true, timeout:150000 })),
     ]);
     if (!k?.records || !p?.records) return false;
+    _warnIfTruncated(k, p);          // ชนเพดานแถว = ยอดต่ำกว่าจริง ต้องเห็นทันที
     loadStep('alljobs', null, TT('กำลังประมวลผลข้อมูล…','processing data…'));
     await yieldUI();                 // ปล่อยให้จอวาดป้าย ก่อนคำนวณก้อนใหญ่ (normalize หมื่นแถว)
     _allKpi  = k.records.filter(r => !_deletedKpiIds.has(r.record_id));
-    _allProd = p.records
-      .map(r => ({ ...r, record_id:r.record_id||r.recordId, valve_no:r.valveNo||r.valve_no, current_process:r.currentProcess||r.current_process }))
-      .filter(r => !_deletedProdIds.has(r.record_id));
+    _allProd = p.records.map(_normProd).filter(r => !_deletedProdIds.has(r.record_id));
     mcRenameRecs(_allKpi); mcRenameRecs(_allProd);   // ★ ชื่อเครื่องใหม่ (M4/R2) — normalize ก่อนคิดทุกยอด
     _allAt = Date.now();
+    _allFromCache = false;
     _wbCache = null;                 // ข้อมูลชุดใหม่ → บังคับคิด 3 ถังใหม่
     _postFgRecs = _allKpi;           // กล่องงานหลัง FG ใช้ชุดเดียวกัน (ไม่ต้องดึงซ้ำอีก 10 MB)
+    // จำจุดอ้างอิงเวลาไว้ให้รอบหน้าขอเฉพาะส่วนต่าง (Worker เก่าไม่คืน sync_time → คงเป็น '' = โหลดเต็มต่อไป)
+    _allSync = (k.sync_time && p.sync_time) ? (k.sync_time < p.sync_time ? k.sync_time : p.sync_time) : '';
+    if (_allSync) _saveAllCache(t, _allSync, _allKpi, _allProd);
     return true;
   } catch (e) { return false; }      // offline → ใช้ cache ไปก่อน
   finally { _allBusy = false; loadOff('alljobs'); }
@@ -12074,6 +12340,29 @@ function renderWipBuckets(){
       </div>` : '';
   }
   renderIotWipStrip(b);
+  renderWipCustTable(b);      // ★ ตารางลูกค้าใช้ข้อมูลก้อนเดียวกัน → ต้องวาดพร้อมกันเสมอ (ดูด้านล่าง)
+}
+
+/* ── ตารางลูกค้า + ยอด WIP หัวหน้าติดตามงาน (2026-08-08) ─────────────────────
+   บั๊กที่แก้: ตารางนี้เคยวาดอยู่ใน _paintHome() ที่เดียว แต่ข้อมูลย้อนหลังทั้งหมด (_allKpi)
+   มาถึงทีหลังผ่าน startWipinSync → ensureAllJobsLoaded ซึ่ง callback เรียกแค่
+   renderWipBuckets() + renderWipInSummary() ไม่ได้เรียก _paintHome()
+   ⇒ การ์ด 3 ถังอัปเดตเป็นยอดจริง แต่ตารางลูกค้าค้างที่ยอดจาก cache 30 วัน
+   วัดจริงเมื่อ 8 ส.ค.: จอโชว์ 143,922 / 34,216 / 10,303 / 4,701
+                    ทั้งที่ของจริง 842,292 / 173,127 / 47,799 / 39,805 (ต่ำกว่าจริง ~6 เท่า)
+   ทางแก้: ย้ายมาเป็นฟังก์ชันของตัวเอง แล้วให้ renderWipBuckets() เรียกให้เสมอ
+   → สองมุมมองนี้อ่าน getWipBuckets() ก้อนเดียวกัน จึงไม่มีทางวาดไม่พร้อมกันอีก */
+function renderWipCustTable(b){
+  const wb = b || getWipBuckets();
+  if ($('hWip')) $('hWip').textContent = nn(wb.wip.total);
+  const custTable = $('custTable');
+  if (!custTable) return;
+  const custBody = custTable.querySelector('tbody');
+  if (!custBody) return;
+  const wipRows = Object.entries(wb.wip.byCust).filter(([, v]) => (v || 0) > 0).sort((a,b)=>b[1]-a[1]);
+  custBody.innerHTML = wipRows.length
+    ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v)}</span></td></tr>`).join('')
+    : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
 }
 // ยอดที่ "เข้า/ออก เมื่อวาน" — WIP IN นับตาม ts ที่รับเข้า · WIP OUT นับตามวันที่ถึง FG
 function _wipInYesterday(b){
@@ -13259,8 +13548,14 @@ async function renderHome(opts) {
                         : TT('📈 กำลังเตรียม Dashboard…','📈 Preparing dashboard…'),
     { at, sub: TT('กำลังคำนวณจากข้อมูลในเครื่อง','computing from local data') });
   await yieldUI();                    // ให้แถบสถานะได้วาดก่อนเริ่มคำนวณก้อนใหญ่
-  try { _paintHome(); } catch (e) {}  // 1) paint จาก state ทันที — ไม่รอ network
-  if (!API || _homeSyncing) { if (seq === _homeSeq) loadOff('home'); return; }   // offline หรือกำลัง sync อยู่ → พอแค่ paint local
+  const _localOnly = !!(opts && opts.localOnly);
+  try { _paintHome(_localOnly); } catch (e) {}  // 1) paint จาก state ทันที — ไม่รอ network
+  /* ⚡ 2026-08-07 — localOnly: วาดจาก state อย่างเดียว ไม่ต้องดึง Cloud
+     ใช้ตอน init() ซึ่งเรียก renderHome() แล้ว reload() ก็เรียกซ้ำอีกทันทีอยู่ดี
+     → เดิมดึงชุดเดียวกัน 2 รอบ (kRange/kToday/records) + คำนวณ _paintHome ก้อนใหญ่ 2 รอบ
+     หน้าจอที่ผู้ใช้เห็นเหมือนเดิมเป๊ะ เพราะ paint แรกก็วาดจาก state เหมือนเดิม
+     แล้ว reload() วาดทับด้วยข้อมูลสดในไม่กี่วินาทีถัดมาตามเดิม */
+  if (!API || _homeSyncing || _localOnly) { if (seq === _homeSeq) loadOff('home'); return; }   // offline หรือกำลัง sync อยู่ → พอแค่ paint local
   loadStep('home', null, TT('กำลังดึงข้อมูลล่าสุดจาก Cloud…','fetching latest from Cloud…'));
   _homeSyncing = true;
   const before = _homeSig();
@@ -13294,7 +13589,7 @@ async function renderHome(opts) {
   finally { _homeSyncing = false; if (seq === _homeSeq) loadOff('home'); }
 }
 
-function _paintHome() {
+function _paintHome(localOnly) {
   // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
   const today = todayISO();
   const dFrom = $('dashFrom')?.value || today;
@@ -13372,24 +13667,13 @@ function _paintHome() {
         .reduce((s, r) => s + (+r.quantity || 0), 0);
       $('hCompleted').textContent = nn(_monthDone);
     }
-    // WIP + ตารางลูกค้า ใช้ "กฎยอดจริง" ผ่าน computeWipBuckets() (แหล่งเดียวกับการ์ด 3 ถัง) → ตัวเลขตรงกันทั้งแอป
-    const _wb = getWipBuckets();
-    if ($('hWip'))       $('hWip').textContent       = nn(_wb.wip.total);
-
-    // Customer table (อยู่ในแท็บติดตามงาน) — เฉพาะ WIP (กำลังผลิต)
-    const custTable = $('custTable');
-    if (custTable) {
-      const custBody = custTable.querySelector('tbody');
-      const wipRows = Object.entries(_wb.wip.byCust).filter(([, v]) => (v || 0) > 0).sort((a,b)=>b[1]-a[1]);
-      custBody.innerHTML = wipRows.length
-        ? wipRows.map(([c, v]) => `<tr><td><b>${escapeHtml(c)}</b></td><td class="center"><span class="tag tag-orange">${nn(v)}</span></td></tr>`).join('')
-        : '<tr><td colspan="2" class="center muted">ไม่มีงาน WIP</td></tr>';
-    }
     // การ์ด 3 ถัง (WIP IN 1.5 / WIP / WIP OUT) + แถบ IOT + สรุปใต้ฟอร์มรับเข้า
+    // ★ 2026-08-08: ยอด WIP หัวหน้า + ตารางลูกค้า ย้ายไปอยู่ใน renderWipBuckets() แล้ว
+    //   (เดิมวาดตรงนี้ที่เดียว → ตกรอบตอนข้อมูลย้อนหลังมาถึงทีหลัง ดู renderWipCustTable)
     renderWipBuckets();
     renderWipInSummary();
     // Process table — เฉพาะ VSM ที่กำลังดู (พนักงาน = สายตัวเอง · Admin = สายที่เลือก) ใช้ช่วงเวลาของตัวเอง (procFrom/procTo)
-    refreshProcOutput();
+    refreshProcOutput(localOnly);   // localOnly = วาดจาก state เหมือนเดิม แต่ไม่ยิง Cloud ซ้ำ (reload() ยิงให้อยู่แล้ว)
   } catch (e) {
     toast('โหลด dashboard ไม่สำเร็จ', 'red');
   }
