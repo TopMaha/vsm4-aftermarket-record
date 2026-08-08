@@ -1,6 +1,12 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.49 — 2026-08-08 — ผังเครื่องจักรลาก/ซูมได้เหมือนแผนที่ (IOT รวม + IOT แยกแผนก)  🚧 ยังไม่ deploy
+## v3.49 — 2026-08-08 — ผังเครื่องจักรลาก/ซูมได้เหมือนแผนที่ (IOT รวม + IOT แยกแผนก)  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `d5283cb0-9633-4393-9a78-dd987fad74be` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `7a55ec2` (run `31252344837` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> ยืนยันของจริงแล้วทั้งสองที่: หัวเว็บขึ้น `v3.49` · มี `--iotfs-z` / `vp-pannable` / `_iotFsScale` / `IOT_VP_SEL` ครบ · ไม่เหลือ `v3.48`
+> เปิดบนเบราว์เซอร์จริง (Worker URL) ไม่มี error ใน console · ทดสอบเต็มจอ z=1→2 ได้ 552×901 → 1084×1782 · `vp-pannable` ติด · เคอร์เซอร์เป็น `grab`
 
 ### ที่มา
 
