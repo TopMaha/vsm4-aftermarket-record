@@ -1,6 +1,14 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.51 — 2026-08-09 — IOT หน้า 2: ตารางขายรายวัน (Valve No × วันที่) · กดตัวเลขดูล็อต+ตำแหน่งงาน · เลิกแบ่งจอซ้าย-ขวา  ⏳ ยังไม่ deploy
+## v3.51 — 2026-08-09 — IOT หน้า 2: ตารางขายรายวัน (Valve No × วันที่) · กดตัวเลขดูล็อต+ตำแหน่งงาน · เลิกแบ่งจอซ้าย-ขวา  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `f1b0ddbd-f2f7-4f04-842d-b850a0de7846` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `01fa82b` (run `133` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> ยืนยันของจริงแล้วทั้งสองที่ (curl พร้อม `?cb=`): หัวเว็บขึ้น `v3.51` · มี `_ismHtml` / `_ismBindScroll` / `islCellPop` / `_islSumQty` / `ism-rng` / `ism-th2` ครบ · ไม่เหลือ `v3.50` และไม่เหลือ `_ISL_GROUPS` (ตัวแบ่งจอซ้าย-ขวาของเดิม) เลย
+> เปิดบนเบราว์เซอร์จริงที่ Worker URL: โหลดแผน 266 · prod 10,000 record **ไม่มี error ใน console**
+> ตารางขายรายวันขึ้น 140 แถว × 33 คอลัมน์ · ยอด **213,409 ตรงกันทั้ง 4 ทาง** (บวกทุกแถว / ช่องรวมแถวท้าย / บวกทุกคอลัมน์วันที่ / แผ่น KPI) · badRows 0/140 · badCols 0/31
+> ป้ายช่วงวันที่ทำงานจริง (`👁 เห็นวันที่ 6–14 · ซ่อนอยู่ 22 วัน · 207,229 ชิ้น`) · กดช่องแล้วป๊อปอัปขึ้นครบ (flow 10 ชิป · "📍 ตอนนี้อยู่ที่ SFG 1,400 ชิ้น ล่าสุด 2026-08-08 🏭 G-2022 VSM4")
 
 ### ที่มา
 
