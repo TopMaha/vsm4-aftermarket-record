@@ -1182,6 +1182,10 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .iot-fs #iotSalesPage > .isl-wrap{flex:1 1 auto;min-height:0;align-items:stretch}
 .iot-fs #iotSalesPage > .isl-wrap > .isl-grp{display:flex;flex-direction:column;min-height:0}
 .iot-fs #iotSalesPage > .isl-wrap > .isl-grp > .isl-gh{flex:0 0 auto}
+/* ★ 2026-08-09 — ตารางขายรายวัน (matrix) เต็มจอ: กล่องนอกกินความสูงที่เหลือ แล้วให้ .ism-sc เลื่อนเอง
+   → หัวตาราง (sticky top) + คอลัมน์ Valve/รวม (sticky left) + แถวรวม (sticky bottom) ค้างครบทั้ง 3 ด้าน */
+.iot-fs #iotSalesPage > .ism-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.iot-fs #iotSalesPage > .ism-wrap > .ism-hdbar{flex:0 0 auto}
 
 /* ★ 2026-08-03 (req #1) — เต็มจอ + หน้า 2 = "บอร์ดติดตามงานขายล้วน ๆ" เต็มจอจริง
    ของเดิม: เต็มจอยังคงแบ่งครึ่งจอให้แผงต่อกะ + แถบ OAE/WIP ค้างอยู่ด้านบน
@@ -1403,6 +1407,213 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   .isl-sc{max-height:64vh}
 }
 
+/* ═══ ★ 2026-08-09 (req) — "ตารางขายรายวัน" (sales matrix): แถว = Valve No · คอลัมน์ = วันที่ ═══
+   ปัญหาที่แก้: Valve No เบอร์เดียวถูกขายหลายล็อต คนละวัน — มุมมองรายการเดิมโชว์เป็นคนละแถว
+   คนดูต้องไล่หาเองว่า "เบอร์นี้เดือนนี้ขายวันไหนบ้าง" ตารางนี้ตอบด้วยการกวาดตาแถวเดียว
+     VF1349 Lot 12345 ขาย 01/08 = 1000  +  VF1349 Lot 65478 ขาย 03/08 = 1000
+     → แถวเดียว: ช่อง 01/08 = 1000 · ช่อง 03/08 = 1000
+   กดที่ตัวเลข = เปิดรายละเอียด "ล็อตไหนบ้าง · ตอนนี้อยู่ที่ process ไหน เครื่องไหน"
+   เลิกแบ่งซ้าย-ขวา (MSI and SWE | OES&OEM) — ตารางเดียวเต็มความกว้าง กรองด้วยปุ่มกลุ่มลูกค้าแทน
+   คอลัมน์ Valve No + รวม ตรึงไว้ซ้ายมือ (sticky) → เลื่อนดูวันที่ 25 ก็ยังรู้ว่ากำลังอ่านเบอร์อะไร */
+#iotSalesPage{--ism-vw:calc(140px*var(--isl-s));--ism-tw:calc(88px*var(--isl-s));--ism-dw:calc(54px*var(--isl-s))}
+/* ปุ่มสลับมุมมอง / ช่วงวันที่ — หน้าตาเดียวกับ .isl-seg เพื่อให้แถบหัวอ่านเป็นภาษาเดียวกัน */
+.isl-vseg{display:inline-flex;background:#E8EFFC;border:1.5px solid var(--blue-soft);border-radius:10px;padding:2px;gap:2px}
+.isl-vseg button{border:0;background:transparent;border-radius:8px;padding:4px 9px;cursor:pointer;font-family:inherit;
+  font-size:calc(11px*var(--isl-s));font-weight:800;color:#334155;display:inline-flex;align-items:center;gap:4px;
+  transition:background .14s,color .14s,box-shadow .14s;white-space:nowrap}
+.isl-vseg button:hover{background:rgba(255,255,255,.7)}
+.isl-vseg button.on{background:var(--card);color:var(--blue-dark);box-shadow:0 1px 3px rgba(30,66,159,.18)}
+.isl-vseg button:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px}
+@media (max-width:760px){.isl-vseg .vs-t{display:none}}
+
+.ism-wrap{border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--card);
+  box-shadow:var(--shadow);min-width:0}
+.ism-hdbar{display:flex;align-items:center;gap:9px;padding:6px 11px;flex-wrap:wrap;
+  background:linear-gradient(120deg,var(--blue-dark),var(--blue) 62%,#3B82F6);color:#fff}
+.ism-hdbar .nm{font-size:calc(12px*var(--isl-s));font-weight:900;letter-spacing:.3px}
+.ism-hdbar .n{margin-left:auto;font-size:calc(10px*var(--isl-s));font-weight:700;color:rgba(255,255,255,.88);
+  font-variant-numeric:tabular-nums}
+/* ★ 2026-08-09 (req) — ป้าย "ตอนนี้เห็นวันที่ไหนอยู่ / ซ่อนอยู่กี่วัน"
+   ที่มา: ผู้ใช้เทียบ 213,409 (รวมทั้งเดือน) กับ 180,399 (ยอดวันที่ 31) แล้วคิดว่าตัวเลขเพี้ยน
+   เพราะวันที่ 1–7 เลื่อนพ้นจอไปทางซ้ายจนมองไม่เห็น — ต้องบอกตรง ๆ ว่ายังมีของที่ไม่ได้อยู่ในสายตา */
+.ism-rng{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.42);
+  background:rgba(255,255,255,.16);color:#fff;border-radius:99px;padding:2px 10px;font-family:inherit;
+  font-size:calc(9.6px*var(--isl-s));font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;
+  cursor:pointer;transition:background .14s}
+.ism-rng:hover{background:rgba(255,255,255,.3)}
+.ism-rng:focus-visible{outline:2.5px solid #fff;outline-offset:1px}
+.ism-rng[hidden]{display:none!important}
+.ism-rng .hid{background:#FDE68A;color:#78350F;border-radius:99px;padding:0 6px;font-weight:900}
+.ism-hdbar .gp{height:4px;background:rgba(255,255,255,.22);border-radius:99px;width:100%;overflow:hidden;margin-top:1px}
+.ism-hdbar .gp i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6EE7B7,#34D399);
+  transition:width .5s cubic-bezier(.22,.61,.36,1)}
+/* ตัวเลื่อนจริงของตาราง — หัวตาราง/คอลัมน์ซ้าย sticky ผูกกับกล่องนี้ (ทั้งโหมดปกติและเต็มจอ) */
+.ism-sc{overflow:auto;-webkit-overflow-scrolling:touch;max-height:60vh;overscroll-behavior:contain}
+.iot-fs .ism-sc{max-height:none;flex:1 1 auto;min-height:0}
+.ism-t{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;
+  font-size:calc(11.5px*var(--isl-s));font-variant-numeric:tabular-nums}
+.ism-t thead th{position:sticky;top:0;z-index:3;background:#EEF3FC;color:#31456B;font-weight:900;
+  padding:4px 6px;white-space:nowrap;border-bottom:1.5px solid var(--blue-soft);
+  box-shadow:0 2px 4px rgba(30,66,159,.07)}
+.ism-t thead th.s{cursor:pointer;user-select:none;font-size:calc(9.5px*var(--isl-s));letter-spacing:.4px;
+  text-transform:uppercase;-webkit-tap-highlight-color:rgba(37,99,235,.2)}
+.ism-t thead th.s:hover{background:var(--blue-soft);color:var(--blue-dark)}
+.ism-t thead th.on{color:var(--blue);box-shadow:inset 0 -2.5px 0 var(--blue),0 2px 4px rgba(30,66,159,.07)}
+.ism-t thead th.s:focus-visible{outline:2.5px solid var(--blue);outline-offset:-2px}
+.ism-t thead th .ar{display:inline-block;margin-left:3px;font-size:.92em;opacity:.28}
+.ism-t thead th.on .ar{opacity:1;color:var(--blue)}
+/* คอลัมน์ตรึงซ้าย — พื้นหลัง inherit จาก <tr> เพื่อให้ลายสลับ/hover/แถวแดงยังมองเห็นใต้คอลัมน์ตรึง */
+/* ลายสลับแถวชัดขึ้นกว่าเดิม — ตารางกว้าง 31 คอลัมน์ ถ้าลายจางไปสายตาจะหลุดแถวตอนกวาดไปทางขวา */
+.ism-t tbody tr{background:var(--card);transition:background .12s}
+.ism-t tbody tr:nth-child(even){background:#F5F8FD}
+.ism-t tbody tr:hover{background:var(--blue-light)}
+.ism-t tbody tr.s-late{background:#FFF7F7}
+.ism-t tbody tr.s-late:hover{background:#FFECEC}
+.ism-t th.c-v,.ism-t td.c-v{position:sticky;left:0;z-index:2;background:inherit;text-align:left;
+  width:var(--ism-vw);min-width:var(--ism-vw);max-width:var(--ism-vw)}
+/* ★ คอลัมน์ "รวมทั้งเดือน" ต้องอ่านออกทันทีว่าเป็นช่องสรุป ไม่ใช่วันที่อีกวัน
+   (ผู้ใช้เคยเทียบเลขในช่องนี้กับเลขรายวันแล้วคิดว่าไม่ตรง) → พื้นฟ้าอ่อน + เส้นคั่นหนา */
+.ism-t th.c-tot,.ism-t td.c-tot{position:sticky;left:var(--ism-vw);z-index:2;text-align:right;
+  width:var(--ism-tw);min-width:var(--ism-tw)}
+.ism-t td.c-tot{background:inherit;background-image:linear-gradient(rgba(26,86,219,.055),rgba(26,86,219,.055));
+  box-shadow:inset 3px 0 0 -1px rgba(30,66,159,.14),4px 0 7px -3px rgba(15,23,42,.22)}
+.ism-t thead th.c-v,.ism-t thead th.c-tot,.ism-t tfoot td.c-v,.ism-t tfoot td.c-tot{z-index:5}
+.ism-t thead th.c-v{background:#EEF3FC}
+.ism-t thead th.c-tot{background:#DEE8F9;box-shadow:4px 0 7px -3px rgba(15,23,42,.22),0 2px 4px rgba(30,66,159,.07)}
+/* หัวคอลัมน์รวม 2 บรรทัด: "รวม" ตัวหนา + "ทั้งเดือน" ตัวเล็ก — ไม่มีทางอ่านสลับกับหัววันที่ */
+.ism-th2{display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.1;gap:0}
+.ism-th2 em{font-style:normal;font-size:.82em;font-weight:800;opacity:.72;text-transform:none;letter-spacing:0}
+.ism-t td.c-v,.ism-t td.c-tot{border-bottom:1px solid #EEF2F8}
+/* เส้นสถานะข้างแถว (ภาษา Andon เดียวกับมุมมองรายการ) */
+.ism-t td.c-v{position:sticky;padding:3px 7px 3px calc(7px + var(--isl-rail));vertical-align:middle}
+.ism-t td.c-v::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--isl-rail);background:#CBD5E1}
+.ism-t tr.s-run  td.c-v::before{background:linear-gradient(180deg,#FBBF24,#F59E0B)}
+.ism-t tr.s-done td.c-v::before{background:linear-gradient(180deg,#34D399,#059669)}
+.ism-t tr.s-late td.c-v::before{background:linear-gradient(180deg,#F87171,#DC2626)}
+.ism-v{display:flex;align-items:center;gap:5px;min-width:0}
+.ism-v .vn{border:0;background:transparent;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-weight:800;
+  color:var(--blue-dark);font-size:calc(11.8px*var(--isl-s));letter-spacing:.2px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;min-width:0;text-align:left}
+.ism-v .vn:hover{color:var(--blue);text-decoration:underline}
+.ism-v .vn:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px;border-radius:4px}
+.ism-sub{display:block;font-size:calc(8.6px*var(--isl-s));font-weight:700;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ism-cu{font-size:calc(8.2px*var(--isl-s));font-weight:900;border-radius:99px;padding:0 5px;border:1px solid;flex:0 0 auto;
+  letter-spacing:.2px}
+.cu-MSI{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
+.cu-SWE{background:#F5F3FF;color:#6D28D9;border-color:#DDD6FE}
+.cu-OES{background:#ECFEFF;color:#0E7490;border-color:#A5F3FC}
+.cu-OTH{background:#F8FAFC;color:#64748B;border-color:#E2E8F0}
+/* ช่อง "รวมทั้งเดือน" ของแถว — ยอดสั่ง + แถบความคืบหน้าที่ผลิตได้จริง */
+.ism-t td.c-tot{padding:3px 8px}
+.ism-t td.c-tot b{display:block;font-size:calc(11.6px*var(--isl-s));font-weight:900;color:var(--blue-dark);
+  letter-spacing:-.3px;line-height:1.15}
+.ism-t td.c-tot .tp{display:block;height:3px;border-radius:99px;background:#E6ECF5;overflow:hidden;margin-top:2px}
+.ism-t td.c-tot .tp i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F59E0B,#FBBF24);
+  transition:width .45s cubic-bezier(.22,.61,.36,1)}
+.ism-t tr.s-done td.c-tot .tp i{background:linear-gradient(90deg,#059669,#34D399)}
+.ism-t tr.s-late td.c-tot .tp i{background:linear-gradient(90deg,#DC2626,#F87171)}
+.ism-t td.c-tot .pcn{display:block;font-style:normal;font-size:calc(8.6px*var(--isl-s));font-weight:800;color:var(--muted)}
+.ism-t td.c-tot .pcn.z{color:#B6C2D4}   /* 0% = ยังไม่เริ่มผลิต — ทำให้จางลง ไม่ให้แย่งสายตากับแถวที่เดินแล้ว */
+/* หัวคอลัมน์วันที่ — เลขวันตัวใหญ่ (อ่านจากจอติดผนัง) + เดือนย่อ + วันในสัปดาห์ */
+.ism-d{display:flex;flex-direction:column;align-items:center;line-height:1.05;gap:1px}
+.ism-d .dd{font-size:calc(12.5px*var(--isl-s));font-weight:900;color:var(--blue-dark);letter-spacing:-.3px}
+/* สีตัวอักษรทั้งชุดผ่าน 4.5:1 บนพื้น #EEF3FC — หัวคอลัมน์วันที่ต้องอ่านออกจากจอติดผนัง ไม่ใช่แค่ "พอเห็น" */
+.ism-d .mm{font-size:calc(7.8px*var(--isl-s));font-weight:800;color:var(--muted)}
+.ism-d .wd{font-size:calc(7.4px*var(--isl-s));font-weight:700;color:var(--muted);letter-spacing:.2px}
+.ism-t th.ism-hc{width:var(--ism-dw);min-width:var(--ism-dw);text-align:center;padding:4px 2px}
+/* เสาร์-อาทิตย์: บอกด้วยพื้นหลัง/ลาย (ดู td.ism-c.we) ไม่ใช่ลดคอนทราสต์ตัวอักษรจนอ่านไม่ออก */
+.ism-t th.ism-hc.we{background:#E3EAF6}
+.ism-t th.ism-hc.we .dd{color:#475569;font-weight:800}
+/* "วันนี้" ต้องชนะสีเสาร์-อาทิตย์เสมอ (วันนี้ตรงกับวันหยุดได้) → ต้องมี specificity สูงกว่า .ism-hc.we */
+.ism-t th.ism-hc.today{background:#DBEAFE;box-shadow:inset 0 -3px 0 var(--blue),0 2px 4px rgba(30,66,159,.07)}
+.ism-t th.ism-hc.today .dd,.ism-t th.ism-hc.today .mm,.ism-t th.ism-hc.today .wd{color:var(--blue)}
+/* ช่องข้อมูลรายวัน */
+.ism-t td.ism-c{width:var(--ism-dw);min-width:var(--ism-dw);text-align:center;padding:2px 3px;
+  border-bottom:1px solid #EEF2F8;border-left:1px solid #F2F5FA;vertical-align:middle}
+.ism-t td.ism-c.we{background-image:linear-gradient(135deg,rgba(148,163,184,.09) 25%,transparent 25%,transparent 50%,
+  rgba(148,163,184,.09) 50%,rgba(148,163,184,.09) 75%,transparent 75%);background-size:6px 6px}
+.ism-t td.ism-c.today{box-shadow:inset 2px 0 0 rgba(26,86,219,.30),inset -2px 0 0 rgba(26,86,219,.30)}
+/* เส้นคั่นต้นสัปดาห์ (วันจันทร์) — ช่วยนับคอลัมน์ตอนกวาดตาข้ามทั้งเดือน ไม่ต้องไล่อ่านเลขวันทีละช่อง */
+.ism-t th.wk,.ism-t td.wk{border-left:2px solid #D4DEEE}
+.ism-t tfoot td.wk{border-left:2px solid #BFCEE6}
+.ism-q{display:block;width:100%;min-height:calc(27px*var(--isl-s));border:1.5px solid transparent;border-radius:7px;
+  padding:2px 3px 3px;cursor:pointer;font-family:inherit;line-height:1.05;
+  transition:transform .11s,box-shadow .11s,border-color .11s}
+.ism-q b{display:block;font-size:calc(11.6px*var(--isl-s));font-weight:900;letter-spacing:-.35px}
+.ism-q .pb{display:block;height:2.5px;border-radius:99px;background:rgba(15,23,42,.13);margin-top:2px;overflow:hidden}
+.ism-q .pb i{display:block;height:100%;border-radius:99px;background:currentColor;opacity:.8;
+  transition:width .45s cubic-bezier(.22,.61,.36,1)}
+.ism-q .lt{display:block;font-size:calc(7.8px*var(--isl-s));font-weight:800;opacity:.75;margin-top:1px}
+.ism-q:hover{transform:translateY(-1px);box-shadow:0 3px 9px rgba(15,23,42,.2)}
+.ism-q:active{transform:translateY(0)}
+.ism-q:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px}
+.ism-q.q-none{background:#F1F5F9;color:#475569;border-color:#E2E8F0}
+.ism-q.q-run {background:var(--orange-bg);color:#B45309;border-color:var(--orange-bd)}
+.ism-q.q-done{background:var(--green-bg);color:#047857;border-color:var(--green-bd)}
+.ism-q.q-late{background:var(--red-bg);color:#B91C1C;border-color:var(--red-bd)}
+@media (prefers-reduced-motion:reduce){.ism-q:hover{transform:none}}
+/* แถวรวมท้ายตาราง — ตรึงไว้ล่างสุด เห็นยอดขายรายวันตลอดเวลาที่เลื่อนดู */
+.ism-t tfoot td{position:sticky;bottom:0;z-index:3;background:#EEF3FC;border-top:1.5px solid var(--blue-soft);
+  padding:4px 5px;text-align:center;font-weight:900;color:#31456B;font-size:calc(10px*var(--isl-s));
+  box-shadow:0 -2px 4px rgba(30,66,159,.07)}
+.ism-t tfoot td.c-v{background:#E4EDFB;text-align:left;font-size:calc(9.5px*var(--isl-s))}
+/* ช่อง "รวมทั้งเดือน" ในแถวท้าย — ต้องมีป้ายกำกับในตัวเอง ไม่งั้นอ่านต่อกับเลขรายวันข้าง ๆ เป็นชุดเดียวกัน */
+.ism-t tfoot td.c-tot{background:#CFDEF6;text-align:right;color:var(--blue-dark);padding:3px 8px;
+  box-shadow:4px 0 7px -3px rgba(15,23,42,.22),0 -2px 4px rgba(30,66,159,.07)}
+.ism-t tfoot td.c-tot b{display:block;font-size:calc(12px*var(--isl-s));line-height:1.15;letter-spacing:-.3px}
+.ism-t tfoot td.c-tot i{display:block;font-style:normal;font-size:calc(8.4px*var(--isl-s));font-weight:800;color:#3D5A8F}
+.ism-t tfoot td.zero{color:#B6C2D4;font-weight:700}
+.ism-t tfoot td.today{background:#DBEAFE;color:var(--blue)}
+@media (prefers-reduced-motion:no-preference){.ism-t tbody tr{animation:islIn .26s cubic-bezier(.22,.61,.36,1) backwards}}
+
+/* ── ป๊อปอัป "กดที่ตัวเลข" — ล็อตที่ขายวันนั้น + ตอนนี้งานเดินไปถึง process ไหนแล้ว ── */
+.ismp-k{display:inline-block;background:#F8FAFC;border:1.5px solid var(--border);border-radius:9px;padding:4px 11px;margin:0 6px 6px 0}
+.ismp-k .v{font-size:15px;font-weight:900;color:var(--blue-dark);font-variant-numeric:tabular-nums;line-height:1.15}
+.ismp-k .k{font-size:9.5px;font-weight:800;color:var(--muted);letter-spacing:.2px}
+.ismp-k.late{border-color:var(--red-bd);background:var(--red-bg)}   .ismp-k.late .v{color:#B91C1C}
+.ismp-k.done{border-color:var(--green-bd);background:var(--green-bg)} .ismp-k.done .v{color:#047857}
+.ismp-lot{border:1.5px solid var(--border);border-radius:11px;padding:8px 10px;margin-bottom:8px;background:var(--card)}
+.ismp-lot.run {border-color:var(--orange-bd);background:#FFFDF6}
+.ismp-lot.done{border-color:var(--green-bd);background:#F7FEFB}
+.ismp-lot.late{border-color:var(--red-bd);background:#FFF8F8}
+.ismp-l1{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.ismp-lotno{font-family:'Courier New',monospace;font-weight:900;font-size:13px;color:var(--blue-dark)}
+.ismp-l1 .amt{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.ismp-l1 .amt b{color:var(--blue-dark);font-size:13px}
+.ismp-now{font-size:11.5px;color:#334155;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.6}
+.ismp-now .at{font-weight:900;color:var(--blue-dark);background:var(--blue-light);border:1px solid var(--blue-soft);
+  border-radius:99px;padding:1px 9px}
+.ismp-now .at.off{color:#64748B;background:#F1F5F9;border-color:#E2E8F0}
+.ismp-flow{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;align-items:stretch}
+.ismp-p{border:1.5px solid #E2E8F0;background:#F8FAFC;color:#94A3B8;border-radius:8px;padding:2px 7px;
+  font-size:10px;font-weight:800;text-align:center;min-width:46px;line-height:1.3}
+.ismp-p.hit{border-color:var(--green-bd);background:var(--green-bg);color:#047857}
+.ismp-p.cur{border-color:var(--blue);background:var(--blue-light);color:var(--blue-dark);box-shadow:0 0 0 2.5px rgba(26,86,219,.16)}
+.ismp-p .n{display:block;font-size:9.5px;font-weight:800;opacity:.85;font-variant-numeric:tabular-nums}
+.ismp-p.xtra{border-color:#DDD6FE;background:#F5F3FF;color:#5B21B6}
+.ismp-ft{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:7px}
+.ismp-mc{display:inline-block;font-size:10px;font-weight:800;color:#1E40AF;background:#EFF6FF;border:1px solid #BFDBFE;
+  border-radius:99px;padding:0 7px}
+.ismp-hint{font-size:11px;color:var(--muted);line-height:1.7;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)}
+
+/* ★ จอแคบ + เต็มจอ: .iot-fs เปลี่ยนเป็น flex column ที่ "เลื่อนทั้งการ์ด" (ดู @media max-width:820px ด้านบน)
+   ตอนนั้น .ism-sc จะไม่ใช่ตัวเลื่อน → ตารางยาวเป็นพัน px หัวตาราง/แถวรวมไม่ค้าง และแถบหัวบอร์ดเลื่อนหายตามไปด้วย
+   ล็อกความสูงของตัวตารางเองไว้ ให้กลับมาเลื่อนในกล่องตัวเองเหมือนโหมดปกติ */
+@media (max-width:820px){
+  .iot-fs #iotSalesPage > .ism-wrap{flex:0 0 auto}
+  .iot-fs .ism-sc{max-height:68vh;flex:0 0 auto}
+  .iot-fs .isl-sc{max-height:68vh;flex:0 0 auto}
+}
+@media (max-width:640px){
+  /* มือถือ: ช่องแตะต้องได้ ≥44px · คอลัมน์ตรึงแคบลงเพื่อเหลือที่ให้ช่องวันที่ */
+  /* คอลัมน์ตรึงกินที่ไปแล้ว ~45% ของจอ 375px — บีบให้เหลือที่ให้ช่องวันที่มากที่สุดเท่าที่ยังอ่านออก */
+  #iotSalesPage{--ism-vw:98px;--ism-tw:70px;--ism-dw:54px}
+  .ism-q{min-height:44px;display:flex;flex-direction:column;justify-content:center}
+  .ism-sc{max-height:64vh}
+  .ism-hdbar .n{margin-left:0;width:100%}
+}
+
 /* ===== IOT รวม 4 VSM (เปิดด้วยรหัสพิเศษ) ===== */
 #iotAllOv{position:fixed;inset:0;z-index:1600;background:#eef2f7;display:flex;flex-direction:column}
 #iotAllHead{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff}
@@ -1613,7 +1824,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.50</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.51</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7991,7 +8202,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.50":"Production Record + KPI · v3.50",
+"ระบบบันทึกผลิต + KPI · v3.51":"Production Record + KPI · v3.51",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9161,17 +9372,35 @@ const _ISL_SORTS = [
   ['due',   'วันกำหนดส่ง',   'Due date'],
   ['part',  'Part No',       'Part No'],
   ['lot',   'Lot No.',       'Lot No.'],
+  ['cust',  'ลูกค้า',        'Customer'],
   ['order', 'ยอดสั่ง',       'Order'],
   ['qty',   "ยอดผลิตได้",    "Q'ty made"],
   ['pc',    '% ความคืบหน้า', '% progress'],
   ['status','สถานะ',         'Status'],
   ['line',  'สายที่ผลิต',    'Line'],
 ];
-const _ISL_GROUPS = [
-  { id: 'MSISWE', label: 'MSI and SWE', custs: ['MSI', 'SWE'] },
-  { id: 'OESOEM', label: 'OES&OEM',     custs: ['OES&OEM'] },
-  { id: 'OTHER',  label: 'อื่น ๆ (Other)', custs: ['Other'] },
-];
+/* ★ 2026-08-09 — คีย์ที่ "ตารางขายรายวัน" เรียงได้จริง (1 แถว = 1 Valve No รวมทุกล็อต
+   → Lot No. / สายที่ผลิต ไม่ใช่ค่าของแถว ต้องตัดออก ไม่งั้นเลือกแล้วไม่มีอะไรเกิดขึ้น) */
+const _ISM_SORT_OK = new Set(['due', 'part', 'cust', 'order', 'qty', 'pc', 'status']);
+/* ★ 2026-08-09 (req) — มุมมองของบอร์ด
+   matrix = ตารางขายรายวัน (แถว=Valve No · คอลัมน์=วันที่)  ← ค่าเริ่มต้นตามที่ผู้ใช้สั่ง
+   list   = รายการรายล็อต (ตารางเดียว ไม่แบ่งซ้าย-ขวาแล้ว) — ยังเก็บไว้เพราะเห็น Lot/Due/Remark ครบในแถวเดียว
+   _islDays: all = โชว์ทุกวันของเดือน (ปฏิทินเต็ม) · act = เฉพาะวันที่มีงานขาย (บีบให้แน่น) */
+const LS_ISL_VIEW = 'vsm4_isl_view', LS_ISL_DAYS = 'vsm4_isl_days';
+let _islView = (() => { try { return localStorage.getItem(LS_ISL_VIEW) === 'list' ? 'list' : 'matrix'; } catch (e) { return 'matrix'; } })();
+let _islDays = (() => { try { return localStorage.getItem(LS_ISL_DAYS) === 'act' ? 'act' : 'all'; } catch (e) { return 'all'; } })();
+function islSetView(v) {
+  _islView = (v === 'list') ? 'list' : 'matrix';
+  try { localStorage.setItem(LS_ISL_VIEW, _islView); } catch (e) {}
+  // เรียงด้วยคีย์ที่ตารางรายวันไม่มี (lot / line) → ตกกลับไปเรียงตาม Part No ไม่ให้ค้างสถานะที่ไม่มีผล
+  if (_islView === 'matrix' && !_ISM_SORT_OK.has(_islSort.key)) _islSort = { key: 'part', dir: 1 };
+  renderIotSales(true);
+}
+function islSetDays(d) {
+  _islDays = (d === 'act') ? 'act' : 'all';
+  try { localStorage.setItem(LS_ISL_DAYS, _islDays); } catch (e) {}
+  renderIotSales(true);
+}
 function iotSetPage(n) {
   _iotPage = (n === 2) ? 2 : 1;
   const card = document.getElementById('iotCard');
@@ -9270,10 +9499,18 @@ function _islRow(p, idx) {
 const _ISL_ST_RANK = { none: 0, run: 1, done: 2 };
 /* % ความคืบหน้าของแถว — ใช้ทั้งตอนเรียงและตอนวาดแถบ (ต้องเป็นสูตรเดียวกันเป๊ะ) */
 function _islPc(r) { return r.order > 0 ? Math.round(r.qty / r.order * 100) : (r.qty > 0 ? 100 : 0); }
+/* รวม "ยอดที่ผลิตได้" แบบไม่นับซ้ำ — r.qty ผูกกับ (valve+lot) ไม่ใช่กับบรรทัดแผน
+   ล็อตเดียวที่ถูกวางแผนขาย 2 วัน = 2 แถว แต่ของที่ผลิตได้มีกองเดียว */
+function _islSumQty(rows) {
+  const seen = new Set(); let s = 0;
+  for (const r of rows) { const k = jobKey(r.valve, r.lot); if (!seen.has(k)) { seen.add(k); s += r.qty; } }
+  return s;
+}
 function _islSortRows(rows) {
   const k = _islSort.key, dir = _islSort.dir;
   const val = r => k === 'part' ? r.valve : k === 'lot' ? r.lot : k === 'order' ? r.order
               : k === 'qty' ? r.qty : k === 'pc' ? _islPc(r) : k === 'line' ? r.remark
+              : k === 'cust' ? r.cust
               : k === 'status' ? _ISL_ST_RANK[r.st] : r.due;
   return rows.slice().sort((a, b) => {
     const va = val(a), vb = val(b);
@@ -9323,10 +9560,13 @@ function _islTable(rows) {
     // ความคืบหน้า = ยอดที่ผลิตได้ ÷ ยอดสั่ง (แถบตันที่ 100% แต่ตัวเลข % บอกของจริง)
     const pc  = _islPc(r);
     const bar = Math.max(0, Math.min(100, pc));
+    const cu = _ismCu(r.cust);
     return `<tr class="s-${r.late ? 'late' : r.st}" style="animation-delay:${Math.min(i, 14) * 18}ms">
       <td class="no">${i + 1}</td>
       <td class="isl-part">${_islHi(r.valve)}</td>
       <td class="isl-lot">${r.lot ? _islHi(r.lot) : '—'}</td>
+      ${/* ★ 2026-08-09 — เลิกแบ่งตารางซ้าย-ขวาตามกลุ่มลูกค้าแล้ว → ต้องมีคอลัมน์บอกว่าแถวนี้ของใคร */''}
+      <td><span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span></td>
       <td style="text-align:right"><span class="isl-ord">${r.order ? nn(r.order) : '<span class="isl-dash">—</span>'}</span></td>
       <td><div class="isl-due"><span class="d">${_fmtThDate(r.due)}</span>${rel ? `<span class="r ${rel.cls}">${rel.txt}</span>` : ''}</div></td>
       <td><div class="isl-q">
@@ -9342,6 +9582,7 @@ function _islTable(rows) {
       <th style="width:38px">No</th>
       ${hd('part','Part No')}
       ${hd('lot','Lot No.')}
+      ${hd('cust',TT('ลูกค้า','Cust'))}
       ${hd('order','Order',' style="text-align:right"')}
       ${hd('due','Due date')}
       ${hd('qty',"Q'ty")}
@@ -9358,6 +9599,330 @@ function _islHi(txt) {
   if (i < 0) return escapeHtml(s);
   return escapeHtml(s.slice(0, i)) + '<mark class="isl-hi">' + escapeHtml(s.slice(i, i + q.length)) + '</mark>' + escapeHtml(s.slice(i + q.length));
 }
+/* ════════════════════════════════════════════════════════════════════
+   ★ 2026-08-09 (req) — ตารางขายรายวัน (SALES MATRIX): แถว = Valve No · คอลัมน์ = วันที่
+   โจทย์: Valve No เบอร์เดียวขายหลายล็อต คนละวัน — มุมมองรายการเดิมกระจายเป็นหลายแถว
+     VF1349 Lot 12345 ขาย 01/08 1000 · VF1349 Lot 65478 ขาย 03/08 1000
+     → ต้องยุบเป็นแถวเดียว แล้ววางตัวเลขให้ตรงคอลัมน์วันที่ที่ขายจริง
+   กดที่ตัวเลข = ป๊อปอัปบอกว่าวันนั้นมีล็อตอะไร และ "ตอนนี้ล็อตนั้นเดินไปถึง process ไหนแล้ว"
+   ════════════════════════════════════════════════════════════════════ */
+/* ป้ายกลุ่มลูกค้า — 'OES&OEM' มี & ใช้เป็นชื่อคลาสไม่ได้ ต้องแปลงเป็นรหัสก่อน */
+function _ismCu(c) {
+  if (c === 'MSI') return { c: 'cu-MSI', t: 'MSI' };
+  if (c === 'SWE') return { c: 'cu-SWE', t: 'SWE' };
+  if (c === 'OES&OEM') return { c: 'cu-OES', t: 'OES' };
+  return { c: 'cu-OTH', t: TT('อื่น ๆ', 'Other') };
+}
+/* สถานะรวมของ "ช่องหนึ่งช่อง" (วันเดียว อาจมีหลายล็อต) — เลยกำหนดมาก่อนเสมอ เพราะเป็นตัวที่ต้องรีบดู */
+function _ismSt(items) {
+  if (items.some(r => r.late)) return 'late';
+  if (items.length && items.every(r => r.st === 'done')) return 'done';
+  if (items.some(r => r.st === 'run')) return 'run';
+  return 'none';
+}
+const _ISM_ST_RANK = { late: 0, run: 1, none: 2, done: 3 };
+/* ยุบแถวรายล็อต → แถวราย Valve No + ช่องรายวัน
+   ★ ยอดผลิต (qty) ต้องกันนับซ้ำ: ถ้าล็อตเดียวถูกวางแผนขาย 2 วัน ยอดที่ผลิตได้ของล็อตนั้นมีชุดเดียว
+     ถ้าบวกทุกแถวจะกลายเป็น 2 เท่า → นับครั้งเดียวต่อ jobKey ทั้งระดับช่องและระดับแถว */
+function _islMatrix(rows, ym) {
+  const [y, mo] = ym.split('-').map(Number);
+  const nDays = new Date(y, mo, 0).getDate();
+  const dayOrder = new Array(nDays + 1).fill(0);
+  const dayN     = new Array(nDays + 1).fill(0);
+  const map = new Map();
+  for (const r of rows) {
+    const d = +String(r.due || '').slice(8, 10) || 0;
+    if (!d || d > nDays) continue;
+    const vk = vKey(r.valve);
+    let e = map.get(vk);
+    if (!e) { e = { valve: r.valve, cust: r.cust, cells: {}, order: 0, qty: 0, seen: new Set(),
+                    firstDue: r.due, nLate: 0, nDone: 0, nRun: 0, n: 0 }; map.set(vk, e); }
+    const c = e.cells[d] || (e.cells[d] = { order: 0, qty: 0, items: [], seen: new Set() });
+    const jk = jobKey(r.valve, r.lot);
+    c.order += r.order; c.items.push(r);
+    if (!c.seen.has(jk)) { c.seen.add(jk); c.qty += r.qty; }
+    e.order += r.order; e.n++;
+    if (!e.seen.has(jk)) { e.seen.add(jk); e.qty += r.qty; }
+    if (r.late) e.nLate++; else if (r.st === 'done') e.nDone++; else if (r.st === 'run') e.nRun++;
+    if (r.due < e.firstDue) e.firstDue = r.due;
+    dayOrder[d] += r.order; dayN[d]++;
+  }
+  const list = [...map.values()].map(e => {
+    e.lots = e.seen.size;
+    e.st = e.nLate ? 'late' : (e.nDone === e.n ? 'done' : (e.nRun ? 'run' : 'none'));
+    e.pc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
+    return e;
+  });
+  return { list, nDays, dayOrder, dayN };
+}
+function _ismSortRows(list) {
+  const k = _ISM_SORT_OK.has(_islSort.key) ? _islSort.key : 'part', dir = _islSort.dir;
+  const val = e => k === 'order' ? e.order : k === 'qty' ? e.qty : k === 'pc' ? e.pc
+              : k === 'cust' ? e.cust : k === 'status' ? _ISM_ST_RANK[e.st]
+              : k === 'due' ? e.firstDue : e.valve;
+  return list.slice().sort((a, b) => {
+    const va = val(a), vb = val(b);
+    let c = (typeof va === 'number') ? va - vb : String(va).localeCompare(String(vb));
+    if (c === 0) c = String(a.valve).localeCompare(String(b.valve));   // ตัวตัดสินรองคงที่ → ลำดับไม่สลับเองตอน auto-refresh
+    return c * dir;
+  });
+}
+const _ISM_WD_TH = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+const _ISM_WD_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+function _ismHtml(rows, ym) {
+  const M = _islMatrix(rows, ym);
+  const [y, mo] = ym.split('-').map(Number);
+  // เลือกคอลัมน์: ทุกวันของเดือน (ปฏิทินเต็ม) หรือเฉพาะวันที่มีงานขายจริง (บีบให้แน่น)
+  let cols = [];
+  for (let d = 1; d <= M.nDays; d++) if (_islDays === 'all' || M.dayN[d]) cols.push(d);
+  if (!cols.length) { cols = []; for (let d = 1; d <= M.nDays; d++) cols.push(d); }
+  const today = todayISO();
+  const tD = today.slice(0, 7) === ym ? +today.slice(8, 10) : 0;
+  const WD = VSM_LANG === 'en' ? _ISM_WD_EN : _ISM_WD_TH;
+  const mn = monName(mo - 1);
+  const dayMeta = cols.map((d, i) => {
+    const wd = new Date(y, mo - 1, d).getDay();
+    // เส้นคั่นต้นสัปดาห์: วันจันทร์ (และไม่ใช่คอลัมน์แรก) — โหมด "เฉพาะวันที่มีงาน" คอลัมน์ไม่ติดกัน จึงไม่ตี
+    const wk = (wd === 1 && i > 0 && _islDays === 'all') ? ' wk' : '';
+    return { d, wd, we: wd === 0 || wd === 6, cls: `${wd === 0 || wd === 6 ? ' we' : ''}${d === tD ? ' today' : ''}${wk}` };
+  });
+  /* หัวคอลัมน์ Valve No / รวม — กดเรียงได้เหมือนมุมมองรายการ (มาตรฐานเดียวกันทั้งบอร์ด)
+     plain = ข้อความล้วนสำหรับ tooltip (lb เป็น HTML ได้ เช่นหัวคอลัมน์รวมที่มี 2 บรรทัด) */
+  const hd = (k, lb, cls, plain, extraTip) => {
+    const on = _islSort.key === k, asc = _islSort.dir > 0;
+    const tip = (extraTip ? extraTip + ' · ' : '')
+      + TT('กดเพื่อเรียงตาม ', 'Sort by ') + (plain || lb)
+      + (on ? (asc ? ' (▲ ' + TT('น้อย→มาก', 'asc') + ')' : ' (▼ ' + TT('มาก→น้อย', 'desc') + ')') : '');
+    return `<th class="${cls} s${on ? ' on' : ''}" role="button" tabindex="0" title="${escapeHtml(tip)}"
+      aria-sort="${on ? (asc ? 'ascending' : 'descending') : 'none'}"
+      onclick="islSetSort('${k}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();islSetSort('${k}')}"
+      >${lb}<span class="ar">${on ? (asc ? '▲' : '▼') : '↕'}</span></th>`;
+  };
+  // data-d / data-t = เลขวัน + ยอดของวันนั้น → ป้าย "ซ่อนอยู่กี่วัน กี่ชิ้น" อ่านจากตรงนี้ตอนเลื่อน
+  const head = dayMeta.map(m => `<th class="ism-hc${m.cls}" scope="col" data-d="${m.d}" data-t="${M.dayOrder[m.d] || 0}"
+      title="${escapeHtml(_fmtThDate(`${ym}-${P(m.d)}`))}${m.d === tD ? ' · ' + TT('วันนี้', 'today') : ''} — ${TT('ขายรวม', 'sold')} ${nn(M.dayOrder[m.d] || 0)} ${TT('ชิ้น', 'pcs')}">
+      <span class="ism-d"><span class="dd">${m.d}</span><span class="mm">${escapeHtml(mn)}</span><span class="wd">${WD[m.wd]}</span></span></th>`).join('');
+
+  const body = _ismSortRows(M.list).map((e, i) => {
+    const cu = _ismCu(e.cust);
+    const vEnc = encodeURIComponent(e.valve);
+    const tds = dayMeta.map(m => {
+      const c = e.cells[m.d];
+      if (!c) return `<td class="ism-c${m.cls}"></td>`;
+      const st = _ismSt(c.items);
+      const pc = c.order > 0 ? Math.max(0, Math.min(100, Math.round(c.qty / c.order * 100))) : 0;
+      const iso = `${ym}-${P(m.d)}`;
+      const nLot = c.seen.size;   // จำนวน "ล็อตจริง" ไม่ใช่จำนวนบรรทัดแผน (แผนเดียวกันถูกแยกหลายบรรทัดได้)
+      const lab = `${e.valve} · ${_fmtThDate(iso)} · ${TT('ขาย', 'sell')} ${nn(c.order)} ${TT('ชิ้น', 'pcs')}`
+        + (nLot > 1 ? ` · ${nLot} ${TT('ล็อต', 'lots')}` : '')
+        + ` · ${TT('ผลิตได้', 'made')} ${nn(c.qty)} (${pc}%)`;
+      return `<td class="ism-c${m.cls}"><button type="button" class="ism-q q-${st}"
+        aria-label="${escapeHtml(lab)}" title="${escapeHtml(lab + ' — ' + TT('กดดูล็อต/สถานะ', 'tap for lots & status'))}"
+        onclick="islCellPop('${vEnc}','${iso}')"><b>${nn(c.order)}</b><span class="pb"><i style="width:${pc}%"></i></span>${
+        nLot > 1 ? `<span class="lt">${nLot} ${TT('ล็อต', 'lots')}</span>` : ''}</button></td>`;
+    }).join('');
+    return `<tr class="s-${e.st}" style="animation-delay:${Math.min(i, 14) * 16}ms">
+      <td class="c-v">
+        <span class="ism-v">
+          <button type="button" class="vn" onclick="islValvePop('${vEnc}')"
+            title="${escapeHtml(e.valve + ' — ' + TT('กดดูทุกล็อตของเบอร์นี้ในเดือนนี้', 'tap to see every lot of this valve this month'))}">${_islHi(e.valve)}</button>
+          <span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span>
+        </span>
+        <span class="ism-sub">${e.lots} ${TT('ล็อต', 'lots')} · ${e.qty ? `${TT('ผลิตได้', 'made')} ${nn(e.qty)}` : TT('ยังไม่เริ่มผลิต', 'not started')}</span>
+      </td>
+      <td class="c-tot" title="${escapeHtml(`${e.valve} — ${TT('ขายทั้งเดือน', 'sold this month')} ${nn(e.order)} ${TT('ชิ้น', 'pcs')} (${TT('ผลรวมของทุกช่องวันที่ในแถวนี้', 'the sum of every day cell in this row')}) · ${TT('ผลิตได้', 'made')} ${nn(e.qty)}`)}"
+        ><b>${nn(e.order)}</b><span class="tp"><i style="width:${Math.max(0, Math.min(100, e.pc))}%"></i></span><i class="pcn${e.pc ? '' : ' z'}">${e.pc}%</i></td>
+      ${tds}</tr>`;
+  }).join('');
+
+  const totOrder = M.list.reduce((s, e) => s + e.order, 0);
+  const totQty   = M.list.reduce((s, e) => s + e.qty, 0);
+  const totLots  = M.list.reduce((s, e) => s + e.lots, 0);
+  const gp = totOrder > 0 ? Math.max(0, Math.min(100, Math.round(totQty / totOrder * 100))) : 0;
+  const foot = dayMeta.map(m => `<td class="${M.dayOrder[m.d] ? '' : 'zero'}${m.cls.replace(' we', '')}"
+      title="${escapeHtml(`${_fmtThDate(`${ym}-${P(m.d)}`)} — ${TT('ขายรวม', 'sold')} ${nn(M.dayOrder[m.d] || 0)} ${TT('ชิ้น', 'pcs')}`)}"
+      >${M.dayOrder[m.d] ? nn(M.dayOrder[m.d]) : '·'}</td>`).join('');
+  /* ★ หัวคอลัมน์ "รวม" = 2 บรรทัด และแถวท้ายมีป้าย "ทั้งเดือน" กำกับ
+     เดิมเลขรวมทั้งเดือนนั่งติดกับเลขรายวันในแถวเดียวกัน → อ่านเป็นชุดเดียวกันแล้วสงสัยว่าทำไมไม่เท่ากัน */
+  const totHd = `<span class="ism-th2"><span>${TT('รวม', 'Total')}</span><em>${TT('ทั้งเดือน', 'month')}</em></span>`;
+  const totTip = TT('ยอดขายทั้งเดือนของเบอร์นั้น = ผลรวมของทุกช่องวันที่ในแถวเดียวกัน',
+                    'the valve’s monthly order = the sum of every day cell in that row');
+
+  return `<div class="ism-wrap">
+    <div class="ism-hdbar">
+      <span class="nm">📅 ${TT('ยอดขายรายวัน', 'Daily sales')} · ${escapeHtml(_fmtThMonth(ym))}</span>
+      <button type="button" class="ism-rng" id="ismRange" hidden
+        onclick="${_islDays === 'all' ? "islSetDays('act')" : "(function(b){var s=b.closest('.ism-wrap').querySelector('.ism-sc');s.scrollTo({left:0,behavior:'smooth'})})(this)"}"></button>
+      <span class="n">${nn(M.list.length)} ${TT('เบอร์', 'valves')} · ${nn(totLots)} ${TT('ล็อต', 'lots')} · ${nn(totQty)} / ${nn(totOrder)} ${TT('ชิ้น', 'pcs')}${totOrder ? ` · ${gp}%` : ''}</span>
+      <span class="gp"><i style="width:${gp}%"></i></span>
+    </div>
+    <div class="ism-sc">
+      <table class="ism-t">
+        <thead><tr>${hd('part', 'Valve No', 'c-v')}${hd('order', totHd, 'c-tot', TT('ยอดขายรวมทั้งเดือน', 'monthly order'), totTip)}${head}</tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot><tr>
+          <td class="c-v">Σ ${TT('รวม', 'Total')}</td>
+          <td class="c-tot" title="${escapeHtml(TT('รวมทั้งเดือน = ผลรวมของทุกคอลัมน์วันที่ (รวมวันที่ยังเลื่อนไม่ถึงด้วย) — ไม่ใช่ยอดของวันใดวันหนึ่ง',
+                                                  'Month total = every day column added up (including days scrolled out of view) — not any single day'))}"
+            ><b>${nn(totOrder)}</b><i>${TT('ทั้งเดือน', 'month')}</i></td>
+          ${foot}
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ★ 2026-08-09 (req) — ป้าย "กำลังดูวันที่ไหนอยู่ · ซ่อนอยู่กี่วัน กี่ชิ้น"
+   ที่มา: ผู้ใช้เห็นแถวท้ายเป็น "213,409 … 180,399" แล้วถามว่าทำไมไม่เท่ากัน
+   ความจริงคือ 213,409 = ทั้งเดือน · 180,399 = วันที่ 31 วันเดียว · ส่วนต่างอยู่ในวันที่ 1–7
+   ที่เลื่อนพ้นจอไปทางซ้ายจนมองไม่เห็น → ตารางต้องบอกเองว่า "ยังมีของที่ไม่ได้อยู่ในสายตา"
+   กดป้าย: โหมดทุกวัน → บีบเหลือเฉพาะวันที่มีงาน · โหมดบีบแล้ว → เลื่อนกลับไปต้นเดือน */
+function _ismBindScroll(box) {
+  const sc = box.querySelector('.ism-sc'), chip = box.querySelector('#ismRange');
+  if (!sc || !chip) return;
+  const upd = () => {
+    const ths = sc.querySelectorAll('thead th.ism-hc');
+    if (!ths.length) { chip.hidden = true; return; }
+    const scR = sc.getBoundingClientRect();
+    const totTh = sc.querySelector('thead th.c-tot');
+    const gate = totTh ? totTh.getBoundingClientRect().right : scR.left;   // ขอบขวาของคอลัมน์ตรึง = เส้นที่ของถูกบัง
+    let hidN = 0, hidQ = 0, first = 0, last = 0;
+    for (const th of ths) {
+      const b = th.getBoundingClientRect(), d = +th.dataset.d || 0;
+      if (b.right <= gate + 1 || b.left >= scR.right - 1) { hidN++; hidQ += +th.dataset.t || 0; }
+      else { if (!first) first = d; last = d; }
+    }
+    if (!hidN) { chip.hidden = true; return; }
+    chip.hidden = false;
+    chip.innerHTML = `👁 ${TT('เห็นวันที่', 'Showing')} <b>${first || '–'}–${last || '–'}</b>`
+      + ` · ${TT('ซ่อนอยู่', 'hidden')} <span class="hid">${hidN} ${TT('วัน', 'd')} · ${nn(hidQ)} ${TT('ชิ้น', 'pcs')}</span>`;
+    chip.title = _islDays === 'all'
+      ? TT('ยังมีวันที่ที่เลื่อนไม่ถึงอีก — ยอดของวันพวกนั้นรวมอยู่ในช่อง "รวมทั้งเดือน" แล้ว · กดเพื่อบีบเหลือเฉพาะวันที่มีงาน',
+           'Some days are still off-screen — their qty is already inside the “month total” column · tap to keep only days that have sales')
+      : TT('ยังมีวันที่ที่เลื่อนไม่ถึงอีก — กดเพื่อเลื่อนกลับไปต้นเดือน',
+           'Some days are still off-screen — tap to scroll back to the start of the month');
+  };
+  sc.addEventListener('scroll', upd, { passive: true });
+  upd();                  // วัดรอบแรกทันที (getBoundingClientRect บังคับ layout ให้อยู่แล้ว)
+  setTimeout(upd, 0);     // วัดซ้ำหลัง scrollTop/scrollLeft ที่ถูกคืนค่าท้าย render ทำงานเสร็จ
+  // ★ ห้ามใช้ requestAnimationFrame ตรงนี้ — ถ้าแท็บถูกซ่อน/หน้าต่างอยู่เบื้องหลัง callback จะไม่ถูกเรียกเลย
+  //   ป้ายจะค้างว่างจนกว่าผู้ใช้จะเลื่อนเอง (เจอของจริงตอนทดสอบ)
+  if (window.ResizeObserver && !sc._ismRo) {   // ย่อ/ขยายหน้าต่าง หรือเข้า-ออกเต็มจอ = จำนวนวันที่เห็นเปลี่ยน
+    sc._ismRo = new ResizeObserver(() => upd());
+    sc._ismRo.observe(sc);
+  }
+}
+
+/* ── ป๊อปอัปรายละเอียด: กดที่ตัวเลขในช่อง (วันเดียว) หรือกดที่ Valve No (ทั้งเดือน) ──
+   ตอบคำถามเดียวที่คนกดอยากรู้: "ยอดนี้คือล็อตอะไร แล้วตอนนี้ล็อตนั้นอยู่ตรงไหนของสายผลิต" */
+function islCellPop(vEnc, iso) { _islPop(decodeURIComponent(vEnc), iso || ''); }
+function islValvePop(vEnc)     { _islPop(decodeURIComponent(vEnc), ''); }
+/* ตอนนี้ล็อตนี้เดินไปถึงไหน — process ที่ไกลสุดตาม flow ของวาล์ว + เครื่องที่ทำ
+   ใช้ filterVsmPeer (VSM3 ⇄ VSM4 เป็นสายพี่น้อง ล็อตเดียววิ่งข้ามสายได้) */
+function _islJobAt(valve, lot, recsOfValve) {
+  const recs = (recsOfValve || filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve)))
+    .filter(r => lotKey(r.lot) === lotKey(lot));
+  const pop  = _wipPerProc(recs, valve);          // เรียงตาม flow แล้ว → ตัวท้าย = ไกลสุด
+  const last = pop.length ? pop[pop.length - 1] : null;
+  const flow = _valveFlow(valve).map(_procCanon);
+  const fin  = flow[flow.length - 1] || '';
+  const cur  = last ? _procCanon(last.proc) : '';
+  return { pop, flow, cur, curQty: last ? last.qty : 0, curDate: last ? last.date : '',
+           machines: last ? last.machines : [], done: (!!cur && !!fin && cur === fin) || getJobProc(valve, lot) === 'DONE' };
+}
+function _islPop(valve, iso) {
+  const ym  = _islMonth || todayISO().slice(0, 7);
+  const idx = _islProdIndex();
+  const all = filterVsm(state.plans || [])
+    .filter(p => p.status !== 'cancelled' && vKey(p.valve_no || '') === vKey(valve)
+              && _planDateISO(p.plan_date).slice(0, 7) === ym)
+    .map(p => _islRow(p, idx));
+  const items = iso ? all.filter(r => r.due === iso) : all;
+  const cu = _ismCu(items.length ? items[0].cust : custOfValve(valve));
+  // ยุบล็อตซ้ำ (แผนเดียวกันถูกแยกหลายบรรทัด) → 1 การ์ด = 1 ล็อต
+  const byLot = new Map();
+  for (const r of items) {
+    const k = lotKey(r.lot);
+    let e = byLot.get(k);
+    if (!e) { e = { lot: r.lot, order: 0, dues: [], r }; byLot.set(k, e); }
+    e.order += r.order;
+    if (e.dues.indexOf(r.due) < 0) e.dues.push(r.due);
+  }
+  const lots = [...byLot.values()].sort((a, b) => (a.dues[0] || '').localeCompare(b.dues[0] || '') || String(a.lot).localeCompare(String(b.lot)));
+  const order = items.reduce((s, r) => s + r.order, 0);
+  let qty = 0; const seen = new Set();
+  for (const r of items) { const jk = jobKey(r.valve, r.lot); if (!seen.has(jk)) { seen.add(jk); qty += r.qty; } }
+  const pc = order > 0 ? Math.round(qty / order * 100) : (qty > 0 ? 100 : 0);
+  const nLate = items.filter(r => r.late).length;
+  const nDone = items.filter(r => r.st === 'done').length;
+
+  // ดึง production ของ "เบอร์นี้" ครั้งเดียว แล้วค่อยแยกรายล็อต — ไม่ต้องกวาดทั้งกองซ้ำทุกล็อต
+  const recsV = filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve));
+
+  const CAP = 40;
+  const cards = lots.slice(0, CAP).map(e => {
+    const r  = e.r;
+    const at = _islJobAt(valve, e.lot, recsV);
+    const st = r.late ? 'late' : (at.done || r.st === 'done') ? 'done' : (at.cur || r.st === 'run') ? 'run' : 'none';
+    const stTxt = st === 'done' ? TT('ผลิตเสร็จ', 'Done') : st === 'late' ? TT('เลยกำหนดขาย', 'Overdue')
+                : st === 'run' ? TT('กำลังผลิต', 'Running') : TT('ยังไม่เริ่ม', 'Not started');
+    const lpc = e.order > 0 ? Math.round(r.qty / e.order * 100) : (r.qty > 0 ? 100 : 0);
+    const rel = _islDueRel(e.dues[0]);
+    const qmap = {}; for (const p of at.pop) qmap[_procCanon(p.proc)] = p.qty;
+    const chips = at.flow.map(p => {
+      const q = qmap[p] || 0;
+      const c = (p === at.cur) ? 'cur' : (q > 0 ? 'hit' : '');
+      return `<span class="ismp-p ${c}">${escapeHtml(p)}${q ? `<span class="n">${nn(q)}</span>` : ''}</span>`;
+    }).join('');
+    // process ที่ลงไว้แต่ไม่อยู่ใน flow ของวาล์ว (ลงผิดขั้น/ขั้นพิเศษ) — ต้องเห็น ไม่ใช่ซ่อน
+    const xtra = at.pop.filter(p => at.flow.indexOf(_procCanon(p.proc)) < 0)
+      .map(p => `<span class="ismp-p xtra">${escapeHtml(p.proc)}<span class="n">${nn(p.qty)}</span></span>`).join('');
+    return `<div class="ismp-lot ${st}">
+      <div class="ismp-l1">
+        <span class="ismp-lotno">Lot ${escapeHtml(e.lot || '—')}</span>
+        <span class="isl-st isl-st-${st === 'late' ? 'run' : st}">${stTxt}</span>
+        <span style="font-size:11px;font-weight:800;color:var(--muted)">📅 ${e.dues.map(d => escapeHtml(_fmtThDate(d))).join(', ')}${rel ? ` <span style="color:${rel.cls === 'over' ? '#B91C1C' : rel.cls === 'warn' ? '#B45309' : 'var(--muted2)'}">(${rel.txt})</span>` : ''}</span>
+        <span class="amt"><b>${nn(r.qty)}</b> / ${nn(e.order)} ${TT('ชิ้น', 'pcs')} · ${lpc}%</span>
+      </div>
+      <div class="ismp-now">
+        📍 ${TT('ตอนนี้อยู่ที่', 'Now at')}
+        <span class="at${at.cur ? '' : ' off'}">${escapeHtml(at.cur || TT('ยังไม่เริ่มผลิต', 'not started'))}</span>
+        ${at.curQty ? `<span style="font-size:11px;color:var(--muted)">${nn(at.curQty)} ${TT('ชิ้น', 'pcs')}</span>` : ''}
+        ${at.curDate ? `<span style="font-size:11px;color:var(--muted2)">${TT('ล่าสุด', 'last')} ${escapeHtml(at.curDate)}</span>` : ''}
+        ${(at.machines || []).map(m => `<span class="ismp-mc">🏭 ${escapeHtml(m)}</span>`).join('')}
+        ${r.remark ? r.remark.split(' · ').map(v => `<span class="isl-rm">${escapeHtml(v)}</span>`).join('') : ''}
+      </div>
+      <div class="ismp-flow">${chips}${xtra}</div>
+      <div class="ismp-ft">
+        <button type="button" class="btn btn-outline btn-sm"
+          onclick="showWipHistory('${encodeURIComponent(valve)}','${encodeURIComponent(e.lot || '')}')">🕘 ${TT('ประวัติการผลิต', 'Production history')}</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const body = `<div>
+    <div style="margin-bottom:4px">
+      <span class="ismp-k"><div class="v">${nn(order)}</div><div class="k">${TT('ยอดขาย (Order)', 'Order')}</div></span>
+      <span class="ismp-k${nDone && nDone === items.length ? ' done' : ''}"><div class="v">${nn(qty)} <span style="font-size:.62em;opacity:.7">${pc}%</span></div><div class="k">${TT('ผลิตได้', "Q'ty made")}</div></span>
+      <span class="ismp-k"><div class="v">${nn(lots.length)}</div><div class="k">${TT('ล็อต', 'Lots')}</div></span>
+      ${nLate ? `<span class="ismp-k late"><div class="v">${nn(nLate)}</div><div class="k">${TT('เลยกำหนด', 'Overdue')}</div></span>` : ''}
+      <span class="ismp-k"><div class="v" style="font-size:12px;padding-top:2px">${escapeHtml(cu.t)}</div><div class="k">${TT('กลุ่มลูกค้า', 'Customer')}</div></span>
+    </div>
+    ${lots.length ? cards : `<div class="center muted" style="padding:14px 0;font-size:13px">${TT('ไม่มีรายการขายของเบอร์นี้ในช่วงที่เลือก', 'No sales rows for this valve in the selected range')}</div>`}
+    ${lots.length > CAP ? `<div style="font-size:11px;color:var(--muted);padding:2px 2px 6px">… ${TT('และอีก', 'and')} ${nn(lots.length - CAP)} ${TT('ล็อต', 'lots')}</div>` : ''}
+    <div class="ismp-hint">
+      📍 ${TT('“ตอนนี้อยู่ที่” = process ที่ไกลสุดตาม flow ของวาล์วนี้ จากยอดผลิตที่บันทึกไว้จริง (รวมสายพี่น้อง VSM3 ⇄ VSM4)',
+              '“Now at” = the farthest process along this valve’s flow, from recorded production (peer lines VSM3 ⇄ VSM4 included)')}<br>
+      🟪 ${TT('ชิปสีม่วง = process ที่ลงไว้แต่ไม่อยู่ใน flow ของวาล์วนี้ — ควรตรวจว่าลงถูกขั้นไหม',
+              'purple chip = a process recorded outside this valve’s flow — worth checking')}
+    </div>
+  </div>`;
+  const title = `📦 ${escapeHtml(valve)}` + (iso ? ` · ${escapeHtml(_fmtThDate(iso))}` : ` · ${escapeHtml(_fmtThMonth(ym))}`);
+  // เต็มจอ (native fullscreen) โชว์ modal ปกติไม่ได้ ต้อง append เข้า #iotCard
+  if (document.getElementById('iotCard')?.classList.contains('iot-fs')) _openIotPop(title, body, true, true);
+  else openModal(title, body, { wide: true });
+}
+
 /* ★ 2026-08-02 — วาดใหม่แบบ "ไม่รบกวนคนที่กำลังนั่งดูอยู่"
    อาการเดิม: กำลังไล่ดูรายการงานขายกลางตาราง พอ auto-sync ทำงาน ตารางถูกสร้างใหม่ทั้งก้อน
    → ที่เลื่อนไว้เด้งกลับขึ้นบนสุดเอง (ตัวเลื่อนจริงคือ .isl-sc ของแต่ละกลุ่ม + #iotSalesPage ตอนเต็มจอ)
@@ -9366,6 +9931,7 @@ function _islHi(txt) {
      2) เปลี่ยนจริง → จำตำแหน่งเลื่อนของทุกกลุ่มไว้ก่อน แล้วคืนให้หลังวาดเสร็จ
    ยกเว้นตอนผู้ใช้เปลี่ยนเดือน/กลุ่มลูกค้าเอง (resetScroll=true) — อันนั้นเริ่มดูจากบนสุดถูกแล้ว */
 let _islSig = '';
+let _ismViewKey = '';   // เดือน|มุมมอง|ช่วงวัน ของตารางที่วาดล่าสุด — ใช้ตัดสินว่า "ตารางเป็นชุดใหม่ไหม"
 function renderIotSales(resetScroll) {
   const box = document.getElementById('iotSalesPage'); if (!box) return;
   const ym = _islMonth || todayISO().slice(0, 7);
@@ -9378,12 +9944,10 @@ function renderIotSales(resetScroll) {
   const inCust = _islCust === 'all' ? rows : rows.filter(r => r.cust === _islCust);
   // ★ req #2 — แล้วค่อยกรองด้วย "สถานะที่กด + คำค้น" (2 ชั้นนี้คือเครื่องมือหางาน)
   const shown = _islFilterRows(inCust);
-  // จัดกลุ่ม → วาดเฉพาะกลุ่มที่มีข้อมูลจริง (ไม่เว้นช่องว่างเปล่า ๆ)
-  const groups = _ISL_GROUPS
-    .map(g => ({ ...g, rows: shown.filter(r => g.custs.includes(r.cust)) }))
-    .filter(g => g.rows.length);
   const totOrder = shown.reduce((s, r) => s + r.order, 0);
-  const totQty   = shown.reduce((s, r) => s + r.qty, 0);
+  /* ★ 2026-08-09 — ยอดผลิตได้ต้องนับ 1 ครั้งต่อ 1 ล็อต: ล็อตเดียวที่ถูกวางแผนขาย 2 วัน
+     จะกลายเป็น 2 แถว แต่ยอดที่ผลิตได้ของล็อตนั้นมีชุดเดียว (เดิมบวกทุกแถว = นับซ้ำ) */
+  const totQty   = _islSumQty(shown);
   // ตัวเลขบนแผ่นสรุป = นับจากชุด "ก่อนกรองสถานะ/คำค้น" → ตัวเลขนิ่ง ไม่กระโดดตอนกดกรอง
   const nNone    = inCust.filter(r => r.st === 'none').length;
   const nDone    = inCust.filter(r => r.st === 'done').length;
@@ -9420,6 +9984,20 @@ function renderIotSales(resetScroll) {
               และเป็นสัญญาณเตือนด้วย: ตกกลุ่มนี้ = เบอร์วาล์วไม่มีใน Master Valve */
           cnt('Other') ? segBtn('Other', TT('อื่น ๆ','Other'), cnt('Other')) : ''}
       </span>
+      ${/* ★ 2026-08-09 (req) — สลับมุมมอง: ตารางขายรายวัน (ค่าเริ่มต้น) ⇄ รายการรายล็อต
+            และเลือกว่าจะกางทุกวันของเดือน หรือบีบเหลือเฉพาะวันที่มีงานขายจริง */''}
+      <span class="isl-vseg" role="group" aria-label="${TT('เลือกมุมมอง','View')}">
+        <button type="button" class="${_islView==='matrix'?'on':''}" aria-pressed="${_islView==='matrix'}"
+          onclick="islSetView('matrix')" title="${TT('ตารางขายรายวัน — แถวคือ Valve No คอลัมน์คือวันที่','Daily matrix — rows are Valve No, columns are dates')}">📅 <span class="vs-t">${TT('ตารางรายวัน','Daily grid')}</span></button>
+        <button type="button" class="${_islView==='list'?'on':''}" aria-pressed="${_islView==='list'}"
+          onclick="islSetView('list')" title="${TT('รายการรายล็อต — เห็น Lot / กำหนดส่ง / สายที่ผลิต ครบในแถวเดียว','Per-lot list — Lot, due date and line in one row')}">📋 <span class="vs-t">${TT('รายการ','List')}</span></button>
+      </span>
+      ${_islView==='matrix' ? `<span class="isl-vseg" role="group" aria-label="${TT('ช่วงวันที่ที่แสดง','Days shown')}">
+        <button type="button" class="${_islDays==='all'?'on':''}" aria-pressed="${_islDays==='all'}"
+          onclick="islSetDays('all')" title="${TT('แสดงทุกวันของเดือน (ปฏิทินเต็ม)','Show every day of the month')}">${TT('ทุกวัน','All days')}</button>
+        <button type="button" class="${_islDays==='act'?'on':''}" aria-pressed="${_islDays==='act'}"
+          onclick="islSetDays('act')" title="${TT('แสดงเฉพาะวันที่มีงานขาย — ตารางแคบลง อ่านง่ายขึ้น','Only days that have sales — a much narrower table')}">${TT('เฉพาะวันที่มีงาน','Active days')}</button>
+      </span>` : ''}
       <span class="isl-find">
         <span class="isl-search">
           <span class="ic" aria-hidden="true">🔍</span>
@@ -9432,7 +10010,9 @@ function renderIotSales(resetScroll) {
         <span class="isl-sortbox">
           <span>${TT('เรียงตาม','Sort by')}</span>
           <select aria-label="${TT('เรียงตาม','Sort by')}" onchange="islPickSort(this.value)">
-            ${_ISL_SORTS.map(([k,th,en]) => `<option value="${k}" ${_islSort.key===k?'selected':''}>${TT(th,en)}</option>`).join('')}
+            ${/* ตารางรายวัน 1 แถว = 1 Valve No → ตัดคีย์ที่เป็นของ "รายล็อต" ออก (Lot No. / สายที่ผลิต) */''}
+            ${_ISL_SORTS.filter(([k]) => _islView !== 'matrix' || _ISM_SORT_OK.has(k))
+               .map(([k,th,en]) => `<option value="${k}" ${_islSort.key===k?'selected':''}>${TT(th,en)}</option>`).join('')}
           </select>
           <button type="button" class="dir" onclick="islToggleDir()"
             title="${_islSort.dir>0?TT('น้อย→มาก (กดเพื่อสลับ)','Ascending (tap to flip)'):TT('มาก→น้อย (กดเพื่อสลับ)','Descending (tap to flip)')}"
@@ -9452,19 +10032,19 @@ function renderIotSales(resetScroll) {
       </span>
     </div>
     ${_islNoPlanHtml(noPlan, ym)}
-    ${groups.length
-      ? `<div class="isl-wrap${groups.length === 1 ? ' one' : ''}">${groups.map(g => {
-          const go = g.rows.reduce((s,r)=>s+r.order,0), gq = g.rows.reduce((s,r)=>s+r.qty,0);
-          const gp = go > 0 ? Math.max(0, Math.min(100, Math.round(gq/go*100))) : 0;
-          return `
-          <div class="isl-grp" data-g="${g.id}">
-            <div class="isl-gh">
-              <span class="nm">${escapeHtml(g.label)}</span>
-              <span class="isl-n">${g.rows.length} ${TT('รายการ','rows')} · ${nn(gq)} / ${nn(go)} ${TT('ชิ้น','pcs')}${go?` · ${gp}%`:''}</span>
-              <span class="isl-gp"><i style="width:${gp}%"></i></span>
-            </div>
-            ${_islTable(g.rows)}
-          </div>`; }).join('')}</div>`
+    ${/* ★ 2026-08-09 (req) — เลิกแบ่งจอ "ซ้าย MSI and SWE | ขวา OES&OEM" แล้ว
+          ตารางเดียวเต็มความกว้างเสมอ · อยากดูเฉพาะกลุ่มไหน ใช้ปุ่มกรองกลุ่มลูกค้าบนแถบหัว */''}
+    ${shown.length
+      ? (_islView === 'matrix'
+          ? _ismHtml(shown, ym)
+          : `<div class="isl-wrap one"><div class="isl-grp" data-g="ALL">
+              <div class="isl-gh">
+                <span class="nm">📋 ${TT('รายการงานขาย','Sales list')}${_islCust==='all' ? '' : ' · ' + escapeHtml(_islCust)}</span>
+                <span class="isl-n">${shown.length} ${TT('รายการ','rows')} · ${nn(totQty)} / ${nn(totOrder)} ${TT('ชิ้น','pcs')}${totOrder?` · ${Math.round(totQty/totOrder*100)}%`:''}</span>
+                <span class="isl-gp"><i style="width:${totOrder>0?Math.max(0,Math.min(100,Math.round(totQty/totOrder*100))):0}%"></i></span>
+              </div>
+              ${_islTable(shown)}
+            </div></div>`)
       : (rows.length
           /* เดือนนี้มีข้อมูล แต่ตัวกรองที่เลือกไม่มี — ต้องบอกให้ตรง ไม่ใช่ "ไม่มีรายการขายในเดือนนี้"
              ★ req #2: แยกกรณี "ค้นหา/กรองสถานะแล้วไม่เจอ" ออกจาก "กลุ่มลูกค้านี้ไม่มี" + มีปุ่มล้างให้กดกลับ */
@@ -9481,10 +10061,17 @@ function renderIotSales(resetScroll) {
                <div style="font-size:11.5px;margin-top:3px;color:var(--muted2)">${TT('เพิ่มได้ที่หน้า','Add them on the')} <b>📅 ${TT('วางแผน','Planning')}</b> ${TT('หรือกดลูกศรดูเดือนอื่น','or use the arrows to browse other months')}</div>
              </div>`)}
     <div class="isl-foot">
+      ${_islView === 'matrix' ? `
+      <span><b>${TT('ตัวเลขในช่อง','Cell number')}</b> ${TT('ยอดขายของวันนั้น (Order) · แถบใต้เลข = ผลิตได้กี่ % ของยอดนั้น','sales for that day · the bar underneath = % produced')}</span>
+      <span style="color:var(--blue)"><b>👆</b> ${TT('กดที่ตัวเลข = ดูล็อตที่ขายวันนั้น + ตอนนี้อยู่ที่ process ไหน · กดที่ Valve No = ดูทั้งเดือน','tap a number for that day’s lots and where they are now · tap a Valve No for the whole month')}</span>
+      ${/* ★ ย้ำให้ชัด: ช่องพื้นฟ้า "รวมทั้งเดือน" ไม่ใช่ยอดของวันใดวันหนึ่ง — เคยมีคนอ่านสลับกัน */''}
+      <span style="color:var(--blue-dark)"><b>${TT('ช่องพื้นฟ้า “รวมทั้งเดือน”','Blue “month total” column')}</b> ${TT('= ผลรวมของทุกช่องวันที่ในแถวนั้น รวมวันที่ยังเลื่อนไม่ถึงด้วย — ไม่ใช่ยอดของวันใดวันหนึ่ง','= every day cell in that row added up, including days scrolled out of view — not any single day')}</span>
+      <span><b>Σ</b> ${TT('แถวล่างสุด = ยอดขายรวมของแต่ละวัน · ช่องซ้ายสุดของแถวนั้นคือยอดทั้งเดือน','bottom row = each day’s total · its leftmost blue cell is the month total')}</span>`
+      : `
       <span><b>Order</b> ${TT('ยอดตามแผนขาย','planned qty')}</span>
       <span><b>Q'ty</b> ${TT('ยอดที่ผลิตได้จริง + % ของยอดสั่ง','actual produced + % of order')}</span>
       <span><b>Status</b> ${TT('process ล่าสุดจากการบันทึกผลิต','latest recorded process')}</span>
-      <span><b>Remark</b> ${TT('สายที่ผลิตจริง','line that produced it')}</span>
+      <span><b>Remark</b> ${TT('สายที่ผลิตจริง','line that produced it')}</span>`}
       <span style="color:#B91C1C"><b>▌</b> ${TT('แถบสีข้างแถว = สถานะ (เทา ยังไม่เริ่ม · ส้ม กำลังผลิต · เขียว เสร็จ · แดง เลยกำหนด)','row rail = status')}</span>
       <span>🔎 ${TT('กดหัวตารางหรือใช้ช่อง "เรียงตาม" เพื่อจัดลำดับ · กดแผ่นตัวเลขเพื่อกรองสถานะ','Tap a column header or use “Sort by” · tap a summary tile to filter by status')}</span>
       <span>🔍 ${TT('ปุ่ม − ⊙ + ปรับขนาดตัวอักษรของบอร์ดนี้','The − ⊙ + buttons resize this board’s text')}</span>
@@ -9502,11 +10089,16 @@ function renderIotSales(resetScroll) {
 
   // (2) จำตำแหน่งเลื่อนไว้ก่อนวาด (ผูกกับ "กลุ่ม" ไม่ใช่ลำดับ — สลับกลุ่มแล้วยังคืนถูกตัว)
   const keep = {};
+  let mxScroll = null;
   if (!resetScroll) {
     box.querySelectorAll('.isl-grp[data-g]').forEach(g => {
       const sc = g.querySelector('.isl-sc');
       if (sc && sc.scrollTop) keep[g.dataset.g] = sc.scrollTop;
     });
+    /* ★ ตารางขายรายวันเลื่อนได้ 2 แกน — ต้องจำ scrollLeft ด้วย ไม่งั้น auto-refresh
+       จะดีดคนที่กำลังดูวันที่ 25 กลับไปวันที่ 1 ทุกครั้ง */
+    const mx = box.querySelector('.ism-sc');
+    if (mx && (mx.scrollTop || mx.scrollLeft)) mxScroll = { t: mx.scrollTop, l: mx.scrollLeft };
   }
   const boxTop = resetScroll ? 0 : box.scrollTop;      // เต็มจอ: #iotSalesPage เป็นตัวเลื่อนเอง
   const winTop = window.scrollY;                        // โหมดปกติ: เลื่อนทั้งหน้า
@@ -9518,9 +10110,25 @@ function renderIotSales(resetScroll) {
     const sc = box.querySelector(`.isl-grp[data-g="${id}"] .isl-sc`);
     if (sc) sc.scrollTop = keep[id];
   }
+  if (mxScroll) {
+    const mx = box.querySelector('.ism-sc');
+    if (mx) { mx.scrollTop = mxScroll.t; mx.scrollLeft = mxScroll.l; }
+  }
+  _ismBindScroll(box);      // ป้าย "เห็นวันที่ไหน · ซ่อนอยู่กี่วัน" (ตารางถูกสร้างใหม่ทั้งก้อน → ต้องผูกใหม่ทุกรอบ)
   box.scrollTop = boxTop;   // resetScroll → 0 (DOM ใหม่เริ่มที่บนสุดอยู่แล้ว)
   if (!resetScroll && window.scrollY !== winTop) window.scrollTo(0, winTop);
   _islApplyZoom();          // ขนาดตัวอักษรที่ผู้ใช้ตั้งไว้ (ปุ่ม − ⊙ +) ติดกลับมาหลังวาดใหม่
+  /* ★ 2026-08-09 — เดือนปัจจุบันมีได้ถึง 31 คอลัมน์: เปิดมาต้องเห็น "วันนี้" เลย ไม่ใช่ต้องลากหา
+     ทำเฉพาะตอนที่ตารางเป็นชุดใหม่จริง ๆ (เปลี่ยนเดือน/มุมมอง/ช่วงวัน) — auto-refresh ห้ามดีดจอคนที่กำลังดูอยู่ */
+  const mxKey = `${ym}|${_islView}|${_islDays}`;
+  if (_islView === 'matrix' && mxKey !== _ismViewKey) {
+    _ismViewKey = mxKey;
+    const mx = box.querySelector('.ism-sc'), th = mx && mx.querySelector('th.today');
+    if (mx && th) {
+      const x = th.getBoundingClientRect().left - mx.getBoundingClientRect().left + mx.scrollLeft;
+      mx.scrollLeft = Math.max(0, x - mx.clientWidth * 0.55);
+    }
+  } else if (_islView !== 'matrix') _ismViewKey = '';
   // คืนโฟกัส + ตำแหน่งเคอร์เซอร์ให้ช่องค้นหา → พิมพ์รวดเดียวจบ ไม่สะดุด
   if (refocusQ) {
     const q = document.getElementById('islQ');
