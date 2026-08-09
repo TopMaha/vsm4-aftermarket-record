@@ -335,6 +335,11 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .iaz-zonewrap:hover{box-shadow:0 6px 18px rgba(79,70,229,.20)}
 .iaz-zonewrap:active{transform:scale(.994)}
 .iaz-hint{text-align:center;font-size:11px;font-weight:800;color:#4338CA;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:0 0 12px 12px;padding:5px;margin-top:-7px}
+/* กล่องต่อท้ายการ์ด Zone (แถบ OAE รายชั่วโมง) — เชื่อมกับการ์ดด้านบน แล้วให้ป้าย "กดเพื่อดู…" ต่อท้ายตามเดิม */
+.iaz-extra{background:#fff;border:1px solid #E2E8F0;border-top:0;padding:0 12px 8px;margin-top:-7px}
+.iaz-extra:last-child{border-radius:0 0 12px 12px}
+.iaz-extra+.iaz-hint{margin-top:0}
+.iaz-extra .iaho{margin-top:0;padding-top:7px}
 .iaz-mc{border:1.5px solid #E2E8F0;border-radius:11px;margin-bottom:8px;overflow:hidden;background:#fff}
 .iaz-mc[open]{border-color:#93C5FD;box-shadow:0 2px 10px rgba(26,86,219,.10)}
 .iaz-mc>summary{list-style:none;cursor:pointer;padding:10px 12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12.5px}
@@ -1492,6 +1497,57 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 #iotAllVp svg{display:block}
 .ia-mc{cursor:pointer}
 .ia-mc:hover,.ia-mc:focus-visible{filter:brightness(1.06) drop-shadow(0 0 3px rgba(15,23,42,.5))}
+/* ── แผง TOP OAE ต่ำสุด (เหนือผังรวม 4 VSM) ──
+   แถว "รวม" = 1-3 ของทั้งโรง (ชิปใหญ่ .top5-item เหมือน TOP ปัญหาของหน้าราย VSM)
+   แถวราย VSM = 1-5 ของแต่ละสาย (ชิปกะทัดรัด .iat-item) — คุมความสูงทั้งแผงไว้ ไม่ให้กินพื้นที่ผัง */
+#iotAllTopOae{flex:0 0 auto;display:flex;min-width:0;margin-bottom:8px}
+#iotAllTopOae:empty{display:none}
+.iatop{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;border:1.5px solid #FCA5A5;
+  background:#FEF2F2;border-radius:12px;padding:4px 8px 5px;max-height:144px;overflow-y:auto}
+/* ราย VSM = 2 คอลัมน์ตายตัว (VSM1|VSM2 / VSM3|VSM4) → 2 แถวแทน 4 · จอแคบชิปตัดบรรทัดในช่องตัวเอง
+   ไม่ใช้ auto-fit เพราะจอกว้างมาก ๆ มันจะแตกเป็น 3 คอลัมน์ แล้ว VSM4 ตกไปอยู่แถวสองตัวเดียว */
+.iatop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
+@media (max-width:860px){ .iatop-grid{grid-template-columns:1fr} }   /* โหมดมือถือ (ผังลงล่าง) = คอลัมน์เดียว */
+.iatop-hd{flex:0 0 auto;font-size:10.5px;font-weight:900;color:#B91C1C;white-space:nowrap;align-self:center}
+.iatop-row{display:flex;align-items:flex-start;gap:6px;min-width:0}
+.iatop-all{padding-bottom:3px;border-bottom:1px dashed #FCA5A5;margin-bottom:1px}
+.iatop-lb{flex:0 0 auto;min-width:38px;text-align:center;color:#fff;font-size:9px;font-weight:900;letter-spacing:.2px;
+  padding:3px 6px;border-radius:999px;white-space:nowrap;margin-top:2px}
+/* จอกว้าง (บอร์ดจริง) = ชิปครบ 5 ตัวใน 1 บรรทัด · จอแคบ = ตัดบรรทัดแล้วเลื่อนทั้งแผงในแนวตั้ง
+   (เคยให้แต่ละแถวเลื่อนแนวนอน → มีแถบเลื่อน 5 อัน กินความสูงเปล่า ๆ ~50px) */
+.iatop-chips{flex:1 1 auto;min-width:0;display:flex;gap:3px;flex-wrap:wrap;row-gap:3px}
+.iatop-none{font-size:10px;font-weight:700;color:#9A3412;opacity:.6;align-self:center;white-space:nowrap}
+/* ชิป — อันดับ 1 ของแต่ละแถวเน้นวงกลมแดง ที่เหลือเลขจาง · big = แถวรวม (มีป้ายสี VSM) */
+.iat-item{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;padding:2px 6px 2px 3px;border:1px solid #FCA5A5;
+  background:#fff;border-radius:999px;cursor:pointer;font-family:inherit;min-height:23px;
+  transition:transform .12s,box-shadow .12s}
+.iat-item.big{min-height:26px;gap:4px;padding-right:8px}
+.iat-item:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(185,28,28,.25);border-color:#DC2626}
+.iat-item:focus-visible{outline:2.5px solid #DC2626;outline-offset:1px}
+.iat-rk{width:15px;height:15px;min-width:15px;border-radius:50%;background:#F1F5F9;color:#B91C1C;
+  display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:900}
+.iat-item.big .iat-rk{width:17px;height:17px;min-width:17px;font-size:10px}
+.iat-item.t1 .iat-rk{background:#DC2626;color:#fff}
+.iat-vsm{flex:0 0 auto;color:#fff;font-size:9px;font-weight:900;padding:1px 6px;border-radius:999px;white-space:nowrap}
+.iat-id{font-family:'Courier New',monospace;font-weight:900;color:#0f172a;font-size:10.5px;white-space:nowrap}
+.iat-oae{color:#DC2626;font-weight:900;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.iat-item.big .iat-id,.iat-item.big .iat-oae{font-size:12px}
+.iat-sos{font-size:9px;margin-left:-1px;animation:sosBlink 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){ .iat-sos{animation:none} }
+/* ไฮไลต์เครื่อง/ป้ายไลน์บนผังรวม เมื่อกดจากแผง TOP (ชุดเดียวกับผังราย VSM) */
+#iotAllSvg .ia-mc.hl,#iotAllSvg .ia-lb.hl{animation:mcHl .55s ease-in-out 4}
+#iotAllSvg .ia-mc.hl rect,#iotAllSvg .ia-lb.hl rect{stroke:#DC2626;stroke-width:4px}
+@media (prefers-reduced-motion:reduce){ #iotAllSvg .ia-mc.hl,#iotAllSvg .ia-lb.hl{animation:none} }
+/* ── แถบ OAE รายชั่วโมง ท้ายการ์ดราย Line (ในป๊อปอัป) — เรียงตามเวลา แสดงเฉพาะ OAE ── */
+.iaho{margin-top:9px;border-top:1px dashed #E2E8F0;padding-top:8px}
+.iaho-hd{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#334155;margin-bottom:6px}
+.iaho-hd small{font-weight:700;color:#94A3B8;font-size:9.5px}
+.iaho-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+.iaho-cell{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:64px;
+  padding:4px 8px;border-radius:9px;border:1px solid rgba(15,23,42,.10);line-height:1.15}
+.iaho-cell b{font-size:9.5px;font-weight:800;opacity:.75;font-variant-numeric:tabular-nums;white-space:nowrap}
+.iaho-cell i{font-style:normal;font-size:12.5px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.iaho-cell.iah-none,.iaho-cell.iaho-nt{background:#F8FAFC;color:#94A3B8;border-style:dashed}
 .ia-vsmcard{cursor:pointer;position:relative;transition:transform .12s;margin-bottom:6px}
 .ia-vsmcard:hover{transform:translateY(-2px)}
 .ia-vhead{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900;color:#1E3A8A;margin:2px 2px 4px;flex-wrap:wrap}
@@ -1557,7 +1613,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.49</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.50</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7935,7 +7991,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.49":"Production Record + KPI · v3.49",
+"ระบบบันทึกผลิต + KPI · v3.50":"Production Record + KPI · v3.50",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -10245,7 +10301,7 @@ let _iotAllWH=null, _iotAllRefitRaf=0;   // ขนาดผังล่าสุ
    _iotAllMetric = KPI ที่เลือกแสดง · _iotAllHourStart = ชั่วโมงเริ่มของหน้าต่างที่กำหนดเอง
    _iotAllHourFollow = true → เลื่อนหน้าต่างตามเวลาปัจจุบันอัตโนมัติ (LIVE) */
 let _iotAllMetric='oae', _iotAllHourStart=null, _iotAllHourFollow=true;
-const _IAH_PAGE=5;   // จำนวนคอลัมน์ชั่วโมงต่อหน้า (08–09 … 12–13 = 5 ช่วง · ครบ 12:00 เลื่อนไป 13:00)
+const _IAH_PAGE=6;   // จำนวนคอลัมน์ชั่วโมงต่อหน้า (08–09 … 13–14 = 6 ช่วง · ครบ 13:00 เลื่อนไป 14:00)
 const _IAH_METRICS=[
   {k:'oae',  label:'OAE',   unit:'%'},
   {k:'dle',  label:'DLE',   unit:'%'},
@@ -10331,7 +10387,7 @@ function _iotAllShow(){
     <div id="iotAllBody">
       <div id="iotAllHourly"></div>
       <div id="iotAllSplit" role="separator" aria-orientation="vertical" title="${TT('ลากปรับขนาด ข้อมูล ⇄ ผัง · ดับเบิลคลิก = ค่าเริ่มต้น','Drag to resize data ⇄ map · double-click = reset')}"></div>
-      <div id="iotAllMapWrap"><div id="iotAllVp"></div></div>
+      <div id="iotAllMapWrap"><div id="iotAllTopOae"></div><div id="iotAllVp"></div></div>
     </div>`;
   document.body.appendChild(ov);
   document.documentElement.style.overflow='hidden';
@@ -10407,8 +10463,125 @@ async function _iotAllSync(){
 function _iotAllRender(keepScroll){
   const ov=document.getElementById('iotAllOv'); if(!ov) return;
   _iotAllD=_iotAllData();
+  _iotAllCalcTop();        // ต้องคิดก่อนวาดผัง — ผังใช้ _iotAllTop.rank แปะ badge อันดับ 1-3
   _iotAllRenderHourly();   // แผงหลักซ้าย = KPI รายชั่วโมง (แทนการ์ดสรุปเดิม)
+  _iotAllRenderTop();
   _iotAllRenderMap(keepScroll);
+}
+
+/* ════════════════ TOP OAE ต่ำสุด (IOT รวม 4 VSM) ════════════════
+   2 ชั้นในแผงเดียว — กันไม่ให้สายเดียวกินอันดับหมดจนสายอื่นหายไปจากจอ
+     · แถว "รวม"  = TOP 1-3 ของทั้ง 4 สาย (ตัวแย่ที่สุดของโรงงาน · มี badge 1-3 บนผัง)
+     · แถวราย VSM = TOP 1-5 ของแต่ละสาย (ชิปกะทัดรัด สาเหตุอยู่ใน tooltip)
+   หน่วยจัดอันดับ: VSM3 = "รายไลน์" (ΣOPR ÷ ΣTarget ของไลน์ → ชื่อ = ป้ายเหลืองบนผัง) เหมือนหน้าราย VSM
+                   VSM อื่น = รายเครื่อง
+   กดชิป = เลื่อนผังไปหาเครื่อง/ไลน์นั้น + ไฮไลต์กะพริบ
+   ================================================================ */
+let _iotAllTop={all:[],byVsm:{},rank:{}};
+const _IA_TOP_ALL=3, _IA_TOP_VSM=3;
+const _iaTopKey=(v,id)=>v+'|'+id;
+// หน่วยที่จัดอันดับได้ของสายหนึ่ง (เรียง OAE น้อย → มาก) — VSM3 รายไลน์ · สายอื่นรายเครื่อง
+function _iaTopUnits(v){
+  const P=_iotAllD&&_iotAllD.per[v]; if(!P) return [];
+  const out=[];
+  if(v==='vsm3'){
+    const la={};   // ป้ายไลน์ → {opr,tgt,mcs,sos}
+    for(const r of P.recs){
+      const lb=r.line_key?lineLbId(r.line_key):VSM3_MC_LB[r.machine_id];
+      if(!lb) continue;
+      const a=la[lb]||(la[lb]={opr:0,tgt:0,mcs:new Set(),sos:false});
+      a.opr+=(+r.opr||0); a.tgt+=(+r.target||0);
+      if(r.machine_id) a.mcs.add(r.machine_id);
+      if(P.sos.has(r.machine_id)) a.sos=true;
+    }
+    for(const lb in la) if(la[lb].tgt>0)
+      out.push({v,id:lb,isLine:true,name:lbFullName(lb),oae:la[lb].opr/la[lb].tgt,sos:la[lb].sos,mcs:[...la[lb].mcs]});
+  } else {
+    for(const m in P.agg) if(P.agg[m].tgt>0)
+      out.push({v,id:m,oae:P.agg[m].opr/P.agg[m].tgt,sos:P.sos.has(m)});
+  }
+  return out.sort((a,b)=>a.oae-b.oae||String(a.id).localeCompare(String(b.id)));
+}
+function _iotAllCalcTop(){
+  const byVsm={}, pool=[];
+  for(const v of VSM_KEYS){
+    const u=_iaTopUnits(v);
+    byVsm[v]=u.slice(0,_IA_TOP_VSM);
+    for(const t of u) pool.push(t);         // แถว "รวม" คิดจากทุกหน่วย ไม่ใช่แค่ 5 อันดับของแต่ละสาย
+  }
+  const all=pool.sort((a,b)=>a.oae-b.oae||String(a.id).localeCompare(String(b.id))).slice(0,_IA_TOP_ALL);
+  const rank={}; all.forEach((t,i)=>{ rank[_iaTopKey(t.v,t.id)]=i+1; });
+  _iotAllTop={all,byVsm,rank};
+}
+/* สาเหตุสั้น ๆ = ข้อความ "ขอความช่วยเหลือ" ล่าสุดของเครื่อง (ไลน์ = จากเครื่องใดก็ได้ในไลน์)
+   อ่านจาก byMc ของหน้ารวม 4 VSM — ห้ามใช้ _mcCauseShort ซึ่งอ่าน _iotData ของหน้าราย VSM */
+function _iaTopCause(t){
+  const P=_iotAllD&&_iotAllD.per[t.v]; if(!P) return '';
+  const hs=[];
+  for(const id of (t.isLine?(t.mcs||[]):[t.id]))
+    for(const r of (P.byMc[id]||[])){ const h=_recHelp(r); if(h) hs.push(h); }
+  if(!hs.length) return '';
+  hs.sort((a,b)=>{ const ao=a.status!=='done'?0:1, bo=b.status!=='done'?0:1; return ao-bo||String(b.at||'').localeCompare(String(a.at||'')); });
+  return String(hs[0].text||'').replace(/\s+/g,' ').trim();
+}
+/* ข้อมูลร่วมของชิป 1 ตัว (ใช้ทั้งแถวรวมและแถวราย VSM) */
+function _iaTopChipData(t,i){
+  const mt=_IA_VSM_META[t.v]||{line:'#64748B',label:t.v};
+  const cause=_iaTopCause(t);
+  const oaeTxt=(Math.min(t.oae,9.99)*100).toFixed(1)+'%';
+  const nameTip=t.isLine&&t.name&&t.name!==t.id?`${t.id} — ${t.name}`:t.id;
+  return {mt,cause,oaeTxt,nameTip,
+    title:`${mt.label} · ${escapeHtml(nameTip)} · OAE ${oaeTxt}${cause?' · '+escapeHtml(cause):''} — ${TT('กดเพื่อชี้ตำแหน่งบนผัง','tap to locate on map')}`,
+    aria:`${TT('อันดับ','Rank')} ${i+1} · ${mt.label} · ${escapeHtml(nameTip)} · OAE ${oaeTxt}${t.sos?' · SOS':''}`};
+}
+function _iotAllRenderTop(){
+  const host=document.getElementById('iotAllTopOae'); if(!host) return;
+  const T=_iotAllTop;
+  if(!T.all||!T.all.length){ host.innerHTML=''; return; }
+  // ชิป 1 ตัว · big = แถวรวม (มีป้ายสี VSM กำกับว่าเป็นของสายไหน) · เล็ก = แถวราย VSM (รู้สายจากป้ายหัวแถวอยู่แล้ว)
+  const chip=(t,i,big)=>{
+    const c=_iaTopChipData(t,i);
+    return `<button type="button" class="iat-item${i===0?' t1':''}${big?' big':''}" onclick="iotAllTopTap('${t.v}','${escapeHtml(t.id)}')" title="${c.title}" aria-label="${c.aria}">
+      <span class="iat-rk">${i+1}</span>
+      ${big?`<span class="iat-vsm" style="background:${c.mt.line}">${c.mt.label}</span>`:''}
+      <span class="iat-id">${escapeHtml(t.id)}</span>
+      <span class="iat-oae">${c.oaeTxt}</span>
+      ${t.sos?`<span class="iat-sos" title="SOS — ${TT('มีคำขอช่วยเหลือค้าง','open help request')}">🆘</span>`:''}
+    </button>`;
+  };
+  const vsmRows=VSM_KEYS.map(v=>{
+    const list=T.byVsm[v]||[], mt=_IA_VSM_META[v];
+    return `<div class="iatop-row">
+      <span class="iatop-lb" style="background:${mt.line}">${mt.label}</span>
+      <div class="iatop-chips">${list.length?list.map((t,i)=>chip(t,i,false)).join(''):`<span class="iatop-none">— ${TT('ไม่มีข้อมูล','no data')} —</span>`}</div>
+    </div>`;
+  }).join('');
+  /* คุมความสูงแผงไม่ให้กินที่ผัง (จอ 1920 ≈ 95px):
+     · TOP 1-3 ของทั้งโรงอยู่บนบรรทัดหัวแผงเลย = ประหยัดไปหนึ่งแถวเต็ม ๆ
+     · ราย VSM จัด 2 คอลัมน์ (VSM1|VSM2 / VSM3|VSM4) = 2 แถวแทน 4 · เห็นครบตลอดไม่ต้องกดกาง */
+  host.innerHTML=`<div class="iatop" title="${TT('กดชิปเพื่อเลื่อนผังไปชี้ตำแหน่งเครื่อง/ไลน์นั้น','Tap a chip to locate that machine / line on the map')}">
+    <div class="iatop-row iatop-all">
+      <span class="iatop-hd">🔥 ${TT('TOP OAE ต่ำสุด','TOP lowest OAE')}</span>
+      <div class="iatop-chips">${T.all.map((t,i)=>chip(t,i,true)).join('')}</div>
+    </div>
+    <div class="iatop-grid">${vsmRows}</div>
+  </div>`;
+}
+/* กดรายการ TOP → เลื่อน "ในกรอบผัง" ให้เห็นเครื่อง/ไลน์กลางจอ + กะพริบไฮไลต์
+   (ไม่ใช้ scrollIntoView เพราะจะดันทั้งหน้าเลื่อนตาม — หน้านี้ล็อก overflow ไว้) */
+function iotAllTopTap(v,id){
+  const vp=document.getElementById('iotAllVp'); if(!vp) return;
+  const sel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
+  let els=[];
+  try{ els=[...vp.querySelectorAll(`g.ia-mc[data-mc="${sel}"][data-v="${v}"], g.ia-lb[data-lb="${sel}"]`)]; }catch(e){}
+  if(!els.length) return;
+  for(const el of vp.querySelectorAll('.hl')) el.classList.remove('hl');   // ไฮไลต์ทีละตัว — ของเดิมค้างเป็นกรอบแดงถาวรจนกว่าจะวาดผังใหม่
+  try{
+    const r=els[0].getBoundingClientRect(), b=vp.getBoundingClientRect();
+    vp.scrollTo({left:Math.max(0,vp.scrollLeft+(r.left-b.left)-(b.width -r.width )/2),
+                 top: Math.max(0,vp.scrollTop +(r.top -b.top )-(b.height-r.height)/2), behavior:'smooth'});
+  }catch(e){}
+  for(const el of els){ el.classList.remove('hl'); void el.getBoundingClientRect(); el.classList.add('hl'); }   // reflow = รีสตาร์ทอนิเมชัน
 }
 
 /* ---- แผง KPI ซ้าย: การ์ดสรุป + KPI ราย Zone (พับเก็บ กดถึงกาง — ไม่ต้องเลื่อนยาว) ของทั้ง 4 VSM ---- */
@@ -10463,8 +10636,11 @@ function iotAllVsmPop(v){
     // กดการ์ด Zone → เปิด popup ซ้อน · VSM3 เห็นราย Line ก่อน (ชั้นที่ 1) · VSM อื่น = รายเครื่องตรง ๆ
     const _v3 = zoneVsm(z)==='vsm3';
     const _hint = _v3 ? `⚡ ${TT('กดเพื่อดูราย Line','Tap for lines')} →` : `🏭 ${TT('กดเพื่อดูรายเครื่อง','Tap for machine details')} →`;
+    // VSM 1/2/4 ไม่มีชั้น Line → "การ์ด Zone" คือหน่วยเดียวกับการ์ด Line ของ VSM3 · แถบ OAE รายชั่วโมงจึงมาลงที่นี่
+    const strip=_iaHourOaeStrip(zr,z);
     return `<div class="iaz-zonewrap" onclick="iotAllZonePop('${v}','${z}')" title="${_v3?TT('กดดูราย Line ใน Zone นี้','Tap to view lines'):TT('กดดูรายเครื่องใน Zone นี้','Tap to view machines')}">
       ${zoneKpiCard(z, ZONE_LABEL[z]||z, zr)}
+      ${strip?`<div class="iaz-extra">${strip}</div>`:''}
       <div class="iaz-hint">${_hint}</div>
     </div>`;
   }).join('');
@@ -10563,7 +10739,7 @@ function iotAllZonePop(v, zone){
     </div>
     <div class="iotpop-bd">
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}${_iaHourOaeStrip(zr,zone)}</div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">🏭 ${TT('รายเครื่องจักร','By machine')} · ${TT('กดเพื่อดูงานในเครื่อง','tap to expand jobs')}</div>
       ${mcHtml}
     </div>
@@ -10593,6 +10769,7 @@ function _iotAllZoneLineView(v, zone, zr, mt){
           <span style="margin-left:auto;font-size:10px;font-weight:700;color:#64748b">${ids.length} ${TT('เครื่อง','mc')} · ${recs.length} rec</span>
         </div>
         ${zoneKpiInner(recs,false,zone)}
+        ${_iaHourOaeStrip(recs,zone)}
       </div>
       <div class="iaz-hint">🏭 ${TT('กดเพื่อดูรายเครื่อง','tap for machines')} →</div>
     </div>`;
@@ -10622,7 +10799,7 @@ function _iotAllZoneLineView(v, zone, zr, mt){
     </div>
     <div class="iotpop-bd">
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}${_iaHourOaeStrip(zr,zone)}</div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">⚡ ${TT('ราย Line (สายการผลิต)','By line')} · ${TT('กดสายเพื่อดูรายเครื่อง','tap a line for machines')}</div>
       ${linesHtml}
       ${orphanCards?`<div style="font-size:12px;font-weight:800;color:#64748b;margin:12px 0 7px">🏭 ${TT('เครื่องนอกสาย','Machines not in a line')}</div>${orphanCards}`:''}
@@ -10657,7 +10834,7 @@ function iotAllLinePop(v, zone, lineKey){
     <div class="iotpop-bd">
       <button onclick="_iotLineBack('${v}','${zone}')" style="background:#EEF2FF;border:1.5px solid #C7D2FE;color:#3730A3;font-weight:800;font-size:12px;padding:6px 12px;border-radius:9px;cursor:pointer;margin-bottom:10px">← ${TT('กลับไปราย Line','back to lines')}</button>
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)} · ${ids.length} ${TT('เครื่อง','mc')}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(lineRecs,false,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(lineRecs,false,zone)}${_iaHourOaeStrip(lineRecs,zone)}</div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">🏭 ${TT('รายเครื่องจักร','By machine')} · ${TT('กดเพื่อดูงานในเครื่อง','tap to expand jobs')}</div>
       ${mcHtml}
     </div>
@@ -10675,7 +10852,7 @@ function _iotLineBack(v, zone){
    - เลือกดู KPI ได้ 5 ตัว: OAE / DLE / PPLH / PDAC / SCRAP
    - แถว = Zone ของแต่ละ VSM · คอลัมน์ = ช่วงชั่วโมง (08–09, 09–10, …)
    - record ที่ลงคร่อมหลายชั่วโมง (เช่น 08:00–10:00) จะโชว์ค่าเดียวกันทุกช่วงที่คร่อม (08–09 = 09–10)
-   - หน้าต่าง 5 ช่วง/หน้า · ผ่าน 12:00 เลื่อนไป 13:00 อัตโนมัติ (LIVE) หรือกด ‹ › เลื่อนเอง
+   - หน้าต่าง 6 ช่วง/หน้า · ผ่าน 13:00 เลื่อนไป 14:00 อัตโนมัติ (LIVE) หรือกด ‹ › เลื่อนเอง
    ============================================================ */
 const _iahP2=n=>String(((n%24)+24)%24).padStart(2,'0');   // ชั่วโมง → "08" (กันค่าติดลบ/เกิน 24)
 function _iahMin(t){ if(t==null||t==='')return null; const m=String(t).match(/(\d{1,2}):(\d{2})/); return m?(+m[1])*60+(+m[2]):null; }
@@ -10737,6 +10914,50 @@ function _iahCls(v,metric,zoneKey){
     case 'scrap':return clsOf(v,t.scrap,true);
   }
   return 'iah-none';
+}
+/* ── แถบ "OAE รายชั่วโมง" ท้ายการ์ดราย Line (ป๊อปอัปของ IOT รวม 4 VSM) ──
+   เรียงตามเวลาจริงของ record · แสดงเฉพาะ OAE ตัวเดียว (ตามที่ขอ) · ชั่วโมงที่ไม่มีงานจะไม่ขึ้นช่อง
+   ค่าแต่ละช่อง = ΣOPR ÷ ΣTarget ของ record ที่คร่อมชั่วโมงนั้น (สูตร/สีเดียวกับตาราง KPI รายชั่วโมง)
+   record ที่อ่านเวลาไม่ได้ (ไม่มี time_start/end · shifts · shift_detail) แยกไว้ท้ายแถบ ไม่กลืนหายไปเงียบ ๆ */
+function _iaHourOaeStrip(recs, zoneKey){
+  const list=recs||[];
+  const has=new Array(24).fill(false);   // ชั่วโมง 0–23 ที่มี record คร่อมอยู่
+  let noTime=0;
+  for(const r of list){
+    const s=_iahRecStart(r), e=_iahRecEnd(r);
+    if(s==null||e==null){ noTime++; continue; }
+    let ee=e; if(ee<=s) ee+=1440;                                   // กะดึกข้ามเที่ยงคืน → ต่อเวลาไปวันถัดไป
+    for(let h=Math.floor(s/60);h<=Math.floor((ee-1)/60);h++) has[((h%24)+24)%24]=true;
+  }
+  /* ลำดับการอ่าน: เริ่มที่ชั่วโมงถัดจาก "ช่องว่างยาวที่สุด" ของวัน → ได้แถวต่อเนื่องแบบวันผลิตจริง
+     (เช่น กะดึก 20:00–08:00 → 20–21 … 23–00 … 00–01 … 07–08) และแต่ละชั่วโมงขึ้นครั้งเดียว
+     ถ้าเรียงตามเวลาดิบ (+1440 ของกะดึก) ชั่วโมงเดียวกันจะขึ้นซ้ำสองหัว-ท้ายแถบ */
+  let start=0, best=-1;
+  const nHas=has.filter(Boolean).length;
+  if(nHas&&nHas<24) for(let h=0;h<24;h++){
+    if(!has[h]) continue;
+    let g=0,p=(h+23)%24;
+    while(!has[p]){ g++; p=(p+23)%24; }
+    if(g>best){ best=g; start=h; }
+  }
+  const cells=[];
+  for(let i=0;i<24;i++){
+    const h=(start+i)%24;
+    if(!has[h]) continue;
+    const rr=list.filter(r=>_iahCovers(r,h));
+    if(!rr.length) continue;                                        // ไม่มีงานชั่วโมงนั้น = ข้าม (ไม่ทำช่องว่างให้รก)
+    const val=_iahVal(rr,'oae',zoneKey);
+    const plain=val==null?'—':(val*100).toFixed(2)+'%';             // ใส่ใน title ต้องเป็นข้อความล้วน (pctOae แถม ⚠️ มาเป็น HTML)
+    cells.push(`<span class="iaho-cell ${_iahCls(val,'oae',zoneKey)}" title="${_iahP2(h)}:00–${_iahP2(h+1)}:00 · OAE ${escapeHtml(plain)} · ${rr.length} rec">`
+      +`<b>${_iahP2(h)}–${_iahP2(h+1)}</b><i>${_iahFmt(val,'oae')}</i></span>`);
+  }
+  if(!cells.length&&!noTime) return '';
+  const ntCell=noTime?`<span class="iaho-cell iaho-nt" title="${TT('record ที่ไม่ได้ระบุเวลาเริ่ม-สิ้นสุด จึงจัดลงชั่วโมงไม่ได้','records without a start/end time cannot be placed in an hour')}">`
+    +`<b>${TT('ไม่ระบุเวลา','no time')}</b><i>${noTime} rec</i></span>`:'';
+  return `<div class="iaho">
+    <div class="iaho-hd">⏱ ${TT('OAE รายชั่วโมง','Hourly OAE')} <small>· ${TT('เรียงตามเวลา','sorted by time')}</small></div>
+    <div class="iaho-row">${cells.join('')}${ntCell}</div>
+  </div>`;
 }
 /* ช่วงชั่วโมงที่ "มีข้อมูลจริง" (เช้าสุด → ช่วงสุดท้ายที่มี record) — ใช้กำหนดหน้าต่าง ไม่ให้เลื่อนไปช่องว่าง
    (แก้บั๊ก: เดิม LIVE เลื่อนตามนาฬิกาเครื่อง เช่นเปิดดูตอนบ่ายแต่ข้อมูลลงช่วงเช้า → ช่องรายชั่วโมงว่างหมด) */
@@ -10916,16 +11137,33 @@ function _iotAllRenderMap(keepScroll){
       parts.push(`<rect class="mc-sos" x="${(x-2.5).toFixed(1)}" y="${(y-2.5).toFixed(1)}" width="${(w+5).toFixed(1)}" height="${(h+5).toFixed(1)}" fill="none" stroke="#DC2626" stroke-width="2.5" rx="5"/>`);
       parts.push(`<text class="mc-sos" x="${(x+1).toFixed(1)}" y="${(y+9).toFixed(1)}" font-size="9" aria-hidden="true">🆘</text>`);
     }
+    // badge เลขอันดับ TOP OAE ต่ำสุด "แถวรวม" (1-3) มุมขวาบน — ตรงกับแถว รวม ของแผงด้านบนผัง
+    // (แถวราย VSM 1-5 ไม่แปะ badge ไม่งั้น 20 วงกลมเต็มผัง 316 เครื่อง อ่านไม่ออก — กดชิปแล้วไฮไลต์แทน)
+    const mrk=_iotAllTop.rank[_iaTopKey(v,b.id)];
+    if(mrk){
+      const bx=x+w-1.5, by=y+1.5;
+      parts.push(`<g aria-hidden="true"><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`
+        +`<text x="${bx.toFixed(1)}" y="${(by+3.4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Arial,sans-serif">${mrk}</text></g>`);
+    }
     const jb=jobs[v]&&jobs[v][b.id];
     const jobTxt=!jb?'' : jb.noValve?TT('ยังไม่ได้ระบุเบอร์วาล์วใน record','No valve no. recorded')
       : `Valve ${jb.cur.valve||'-'}${jb.cur.lot?' · Lot '+jb.cur.lot:''}${jb.n>1?` · +${jb.n-1}`:''}`;
-    const aria=(active?`${b.id} OAE ${Math.round(oae*100)}%`:`${b.id} ${TT('ปิดเครื่อง','off')}`)+(jobTxt?` · ${escapeHtml(jobTxt)}`:'')+` · ${_IA_VSM_META[v].label}`;
+    const aria=(active?`${b.id} OAE ${Math.round(oae*100)}%`:`${b.id} ${TT('ปิดเครื่อง','off')}`)+(jobTxt?` · ${escapeHtml(jobTxt)}`:'')+(mrk?` · TOP ${mrk}`:'')+` · ${_IA_VSM_META[v].label}`;
     const tip=escapeHtml(`${b.id}${jobTxt?' — '+jobTxt:''}${active?` · OAE ${Math.round(oae*100)}%`:` · ${TT('ปิดเครื่อง','off')}`} · ${_IA_VSM_META[v].label}`);
-    out.push(`<g class="ia-mc" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}"><title>${tip}</title>${parts.join('')}</g>`);
+    out.push(`<g class="ia-mc" data-mc="${escapeHtml(b.id)}" data-v="${v}" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}"><title>${tip}</title>${parts.join('')}</g>`);
   }
+  // ป้ายไลน์สีเหลือง (VSM3) — TOP OAE ต่ำสุดของ VSM3 จัดอันดับรายไลน์ → badge/กรอบแดงอยู่ที่ป้ายนี้
   for(const lb of FPA_LB){
     const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
-    out.push(`<g aria-hidden="true"><rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="#111827" stroke-width="1.5" rx="4"/><text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text></g>`);
+    const rk=_iotAllTop.rank[_iaTopKey('vsm3',lb.id)];
+    const parts=[`<rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="${rk?'#DC2626':'#111827'}" stroke-width="${rk?2.5:1.5}" rx="4"/>`,
+      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text>`];
+    if(rk){
+      const bx=lb.x+lb.w-1.5, by=lb.y+1.5;
+      parts.push(`<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`
+        +`<text x="${bx.toFixed(1)}" y="${(by+3.4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Arial,sans-serif">${rk}</text>`);
+    }
+    out.push(`<g class="ia-lb" data-lb="${escapeHtml(lb.id)}"${rk?` role="img" aria-label="TOP ${rk} · ${escapeHtml(lb.id)}"`:' aria-hidden="true"'}>${parts.join('')}</g>`);
   }
   if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
   vp.innerHTML=`<svg id="iotAllSvg" viewBox="-14 -14 ${(W+28).toFixed(0)} ${(H+28).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="width:${Math.round((W+28)*_iotAllScale)}px;height:auto">${out.join('')}</svg>`;
