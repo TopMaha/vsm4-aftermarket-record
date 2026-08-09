@@ -1,6 +1,14 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.50 — 2026-08-09 — IOT รวมทุก VSM: OAE รายชั่วโมงท้ายการ์ด · ช่วงเวลา 6 ชม. · แผง TOP OAE ต่ำสุด  🚧 กำลัง deploy
+## v3.50 — 2026-08-09 — IOT รวมทุก VSM: OAE รายชั่วโมงท้ายการ์ด · ช่วงเวลา 6 ชม. · แผง TOP OAE ต่ำสุด  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `de70f745-1344-4133-ac7c-8f8153a84f5e` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `893940d` (run `31316086969` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> ยืนยันของจริงแล้วทั้งสองที่: หัวเว็บขึ้น `v3.50` · มี `_iaHourOaeStrip` / `_IAH_PAGE=6` / `iotAllTopOae` / `_iotAllCalcTop` / `iatop-grid` ครบ · ไม่เหลือ `v3.49`
+> (ครั้งแรก curl Worker แบบไม่ cache-bust ยังได้ของเก่า — edge cache ยังไม่ propagate · ยิงซ้ำพร้อม `?cb=` 3 ครั้งได้ v3.50 ตรงกันหมด)
+> เปิดบนเบราว์เซอร์จริง (Worker URL) โหลด 10,000 record ไม่มี error ใน console · ตารางรายชั่วโมงขึ้น 6 ช่อง `14–15 … 19–20`
+> · แผง TOP แถวรวมคละสาย (`VSM1 F-1140 26.9% / VSM1 F-1126 44.1% / VSM3 F4 55.6%`) · badge บนผัง 3 จุด · VSM4 ที่ยังไม่มีข้อมูลขึ้น "— ไม่มีข้อมูล —" ไม่พัง
 
 ### ที่มา
 
