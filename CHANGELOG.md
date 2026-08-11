@@ -1,6 +1,14 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.52 — 2026-08-11 — IOT รวมทุก VSM: ตาราง OAE รายชั่วโมง (Time·Target·OPR·OAE·SOS) แทนแถบ OAE ยาว ๆ · VSM3 หารด้วยจำนวนเครื่องที่เปิด  ⏳ กำลัง deploy
+## v3.52 — 2026-08-11 — IOT รวมทุก VSM: ตาราง OAE รายชั่วโมง (Time·Target·OPR·OAE·SOS) แทนแถบ OAE ยาว ๆ · VSM3 หารด้วยจำนวนเครื่องที่เปิด  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `3d9e2a98-caa7-4b1f-a1cf-c9413742e858` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `482019b` (run `135` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> ยืนยันของจริงแล้วทั้งสองที่ (curl พร้อม `?cb=`): หัวเว็บขึ้น `v3.52` · มี `_iaHourTblPop` / `_iaHourBuckets` / `_iaHtBody` / `iaht-div` ครบ
+> และ **ไม่เหลือ `_iaHourOaeStrip` / `iaho-cell` เลย** (แถบ OAE ยาว ๆ ของเดิมถูกยกออกจริง)
+> ตรวจตัวเลขในเบราว์เซอร์ก่อน deploy: 08.00–10.00 · Target 1500 · OPR 1000 → 08–09 = 750/500/66.67% · 09–10 = 750/500/66.67% (ยอด Σ รวมเท่าเดิม)
+> F1 6 เครื่อง (Auto Line) ดิบ 6,000/3,000 → ตารางโชว์ **1,000/500 ÷6** · ชั่วโมงที่เดินแค่ 3 เครื่อง → ÷3 · ดูรายเครื่องไม่หาร · RECORD 12 ใบ → **2 ครั้งที่กรอก**
 
 ### ที่มา
 
