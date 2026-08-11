@@ -335,11 +335,11 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .iaz-zonewrap:hover{box-shadow:0 6px 18px rgba(79,70,229,.20)}
 .iaz-zonewrap:active{transform:scale(.994)}
 .iaz-hint{text-align:center;font-size:11px;font-weight:800;color:#4338CA;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:0 0 12px 12px;padding:5px;margin-top:-7px}
-/* กล่องต่อท้ายการ์ด Zone (แถบ OAE รายชั่วโมง) — เชื่อมกับการ์ดด้านบน แล้วให้ป้าย "กดเพื่อดู…" ต่อท้ายตามเดิม */
-.iaz-extra{background:#fff;border:1px solid #E2E8F0;border-top:0;padding:0 12px 8px;margin-top:-7px}
+/* กล่องต่อท้ายการ์ด Zone (ปุ่มเปิดตาราง OAE รายชั่วโมง) — เชื่อมกับการ์ดด้านบน แล้วให้ป้าย "กดเพื่อดู…" ต่อท้ายตามเดิม */
+.iaz-extra{background:#fff;border:1px solid #E2E8F0;border-top:0;padding:0 12px 9px;margin-top:-7px}
 .iaz-extra:last-child{border-radius:0 0 12px 12px}
 .iaz-extra+.iaz-hint{margin-top:0}
-.iaz-extra .iaho{margin-top:0;padding-top:7px}
+.iaz-extra .iaht-btn{margin-top:2px}
 .iaz-mc{border:1.5px solid #E2E8F0;border-radius:11px;margin-bottom:8px;overflow:hidden;background:#fff}
 .iaz-mc[open]{border-color:#93C5FD;box-shadow:0 2px 10px rgba(26,86,219,.10)}
 .iaz-mc>summary{list-style:none;cursor:pointer;padding:10px 12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12.5px}
@@ -1749,16 +1749,85 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 #iotAllSvg .ia-mc.hl,#iotAllSvg .ia-lb.hl{animation:mcHl .55s ease-in-out 4}
 #iotAllSvg .ia-mc.hl rect,#iotAllSvg .ia-lb.hl rect{stroke:#DC2626;stroke-width:4px}
 @media (prefers-reduced-motion:reduce){ #iotAllSvg .ia-mc.hl,#iotAllSvg .ia-lb.hl{animation:none} }
-/* ── แถบ OAE รายชั่วโมง ท้ายการ์ดราย Line (ในป๊อปอัป) — เรียงตามเวลา แสดงเฉพาะ OAE ── */
-.iaho{margin-top:9px;border-top:1px dashed #E2E8F0;padding-top:8px}
-.iaho-hd{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#334155;margin-bottom:6px}
-.iaho-hd small{font-weight:700;color:#94A3B8;font-size:9.5px}
-.iaho-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;-webkit-overflow-scrolling:touch}
-.iaho-cell{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:64px;
-  padding:4px 8px;border-radius:9px;border:1px solid rgba(15,23,42,.10);line-height:1.15}
-.iaho-cell b{font-size:9.5px;font-weight:800;opacity:.75;font-variant-numeric:tabular-nums;white-space:nowrap}
-.iaho-cell i{font-style:normal;font-size:12.5px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
-.iaho-cell.iah-none,.iaho-cell.iaho-nt{background:#F8FAFC;color:#94A3B8;border-style:dashed}
+/* ── ปุ่มเปิด "ตาราง OAE รายชั่วโมง" (ท้ายการ์ด Zone / Line · ในการ์ดรายเครื่อง) ──
+   แทนแถบ OAE ยาว ๆ ของเดิม: ปุ่มโชว์แค่ OAE รวมของกลุ่มนั้น แล้วเปิดหน้าต่างตารางเต็มไปดูรายชั่วโมง */
+.iaht-btn{width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:11px;cursor:pointer;
+  border:1.5px solid #C7D2FE;background:linear-gradient(180deg,#F7F8FF,#EEF2FF);color:#312E81;
+  font-family:inherit;text-align:left;transition:background .12s,box-shadow .12s,transform .1s}
+.iaht-btn:hover{background:#E0E7FF;box-shadow:0 3px 12px rgba(79,70,229,.18)}
+.iaht-btn:active{transform:scale(.995)}
+.iaht-btn:focus-visible{outline:2.5px solid #4F46E5;outline-offset:2px}
+.iaht-btn .iaht-ic{width:26px;height:26px;flex:0 0 auto;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#4F46E5,#312E81);color:#fff;font-size:14px}
+.iaht-btn .iaht-tx{display:flex;flex-direction:column;gap:1px;min-width:0;line-height:1.2}
+.iaht-btn .iaht-tx b{font-size:11.5px;font-weight:900;white-space:nowrap}
+.iaht-btn .iaht-tx small{font-size:9.5px;font-weight:700;color:#5B54C9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iaht-btn .iaht-v{margin-left:auto;flex:0 0 auto;font-size:12.5px;font-weight:900;font-variant-numeric:tabular-nums;
+  padding:3px 9px;border-radius:8px;border:1px solid rgba(15,23,42,.10);white-space:nowrap}
+.iaht-btn .iaht-go{flex:0 0 auto;font-size:16px;font-weight:900;opacity:.45}
+.iaz-mcbody .iaht-btn{margin:7px 0 4px}
+
+/* ── หน้าต่างตาราง OAE รายชั่วโมง (Time · Target · OPR · OAE · SOS) ── */
+.iahtp-note{font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.iahtp-sum{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.iahtp-sum>div{flex:1 1 88px;min-width:0;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:6px 8px;text-align:center}
+.iahtp-sum span{display:block;font-size:9.5px;font-weight:800;color:#64748B;letter-spacing:.3px;white-space:nowrap}
+.iahtp-sum b{display:block;font-size:15px;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;margin-top:1px}
+.iahtp-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.iahtp-dates{display:flex;gap:6px;overflow-x:auto;flex:1 1 auto;min-width:0;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.iahtp-dbtn,.iahtp-tg{flex:0 0 auto;min-height:44px;border-radius:999px;border:1.5px solid #C7D2FE;background:#fff;
+  color:#3730A3;font-family:inherit;font-size:11.5px;font-weight:800;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.iahtp-dbtn:hover,.iahtp-tg:hover{background:#EEF2FF}
+.iahtp-dbtn.on{background:#4F46E5;border-color:#4F46E5;color:#fff}
+.iahtp-tg.on{background:#4F46E5;border-color:#4F46E5;color:#fff}
+.iahtp-dbtn:focus-visible,.iahtp-tg:focus-visible{outline:2.5px solid #4F46E5;outline-offset:2px}
+.iaht-scroll{border:1.5px solid #E2E8F0;border-radius:12px;overflow:auto;-webkit-overflow-scrolling:touch;background:#fff}
+table.iaht{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+table.iaht th,table.iaht td{padding:7px 9px;white-space:nowrap;border-bottom:1px solid #F1F5F9}
+table.iaht thead th{position:sticky;top:0;z-index:3;background:#0F172A;color:#fff;font-size:11px;font-weight:800;
+  text-align:center;letter-spacing:.3px;border-bottom:none}
+table.iaht thead th.t{left:0;z-index:4;text-align:left}
+table.iaht td.t{position:sticky;left:0;z-index:2;background:#fff;font-weight:800;color:#1E3A8A;
+  font-variant-numeric:tabular-nums;box-shadow:1px 0 0 #E2E8F0}
+table.iaht td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:800;color:#0F172A}
+table.iaht td.o{text-align:center;font-variant-numeric:tabular-nums;font-weight:900}
+table.iaht td.s{white-space:normal;font-size:11.5px;font-weight:700;color:#334155;min-width:148px;line-height:1.35}
+table.iaht tr.iaht-zero td{color:#CBD5E1;font-weight:700}
+table.iaht tr.iaht-zero td.t{background:#FCFDFE;color:#94A3B8}
+table.iaht tr.iaht-sec td{background:#334155;color:#fff;font-weight:900;font-size:11.5px;padding:7px 10px;
+  border-bottom:none;position:static;box-shadow:none}
+table.iaht tr.iaht-sec.day td{background:linear-gradient(135deg,#F59E0B,#B45309)}
+table.iaht tr.iaht-sec.night td{background:linear-gradient(135deg,#4F46E5,#312E81)}
+table.iaht tr.iaht-sec small{font-weight:700;opacity:.85;font-size:10px;margin-left:6px}
+table.iaht tr.iaht-sub td{background:#F1F5F9;font-weight:900;border-bottom:1.5px solid #E2E8F0}
+table.iaht tr.iaht-sub td.t{background:#F1F5F9;color:#0F172A}
+table.iaht tfoot td{position:sticky;bottom:0;z-index:3;background:#DBEAFE;color:#1E3A8A;font-weight:900;
+  border-top:1.5px solid #93C5FD;border-bottom:none}
+table.iaht tfoot td.t{z-index:4;background:#DBEAFE;color:#1E3A8A}
+/* VSM3: ป้ายอธิบาย + ตัวหารรายชั่วโมง (÷ จำนวนเครื่องที่เปิด) */
+.iaht-div{display:flex;flex-direction:column;gap:2px;background:#EEF2FF;border:1.5px solid #C7D2FE;border-left:4px solid #4F46E5;
+  border-radius:10px;padding:7px 10px;margin-bottom:10px;font-size:11px;color:#312E81;line-height:1.4}
+.iaht-div b{font-size:11.5px;font-weight:900}
+.iaht-div span{font-weight:700;color:#4338CA;opacity:.92}
+table.iaht td.t .iaht-dv{font-style:normal;font-size:9.5px;font-weight:800;color:#6366F1;background:#EEF2FF;
+  border-radius:5px;padding:1px 4px;margin-left:5px;vertical-align:middle}
+table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
+.iaht-sos{display:block;color:#475569}
+.iaht-sos.open{color:#B91C1C;font-weight:800}
+.iaht-sos i{font-style:normal;font-weight:700;color:#94A3B8;font-family:'Courier New',monospace}
+.iaht-dash{color:#CBD5E1;font-weight:700}
+.iaht-lg{display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-size:10px;font-weight:700;color:#475569;margin-top:8px}
+.iaht-lg span{display:inline-flex;align-items:center;gap:5px}
+.iaht-lg i{width:11px;height:11px;border-radius:3px;display:inline-block;font-style:normal}
+.iaht-lg i.iah-good{background:#DCFCE7;border:1px solid #86EFAC}
+.iaht-lg i.iah-warn{background:#FFEDD5;border:1px solid #FDBA74}
+.iaht-lg i.iah-bad{background:#FEE2E2;border:1px solid #FCA5A5}
+@media (max-width:520px){
+  table.iaht th,table.iaht td{padding:7px 7px;font-size:12px}
+  table.iaht td.s{min-width:120px;font-size:11px}
+  .iahtp-sum>div{flex:1 1 72px}
+  .iahtp-sum b{font-size:13.5px}
+}
 .ia-vsmcard{cursor:pointer;position:relative;transition:transform .12s;margin-bottom:6px}
 .ia-vsmcard:hover{transform:translateY(-2px)}
 .ia-vhead{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900;color:#1E3A8A;margin:2px 2px 4px;flex-wrap:wrap}
@@ -1824,7 +1893,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.51</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.52</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -8202,7 +8271,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.51":"Production Record + KPI · v3.51",
+"ระบบบันทึกผลิต + KPI · v3.52":"Production Record + KPI · v3.52",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11026,10 +11095,14 @@ function iotAllClose(){
   ov.remove();
   document.documentElement.style.overflow='';
 }
+/* Escape = ปิด "ชั้นบนสุด" ทีละชั้น (ตารางรายชั่วโมง → รายเครื่อง → ราย Line → VSM → ปิดหน้า)
+   ของเดิมเจาะจงปิด #iotAllPop เท่านั้น → กด Escape ตอนเปิดชั้นซ้อนอยู่ จะไปปิดชั้นล่างแทน */
 function _iotAllKey(e){
   if(e.key!=='Escape') return;
   const pw=document.getElementById('iotAllPw'); if(pw){ e.preventDefault(); pw.remove(); return; }
-  const pop=document.getElementById('iotAllPop'); if(pop){ e.preventDefault(); pop.remove(); return; }
+  const ov=document.getElementById('iotAllOv');
+  const pops=ov?[...ov.querySelectorAll('.iotpop-bg')]:[];
+  if(pops.length){ e.preventDefault(); pops[pops.length-1].remove(); return; }
   e.preventDefault(); iotAllClose();
 }
 
@@ -11244,8 +11317,8 @@ function iotAllVsmPop(v){
     // กดการ์ด Zone → เปิด popup ซ้อน · VSM3 เห็นราย Line ก่อน (ชั้นที่ 1) · VSM อื่น = รายเครื่องตรง ๆ
     const _v3 = zoneVsm(z)==='vsm3';
     const _hint = _v3 ? `⚡ ${TT('กดเพื่อดูราย Line','Tap for lines')} →` : `🏭 ${TT('กดเพื่อดูรายเครื่อง','Tap for machine details')} →`;
-    // VSM 1/2/4 ไม่มีชั้น Line → "การ์ด Zone" คือหน่วยเดียวกับการ์ด Line ของ VSM3 · แถบ OAE รายชั่วโมงจึงมาลงที่นี่
-    const strip=_iaHourOaeStrip(zr,z);
+    // VSM 1/2/4 ไม่มีชั้น Line → "การ์ด Zone" คือหน่วยเดียวกับการ์ด Line ของ VSM3 · ปุ่มตาราง OAE รายชั่วโมงจึงมาลงที่นี่
+    const strip=_iaHourBtn(zr, z, `${mt.label} · ${ZONE_LABEL[z]||z}`, TT('ราย Zone','by zone'));
     return `<div class="iaz-zonewrap" onclick="iotAllZonePop('${v}','${z}')" title="${_v3?TT('กดดูราย Line ใน Zone นี้','Tap to view lines'):TT('กดดูรายเครื่องใน Zone นี้','Tap to view machines')}">
       ${zoneKpiCard(z, ZONE_LABEL[z]||z, zr)}
       ${strip?`<div class="iaz-extra">${strip}</div>`:''}
@@ -11285,7 +11358,7 @@ function iotAllVsmPop(v){
 /* Zone → รายเครื่อง (popup ซ้อนบน iotAllVsmPop) — req #2
    จัดกลุ่ม record ของ Zone ตามเครื่อง · แต่ละเครื่องกางดูงาน (Valve/Lot/เวลา/OPR/OAE/Process) ได้ */
 // สร้างการ์ดรายเครื่อง (accordion) จากชุด record — ใช้ทั้ง Zone (VSM อื่น) และ Line (VSM3 ชั้น 2)
-function _iotAllMcCards(recsIn, tgt){
+function _iotAllMcCards(recsIn, tgt, zoneKey){
   const mmap=new Map();
   for(const r of recsIn){
     const id=r.machine_id||'—';
@@ -11315,7 +11388,10 @@ function _iotAllMcCards(recsIn, tgt){
         <span style="color:#64748b">${m.valves.size} ${TT('วาล์ว','valves')}</span>
         <span style="margin-left:auto;font-size:10.5px;font-weight:800;color:#4338CA;background:#EEF2FF;padding:2px 8px;border-radius:999px">${m.recs.length} rec ▾</span>
       </summary>
-      <div class="iaz-mcbody">${recHtml}</div>
+      <div class="iaz-mcbody">
+        ${_iaHourBtn(m.recs, zoneKey, `${TT('เครื่อง','Machine')} ${m.id}`, (ZONE_LABEL[zoneKey]||zoneKey||''), true)}
+        ${recHtml}
+      </div>
     </details>`;
   }).join('') || `<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">${TT('ไม่มีข้อมูลเครื่องในกลุ่มนี้','No machine data')}</div>`;
   return { html, count: machines.length };
@@ -11332,7 +11408,7 @@ function iotAllZonePop(v, zone){
   // VSM3 → drill 2 ชั้น: ชั้นที่ 1 = ราย Line (กด Line → iotAllLinePop รายเครื่อง) · VSM อื่น = รายเครื่องตรง ๆ
   if(zoneVsm(zone)==='vsm3'){ _iotAllZoneLineView(v, zone, zr, mt); return; }
 
-  const { html:mcHtml, count } = _iotAllMcCards(zr, tgt);
+  const { html:mcHtml, count } = _iotAllMcCards(zr, tgt, zone);
   const pop=document.createElement('div');
   pop.id='iotAllZonePop'; pop.className='iotpop-bg';
   pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });   // กดพื้นหลัง = ปิดเฉพาะชั้นนี้
@@ -11347,7 +11423,8 @@ function iotAllZonePop(v, zone){
     </div>
     <div class="iotpop-bd">
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}${_iaHourOaeStrip(zr,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}
+        <div style="margin-top:9px">${_iaHourBtn(zr, zone, `${mt.label} · ${ZONE_LABEL[zone]||zone}`, TT('รวมทุกเครื่องใน Zone','all machines in zone'))}</div></div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">🏭 ${TT('รายเครื่องจักร','By machine')} · ${TT('กดเพื่อดูงานในเครื่อง','tap to expand jobs')}</div>
       ${mcHtml}
     </div>
@@ -11377,7 +11454,7 @@ function _iotAllZoneLineView(v, zone, zr, mt){
           <span style="margin-left:auto;font-size:10px;font-weight:700;color:#64748b">${ids.length} ${TT('เครื่อง','mc')} · ${recs.length} rec</span>
         </div>
         ${zoneKpiInner(recs,false,zone)}
-        ${_iaHourOaeStrip(recs,zone)}
+        <div style="margin-top:9px">${_iaHourBtn(recs, zone, `${mt.label} · ${label}`, ZONE_LABEL[zone]||zone)}</div>
       </div>
       <div class="iaz-hint">🏭 ${TT('กดเพื่อดูรายเครื่อง','tap for machines')} →</div>
     </div>`;
@@ -11391,7 +11468,7 @@ function _iotAllZoneLineView(v, zone, zr, mt){
     </div>`;
   };
   const linesHtml = withData.map(lineCard).join('') + noData.map(emptyCard).join('');
-  const orphanCards = orphan.length ? _iotAllMcCards(orphan, zoneTargetsObj(zone)).html : '';
+  const orphanCards = orphan.length ? _iotAllMcCards(orphan, zoneTargetsObj(zone), zone).html : '';
 
   const pop=document.createElement('div');
   pop.id='iotAllZonePop'; pop.className='iotpop-bg';
@@ -11407,7 +11484,8 @@ function _iotAllZoneLineView(v, zone, zr, mt){
     </div>
     <div class="iotpop-bd">
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}${_iaHourOaeStrip(zr,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(zr,false,zone)}
+        <div style="margin-top:9px">${_iaHourBtn(zr, zone, `${mt.label} · ${ZONE_LABEL[zone]||zone}`, TT('รวมทุกสายใน Zone','all lines in zone'))}</div></div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">⚡ ${TT('ราย Line (สายการผลิต)','By line')} · ${TT('กดสายเพื่อดูรายเครื่อง','tap a line for machines')}</div>
       ${linesHtml}
       ${orphanCards?`<div style="font-size:12px;font-weight:800;color:#64748b;margin:12px 0 7px">🏭 ${TT('เครื่องนอกสาย','Machines not in a line')}</div>${orphanCards}`:''}
@@ -11425,7 +11503,7 @@ function iotAllLinePop(v, zone, lineKey){
   const tgt=zoneTargetsObj(zone);
   const label=VSM3_LINE_LABEL[lineKey]||lineKey, ids=VSM3_LINES[lineKey]||[];
   const lineRecs=P.recs.filter(r=>r.zone===zone && _recLineKey(zone,r)===lineKey);
-  const { html:mcHtml, count } = _iotAllMcCards(lineRecs, tgt);
+  const { html:mcHtml, count } = _iotAllMcCards(lineRecs, tgt, zone);
 
   const pop=document.createElement('div');
   pop.id='iotAllLinePop'; pop.className='iotpop-bg';
@@ -11442,7 +11520,8 @@ function iotAllLinePop(v, zone, lineKey){
     <div class="iotpop-bd">
       <button onclick="_iotLineBack('${v}','${zone}')" style="background:#EEF2FF;border:1.5px solid #C7D2FE;color:#3730A3;font-weight:800;font-size:12px;padding:6px 12px;border-radius:9px;cursor:pointer;margin-bottom:10px">← ${TT('กลับไปราย Line','back to lines')}</button>
       <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:9px">📅 ${escapeHtml(_iotAllD.rangeLabel)} · ${ids.length} ${TT('เครื่อง','mc')}</div>
-      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(lineRecs,false,zone)}${_iaHourOaeStrip(lineRecs,zone)}</div>
+      <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:12px">${zoneKpiInner(lineRecs,false,zone)}
+        <div style="margin-top:9px">${_iaHourBtn(lineRecs, zone, `${mt.label} · ${label}`, ZONE_LABEL[zone]||zone)}</div></div>
       <div style="font-size:12px;font-weight:900;color:#1E3A8A;margin-bottom:7px">🏭 ${TT('รายเครื่องจักร','By machine')} · ${TT('กดเพื่อดูงานในเครื่อง','tap to expand jobs')}</div>
       ${mcHtml}
     </div>
@@ -11523,49 +11602,207 @@ function _iahCls(v,metric,zoneKey){
   }
   return 'iah-none';
 }
-/* ── แถบ "OAE รายชั่วโมง" ท้ายการ์ดราย Line (ป๊อปอัปของ IOT รวม 4 VSM) ──
-   เรียงตามเวลาจริงของ record · แสดงเฉพาะ OAE ตัวเดียว (ตามที่ขอ) · ชั่วโมงที่ไม่มีงานจะไม่ขึ้นช่อง
-   ค่าแต่ละช่อง = ΣOPR ÷ ΣTarget ของ record ที่คร่อมชั่วโมงนั้น (สูตร/สีเดียวกับตาราง KPI รายชั่วโมง)
-   record ที่อ่านเวลาไม่ได้ (ไม่มี time_start/end · shifts · shift_detail) แยกไว้ท้ายแถบ ไม่กลืนหายไปเงียบ ๆ */
-function _iaHourOaeStrip(recs, zoneKey){
+/* ============================================================
+   ตาราง "OAE รายชั่วโมง" (หน้าต่างใหม่) — ราย VSM / Zone / Line / เครื่อง
+   ─ แถว = ชั่วโมงของ "วันผลิต" 08.00 → 08.00 วันรุ่งขึ้น (24 แถวครบ ไม่ข้ามชั่วโมงที่ว่าง)
+     · กะกลางวัน 08.00–20.00 · กะกลางคืน 20.00–08.00 (00.00–08.00 = ข้อมูลของวันก่อนหน้า ตามกติกาที่ใช้ทั้งระบบ)
+   ─ คอลัมน์ = Time · Target · OPR · OAE · SOS
+   ─ record ที่ลงคร่อมหลายชั่วโมงจะ "หารตามนาทีที่คร่อม" ไม่ใช่โชว์ค่าเดิมซ้ำทุกช่อง
+       เช่น 08.00–10.00 · OPR 1000 · Target 1500  →  08–09 = OPR 500 / Target 750 / OAE 66.67%
+                                                     09–10 = OPR 500 / Target 750 / OAE 66.67%
+     (แถบ OAE ยาว ๆ ของเดิมถูกยกออก เหลือปุ่มเปิดตารางนี้แทน)
+   ============================================================ */
+const _IAHT_H0=8;                        // ตารางเริ่มที่ 08:00 ของวันผลิต (ชั่วโมงที่ 8 → 31)
+let _iaHtSeq=0, _iaHtCur=null, _iaHtDate='', _iaHtHideEmpty=false;
+const _iaHtReg=new Map();                // ทะเบียนชุด record: HTML ประกอบเป็นสตริง จึงส่ง array ทาง onclick ตรง ๆ ไม่ได้
+function _iaHtToken(payload){
+  const k='iaht'+(++_iaHtSeq);
+  _iaHtReg.set(k,payload);
+  if(_iaHtReg.size>800){ let n=0; for(const kk of _iaHtReg.keys()){ if(n++>=300) break; if(kk!==_iaHtCur) _iaHtReg.delete(kk); } }
+  return k;
+}
+/* กระจาย Target/OPR ของแต่ละ record ลง 24 ช่องชั่วโมง (ถ่วงตามนาทีที่คร่อมจริง)
+   – 00:00–07:59 ถูกเลื่อนไปท้ายวันผลิต (+1440) → กะดึกอ่านต่อเนื่อง 20–21 … 23–00 … 00–01 … 07–08
+   – เช็กเงา -1440/0/+1440 กัน record ที่ล้นข้ามหัว-ท้ายตาราง · แต่ละช่องรับได้ไม่เกิน 60 นาที */
+function _iaHourBuckets(recs){
+  const B=[];
+  for(let i=0;i<24;i++){ const h=_IAHT_H0+i; B.push({h, hh:((h%24)+24)%24, target:0, opr:0, nrec:0, mcs:new Set(), rset:new Set(), sos:new Map()}); }
+  const noTime=[];                         // เก็บเป็น record (ไม่ใช่ตัวนับ) — ผู้เรียกต้องนับแบบรวมกลุ่ม Auto Line ได้
+  for(const r of recs||[]){
+    const t=_iahRecTimes(r);
+    if(t.s==null||t.e==null){ noTime.push(r); continue; }
+    let dur=(((t.e-t.s)%1440)+1440)%1440; if(!dur) dur=1440;                 // 08:00–08:00 = ครบ 24 ชม.
+    const s=t.s<_IAHT_H0*60 ? t.s+1440 : t.s;
+    const tgt=+r.target||0, opr=+r.opr||0, help=_recHelp(r);
+    for(const b of B){
+      const lo=b.h*60, hi=lo+60;
+      let ov=0;
+      for(const sh of [-1440,0,1440]){ const a=s+sh; ov+=Math.max(0,Math.min(a+dur,hi)-Math.max(a,lo)); }
+      if(ov<=0) continue;
+      const w=Math.min(ov,60)/dur;
+      b.target+=tgt*w; b.opr+=opr*w; b.nrec++; b.rset.add(r);
+      if(r.machine_id) b.mcs.add(r.machine_id);
+      if(help&&help.text&&!b.sos.has(help.text)) b.sos.set(help.text,{open:help.status!=='done', mc:r.machine_id||''});
+    }
+  }
+  for(const b of B) b.oae = b.target>0 ? b.opr/b.target : null;
+  return {B, noTime};
+}
+/* ปุ่มเปิดตาราง — โชว์ OAE รวมของกลุ่มไว้บนปุ่ม (ข้อมูลไม่หายไปจากการ์ด) แล้วกดเพื่อดูรายชั่วโมง
+   perMc=true → เปิดจากการ์ด "รายเครื่อง" (VSM3 ไม่ต้องหารด้วยจำนวนเครื่อง · ดู _iaHtBody) */
+function _iaHourBtn(recs, zoneKey, title, sub, perMc){
   const list=recs||[];
-  const has=new Array(24).fill(false);   // ชั่วโมง 0–23 ที่มี record คร่อมอยู่
-  let noTime=0;
-  for(const r of list){
-    const s=_iahRecStart(r), e=_iahRecEnd(r);
-    if(s==null||e==null){ noTime++; continue; }
-    let ee=e; if(ee<=s) ee+=1440;                                   // กะดึกข้ามเที่ยงคืน → ต่อเวลาไปวันถัดไป
-    for(let h=Math.floor(s/60);h<=Math.floor((ee-1)/60);h++) has[((h%24)+24)%24]=true;
-  }
-  /* ลำดับการอ่าน: เริ่มที่ชั่วโมงถัดจาก "ช่องว่างยาวที่สุด" ของวัน → ได้แถวต่อเนื่องแบบวันผลิตจริง
-     (เช่น กะดึก 20:00–08:00 → 20–21 … 23–00 … 00–01 … 07–08) และแต่ละชั่วโมงขึ้นครั้งเดียว
-     ถ้าเรียงตามเวลาดิบ (+1440 ของกะดึก) ชั่วโมงเดียวกันจะขึ้นซ้ำสองหัว-ท้ายแถบ */
-  let start=0, best=-1;
-  const nHas=has.filter(Boolean).length;
-  if(nHas&&nHas<24) for(let h=0;h<24;h++){
-    if(!has[h]) continue;
-    let g=0,p=(h+23)%24;
-    while(!has[p]){ g++; p=(p+23)%24; }
-    if(g>best){ best=g; start=h; }
-  }
-  const cells=[];
-  for(let i=0;i<24;i++){
-    const h=(start+i)%24;
-    if(!has[h]) continue;
-    const rr=list.filter(r=>_iahCovers(r,h));
-    if(!rr.length) continue;                                        // ไม่มีงานชั่วโมงนั้น = ข้าม (ไม่ทำช่องว่างให้รก)
-    const val=_iahVal(rr,'oae',zoneKey);
-    const plain=val==null?'—':(val*100).toFixed(2)+'%';             // ใส่ใน title ต้องเป็นข้อความล้วน (pctOae แถม ⚠️ มาเป็น HTML)
-    cells.push(`<span class="iaho-cell ${_iahCls(val,'oae',zoneKey)}" title="${_iahP2(h)}:00–${_iahP2(h+1)}:00 · OAE ${escapeHtml(plain)} · ${rr.length} rec">`
-      +`<b>${_iahP2(h)}–${_iahP2(h+1)}</b><i>${_iahFmt(val,'oae')}</i></span>`);
-  }
-  if(!cells.length&&!noTime) return '';
-  const ntCell=noTime?`<span class="iaho-cell iaho-nt" title="${TT('record ที่ไม่ได้ระบุเวลาเริ่ม-สิ้นสุด จึงจัดลงชั่วโมงไม่ได้','records without a start/end time cannot be placed in an hour')}">`
-    +`<b>${TT('ไม่ระบุเวลา','no time')}</b><i>${noTime} rec</i></span>`:'';
-  return `<div class="iaho">
-    <div class="iaho-hd">⏱ ${TT('OAE รายชั่วโมง','Hourly OAE')} <small>· ${TT('เรียงตามเวลา','sorted by time')}</small></div>
-    <div class="iaho-row">${cells.join('')}${ntCell}</div>
+  if(!list.length) return '';
+  const tgt=list.reduce((a,r)=>a+(+r.target||0),0), opr=list.reduce((a,r)=>a+(+r.opr||0),0);
+  const oae=tgt>0?opr/tgt:null;
+  const tok=_iaHtToken({recs:list, zoneKey, title:title||'', sub:sub||'', perMc:!!perMc});
+  return `<button type="button" class="iaht-btn" onclick="event.preventDefault();event.stopPropagation();_iaHourTblPop('${tok}')"
+    title="${TT('เปิดตาราง Target · OPR · OAE · SOS รายชั่วโมง แยกกะกลางวัน/กลางคืน','Open the hourly Target · OPR · OAE · SOS table, split by day/night shift')}">
+    <span class="iaht-ic">⏱</span>
+    <span class="iaht-tx"><b>${TT('ตาราง OAE รายชั่วโมง','Hourly OAE table')}</b><small>Target · OPR · OAE · SOS · ${TT('แยกกะกลางวัน/กลางคืน','day / night shift')}</small></span>
+    <span class="iaht-v ${_iahCls(oae,'oae',zoneKey)}">${_iahFmt(oae,'oae')}</span>
+    <span class="iaht-go">›</span>
+  </button>`;
+}
+function _iaHtSetDate(d){ _iaHtDate=d; _iaHtRender(); }
+function _iaHtToggleEmpty(){ _iaHtHideEmpty=!_iaHtHideEmpty; _iaHtRender(); }
+function _iaHtRender(){
+  const bd=document.getElementById('iaHtBd'), p=_iaHtReg.get(_iaHtCur);
+  if(!bd||!p) return;
+  const sc=bd.querySelector('.iaht-scroll'); const keepTop=sc?sc.scrollTop:0;
+  bd.innerHTML=_iaHtBody(p);
+  const sc2=bd.querySelector('.iaht-scroll'); if(sc2) sc2.scrollTop=keepTop;   // สลับวัน/ซ่อนชั่วโมงว่าง แล้วไม่เด้งกลับหัวตาราง
+}
+function _iaHourTblPop(tok){
+  const p=_iaHtReg.get(tok); if(!p) return;
+  const ov=document.getElementById('iotAllOv')||document.body;
+  const old=document.getElementById('iaHtPop'); if(old) old.remove();
+  _iaHtCur=tok; _iaHtDate=''; _iaHtHideEmpty=false;
+  const pop=document.createElement('div');
+  pop.id='iaHtPop'; pop.className='iotpop-bg';
+  pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });      // กดพื้นหลัง = ปิดเฉพาะชั้นนี้
+  pop.innerHTML=`<div class="iotpop wide" role="dialog" aria-modal="true"
+      aria-label="${TT('ตาราง OAE รายชั่วโมง','Hourly OAE table')} — ${escapeHtml(p.title||'')}" style="max-width:720px">
+    <div class="iotpop-hd" style="background:linear-gradient(135deg,#4F46E5,#0F172A)">
+      <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:10.5px;font-weight:800;opacity:.85">⏱ ${TT('ตาราง OAE รายชั่วโมง','Hourly OAE table')}${p.sub?' · '+escapeHtml(p.sub):''}</span>
+        <span style="font-size:15px;font-weight:900;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title||'')}</span>
+      </span>
+      <button class="iotpop-cl" onclick="this.closest('.iotpop-bg').remove()" aria-label="${TT('ปิด','Close')}">✕</button>
+    </div>
+    <div class="iotpop-bd" id="iaHtBd"></div>
   </div>`;
+  ov.appendChild(pop);
+  _iaHtRender();
+}
+function _iaHtBody(p){
+  const all=p.recs||[], zk=p.zoneKey;
+  const dOf=r=>String(r.shift_date||r.record_date||'').slice(0,10);
+  const dates=[...new Set(all.map(dOf).filter(Boolean))].sort();
+  const recs=(_iaHtDate&&dates.includes(_iaHtDate))?all.filter(r=>dOf(r)===_iaHtDate):all;
+  const {B,noTime}=_iaHourBuckets(recs);
+  const manyMc=new Set(recs.map(r=>r.machine_id).filter(Boolean)).size>1;
+  const t=zoneTargetsObj(zk);
+
+  /* ── เฉพาะ VSM3: Target/OPR ต้อง "หารด้วยจำนวนเครื่องที่เปิด" ในชั่วโมงนั้น ──
+     โหมด Auto Line ของ VSM3 กรอกครั้งเดียวแล้วบันทึกเป็น 1 record ต่อ 1 เครื่องในสาย โดยใส่ค่าเต็มทุกใบ
+     (ดู saveAll: "1 record ต่อ 1 เครื่องในหน่วย" — sTarget/sOpr ไม่ถูกหาร)
+     → ดูรวมสาย/Zone จึงบวกได้เป็น N เท่า เช่น F1 6 เครื่อง Target 6,000 / OPR 3,000
+       ต้องแสดง Target 1,000 / OPR 500 (OAE 50% เท่าเดิม เพราะหารทั้งเศษและส่วน)
+     "เครื่องที่เปิด" = เครื่องที่มี record ในชั่วโมงนั้น (นิยามเดียวกับผังเครื่อง: มี record = เปิด)
+     ดูรายเครื่อง (perMc) ไม่หาร — และเครื่องเดียวก็ได้ตัวหาร 1 อยู่แล้ว */
+  const divMc=(zk&&zoneVsm(zk)==='vsm3')&&!p.perMc;
+  const dvOf=b=>divMc?Math.max(1,b.mcs.size):1;
+
+  /* จำนวน record ก็ต้องหารด้วยจำนวนเครื่องเหมือน Target/OPR — Auto Line กรอก 1 ครั้งได้ N ใบ (N = เครื่องในสาย)
+     ทำด้วยการ "นับรายการที่กรอกจริง" แทนการหารเลข: ใบในสายชุดเดียวกันมี วัน+กะ+ช่วงเวลา+OPR+วาล์ว+Lot เหมือนกันหมด
+     ต่างแค่ machine_id/process → ยุบเป็นคีย์เดียว (แม่นกว่าหารแล้วปัด และงานคร่อมหลายชั่วโมงยังนับ 1 ครั้งเหมือนเดิม)
+     ไม่ใช่ VSM3 / ดูรายเครื่อง → คีย์คือตัว record เอง = นับทุกใบตามเดิม */
+  const rKey=divMc
+    ? r=>`${dOf(r)}|${r.shift_type||''}|${r.time_start||''}|${r.time_end||''}|${+r.opr||0}|${r.valve_no||''}|${r.lot||''}`
+    : r=>r;
+  const nRec=set=>{ const s=new Set(); for(const r of set) s.add(rKey(r)); return s.size; };
+  const noTimeN=nRec(noTime);
+
+  /* ยอดรวมของช่วง: บวกค่า "หลังหาร" ของแต่ละชั่วโมง → แถว Σ ตรงกับแถวรายชั่วโมงที่เห็นเสมอ
+     (น้ำหนักของ record รวมกัน = 1 พอดี) · จำนวน record นับแบบไม่ซ้ำ — งานคร่อม 2 ชั่วโมงคือ 1 record */
+  const sumRange=(a,b)=>{ let tg=0,op=0; const rs=new Set();
+    for(let i=a;i<=b;i++){ const d=dvOf(B[i]); tg+=B[i].target/d; op+=B[i].opr/d; for(const r of B[i].rset) rs.add(rKey(r)); }
+    return {tg,op,n:rs.size,oae:tg>0?op/tg:null}; };
+  const day=sumRange(0,11), night=sumRange(12,23), tot=sumRange(0,23);
+
+  const row=b=>{
+    const zero=b.nrec===0;
+    if(zero&&_iaHtHideEmpty) return '';
+    const sos=[...b.sos.entries()];
+    const sosHtml=sos.length
+      ? sos.map(([tx,m])=>`<span class="iaht-sos${m.open?' open':''}">${m.open?'🆘':'✅'} ${escapeHtml(tx)}${manyMc&&m.mc?` <i>· ${escapeHtml(m.mc)}</i>`:''}</span>`).join('')
+      : `<span class="iaht-dash">·</span>`;
+    const d=dvOf(b);
+    const tip=zero?TT('ไม่มีงานในชั่วโมงนี้','no job in this hour')
+                  :`${nRec(b.rset)} rec · ${b.mcs.size} ${TT('เครื่อง','mc')}`
+                    +(d>1?` · ${TT('หารด้วยเครื่องที่เปิด','divided by machines running')} ${d}`:'');
+    return `<tr class="${zero?'iaht-zero':''}">
+      <td class="t" title="${tip}">${_iahP2(b.hh)}.00-${_iahP2(b.hh+1)}.00${d>1?`<i class="iaht-dv">÷${d}</i>`:''}</td>
+      <td class="n">${zero?'·':nn(b.target/d)}</td>
+      <td class="n">${zero?'·':nn(b.opr/d)}</td>
+      <td class="o ${zero?'iah-none':_iahCls(b.oae,'oae',zk)}">${zero?'·':_iahFmt(b.oae,'oae')}</td>
+      <td class="s">${sosHtml}</td>
+    </tr>`;
+  };
+  const sub=(lb,g)=>`<tr class="iaht-sub">
+    <td class="t">Σ ${lb}</td><td class="n">${nn(g.tg)}</td><td class="n">${nn(g.op)}</td>
+    <td class="o ${_iahCls(g.oae,'oae',zk)}">${_iahFmt(g.oae,'oae')}</td>
+    <td class="s"><span class="iaht-dash">${g.n} rec</span></td></tr>`;
+  const sec=(cls,ic,lb,note)=>`<tr class="iaht-sec ${cls}"><td colspan="5">${ic} ${lb}${note?`<small>· ${note}</small>`:''}</td></tr>`;
+
+  const dateBar=dates.length>1?`<div class="iahtp-dates">
+      <button type="button" class="iahtp-dbtn${_iaHtDate?'':' on'}" onclick="_iaHtSetDate('')" aria-pressed="${!_iaHtDate}">${TT('รวมทุกวัน','All dates')}</button>
+      ${dates.map(d=>`<button type="button" class="iahtp-dbtn${_iaHtDate===d?' on':''}" onclick="_iaHtSetDate('${d}')" aria-pressed="${_iaHtDate===d}">${escapeHtml(d)}</button>`).join('')}
+    </div>`:'';
+
+  return `<div class="iahtp-note">📅 ${escapeHtml((_iotAllD&&_iotAllD.rangeLabel)||'')}${p.sub?` · ${escapeHtml(p.sub)}`:''}</div>
+  ${divMc?`<div class="iaht-div">⚡ <b>${TT('VSM3 · เฉลี่ยต่อเครื่อง','VSM3 · per-machine average')}</b>
+    <span>${TT('Target/OPR หารด้วยจำนวนเครื่องที่เปิดในชั่วโมงนั้น (Auto Line บันทึกค่าเต็มทุกเครื่องในสาย) · OAE ไม่เปลี่ยน · ดูรายเครื่องจะไม่หาร','Target/OPR divided by the machines running that hour (Auto Line saves the full value on every machine in the line) · OAE unchanged · no division in the per-machine view')}</span></div>`:''}
+  <div class="iahtp-sum">
+    <div><span>OAE ${TT('รวม','all')}</span><b style="color:${tot.oae==null?'#94A3B8':(tot.oae>=t.oae?'#16A34A':tot.oae>=t.oae*.85?'#EA580C':'#DC2626')}">${_iahFmt(tot.oae,'oae')}</b></div>
+    <div><span>TARGET</span><b>${nn(tot.tg)}</b></div>
+    <div><span>OPR</span><b style="color:#1A56DB">${nn(tot.op)}</b></div>
+    <div title="${divMc?TT('จำนวนครั้งที่พนักงานกรอกจริง — Auto Line 1 ครั้ง เขียนลงฐานข้อมูล 1 ใบต่อเครื่อง จึงยุบเป็นครั้งเดียว','Number of entries the operator actually made — Auto Line writes one row per machine, collapsed back to one'):''}">
+      <span>RECORD${divMc?` · ${TT('ที่กรอก','entries')}`:''}</span>
+      <b>${tot.n}${noTimeN?`<small style="font-size:10px;color:#B45309"> +${noTimeN}⚠️</small>`:''}</b></div>
+  </div>
+  ${dateBar?`<div class="iahtp-bar">${dateBar}</div>`:''}
+  <div class="iahtp-bar">
+    <button type="button" class="iahtp-tg${_iaHtHideEmpty?' on':''}" onclick="_iaHtToggleEmpty()" aria-pressed="${_iaHtHideEmpty}">
+      ${_iaHtHideEmpty?'☑':'☐'} ${TT('ซ่อนชั่วโมงที่ไม่มีงาน','Hide empty hours')}</button>
+    <span style="margin-left:auto;font-size:10px;font-weight:700;color:#94A3B8">${TT('เป้า OAE','OAE target')} ${pct(t.oae)}</span>
+  </div>
+  <div class="iaht-scroll">
+    <table class="iaht">
+      <thead><tr><th class="t">${TT('เวลา','Time')}</th><th>Target</th><th>OPR</th><th>OAE</th><th>SOS</th></tr></thead>
+      <tbody>
+        ${sec('day','☀️',TT('กะกลางวัน','Day shift')+' · 08.00-20.00')}
+        ${B.slice(0,12).map(row).join('')}
+        ${sub(TT('กลางวัน','day'),day)}
+        ${sec('night','🌙',TT('กะกลางคืน','Night shift')+' · 20.00-08.00',TT('00.00-08.00 = ข้อมูลของวันก่อนหน้า','00.00-08.00 belongs to the previous day'))}
+        ${B.slice(12).map(row).join('')}
+        ${sub(TT('กลางคืน','night'),night)}
+      </tbody>
+      <tfoot><tr>
+        <td class="t">Σ ${TT('รวมทั้งวัน','Full day')}</td><td class="n">${nn(tot.tg)}</td><td class="n">${nn(tot.op)}</td>
+        <td class="o ${_iahCls(tot.oae,'oae',zk)}">${_iahFmt(tot.oae,'oae')}</td>
+        <td class="s"><span class="iaht-dash">${tot.n} rec</span></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <div class="iaht-lg">
+    <span><i class="iah-good"></i>${TT('ถึงเป้า','On target')}</span>
+    <span><i class="iah-warn"></i>${TT('ใกล้เป้า','Near')}</span>
+    <span><i class="iah-bad"></i>${TT('ต่ำกว่าเป้า','Below')}</span>
+    <span style="margin-left:auto;color:#94A3B8">${TT('งานคร่อมหลายชั่วโมง = หารตามนาทีที่คร่อม','multi-hour jobs are split by minutes covered')}</span>
+  </div>
+  ${noTimeN?`<div class="iahtp-note" style="margin:8px 0 0;color:#B45309">⚠️ ${noTimeN} rec ${TT('ไม่ได้ระบุเวลาเริ่ม-สิ้นสุด จึงลงตารางรายชั่วโมงไม่ได้ (ไม่ถูกนับในยอดรวมของตารางนี้)','have no start/end time, so they cannot be placed in an hour (excluded from the totals below)')}</div>`:''}`;
 }
 /* ช่วงชั่วโมงที่ "มีข้อมูลจริง" (เช้าสุด → ช่วงสุดท้ายที่มี record) — ใช้กำหนดหน้าต่าง ไม่ให้เลื่อนไปช่องว่าง
    (แก้บั๊ก: เดิม LIVE เลื่อนตามนาฬิกาเครื่อง เช่นเปิดดูตอนบ่ายแต่ข้อมูลลงช่วงเช้า → ช่องรายชั่วโมงว่างหมด) */
