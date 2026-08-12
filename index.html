@@ -1269,6 +1269,7 @@ button.isl-kpi.on .k::after{content:" ✕";font-weight:900}
 .isl-kpi.run{border-color:var(--orange-bd);background:var(--orange-bg)}   .isl-kpi.run .v{color:#B45309}
 .isl-kpi.done{border-color:var(--green-bd);background:var(--green-bg)}    .isl-kpi.done .v{color:#047857}
 .isl-kpi.late{border-color:var(--red-bd);background:var(--red-bg)}        .isl-kpi.late .v{color:#B91C1C}
+.isl-kpi.short{border-color:var(--red-bd);background:var(--red-bg);border-style:dashed} .isl-kpi.short .v{color:#B91C1C}
 
 /* บอร์ดรายกลุ่มลูกค้า */
 .isl-wrap{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(500px,1fr));align-items:start}
@@ -1341,6 +1342,12 @@ tr.s-done  td.no::before{background:linear-gradient(180deg,#34D399,#059669)}
 tr.s-late  td.no::before{background:linear-gradient(180deg,#F87171,#DC2626)}
 tr.s-late{background:#FFF7F7!important}
 tr.s-late:hover{background:#FFECEC!important}
+/* ★ 2026-08-12 — "ของไม่พอส่ง": ผลิตจบทั้งล็อตแล้ว แต่ของถูกงวดที่ถึงก่อนตัดไปจนไม่พอส่งงวดนี้
+   แดงเหมือนเลยกำหนด (เป็นเรื่องที่ต้องรีบตัดสินใจพอกัน) แต่แยกด้วยลายเส้นประ = "ของไม่พอ" ไม่ใช่ "สาย"
+   → ต่างกันด้วยรูปร่าง ไม่ใช่ต่างที่สีอย่างเดียว คนตาบอดสีก็แยกออก */
+tr.s-short td.no::before{background:repeating-linear-gradient(180deg,#DC2626 0 4px,#FCA5A5 4px 8px)}
+tr.s-short{background:#FFF7F7!important}
+tr.s-short:hover{background:#FFECEC!important}
 
 .isl-part{font-weight:800;color:var(--blue-dark);font-family:'Courier New',monospace;
   font-size:calc(11.8px*var(--isl-s));letter-spacing:.2px}
@@ -1364,6 +1371,9 @@ tr.s-late:hover{background:#FFECEC!important}
   transition:width .45s cubic-bezier(.22,.61,.36,1)}
 tr.s-done .isl-bar-t i{background:linear-gradient(90deg,#059669,#34D399)}
 tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
+tr.s-short .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
+/* "ขาดอีกกี่ชิ้น" — ตัวเลขที่คนต้องเอาไปตัดสินใจต่อ (เพิ่มแผนผลิต หรือเลื่อนงวดส่ง) */
+.isl-q .n i.sh{color:#B91C1C;font-weight:900}
 
 .isl-st{display:inline-flex;align-items:center;gap:4px;font-size:calc(9.8px*var(--isl-s));font-weight:800;
   border-radius:99px;padding:1.5px 8px;border:1px solid transparent;letter-spacing:.1px}
@@ -1372,6 +1382,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .isl-st-run{background:var(--orange-bg);color:#B45309;border-color:var(--orange-bd)}
 .isl-st-run::before{animation:islPulse 1.8s ease-in-out infinite}
 .isl-st-done{background:var(--green-bg);color:#047857;border-color:var(--green-bd)}
+.isl-st-short{background:var(--red-bg);color:#B91C1C;border-color:var(--red-bd);border-style:dashed}
 @keyframes islPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
 @media (prefers-reduced-motion:reduce){.isl-st-run::before{animation:none}}
 .isl-rm{display:inline-block;font-size:calc(9px*var(--isl-s));font-weight:900;color:#4C1D95;background:#EDE9FE;
@@ -1469,6 +1480,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-t tbody tr:hover{background:var(--blue-light)}
 .ism-t tbody tr.s-late{background:#FFF7F7}
 .ism-t tbody tr.s-late:hover{background:#FFECEC}
+.ism-t tbody tr.s-short{background:#FFF7F7}
+.ism-t tbody tr.s-short:hover{background:#FFECEC}
 .ism-t th.c-v,.ism-t td.c-v{position:sticky;left:0;z-index:2;background:inherit;text-align:left;
   width:var(--ism-vw);min-width:var(--ism-vw);max-width:var(--ism-vw)}
 /* ★ คอลัมน์ "รวมทั้งเดือน" ต้องอ่านออกทันทีว่าเป็นช่องสรุป ไม่ใช่วันที่อีกวัน
@@ -1490,6 +1503,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-t tr.s-run  td.c-v::before{background:linear-gradient(180deg,#FBBF24,#F59E0B)}
 .ism-t tr.s-done td.c-v::before{background:linear-gradient(180deg,#34D399,#059669)}
 .ism-t tr.s-late td.c-v::before{background:linear-gradient(180deg,#F87171,#DC2626)}
+.ism-t tr.s-short td.c-v::before{background:repeating-linear-gradient(180deg,#DC2626 0 4px,#FCA5A5 4px 8px)}
 .ism-v{display:flex;align-items:center;gap:5px;min-width:0}
 .ism-v .vn{border:0;background:transparent;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-weight:800;
   color:var(--blue-dark);font-size:calc(11.8px*var(--isl-s));letter-spacing:.2px;overflow:hidden;
@@ -1498,6 +1512,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-v .vn:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px;border-radius:4px}
 .ism-sub{display:block;font-size:calc(8.6px*var(--isl-s));font-weight:700;color:var(--muted);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ism-sub .sh{color:#B91C1C;font-weight:900}   /* ขาดอีกกี่ชิ้นถึงจะส่งครบทั้งเดือน */
 .ism-cu{font-size:calc(8.2px*var(--isl-s));font-weight:900;border-radius:99px;padding:0 5px;border:1px solid;flex:0 0 auto;
   letter-spacing:.2px}
 .cu-MSI{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
@@ -1513,6 +1528,7 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   transition:width .45s cubic-bezier(.22,.61,.36,1)}
 .ism-t tr.s-done td.c-tot .tp i{background:linear-gradient(90deg,#059669,#34D399)}
 .ism-t tr.s-late td.c-tot .tp i{background:linear-gradient(90deg,#DC2626,#F87171)}
+.ism-t tr.s-short td.c-tot .tp i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-t td.c-tot .pcn{display:block;font-style:normal;font-size:calc(8.6px*var(--isl-s));font-weight:800;color:var(--muted)}
 .ism-t td.c-tot .pcn.z{color:#B6C2D4}   /* 0% = ยังไม่เริ่มผลิต — ทำให้จางลง ไม่ให้แย่งสายตากับแถวที่เดินแล้ว */
 /* หัวคอลัมน์วันที่ — เลขวันตัวใหญ่ (อ่านจากจอติดผนัง) + เดือนย่อ + วันในสัปดาห์ */
@@ -1545,6 +1561,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-q .pb i{display:block;height:100%;border-radius:99px;background:currentColor;opacity:.8;
   transition:width .45s cubic-bezier(.22,.61,.36,1)}
 .ism-q .lt{display:block;font-size:calc(7.8px*var(--isl-s));font-weight:800;opacity:.75;margin-top:1px}
+/* "ขาด N" ในช่องวันที่ — ต้องอ่านออกก่อนจำนวนล็อต เพราะเป็นตัวที่ทำให้ส่งของไม่ได้ */
+.ism-q .lt.sh{opacity:1;font-weight:900;letter-spacing:-.2px}
 .ism-q:hover{transform:translateY(-1px);box-shadow:0 3px 9px rgba(15,23,42,.2)}
 .ism-q:active{transform:translateY(0)}
 .ism-q:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px}
@@ -1552,6 +1570,8 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ism-q.q-run {background:var(--orange-bg);color:#B45309;border-color:var(--orange-bd)}
 .ism-q.q-done{background:var(--green-bg);color:#047857;border-color:var(--green-bd)}
 .ism-q.q-late{background:var(--red-bg);color:#B91C1C;border-color:var(--red-bd)}
+/* ของไม่พอส่งงวดนี้ — แดงเหมือนเลยกำหนด แต่กรอบเส้นประ = แยกออกจากกันได้โดยไม่ต้องพึ่งสีอย่างเดียว */
+.ism-q.q-short{background:var(--red-bg);color:#B91C1C;border-color:#DC2626;border-style:dashed}
 @media (prefers-reduced-motion:reduce){.ism-q:hover{transform:none}}
 /* แถวรวมท้ายตาราง — ตรึงไว้ล่างสุด เห็นยอดขายรายวันตลอดเวลาที่เลื่อนดู */
 .ism-t tfoot td{position:sticky;bottom:0;z-index:3;background:#EEF3FC;border-top:1.5px solid var(--blue-soft);
@@ -1577,6 +1597,16 @@ tr.s-late .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .ismp-lot.run {border-color:var(--orange-bd);background:#FFFDF6}
 .ismp-lot.done{border-color:var(--green-bd);background:#F7FEFB}
 .ismp-lot.late{border-color:var(--red-bd);background:#FFF8F8}
+.ismp-lot.short{border-color:#DC2626;border-style:dashed;background:#FFF8F8}
+/* ★ 2026-08-12 — แถบ "ของกองเดียวถูกแบ่งให้งวดไหนเท่าไร" — ตัวอธิบายว่าทำไมงวดหลังถึงแดง */
+.ismp-alloc{font-size:11px;color:#475569;line-height:1.9;margin:2px 0 6px;padding:4px 7px;border-radius:8px;
+  background:#F8FAFC;border:1px dashed var(--border)}
+.ismp-alloc b{color:var(--blue-dark)}
+.ismp-alloc .al{display:inline-block;font-weight:800;font-variant-numeric:tabular-nums;border-radius:99px;
+  padding:0 7px;margin:0 3px 2px 0;border:1px solid}
+.ismp-alloc .al.ok {background:var(--green-bg);color:#047857;border-color:var(--green-bd)}
+.ismp-alloc .al.bad{background:var(--red-bg);color:#B91C1C;border-color:#DC2626;border-style:dashed}
+.ismp-alloc .al.on {box-shadow:0 0 0 2px rgba(26,86,219,.35)}   /* งวดที่กำลังเปิดดูอยู่ */
 .ismp-l1{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px}
 .ismp-lotno{font-family:'Courier New',monospace;font-weight:900;font-size:13px;color:var(--blue-dark)}
 .ismp-l1 .amt{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -1893,7 +1923,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.52</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.53</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -8271,7 +8301,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.52":"Production Record + KPI · v3.52",
+"ระบบบันทึกผลิต + KPI · v3.53":"Production Record + KPI · v3.53",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9517,7 +9547,10 @@ function islZoom(dir) {
   _islApplyZoom();   // ตัวหนังสือขยาย/ย่อให้เห็นทันที = feedback ในตัว (toast มองไม่เห็นตอน native fullscreen)
 }
 /* ดัชนี "ผลิตไปถึงไหนแล้ว" ต่อ (valve::lot) — สร้างครั้งเดียวต่อการวาด 1 รอบ
-   ใช้ชุดข้อมูลแบบเดียวกับ WIP (ครบทุกช่วงเวลา) + รวมสายพี่น้อง VSM3/VSM4 */
+   ใช้ชุดข้อมูลแบบเดียวกับ WIP (ครบทุกช่วงเวลา) + รวมสายพี่น้อง VSM3/VSM4
+   ★ 2026-08-12 — สร้างตารางจัดสรรของให้แต่ละงวดส่ง (_islAllocMap) ต่อท้ายในฟังก์ชันเดียวกัน
+     สองอย่างนี้ต้องมาจากข้อมูลรอบเดียวกันเสมอ ถ้าแยกให้ผู้เรียกกดเองแล้วลืมอันใดอันหนึ่ง
+     ตัวเลขบนบอร์ดจะกลายเป็นคนละรอบข้อมูลโดยไม่มีอะไรฟ้อง */
 function _islProdIndex() {
   const idx = {};
   for (const r of filterVsmPeer(_wipProdSrc())) {
@@ -9530,49 +9563,97 @@ function _islProdIndex() {
     const d = (r.timestamp || r.shift_date || r.record_date || '').slice(0, 10);
     if (d > e.last) e.last = d;
   }
+  _islAllocMap = _islBuildAlloc(idx);
   return idx;
 }
-/* แถวเดียวของตาราง — รวมข้อมูลแผนขาย + ของจริงจากการผลิต */
+/* ยอดที่ผลิตได้ของ "ทั้งล็อต" + process ที่ไกลสุดตาม flow ของวาล์วนั้น (= ตัวแทนสถานะ)
+   แยกออกมาเพราะทั้งการจัดสรรงวดส่งและการวาดแถวต้องใช้เลขชุดเดียวกันเป๊ะ */
+function _islLotProd(valve, lot, idx) {
+  const e = idx[jobKey(valve, lot)];
+  const flow = _valveFlow(valve).map(_procCanon);
+  let proc = '', qty = 0, best = -2;
+  if (e) for (const pr in e.byProc) {
+    const rank = flow.indexOf(pr) >= 0 ? flow.indexOf(pr) : -1;
+    if (rank > best || (rank === best && (e.byProc[pr] || 0) > qty)) { best = rank; proc = pr; qty = e.byProc[pr] || 0; }
+  }
+  // ถึง process สุดท้ายของวาล์วแล้ว = จบงาน (กฎเดียวกับ _planAutoStatus)
+  const last = flow[flow.length - 1] || '';
+  return { e, proc, qty, done: !!(proc && last && proc === last) };
+}
+/* ═══ ★ 2026-08-12 (req) — จัดสรร "ของที่ผลิตได้" ให้แต่ละงวดส่ง ตามลำดับวันที่ (FIFO) ═══
+   อาการที่เจอ: VV2629M0 ล็อต 2607S070244 วางแผนขาย 2 งวด — 07/08 1,100 ชิ้น + 14/08 1,800 ชิ้น
+     แต่ของที่ผลิตได้มีกองเดียว · เดิมทุกงวดอ่าน "ยอดของทั้งล็อต" เท่ากันหมด
+     → สองช่องขึ้นเขียวเหมือนส่งได้ครบทั้งคู่ ทั้งที่ของพอแค่งวดแรกงวดเดียว
+   กติกาใหม่ (ตรงกับของจริง): งวดที่ถึงก่อนตัดของไปก่อนจนเต็มยอดสั่ง เหลือเท่าไรค่อยไหลไปงวดถัดไป
+     → 07/08 ได้ 1,100 (ครบ) · 14/08 ได้ 0 จาก 1,800 = ของไม่พอส่ง (แดง)
+   • คิดจากแผนขาย "ทุกเดือน" ของล็อตนั้น ไม่ใช่เฉพาะเดือนที่เปิดดู — ของที่ถูกงวดเดือนก่อนตัดไปแล้ว
+     ต้องหายไปจริง ไม่ใช่โผล่กลับมาให้เดือนนี้ใช้ซ้ำ
+   • ผลิตเกินยอดสั่งทุกงวด (ผลิตเผื่อ) → ส่วนเกินตกที่งวดสุดท้าย ผลรวมที่จัดสรรจึงเท่ากับ
+     ยอดที่ผลิตได้ของล็อตเสมอ — ตัวเลขรวมทั้งบอร์ดไม่เปลี่ยนจากเดิม เปลี่ยนแค่ "ของกองนี้เป็นของงวดไหน"
+   • คีย์เป็นตัวแผนเอง (object) ไม่ใช่ plan_id — แถวที่ยังไม่มี id (เพิ่งเพิ่ม/เพิ่งนำเข้า) ก็จัดสรรได้ */
+let _islAllocMap = new Map();
+function _islBuildAlloc(idx) {
+  const byLot = new Map();
+  for (const p of filterVsm(state.plans || [])) {
+    if (p.status === 'cancelled') continue;
+    const valve = (p.valve_no || '').trim(); if (!valve) continue;
+    const k = jobKey(valve, (p.lot || '').trim());
+    let a = byLot.get(k); if (!a) byLot.set(k, a = []);
+    a.push(p);
+  }
+  const out = new Map();
+  for (const ps of byLot.values()) {
+    // เรียงตามวันส่ง · วันเดียวกันตัดสินด้วย plan_id → ลำดับคงที่ ตัวเลขไม่สลับเองตอน auto-refresh
+    ps.sort((a, b) => _planDateISO(a.plan_date).localeCompare(_planDateISO(b.plan_date))
+                   || String(a.plan_id || '').localeCompare(String(b.plan_id || '')));
+    let left = _islLotProd((ps[0].valve_no || '').trim(), (ps[0].lot || '').trim(), idx).qty;
+    ps.forEach((p, i) => {
+      let give = Math.min(left, Math.max(0, Number(p.quantity) || 0));
+      left -= give;
+      if (i === ps.length - 1) { give += left; left = 0; }   // ผลิตเกิน → ตกงวดสุดท้าย ยอดรวมจึงไม่หาย
+      out.set(p, give);
+    });
+  }
+  return out;
+}
+/* แถวเดียวของตาราง — รวมข้อมูลแผนขาย + ของจริงจากการผลิต
+   qty = ของที่ "งวดนี้" ได้รับจัดสรร (ไม่ใช่ยอดทั้งล็อต) · lotQty = ของทั้งล็อต · short = ขาดอีกกี่ชิ้น */
 function _islRow(p, idx) {
   const valve = (p.valve_no || '').trim();
   const lot   = (p.lot || '').trim();
-  const k     = jobKey(valve, lot);
-  const e     = idx[k];
   const due   = _planDateISO(p.plan_date);
   const order = Number(p.quantity) || 0;
-  let done = getJobProc(valve, lot) === 'DONE';
-  let proc = '', qty = 0;
-  const flow = _valveFlow(valve).map(_procCanon);
-  if (e) {
-    // process ที่ "ไกลสุด" ตาม flow ของวาล์ว = ตัวแทนสถานะ + ยอดที่ทำได้จริง
-    let best = -2;
-    for (const pr in e.byProc) {
-      const i = flow.indexOf(pr);
-      const rank = i >= 0 ? i : -1;
-      if (rank > best || (rank === best && (e.byProc[pr] || 0) > qty)) { best = rank; proc = pr; qty = e.byProc[pr] || 0; }
-    }
-    // ถึง process สุดท้ายของวาล์วแล้ว = จบงาน (กฎเดียวกับ _planAutoStatus)
-    const last = flow[flow.length - 1] || '';
-    if (proc && last && _procCanon(proc) === last) done = true;
-  }
+  const pr    = _islLotProd(valve, lot, idx);
+  const e     = pr.e, proc = pr.proc;
+  const done  = pr.done || getJobProc(valve, lot) === 'DONE';
+  const lotQty = pr.qty;
+  const qty    = _islAllocMap.has(p) ? _islAllocMap.get(p) : lotQty;
+  const short  = Math.max(0, order - qty);
+  const taken  = Math.max(0, lotQty - qty);   // ของที่งวดซึ่งถึงก่อนตัดไปแล้ว
+  /* ★ ธงแดง "ของไม่พอส่ง" ติดเฉพาะกรณีที่ของถูกงวดก่อนหน้าตัดไปจนงวดนี้ไม่พอ (taken > 0)
+     ไม่ใช่ทุกแถวที่ยังผลิตไม่ครบ — งานที่แค่ "ยังผลิตไม่ถึง" มีสีส้ม/เทา + แถบ % บอกอยู่แล้ว
+     ถ้าติดแดงยกเข่งทุกแถวที่ยังไม่ครบ ธงจะเฟ้อจนไม่มีใครดู */
+  const stolenShort = short > 0 && taken > 0;
   const cust = custOfValve(valve);        // จัดกลุ่มแล้ว 4 กลุ่ม: MSI / SWE / OES&OEM / Other
-  const st = done ? 'done' : (proc ? 'run' : 'none');
+  const st = stolenShort ? 'short' : done ? 'done' : (proc ? 'run' : 'none');
   return {
-    valve, lot, order, due, qty, proc, cust, st,
+    valve, lot, order, due, qty, lotQty, short, taken, proc, cust, st,
     remark: e ? [...e.vsms].map(v => (VSM_LABEL[v] || v).replace(/\s+/g, '')).sort().join(' · ') : '',
     lastDate: e ? e.last : '',
-    late: !done && due && due < todayISO(),
+    // เลยกำหนดแล้ว: งานที่ยังไม่จบ (เกณฑ์เดิม) + งานที่จบแล้วแต่ของถูกงวดก่อนหน้าตัดไปจนส่งไม่ได้
+    late: !!due && due < todayISO() && (!done || stolenShort),
     planStatus: p.status || 'planned',
   };
 }
-const _ISL_ST_RANK = { none: 0, run: 1, done: 2 };
+const _ISL_ST_RANK = { none: 0, run: 1, short: 2, done: 3 };
 /* % ความคืบหน้าของแถว — ใช้ทั้งตอนเรียงและตอนวาดแถบ (ต้องเป็นสูตรเดียวกันเป๊ะ) */
 function _islPc(r) { return r.order > 0 ? Math.round(r.qty / r.order * 100) : (r.qty > 0 ? 100 : 0); }
-/* รวม "ยอดที่ผลิตได้" แบบไม่นับซ้ำ — r.qty ผูกกับ (valve+lot) ไม่ใช่กับบรรทัดแผน
-   ล็อตเดียวที่ถูกวางแผนขาย 2 วัน = 2 แถว แต่ของที่ผลิตได้มีกองเดียว */
+/* รวม "ยอดที่ผลิตได้" ของชุดแถวที่ส่งมา
+   ★ 2026-08-12 — r.qty ถูกจัดสรรรายงวดแล้ว (ดู _islBuildAlloc) ของล็อตเดียวกันจึงไม่ซ้ำกันเอง
+     บวกตรง ๆ ได้เลย · เดิมต้อง dedupe ด้วย jobKey เพราะทุกงวดถือยอดทั้งล็อตเท่ากันหมด */
 function _islSumQty(rows) {
-  const seen = new Set(); let s = 0;
-  for (const r of rows) { const k = jobKey(r.valve, r.lot); if (!seen.has(k)) { seen.add(k); s += r.qty; } }
+  let s = 0;
+  for (const r of rows) s += r.qty;
   return s;
 }
 function _islSortRows(rows) {
@@ -9624,7 +9705,9 @@ function _islTable(rows) {
       >${lb}<span class="ar">${on ? (asc ? '▲' : '▼') : '↕'}</span></th>`;
   };
   const body = _islSortRows(rows).map((r, i) => {
-    const stTxt = r.st === 'done' ? TT('ผลิตเสร็จ','Done') : r.st === 'run' ? escapeHtml(r.proc || TT('กำลังผลิต','Running')) : TT('ยังไม่เริ่ม','Not started');
+    const stTxt = r.st === 'done' ? TT('ผลิตเสร็จ','Done')
+                : r.st === 'short' ? TT('ของไม่พอส่ง','Short')
+                : r.st === 'run' ? escapeHtml(r.proc || TT('กำลังผลิต','Running')) : TT('ยังไม่เริ่ม','Not started');
     const rel = _islDueRel(r.due);
     // ความคืบหน้า = ยอดที่ผลิตได้ ÷ ยอดสั่ง (แถบตันที่ 100% แต่ตัวเลข % บอกของจริง)
     const pc  = _islPc(r);
@@ -9638,8 +9721,13 @@ function _islTable(rows) {
       <td><span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span></td>
       <td style="text-align:right"><span class="isl-ord">${r.order ? nn(r.order) : '<span class="isl-dash">—</span>'}</span></td>
       <td><div class="isl-due"><span class="d">${_fmtThDate(r.due)}</span>${rel ? `<span class="r ${rel.cls}">${rel.txt}</span>` : ''}</div></td>
-      <td><div class="isl-q">
-        <div class="n"><b>${r.qty ? nn(r.qty) : '<span class="isl-dash">—</span>'}</b>${r.order ? `<i>${pc}%</i>` : ''}</div>
+      ${/* ★ 2026-08-12 — Q'ty = ของที่ "งวดนี้" ได้รับจัดสรร (ล็อตเดียวขายหลายงวด = แบ่งกันไป ไม่ใช่เต็มทุกงวด)
+            ขาดเท่าไรบอกในช่องเดียวกัน พร้อม tooltip ว่าของทั้งล็อตมีเท่าไร — กันคนเทียบแล้วงงว่าเลขหายไปไหน */''}
+      <td title="${escapeHtml(`${TT('ของพร้อมส่งงวดนี้','Ready for this delivery')} ${nn(r.qty)} / ${nn(r.order)}`
+          + (r.taken ? ` · ${TT('ของทั้งล็อต','whole lot')} ${nn(r.lotQty)} (${TT('งวดที่ถึงก่อนตัดไป','taken by earlier deliveries')} ${nn(r.taken)})` : '')
+          + (r.short ? ` · ${TT('ขาด','short')} ${nn(r.short)}` : ''))}"><div class="isl-q">
+        <div class="n"><b>${r.qty ? nn(r.qty) : '<span class="isl-dash">—</span>'}</b>${r.order ? `<i>${pc}%</i>` : ''}${
+          r.st === 'short' ? `<i class="sh">${TT('ขาด','short')} ${nn(r.short)}</i>` : ''}</div>
         <div class="isl-bar-t"><i style="width:${bar}%"></i></div>
       </div></td>
       <td><span class="isl-st isl-st-${r.st}">${stTxt}</span></td>
@@ -9682,17 +9770,20 @@ function _ismCu(c) {
   if (c === 'OES&OEM') return { c: 'cu-OES', t: 'OES' };
   return { c: 'cu-OTH', t: TT('อื่น ๆ', 'Other') };
 }
-/* สถานะรวมของ "ช่องหนึ่งช่อง" (วันเดียว อาจมีหลายล็อต) — เลยกำหนดมาก่อนเสมอ เพราะเป็นตัวที่ต้องรีบดู */
+/* สถานะรวมของ "ช่องหนึ่งช่อง" (วันเดียว อาจมีหลายล็อต) — เลยกำหนดมาก่อนเสมอ เพราะเป็นตัวที่ต้องรีบดู
+   รองลงมาคือ "ของไม่พอส่ง": ของกองเดียวกันถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ */
 function _ismSt(items) {
   if (items.some(r => r.late)) return 'late';
+  if (items.some(r => r.st === 'short')) return 'short';
   if (items.length && items.every(r => r.st === 'done')) return 'done';
   if (items.some(r => r.st === 'run')) return 'run';
   return 'none';
 }
-const _ISM_ST_RANK = { late: 0, run: 1, none: 2, done: 3 };
+const _ISM_ST_RANK = { late: 0, short: 1, run: 2, none: 3, done: 4 };
 /* ยุบแถวรายล็อต → แถวราย Valve No + ช่องรายวัน
-   ★ ยอดผลิต (qty) ต้องกันนับซ้ำ: ถ้าล็อตเดียวถูกวางแผนขาย 2 วัน ยอดที่ผลิตได้ของล็อตนั้นมีชุดเดียว
-     ถ้าบวกทุกแถวจะกลายเป็น 2 เท่า → นับครั้งเดียวต่อ jobKey ทั้งระดับช่องและระดับแถว */
+   ★ 2026-08-12 — ยอดผลิต (qty) บวกตรง ๆ ได้แล้ว: r.qty คือ "ของที่งวดนั้นได้รับจัดสรร"
+     ล็อตเดียวที่ขาย 2 วันจึงถูกแบ่งกันไปคนละส่วน ไม่ใช่ถือยอดเต็มทั้งคู่เหมือนเดิม (ดู _islBuildAlloc)
+     seen ยังต้องมีอยู่ — ใช้นับ "จำนวนล็อตจริง" ไม่ใช่กันนับซ้ำยอดแล้ว */
 function _islMatrix(rows, ym) {
   const [y, mo] = ym.split('-').map(Number);
   const nDays = new Date(y, mo, 0).getDate();
@@ -9704,21 +9795,24 @@ function _islMatrix(rows, ym) {
     if (!d || d > nDays) continue;
     const vk = vKey(r.valve);
     let e = map.get(vk);
-    if (!e) { e = { valve: r.valve, cust: r.cust, cells: {}, order: 0, qty: 0, seen: new Set(),
-                    firstDue: r.due, nLate: 0, nDone: 0, nRun: 0, n: 0 }; map.set(vk, e); }
-    const c = e.cells[d] || (e.cells[d] = { order: 0, qty: 0, items: [], seen: new Set() });
+    if (!e) { e = { valve: r.valve, cust: r.cust, cells: {}, order: 0, qty: 0, short: 0, seen: new Set(),
+                    firstDue: r.due, nLate: 0, nDone: 0, nRun: 0, nShort: 0, n: 0 }; map.set(vk, e); }
+    const c = e.cells[d] || (e.cells[d] = { order: 0, qty: 0, short: 0, taken: 0, items: [], seen: new Set() });
     const jk = jobKey(r.valve, r.lot);
-    c.order += r.order; c.items.push(r);
-    if (!c.seen.has(jk)) { c.seen.add(jk); c.qty += r.qty; }
-    e.order += r.order; e.n++;
-    if (!e.seen.has(jk)) { e.seen.add(jk); e.qty += r.qty; }
-    if (r.late) e.nLate++; else if (r.st === 'done') e.nDone++; else if (r.st === 'run') e.nRun++;
+    // short ที่สะสมไว้ = เฉพาะส่วนที่ขาดเพราะถูกงวดก่อนหน้าตัดไป (ไม่ใช่ "ยังผลิตไม่ถึง" ซึ่งแถบ % บอกอยู่แล้ว)
+    const sh = r.st === 'short' ? r.short : 0, tk = r.st === 'short' ? r.taken : 0;
+    c.order += r.order; c.qty += r.qty; c.short += sh; c.taken += tk; c.items.push(r);
+    c.seen.add(jk);
+    e.order += r.order; e.qty += r.qty; e.short += sh; e.n++;
+    e.seen.add(jk);
+    if (r.late) e.nLate++; else if (r.st === 'short') e.nShort++;
+    else if (r.st === 'done') e.nDone++; else if (r.st === 'run') e.nRun++;
     if (r.due < e.firstDue) e.firstDue = r.due;
     dayOrder[d] += r.order; dayN[d]++;
   }
   const list = [...map.values()].map(e => {
     e.lots = e.seen.size;
-    e.st = e.nLate ? 'late' : (e.nDone === e.n ? 'done' : (e.nRun ? 'run' : 'none'));
+    e.st = e.nLate ? 'late' : e.nShort ? 'short' : (e.nDone === e.n ? 'done' : (e.nRun ? 'run' : 'none'));
     e.pc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
     return e;
   });
@@ -9782,13 +9876,19 @@ function _ismHtml(rows, ym) {
       const pc = c.order > 0 ? Math.max(0, Math.min(100, Math.round(c.qty / c.order * 100))) : 0;
       const iso = `${ym}-${P(m.d)}`;
       const nLot = c.seen.size;   // จำนวน "ล็อตจริง" ไม่ใช่จำนวนบรรทัดแผน (แผนเดียวกันถูกแยกหลายบรรทัดได้)
+      /* ★ 2026-08-12 — ของที่ "งวดวันนี้" ได้จริง หลังหักให้งวดที่ถึงก่อนไปแล้ว (ดู _islBuildAlloc)
+         ขาดเท่าไรต้องเขียนไว้ในช่องเลย ไม่ใช่ให้ไปเปิดป๊อปอัปหาเอง */
+      const shortNow = c.short > 0;
       const lab = `${e.valve} · ${_fmtThDate(iso)} · ${TT('ขาย', 'sell')} ${nn(c.order)} ${TT('ชิ้น', 'pcs')}`
         + (nLot > 1 ? ` · ${nLot} ${TT('ล็อต', 'lots')}` : '')
-        + ` · ${TT('ผลิตได้', 'made')} ${nn(c.qty)} (${pc}%)`;
+        + ` · ${TT('ของพร้อมส่งงวดนี้', 'ready for this delivery')} ${nn(c.qty)} (${pc}%)`
+        + (shortNow ? ` · ${TT('ขาด', 'short')} ${nn(c.short)} — ${TT('ของล็อตเดียวกันถูกงวดที่ถึงก่อนตัดไปแล้ว',
+              'the same lot’s stock was already taken by an earlier delivery')} ${nn(c.taken)} ${TT('ชิ้น', 'pcs')}` : '');
       return `<td class="ism-c${m.cls}"><button type="button" class="ism-q q-${st}"
         aria-label="${escapeHtml(lab)}" title="${escapeHtml(lab + ' — ' + TT('กดดูล็อต/สถานะ', 'tap for lots & status'))}"
         onclick="islCellPop('${vEnc}','${iso}')"><b>${nn(c.order)}</b><span class="pb"><i style="width:${pc}%"></i></span>${
-        nLot > 1 ? `<span class="lt">${nLot} ${TT('ล็อต', 'lots')}</span>` : ''}</button></td>`;
+        nLot > 1 ? `<span class="lt">${nLot} ${TT('ล็อต', 'lots')}</span>` : ''}${
+        shortNow ? `<span class="lt sh">${TT('ขาด', 'short')} ${nn(c.short)}</span>` : ''}</button></td>`;
     }).join('');
     return `<tr class="s-${e.st}" style="animation-delay:${Math.min(i, 14) * 16}ms">
       <td class="c-v">
@@ -9797,7 +9897,8 @@ function _ismHtml(rows, ym) {
             title="${escapeHtml(e.valve + ' — ' + TT('กดดูทุกล็อตของเบอร์นี้ในเดือนนี้', 'tap to see every lot of this valve this month'))}">${_islHi(e.valve)}</button>
           <span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span>
         </span>
-        <span class="ism-sub">${e.lots} ${TT('ล็อต', 'lots')} · ${e.qty ? `${TT('ผลิตได้', 'made')} ${nn(e.qty)}` : TT('ยังไม่เริ่มผลิต', 'not started')}</span>
+        <span class="ism-sub">${e.lots} ${TT('ล็อต', 'lots')} · ${e.qty ? `${TT('ผลิตได้', 'made')} ${nn(e.qty)}` : TT('ยังไม่เริ่มผลิต', 'not started')}${
+          e.short ? ` · <b class="sh">${TT('ขาด', 'short')} ${nn(e.short)}</b>` : ''}</span>
       </td>
       <td class="c-tot" title="${escapeHtml(`${e.valve} — ${TT('ขายทั้งเดือน', 'sold this month')} ${nn(e.order)} ${TT('ชิ้น', 'pcs')} (${TT('ผลรวมของทุกช่องวันที่ในแถวนี้', 'the sum of every day cell in this row')}) · ${TT('ผลิตได้', 'made')} ${nn(e.qty)}`)}"
         ><b>${nn(e.order)}</b><span class="tp"><i style="width:${Math.max(0, Math.min(100, e.pc))}%"></i></span><i class="pcn${e.pc ? '' : ' z'}">${e.pc}%</i></td>
@@ -9913,14 +10014,14 @@ function _islPop(valve, iso) {
   for (const r of items) {
     const k = lotKey(r.lot);
     let e = byLot.get(k);
-    if (!e) { e = { lot: r.lot, order: 0, dues: [], r }; byLot.set(k, e); }
-    e.order += r.order;
+    if (!e) { e = { lot: r.lot, order: 0, qty: 0, short: 0, lotQty: r.lotQty, dues: [], rows: [], r }; byLot.set(k, e); }
+    // short = เฉพาะที่ขาดเพราะงวดก่อนหน้าตัดของไป (ไม่รวม "ยังผลิตไม่ถึง" ซึ่งดูได้จาก % อยู่แล้ว)
+    e.order += r.order; e.qty += r.qty; e.short += (r.st === 'short' ? r.short : 0); e.rows.push(r);
     if (e.dues.indexOf(r.due) < 0) e.dues.push(r.due);
   }
   const lots = [...byLot.values()].sort((a, b) => (a.dues[0] || '').localeCompare(b.dues[0] || '') || String(a.lot).localeCompare(String(b.lot)));
   const order = items.reduce((s, r) => s + r.order, 0);
-  let qty = 0; const seen = new Set();
-  for (const r of items) { const jk = jobKey(r.valve, r.lot); if (!seen.has(jk)) { seen.add(jk); qty += r.qty; } }
+  const qty = _islSumQty(items);   // r.qty จัดสรรรายงวดแล้ว → บวกตรง ๆ ไม่ซ้ำ (ดู _islBuildAlloc)
   const pc = order > 0 ? Math.round(qty / order * 100) : (qty > 0 ? 100 : 0);
   const nLate = items.filter(r => r.late).length;
   const nDone = items.filter(r => r.st === 'done').length;
@@ -9932,11 +10033,24 @@ function _islPop(valve, iso) {
   const cards = lots.slice(0, CAP).map(e => {
     const r  = e.r;
     const at = _islJobAt(valve, e.lot, recsV);
-    const st = r.late ? 'late' : (at.done || r.st === 'done') ? 'done' : (at.cur || r.st === 'run') ? 'run' : 'none';
+    const st = r.late ? 'late' : e.short > 0 ? 'short' : (at.done || r.st === 'done') ? 'done'
+             : (at.cur || r.st === 'run') ? 'run' : 'none';
     const stTxt = st === 'done' ? TT('ผลิตเสร็จ', 'Done') : st === 'late' ? TT('เลยกำหนดขาย', 'Overdue')
+                : st === 'short' ? TT('ของไม่พอส่ง', 'Short')
                 : st === 'run' ? TT('กำลังผลิต', 'Running') : TT('ยังไม่เริ่ม', 'Not started');
-    const lpc = e.order > 0 ? Math.round(r.qty / e.order * 100) : (r.qty > 0 ? 100 : 0);
+    const lpc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
     const rel = _islDueRel(e.dues[0]);
+    /* ★ 2026-08-12 — ล็อตเดียวถูกวางแผนขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง (FIFO)
+       ต้องกางให้เห็นว่า "งวดไหนตัดไปเท่าไร เหลือให้งวดนี้เท่าไร" ไม่งั้นเลขในช่องอธิบายตัวเองไม่ได้ */
+    const lotAll = all.filter(x => lotKey(x.lot) === lotKey(e.lot))
+                      .sort((a, b) => String(a.due).localeCompare(String(b.due)));
+    const alloc = lotAll.length > 1 ? `<div class="ismp-alloc">
+        🧮 ${TT('ของทั้งล็อตที่ผลิตได้', 'Whole lot produced')} <b>${nn(e.lotQty)}</b> ${TT('ชิ้น', 'pcs')}
+        — ${TT('แบ่งให้แต่ละงวดตามลำดับวันส่ง', 'split across deliveries in due-date order')}:
+        ${lotAll.map(x => `<span class="al ${x.st === 'short' ? 'bad' : x.qty >= x.order ? 'ok' : ''}${iso && x.due === iso ? ' on' : ''}">${
+          escapeHtml(_fmtThDate(x.due))} · ${nn(x.qty)}/${nn(x.order)}${
+          x.st === 'short' ? ` · ${TT('ขาด', 'short')} ${nn(x.short)}` : ''}</span>`).join('')}
+      </div>` : '';
     const qmap = {}; for (const p of at.pop) qmap[_procCanon(p.proc)] = p.qty;
     const chips = at.flow.map(p => {
       const q = qmap[p] || 0;
@@ -9951,8 +10065,10 @@ function _islPop(valve, iso) {
         <span class="ismp-lotno">Lot ${escapeHtml(e.lot || '—')}</span>
         <span class="isl-st isl-st-${st === 'late' ? 'run' : st}">${stTxt}</span>
         <span style="font-size:11px;font-weight:800;color:var(--muted)">📅 ${e.dues.map(d => escapeHtml(_fmtThDate(d))).join(', ')}${rel ? ` <span style="color:${rel.cls === 'over' ? '#B91C1C' : rel.cls === 'warn' ? '#B45309' : 'var(--muted2)'}">(${rel.txt})</span>` : ''}</span>
-        <span class="amt"><b>${nn(r.qty)}</b> / ${nn(e.order)} ${TT('ชิ้น', 'pcs')} · ${lpc}%</span>
+        <span class="amt"><b>${nn(e.qty)}</b> / ${nn(e.order)} ${TT('ชิ้น', 'pcs')} · ${lpc}%${
+          e.short ? ` · <b style="color:#B91C1C">${TT('ขาด', 'short')} ${nn(e.short)}</b>` : ''}</span>
       </div>
+      ${alloc}
       <div class="ismp-now">
         📍 ${TT('ตอนนี้อยู่ที่', 'Now at')}
         <span class="at${at.cur ? '' : ' off'}">${escapeHtml(at.cur || TT('ยังไม่เริ่มผลิต', 'not started'))}</span>
@@ -9972,7 +10088,7 @@ function _islPop(valve, iso) {
   const body = `<div>
     <div style="margin-bottom:4px">
       <span class="ismp-k"><div class="v">${nn(order)}</div><div class="k">${TT('ยอดขาย (Order)', 'Order')}</div></span>
-      <span class="ismp-k${nDone && nDone === items.length ? ' done' : ''}"><div class="v">${nn(qty)} <span style="font-size:.62em;opacity:.7">${pc}%</span></div><div class="k">${TT('ผลิตได้', "Q'ty made")}</div></span>
+      <span class="ismp-k${nDone && nDone === items.length ? ' done' : ''}"><div class="v">${nn(qty)} <span style="font-size:.62em;opacity:.7">${pc}%</span></div><div class="k">${iso ? TT('ของพร้อมส่งงวดนี้', 'Ready for this delivery') : TT('ผลิตได้', "Q'ty made")}</div></span>
       <span class="ismp-k"><div class="v">${nn(lots.length)}</div><div class="k">${TT('ล็อต', 'Lots')}</div></span>
       ${nLate ? `<span class="ismp-k late"><div class="v">${nn(nLate)}</div><div class="k">${TT('เลยกำหนด', 'Overdue')}</div></span>` : ''}
       <span class="ismp-k"><div class="v" style="font-size:12px;padding-top:2px">${escapeHtml(cu.t)}</div><div class="k">${TT('กลุ่มลูกค้า', 'Customer')}</div></span>
@@ -9982,6 +10098,10 @@ function _islPop(valve, iso) {
     <div class="ismp-hint">
       📍 ${TT('“ตอนนี้อยู่ที่” = process ที่ไกลสุดตาม flow ของวาล์วนี้ จากยอดผลิตที่บันทึกไว้จริง (รวมสายพี่น้อง VSM3 ⇄ VSM4)',
               '“Now at” = the farthest process along this valve’s flow, from recorded production (peer lines VSM3 ⇄ VSM4 included)')}<br>
+      🧮 ${TT('ล็อตเดียวที่ขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อนจนครบยอดสั่ง เหลือเท่าไรจึงตกเป็นของงวดถัดไป',
+              'One lot sold over several deliveries: the single stock is split in due-date order — the earliest delivery takes what it needs first, and only the remainder rolls to the next')}<br>
+      🟥 ${TT('“ของไม่พอส่ง” = ของที่ผลิตได้ถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ — ต้องผลิตเพิ่มให้ทันหรือเลื่อนงวดนี้',
+              '“Short” = earlier deliveries already took the stock, leaving this one without enough — produce more in time or move this delivery')}<br>
       🟪 ${TT('ชิปสีม่วง = process ที่ลงไว้แต่ไม่อยู่ใน flow ของวาล์วนี้ — ควรตรวจว่าลงถูกขั้นไหม',
               'purple chip = a process recorded outside this valve’s flow — worth checking')}
     </div>
@@ -10022,6 +10142,8 @@ function renderIotSales(resetScroll) {
   const nDone    = inCust.filter(r => r.st === 'done').length;
   const nRun     = inCust.filter(r => r.st === 'run').length;
   const nLate    = inCust.filter(r => r.late).length;
+  // ★ 2026-08-12 — ผลิตจบล็อตแล้วแต่ของถูกงวดก่อนหน้าตัดไปจนไม่พอส่งงวดนี้ (ดู _islBuildAlloc)
+  const nShort   = inCust.filter(r => r.st === 'short').length;
   const filtering = _islSt !== 'all' || !!_islQ;
   const cnt = c => rows.filter(r => r.cust === c).length;
   const segBtn = (v, lb, n) => `<button type="button" class="${_islCust===v?'on':''}" onclick="islSetCust('${v}')"
@@ -10095,6 +10217,7 @@ function renderIotSales(resetScroll) {
         ${kpi(nn(totOrder), 'Order')}
         ${kpi(nn(totQty) + (totOrder ? ` <span style="font-size:.62em;opacity:.65">${Math.round(totQty/totOrder*100)}%</span>` : ''), "Q'ty " + TT('ผลิตได้','made'))}
         ${nLate ? kpiBtn(nLate, TT('เลยกำหนด','Overdue'),  'late', 'late') : ''}
+        ${nShort ? kpiBtn(nShort, TT('ของไม่พอส่ง','Short'), 'short', 'short') : ''}
         ${nRun  ? kpiBtn(nRun,  TT('กำลังผลิต','Running'),  'run',  'run')  : ''}
         ${nNone ? kpiBtn(nNone, TT('ยังไม่เริ่ม','Not started'), 'none', 'none') : ''}
         ${nDone ? kpiBtn(nDone, TT('ผลิตเสร็จ','Done'),     'done', 'done') : ''}
@@ -10131,17 +10254,19 @@ function renderIotSales(resetScroll) {
              </div>`)}
     <div class="isl-foot">
       ${_islView === 'matrix' ? `
-      <span><b>${TT('ตัวเลขในช่อง','Cell number')}</b> ${TT('ยอดขายของวันนั้น (Order) · แถบใต้เลข = ผลิตได้กี่ % ของยอดนั้น','sales for that day · the bar underneath = % produced')}</span>
+      <span><b>${TT('ตัวเลขในช่อง','Cell number')}</b> ${TT('ยอดขายของวันนั้น (Order) · แถบใต้เลข = มีของพร้อมส่งงวดนั้นกี่ % ของยอดนั้น','sales for that day · the bar underneath = % of that day’s order that has stock ready')}</span>
+      ${/* ★ 2026-08-12 — กติกาการแบ่งของต้องเขียนไว้บนบอร์ด ไม่ใช่ให้เดาจากสีเอา */''}
+      <span style="color:#B91C1C"><b>🧮 ${TT('ล็อตเดียวขายหลายงวด','One lot, several deliveries')}</b> ${TT('ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อน · ช่องแดงเส้นประ “ขาด …” = ของถูกงวดก่อนหน้าตัดไปจนงวดนั้นไม่เหลือพอ','the single stock is split in due-date order — the earliest delivery takes its share first · a dashed red “short …” cell means earlier deliveries took the stock and that one is left without enough')}</span>
       <span style="color:var(--blue)"><b>👆</b> ${TT('กดที่ตัวเลข = ดูล็อตที่ขายวันนั้น + ตอนนี้อยู่ที่ process ไหน · กดที่ Valve No = ดูทั้งเดือน','tap a number for that day’s lots and where they are now · tap a Valve No for the whole month')}</span>
       ${/* ★ ย้ำให้ชัด: ช่องพื้นฟ้า "รวมทั้งเดือน" ไม่ใช่ยอดของวันใดวันหนึ่ง — เคยมีคนอ่านสลับกัน */''}
       <span style="color:var(--blue-dark)"><b>${TT('ช่องพื้นฟ้า “รวมทั้งเดือน”','Blue “month total” column')}</b> ${TT('= ผลรวมของทุกช่องวันที่ในแถวนั้น รวมวันที่ยังเลื่อนไม่ถึงด้วย — ไม่ใช่ยอดของวันใดวันหนึ่ง','= every day cell in that row added up, including days scrolled out of view — not any single day')}</span>
       <span><b>Σ</b> ${TT('แถวล่างสุด = ยอดขายรวมของแต่ละวัน · ช่องซ้ายสุดของแถวนั้นคือยอดทั้งเดือน','bottom row = each day’s total · its leftmost blue cell is the month total')}</span>`
       : `
       <span><b>Order</b> ${TT('ยอดตามแผนขาย','planned qty')}</span>
-      <span><b>Q'ty</b> ${TT('ยอดที่ผลิตได้จริง + % ของยอดสั่ง','actual produced + % of order')}</span>
-      <span><b>Status</b> ${TT('process ล่าสุดจากการบันทึกผลิต','latest recorded process')}</span>
+      <span><b>Q'ty</b> ${TT('ของที่พร้อมส่ง “งวดนี้” + % ของยอดสั่ง — ล็อตเดียวขายหลายงวดจะถูกแบ่งตามลำดับวันส่ง','stock ready for THIS delivery + % of its order — one lot sold over several deliveries is split in due-date order')}</span>
+      <span><b>Status</b> ${TT('process ล่าสุดจากการบันทึกผลิต · “ของไม่พอส่ง” = ของถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ','latest recorded process · “Short” = earlier deliveries took the stock, leaving this one without enough')}</span>
       <span><b>Remark</b> ${TT('สายที่ผลิตจริง','line that produced it')}</span>`}
-      <span style="color:#B91C1C"><b>▌</b> ${TT('แถบสีข้างแถว = สถานะ (เทา ยังไม่เริ่ม · ส้ม กำลังผลิต · เขียว เสร็จ · แดง เลยกำหนด)','row rail = status')}</span>
+      <span style="color:#B91C1C"><b>▌</b> ${TT('แถบสีข้างแถว = สถานะ (เทา ยังไม่เริ่ม · ส้ม กำลังผลิต · เขียว เสร็จ · แดง เลยกำหนด/ของไม่พอส่ง)','row rail = status')}</span>
       <span>🔎 ${TT('กดหัวตารางหรือใช้ช่อง "เรียงตาม" เพื่อจัดลำดับ · กดแผ่นตัวเลขเพื่อกรองสถานะ','Tap a column header or use “Sort by” · tap a summary tile to filter by status')}</span>
       <span>🔍 ${TT('ปุ่ม − ⊙ + ปรับขนาดตัวอักษรของบอร์ดนี้','The − ⊙ + buttons resize this board’s text')}</span>
     </div>`;
