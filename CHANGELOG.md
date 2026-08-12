@@ -1,6 +1,13 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.53 — 2026-08-12 — ติดตามงานขาย: ล็อตเดียวขายหลายงวด ต้องแบ่งของตามลำดับวันส่ง (ไม่ใช่ให้ทุกงวดถือยอดเต็ม)  ⏳ ยังไม่ deploy
+## v3.53 — 2026-08-12 — ติดตามงานขาย: ล็อตเดียวขายหลายงวด ต้องแบ่งของตามลำดับวันส่ง (ไม่ใช่ให้ทุกงวดถือยอดเต็ม)  ✅ deployed
+
+**Deploy แล้วทั้ง 2 ที่** · Worker `vsm4-api` version `291d3cc2-45a8-48d1-a9e1-fb2d5b9c9b9f` → https://vsm4-api.wiphawas-sketchup.workers.dev
+· GitHub Pages commit `deae47e` (run `137` · conclusion `success`) → https://topmaha.github.io/vsm4-aftermarket-record/
+
+> ยืนยันของจริงแล้วทั้งสองที่ (curl พร้อม `?cb=`): หัวเว็บขึ้น `v3.53` · มี `_islBuildAlloc` / `q-short` / `ismp-alloc` ครบ · ไม่เหลือท่า dedupe เดิมของ `_islSumQty`
+> เปิดหน้าจริงบน Worker แล้วค้น `2629`: ช่อง 07/08 `q-done 1,100` · ช่อง 14/08 **`q-short 1,800 · ขาด 1,800`**
+> tooltip: `ของพร้อมส่งงวดนี้ 0 (0%) · ขาด 1,800 — ของล็อตเดียวกันถูกงวดที่ถึงก่อนตัดไปแล้ว 1,100 ชิ้น`
 
 ### ที่มา
 
