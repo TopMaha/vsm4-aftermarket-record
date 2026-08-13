@@ -1923,7 +1923,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.53</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.54</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2489,6 +2489,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
           <option value="vsm2">VSM 2</option>
           <option value="vsm3">VSM 3</option>
           <option value="vsm4">VSM 4</option>
+          <option value="qc">QC</option>
         </select>
       </div>
     </div>
@@ -2500,6 +2501,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
         <option value="vsm2">VSM 2</option>
         <option value="vsm3">VSM 3</option>
         <option value="vsm4">VSM 4</option>
+        <option value="qc">QC</option>
       </select>
       <span id="empVsmTally" class="muted" style="font-size:11px;margin-left:6px"></span>
     </div>
@@ -2826,6 +2828,9 @@ const DEFAULT_TARGETS = {
   'zone1.oae':0.75, 'zone1.dle':0.85, 'zone1.pdac':0.883, 'zone1.scrap':0.0012, 'zone1.pplh':300,
   'zone2.oae':0.75, 'zone2.dle':0.85, 'zone2.pdac':0.883, 'zone2.scrap':0.0012, 'zone2.pplh':400,
   'zone3.oae':0.75, 'zone3.dle':0.85, 'zone3.pdac':0.883, 'zone3.scrap':0.0012, 'zone3.pplh':300,
+  // ★ 2026-08-13 — QC (2 Zone) · ค่าเริ่มต้นชุดเดียวกับสายอื่น แก้ได้ที่หน้าตั้งค่า → เป้าราย Zone
+  'qcz1.oae':0.75, 'qcz1.dle':0.85, 'qcz1.pdac':0.883, 'qcz1.scrap':0.0012, 'qcz1.pplh':300,
+  'qcz2.oae':0.75, 'qcz2.dle':0.85, 'qcz2.pdac':0.883, 'qcz2.scrap':0.0012, 'qcz2.pplh':300,
 };
 
 /* loader: ดึงจาก LocalStorage ก่อน ถ้าไม่มีใช้ default */
@@ -2925,6 +2930,10 @@ const VSM_LIST = [
   { key:'vsm2', label:'VSM 2' },
   { key:'vsm3', label:'VSM 3' },
   { key:'vsm4', label:'VSM 4' },
+  // ★ 2026-08-13 — QC = "สาย" ที่ 5 (แผนกตรวจสอบ) ตามเอกสาร "OAE Lay out QC.xlsx"
+  //   ใช้โครงเดียวกับ VSM ทุกอย่าง (Man / Machine / Zone / IOT / KPI / ต่อกะ / ประวัติ)
+  //   ต่างที่: Process ของแต่ละเครื่อง + Valve ยังไม่ผูกกับ Master ของ VSM (ยังไม่กำหนด — จะต่างจาก VSM)
+  { key:'qc',   label:'QC' },
 ];
 const VSM_LABEL  = Object.fromEntries(VSM_LIST.map(v => [v.key, v.label]));
 const VSM_KEYS   = VSM_LIST.map(v => v.key);            // ['vsm1','vsm2','vsm3','vsm4'] — ลำดับปุ่มสลับ
@@ -3144,6 +3153,46 @@ const VSM_EMP_MAP = {
   'S-061':'vsm2',   // นายวิสันต์ กันนุฬา
   'S-063':'vsm2',   // นายมนูน อินทร์โสภา
   'S-064':'vsm2',   // นายบุญเลิศ สุขสมัย
+  // === QC 39 คน — ตามเอกสาร "OAE Lay out QC.xlsx" (Sheet Man) ===
+  'G-131':'qc',     // น.ส. กษมา ภิรมย์ศรี
+  'G-134':'qc',     // น.ส. อรนุช คำลือเมือง
+  'L-1606':'qc',    // นาย ธรรมนูญ พงษ์ไธสง
+  'L-1686':'qc',    // นาย คำพันธ์ สาเกตุ
+  'L-1776':'qc',    // นาย ประวิง ไฝ่ไร่
+  'L-1839':'qc',    // นาย นนทชัย กันกา
+  'L-1930':'qc',    // นาย วสันต์ จันทคีรี
+  'L-2005':'qc',    // นาย ตรีภพ สมพงษ์
+  'L-2088':'qc',    // นาย ยุทธพิชัย สมหวัง
+  'L-2352':'qc',    // น.ส. สุภาพร ปานพุ่ม
+  'L-2446':'qc',    // นาย สมเดช สมญา
+  'L-2539':'qc',    // นาย นิพนธ์ สีระพันธ์
+  'S-070':'qc',     // นาย ถาวร นิลผาพงษ์
+  'L-2642':'qc',    // น.ส. เกษร อุ่นมุกดา
+  'L-2776':'qc',    // น.ส. อารยา เกือกรัมย์
+  'L-2796':'qc',    // น.ส. พรทิพย์ หอมจันทร์
+  'L-2847':'qc',    // นาย วัฒชัย ปิตตาละตัง
+  'L-2861':'qc',    // น.ส. การะเกษ สุโพธิ์
+  'L-2920':'qc',    // น.ส. จิตติมา เปลี่ยนวงษ์
+  'L-3264':'qc',    // นาย ประวิท เดชโชค
+  'L-3388':'qc',    // นาย เสรี สิงห์ชู
+  'L-3412':'qc',    // น.ส. บังอร แก้ววิเศษ
+  'L-3516':'qc',    // นาย อำพล เมฆวัน
+  'L-3523':'qc',    // นาย ณัฐวุฒิ จันทร์ขำ
+  'L-3550':'qc',    // นาย วรพันธ์ แฝดสุระ
+  'L-3561':'qc',    // น.ส. ปิยมาศ จันเรียน
+  'L-3572':'qc',    // น.ส. ดมิสา ศาลางาม
+  'L-3578':'qc',    // น.ส. ณัฐธยาน์ สุระชาติ
+  'L-3595':'qc',    // นางสาว พินศร มักคะสุด
+  'L-3598':'qc',    // นาย อัจฉรา เปร่งเพิ่มพูล
+  'L-855':'qc',     // นาย สำเนียง รุ่งเรือง
+  'L-929':'qc',     // นาย ชัยยุทธิ์ ประสงค์จิรกุล
+  'S-019':'qc',     // นาย ไสว พลทิแสง
+  'S-027':'qc',     // นาย เสถียน ใจกล้า
+  'S-035':'qc',     // นาย ประทาน นามวงษา
+  'S-040':'qc',     // นาย ชลธี สุวรรณไตรย์
+  'S-054':'qc',     // นาย รังสรรค์ ดุลมา
+  'T-604':'qc',     // นาย วาทิศ วินทไชย
+  'PST786':'qc',    // น.ส. อังควิภา จามะรีย์
   // === เพิ่มรหัสพนักงาน VSM1 / VSM2 เพิ่มเติมที่นี่ได้ ===
 };
 
@@ -3330,6 +3379,13 @@ const ZONE_DEFS = {
   ZI: { label:'RENAULT·T3·M3·N4·BUFF', vsm:'vsm3' },  // R1 R2 T3 MIT-3 NIS-4 Buffing
   ZJ: { label:'ISUZU·NIS 1+3',        vsm:'vsm3' },   // I1 I2 NIS-1 NIS-3
   ZK: { label:'TRUCK·MIT 1+4·POL',    vsm:'vsm3' },   // Truck MIT-1 MIT-4 Polish
+  /* ★ 2026-08-13 — QC 2 Zone ตามผังในเอกสาร "OAE Lay out QC.xlsx" (Sheet IOT / IOT Total)
+     QCZ1 = กลุ่มพื้นที่ After market (Q-545 · Etching3 · D506 · Visual/Packing After market) = 5 เครื่อง
+     QCZ2 = กลุ่มพื้นที่ OEM (Q-5xx/Q-2xx Leak&Visual · Visual OEM 1-2 · Etching1-2 · D502 · Packing OEM) = 20 เครื่อง
+     ⚠️ คอลัมน์ zone ใน Sheet Machine สลับคู่กันอยู่ 3 ตัว (Etching1↔Etching3 · D502↔D506 · Packing OEM↔After market)
+        ที่นี่ยึด "กลุ่มบนผัง" เป็นหลัก (จำนวนตรงกัน 5/20) — ถ้าจะสลับให้ตรงคอลัมน์ zone แก้ที่ QC_MACHINES + FPQ_MC */
+  QCZ1: { label:'QC AFTER MARKET', vsm:'qc' },
+  QCZ2: { label:'QC OEM',          vsm:'qc' },
 };
 const ZONE_LABEL = Object.fromEntries(Object.entries(ZONE_DEFS).map(([k,v]) => [k, v.label]));
 function zoneVsm(z)       { return ZONE_DEFS[z] ? ZONE_DEFS[z].vsm : DEFAULT_VSM; }
@@ -3467,6 +3523,43 @@ for (const z of Object.keys(VSM3_ZONE_LINES)) {
   for (const ln of VSM3_ZONE_LINES[z]) for (const id of (VSM3_LINES[ln] || [])) pushMc(id);
   for (const id of (VSM3_ZONE_EXTRA[z] || [])) pushMc(id);   // เครื่อง extra ต่อท้าย (ลงรายเครื่องได้)
 }
+/* ▼ เครื่องจักรจริงของ QC — เอกสาร "OAE Lay out QC.xlsx" (Sheet Machine + Sheet IOT)
+   • 25 เครื่อง · 2 Zone (QCZ1 = After market · QCZ2 = OEM) — ลงข้อมูล "รายเครื่อง" เหมือน VSM1/2/4 (ไม่มี Auto Line)
+   • process = คอลัมน์ Process ของ Sheet Machine (Leak&Visual · Visual · Mark identify · Crack detec · Packing)
+     — เก็บเป็นป้ายของเครื่องเท่านั้น ยังไม่ผูกกับ Process/Valve Master ของ VSM (ตามที่ผู้ใช้แจ้งว่ายังไม่กำหนด)
+   • target/man_std = ค่า default (2000 / 0.5) เหมือนตอนเปิดสาย VSM1/VSM2 ครั้งแรก → แก้จริงที่หน้าตั้งค่า */
+const QC_MACHINES = {
+  QCZ1: [   // QC · Zone 1 = พื้นที่ After market (5 เครื่อง)
+    { id:'Visual Aftermarket', target:2000, man_std:0.5, process:'Visual' },
+    { id:'Etching3', target:2000, man_std:0.5, process:'Mark identify' },
+    { id:'D506', target:2000, man_std:0.5, process:'Mark identify' },
+    { id:'Q-545', target:2000, man_std:0.5, process:'Crack detec' },
+    { id:'Packing Aftermarket', target:2000, man_std:0.5, process:'Packing' },
+  ],
+  QCZ2: [   // QC · Zone 2 = พื้นที่ OEM (20 เครื่อง)
+    { id:'Q-540', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-543', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-205', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-207', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-208', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-209', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-210', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-211', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-212', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-213', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-203', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-519', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-519.28', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Q-520', target:2000, man_std:0.5, process:'Leak&Visual' },
+    { id:'Visual OEM 1', target:2000, man_std:0.5, process:'Visual' },
+    { id:'Visual OEM 2', target:2000, man_std:0.5, process:'Visual' },
+    { id:'Etching1', target:2000, man_std:0.5, process:'Mark identify' },
+    { id:'Etching2', target:2000, man_std:0.5, process:'Mark identify' },
+    { id:'D502', target:2000, man_std:0.5, process:'Mark identify' },
+    { id:'Packing OEM', target:2000, man_std:0.5, process:'Packing' },
+  ],
+};
+for (const z of Object.keys(QC_MACHINES)) SEED_VSM_MACHINES[z] = QC_MACHINES[z].map(m => ({ ...m }));
 /* ============================================================
    ★ 2026-08-02 — เปลี่ยนชื่อเครื่อง VSM3 (ตามที่ผู้ใช้แจ้ง)
      • G-2018 ของสาย M4 (โซน ZK) → G-2010    · G-2018 ของสาย N1 (โซน ZJ) คงเดิม
@@ -3845,6 +3938,46 @@ const SEED_VSM_EMPLOYEES = [
   { id:'S-061', name:'นายวิสันต์ กันนุฬา' },
   { id:'S-063', name:'นายมนูน อินทร์โสภา' },
   { id:'S-064', name:'นายบุญเลิศ สุขสมัย' },
+  // === QC 39 คน (Sheet Man ของเอกสาร OAE Lay out QC) ===
+  { id:'G-131', name:'น.ส. กษมา ภิรมย์ศรี' },
+  { id:'G-134', name:'น.ส. อรนุช คำลือเมือง' },
+  { id:'L-1606', name:'นาย ธรรมนูญ พงษ์ไธสง' },
+  { id:'L-1686', name:'นาย คำพันธ์ สาเกตุ' },
+  { id:'L-1776', name:'นาย ประวิง ไฝ่ไร่' },
+  { id:'L-1839', name:'นาย นนทชัย กันกา' },
+  { id:'L-1930', name:'นาย วสันต์ จันทคีรี' },
+  { id:'L-2005', name:'นาย ตรีภพ สมพงษ์' },
+  { id:'L-2088', name:'นาย ยุทธพิชัย สมหวัง' },
+  { id:'L-2352', name:'น.ส. สุภาพร ปานพุ่ม' },
+  { id:'L-2446', name:'นาย สมเดช สมญา' },
+  { id:'L-2539', name:'นาย นิพนธ์ สีระพันธ์' },
+  { id:'S-070', name:'นาย ถาวร นิลผาพงษ์' },
+  { id:'L-2642', name:'น.ส. เกษร อุ่นมุกดา' },
+  { id:'L-2776', name:'น.ส. อารยา เกือกรัมย์' },
+  { id:'L-2796', name:'น.ส. พรทิพย์ หอมจันทร์' },
+  { id:'L-2847', name:'นาย วัฒชัย ปิตตาละตัง' },
+  { id:'L-2861', name:'น.ส. การะเกษ สุโพธิ์' },
+  { id:'L-2920', name:'น.ส. จิตติมา เปลี่ยนวงษ์' },
+  { id:'L-3264', name:'นาย ประวิท เดชโชค' },
+  { id:'L-3388', name:'นาย เสรี สิงห์ชู' },
+  { id:'L-3412', name:'น.ส. บังอร แก้ววิเศษ' },
+  { id:'L-3516', name:'นาย อำพล เมฆวัน' },
+  { id:'L-3523', name:'นาย ณัฐวุฒิ จันทร์ขำ' },
+  { id:'L-3550', name:'นาย วรพันธ์ แฝดสุระ' },
+  { id:'L-3561', name:'น.ส. ปิยมาศ จันเรียน' },
+  { id:'L-3572', name:'น.ส. ดมิสา ศาลางาม' },
+  { id:'L-3578', name:'น.ส. ณัฐธยาน์ สุระชาติ' },
+  { id:'L-3595', name:'นางสาว พินศร มักคะสุด' },
+  { id:'L-3598', name:'นาย อัจฉรา เปร่งเพิ่มพูล' },
+  { id:'L-855', name:'นาย สำเนียง รุ่งเรือง' },
+  { id:'L-929', name:'นาย ชัยยุทธิ์ ประสงค์จิรกุล' },
+  { id:'S-019', name:'นาย ไสว พลทิแสง' },
+  { id:'S-027', name:'นาย เสถียน ใจกล้า' },
+  { id:'S-035', name:'นาย ประทาน นามวงษา' },
+  { id:'S-040', name:'นาย ชลธี สุวรรณไตรย์' },
+  { id:'S-054', name:'นาย รังสรรค์ ดุลมา' },
+  { id:'T-604', name:'นาย วาทิศ วินทไชย' },
+  { id:'PST786', name:'น.ส. อังควิภา จามะรีย์' },
 ];
 function ensureSeedEmployees() {
   if (!Array.isArray(state.employees)) state.employees = [];
@@ -6841,7 +6974,8 @@ function updateVsmHeader() {
   const vsmKey = viewVsm();
   const vb = document.getElementById('userVsm');
   if (vb) vb.textContent = VSM_LABEL[vsmKey] || vsmKey;
-  const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : 'AFTERMARKET';   // VSM3 = สาย Machining
+  // VSM3 = สาย Machining · QC = แผนกตรวจสอบ (ไม่ใช่ Aftermarket)
+  const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : (vsmKey === 'qc') ? 'INSPECTION' : 'AFTERMARKET';
   const ht = document.getElementById('hdrTitle');
   if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
   try { document.title = `${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`; } catch (e) {}
@@ -8301,7 +8435,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.53":"Production Record + KPI · v3.53",
+"ระบบบันทึกผลิต + KPI · v3.54":"Production Record + KPI · v3.54",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -8852,7 +8986,7 @@ if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }   // เปิ�
 function renderMachineStatusChecker(recs) {
   // IoT floor plan: ผังจริงครบทั้ง 4 สาย — VSM4 (grid) · VSM3 (Layout VSM3) · VSM1/VSM2 (IOT VSM1/IOT VSM2)
   const fpv = _fpVsm();
-  const FP_HAS_PLAN = { vsm1:1, vsm2:1, vsm3:1, vsm4:1 };   // สายที่มีผังจริงแล้ว (ถ้ามีสายใหม่ยังไม่มีผัง → ขึ้น "เพิ่มภายหลัง")
+  const FP_HAS_PLAN = { vsm1:1, vsm2:1, vsm3:1, vsm4:1, qc:1 };   // สายที่มีผังจริงแล้ว (ถ้ามีสายใหม่ยังไม่มีผัง → ขึ้น "เพิ่มภายหลัง")
   if (!FP_HAS_PLAN[fpv]) {
     const fw = $('mcViewFloor');
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
@@ -9090,6 +9224,42 @@ const FP3_LB=[
    ============================================================ */
 const FP1_MC=[{id:'H-1109',x:44,y:245,w:67,h:34},{id:'H-1114',x:0,y:553,w:110,h:52},{id:'H-1115',x:0,y:495,w:110,h:52},{id:'D-1105',x:0,y:436,w:110,h:52},{id:'H-1113',x:43,y:397,w:67,h:34},{id:'H-1112',x:43,y:359,w:67,h:34},{id:'H-1111',x:43,y:321,w:67,h:34},{id:'H-1110',x:43,y:282,w:67,h:34},{id:'G-1107',x:147,y:495,w:67,h:34},{id:'G-1104',x:147,y:457,w:67,h:34},{id:'G-1123',x:798,y:56,w:67,h:34},{id:'H-1124',x:145,y:282,w:67,h:34},{id:'F-1127',x:337,y:457,w:67,h:34},{id:'F-1126',x:259,y:417,w:67,h:34},{id:'F-1128',x:412,y:457,w:67,h:34},{id:'F-1129',x:485,y:457,w:67,h:34},{id:'F-1130',x:559,y:457,w:67,h:34},{id:'F-1131',x:633,y:457,w:67,h:34},{id:'F-1118',x:337,y:570,w:67,h:34},{id:'F-1115',x:259,y:530,w:67,h:34},{id:'F-1120',x:412,y:570,w:67,h:34},{id:'F-1121',x:485,y:570,w:67,h:34},{id:'F-1122',x:559,y:570,w:67,h:34},{id:'F-1123',x:633,y:570,w:67,h:34},{id:'F-1158',x:587,y:286,w:110,h:52},{id:'F-1140',x:794,y:555,w:110,h:52},{id:'F-1134',x:794,y:453,w:110,h:52},{id:'F-1138',x:916,y:555,w:110,h:52},{id:'F-1139',x:916,y:453,w:110,h:52},{id:'F-1132',x:794,y:284,w:67,h:52},{id:'F-1156',x:870,y:284,w:78,h:127},{id:'C-1107',x:956,y:284,w:67,h:60},{id:'C-1108',x:956,y:350,w:67,h:60},{id:'H-1117',x:144,y:173,w:261,h:45},{id:'H-1118',x:144,y:115,w:261,h:45},{id:'H-1120',x:244,y:58,w:407,h:45},{id:'H-1119',x:436,y:115,w:261,h:45},{id:'G-401',x:876,y:56,w:67,h:34},{id:'L-202',x:952,y:56,w:67,h:34},{id:'L-402',x:1028,y:56,w:67,h:34},{id:'L-401',x:1103,y:56,w:67,h:34},{id:'L-403',x:1103,y:104,w:67,h:33},{id:'L-404',x:1028,y:102,w:67,h:33},{id:'L-405',x:1103,y:148,w:67,h:33},{id:'C-1603',x:1103,y:193,w:67,h:33},{id:'C-1602',x:1103,y:237,w:67,h:33},{id:'G-1118',x:626,y:0,w:67,h:34},{id:'G-1122',x:549,y:0,w:67,h:34},{id:'D-1109',x:387,y:0,w:67,h:34},{id:'D-1112',x:246,y:0,w:67,h:34},{id:'D-1121',x:168,y:0,w:67,h:34},{id:'D-1122',x:93,y:0,w:67,h:34},{id:'D-1123',x:19,y:0,w:67,h:34}];
 const FP2_MC=[{id:'G-1110',x:250,y:742,w:69,h:34},{id:'D-1118',x:250,y:703,w:69,h:34},{id:'D-1119',x:250,y:664,w:69,h:34},{id:'D-1120',x:250,y:626,w:69,h:34},{id:'W-1136',x:250,y:584,w:69,h:34},{id:'C-204',x:250,y:542,w:69,h:34},{id:'G-2025',x:250,y:504,w:69,h:34},{id:'G-1106',x:0,y:398,w:67,h:34},{id:'F-1149',x:0,y:323,w:67,h:34},{id:'F-1148',x:0,y:248,w:67,h:34},{id:'F-1150',x:0,y:178,w:67,h:34},{id:'G-1105',x:78,y:398,w:67,h:34},{id:'Q-1108',x:78,y:323,w:67,h:34},{id:'G-1102',x:154,y:398,w:67,h:34},{id:'G-1115',x:154,y:323,w:67,h:34},{id:'F-1147',x:118,y:178,w:67,h:106},{id:'F-1142',x:194,y:178,w:67,h:106},{id:'F-1109',x:270,y:178,w:67,h:106},{id:'L-240',x:228,y:310,w:110,h:52},{id:'L-260',x:228,y:378,w:110,h:52},{id:'W-1109',x:356,y:281,w:67,h:40},{id:'W-1108',x:356,y:339,w:67,h:40},{id:'W-1139',x:430,y:281,w:67,h:40},{id:'W-1118',x:430,y:339,w:67,h:40},{id:'W-1135',x:506,y:282,w:67,h:40},{id:'W-1126',x:506,y:339,w:67,h:40},{id:'H-1123',x:431,y:390,w:67,h:40},{id:'L-1114',x:356,y:178,w:67,h:40},{id:'L-1112',x:430,y:178,w:67,h:40},{id:'L-1111',x:506,y:178,w:67,h:40},{id:'F-201',x:506,y:229,w:67,h:40},{id:'F-1157',x:658,y:222,w:67,h:106},{id:'F-1144',x:659,y:339,w:67,h:40},{id:'F-1143',x:739,y:339,w:67,h:40},{id:'W-1114',x:660,y:390,w:67,h:40},{id:'G-229',x:817,y:390,w:67,h:40},{id:'G-228',x:817,y:341,w:67,h:40},{id:'G-242',x:818,y:289,w:67,h:40},{id:'W-1121',x:891,y:390,w:67,h:40},{id:'W-1119',x:891,y:341,w:67,h:40},{id:'W-1115',x:893,y:289,w:67,h:40},{id:'W-1120',x:966,y:390,w:67,h:40},{id:'W-1117',x:966,y:341,w:67,h:40},{id:'W-1116',x:968,y:289,w:67,h:40},{id:'C-212',x:1042,y:390,w:67,h:40},{id:'C-211',x:1042,y:341,w:67,h:40},{id:'C-210',x:1044,y:289,w:67,h:40},{id:'F-1146',x:194,y:0,w:67,h:106},{id:'F-1154',x:270,y:0,w:67,h:106},{id:'W-1131',x:579,y:506,w:67,h:40},{id:'W-1127',x:579,y:552,w:67,h:40},{id:'G-2049',x:579,y:598,w:67,h:40},{id:'G-278',x:579,y:643,w:67,h:40},{id:'W-1134',x:654,y:506,w:67,h:40},{id:'W-1129',x:654,y:552,w:67,h:40},{id:'W-1130',x:654,y:598,w:67,h:40},{id:'G-2043',x:710,y:643,w:67,h:40},{id:'C-217',x:840,y:643,w:67,h:40},{id:'C-220',x:962,y:643,w:67,h:40},{id:'C-213',x:731,y:598,w:67,h:40},{id:'C-214',x:808,y:598,w:67,h:40},{id:'L-224',x:887,y:598,w:67,h:40},{id:'L-230',x:962,y:598,w:67,h:40},{id:'C-203',x:1038,y:643,w:67,h:40},{id:'L-222',x:1038,y:598,w:67,h:40},{id:'W-1124',x:731,y:552,w:67,h:40},{id:'C-209',x:888,y:552,w:67,h:40},{id:'C-206',x:962,y:552,w:67,h:40},{id:'C-215',x:1038,y:552,w:67,h:40},{id:'W-1128',x:733,y:506,w:67,h:40},{id:'C-206',x:888,y:506,w:67,h:40},{id:'C-207',x:962,y:506,w:67,h:40},{id:'C-205',x:1038,y:506,w:67,h:40}];
+
+/* ============================================================
+   ★ 2026-08-13 — QC Factory Floor Plan (ผัง IOT ของ QC)
+   พิกัด px จริงจากเอกสาร "OAE Lay out QC.xlsx" (Sheet IOT — drawing shapes: EMU ÷ 9525 → px
+   แล้วเลื่อนให้มุมซ้ายบนของกลุ่มเครื่อง = 0,0) · 25 กล่อง แยก 2 Zone ด้วย field z
+   ชื่อกล่องบนผังใช้ "รหัสเครื่องจาก Sheet Machine" เป็นหลัก (ผังสะกด Ehching/Q-519-28/after market)
+   ============================================================ */
+const FPQ_MC=[
+  // QCZ2
+  {id:'Q-540',x:2,y:0,w:67,h:33,z:'QCZ2'},
+  {id:'Q-203',x:105,y:0,w:67,h:33,z:'QCZ2'},
+  {id:'Q-543',x:2,y:43,w:67,h:33,z:'QCZ2'},
+  {id:'Q-519',x:105,y:44,w:67,h:33,z:'QCZ2'},
+  {id:'Etching1',x:180,y:44,w:74,h:33,z:'QCZ2'},
+  {id:'Visual OEM 1',x:260,y:45,w:123,h:33,z:'QCZ2'},
+  {id:'Q-520',x:104,y:84,w:67,h:33,z:'QCZ2'},
+  {id:'Visual OEM 2',x:260,y:84,w:122,h:33,z:'QCZ2'},
+  {id:'Q-209',x:0,y:85,w:67,h:33,z:'QCZ2'},
+  {id:'Etching2',x:179,y:85,w:74,h:33,z:'QCZ2'},
+  {id:'Packing OEM',x:194,y:124,w:99,h:33,z:'QCZ2'},
+  {id:'Q-210',x:0,y:125,w:67,h:33,z:'QCZ2'},
+  {id:'Q-519.28',x:105,y:126,w:83,h:33,z:'QCZ2'},
+  {id:'Q-211',x:0,y:167,w:67,h:33,z:'QCZ2'},
+  {id:'Q-205',x:105,y:167,w:67,h:33,z:'QCZ2'},
+  {id:'D502',x:179,y:168,w:67,h:31,z:'QCZ2'},
+  {id:'Q-207',x:103,y:207,w:67,h:33,z:'QCZ2'},
+  {id:'Q-212',x:0,y:208,w:67,h:33,z:'QCZ2'},
+  {id:'Q-208',x:104,y:248,w:67,h:33,z:'QCZ2'},
+  {id:'Q-213',x:1,y:250,w:67,h:33,z:'QCZ2'},
+  // QCZ1
+  {id:'Q-545',x:454,y:393,w:67,h:33,z:'QCZ1'},
+  {id:'Etching3',x:532,y:394,w:74,h:33,z:'QCZ1'},
+  {id:'Visual Aftermarket',x:532,y:437,w:146,h:33,z:'QCZ1'},
+  {id:'D506',x:454,y:438,w:67,h:33,z:'QCZ1'},
+  {id:'Packing Aftermarket',x:450,y:500,w:151,h:33,z:'QCZ1'},
+];
 
 
 /* ============================================================
@@ -10539,10 +10709,23 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   const boxes = fpv==='vsm3' ? FP3_MC
     : fpv==='vsm1' ? FP1_MC
     : fpv==='vsm2' ? FP2_MC
+    : fpv==='qc'   ? FPQ_MC
     : MC.map(m=>({id:m.id, x:m.c1*CX+2, y:m.r1*CY+2, w:(m.c2-m.c1)*CX-4, h:(m.r2-m.r1)*CY-4}));
   const labels = fpv==='vsm3' ? FP3_LB : [];
+  /* ★ 2026-08-13 — กรอบ Zone บนผัง: ใช้กับผังที่กล่องเครื่องบอกโซนมาด้วย field z (ตอนนี้ = QC)
+     ผัง QC มี 2 กลุ่มพื้นที่อยู่คนละมุม → ถ้าไม่ตีกรอบจะดูไม่ออกว่ากลุ่มไหนเป็น Zone อะไร
+     คิด bbox ก่อนวัดขนาด viewBox เพื่อให้ป้ายชื่อ Zone (อยู่เหนือกรอบ) ไม่ถูกตัดขอบ */
+  const ZFP=9, ZLBH=15;                                                   // ระยะห่างกรอบจากเครื่อง · สูงของป้ายชื่อโซน
+  const _zBox={};
+  for(const b of boxes){ if(!b.z) continue; const q=_zBox[b.z]||(_zBox[b.z]=[9e9,9e9,-9e9,-9e9]);
+    if(b.x<q[0])q[0]=b.x; if(b.y<q[1])q[1]=b.y; if(b.x+b.w>q[2])q[2]=b.x+b.w; if(b.y+b.h>q[3])q[3]=b.y+b.h; }
+  const zFrames=zonesForVsm(fpv).filter(z=>_zBox[z]).map((z,i)=>{
+    const q=_zBox[z], lbl=`Zone ${i+1} · ${ZONE_LABEL[z]||z}`;
+    return { zone:z, i, lbl, lbw:lbl.length*5.6+16,
+      x:q[0]-ZFP, y:q[1]-ZFP-ZLBH-2, w:q[2]-q[0]+ZFP*2, h:q[3]-q[1]+ZFP*2+ZLBH+2 };   // รวมแถบป้ายชื่อไว้ในกรอบวัดขนาด
+  });
   // กรอบให้พอดีเครื่องจริง — บีบพื้นที่ว่างที่ไม่ได้ใช้ออก (req #1)
-  const allB=[...boxes,...labels];
+  const allB=[...boxes,...labels,...zFrames];
   const PAD=8;
   const minX=Math.min(...allB.map(b=>b.x)), maxX=Math.max(...allB.map(b=>b.x+b.w));
   const minY=Math.min(...allB.map(b=>b.y)), maxY=Math.max(...allB.map(b=>b.y+b.h));
@@ -10594,6 +10777,17 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
 
   // Single unified background
   g.push(`<rect x="${VBX}" y="${VBY}" width="${W}" height="${H}" fill="#e5e7eb"/>`);
+
+  /* กรอบ Zone (QC) — วาดใต้กล่องเครื่องเสมอ + pointer-events:none → กดทะลุถึงเครื่องได้เหมือนเดิม
+     สีชุดเดียวกับจุดสีของแถบ OAE ราย Zone (ZDOT) เพื่อให้อ่านคู่กันได้ */
+  const _zColors=['#7C3AED','#1A56DB','#D97706','#0E9F6E'];
+  for(const f of zFrames){
+    const c=_zColors[f.i]||'#64748b';
+    g.push(`<g pointer-events="none">`
+      +`<rect x="${f.x.toFixed(1)}" y="${(f.y+ZLBH+2).toFixed(1)}" width="${f.w.toFixed(1)}" height="${(f.h-ZLBH-2).toFixed(1)}" fill="${c}" fill-opacity="0.07" stroke="${c}" stroke-opacity="0.75" stroke-width="1.8" stroke-dasharray="7 4" rx="9"/>`
+      +`<rect x="${(f.x+3).toFixed(1)}" y="${f.y.toFixed(1)}" width="${f.lbw.toFixed(1)}" height="${ZLBH}" rx="7.5" fill="${c}"/>`
+      +`<text x="${(f.x+3+f.lbw/2).toFixed(1)}" y="${(f.y+ZLBH-4).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff" font-family="Arial,sans-serif">${escapeHtml(f.lbl)}</text></g>`);
+  }
 
   for(const mc of boxes){
     const x=mc.x, y=mc.y, w=mc.w, h=mc.h;
@@ -11118,8 +11312,9 @@ const _IAH_METRICS=[
 const _IA_VSM_META={
   vsm1:{tint:'#DBEAFE',line:'#1D4ED8',label:'VSM 1'},  // น้ำเงิน (เดิม)
   vsm2:{tint:'#E0E7FF',line:'#4338CA',label:'VSM 2'},  // คราม (เดิมมิ้นต์ชนเขียว)
-  vsm3:{tint:'#FCE7F3',line:'#BE185D',label:'VSM 3'},  // ชมพู (เดิมอำพันชนส้ม)
+  vsm3:{tint:'#CCFBF1',line:'#0D9488',label:'VSM 3'},  // ★ 2026-08-13 เขียวน้ำทะเล/teal (เดิมชมพู — ผู้ใช้ขอโทนเย็น)
   vsm4:{tint:'#E9D5FF',line:'#7C3AED',label:'VSM 4'},  // ม่วง (เดิม)
+  qc:  {tint:'#CFFAFE',line:'#0E7490',label:'QC'},     // ★ 2026-08-13 ฟ้าน้ำทะเล (ไม่ชนเขียว/ส้ม/แดงของสถานะเครื่อง)
 };
 
 function iotAllOpen(){
@@ -11167,7 +11362,7 @@ function _iotAllShow(){
   try{ const s=+localStorage.getItem('vsm4_iotall_mapw'); if(s>=22&&s<=62) ov.style.setProperty('--iotall-mapw',s+'%'); }catch(e){}
   ov.innerHTML=`
     <div id="iotAllHead">
-      <span class="ia-title">🏭 ${TT('IOT รวมทุก VSM','All-VSM IOT')}<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:999px">VSM 1·2·3·4</span></span>
+      <span class="ia-title">🏭 ${TT('IOT รวมทุกสาย','All-line IOT')}<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:999px">${VSM_KEYS.map(v=>(VSM_LABEL[v]||v).replace(/^VSM\s*/,'')).join('·')}</span></span>
       <span class="ia-info" id="iotAllInfo"></span>
       <span style="margin-left:auto;display:flex;gap:4px;align-items:center">
         <button onclick="iotAllZoom(-1)" title="${TT('ย่อ','Zoom out')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;font-weight:700;line-height:1">−</button>
@@ -12034,7 +12229,15 @@ function _iotAllRenderHourly(){
   const sc2=host.querySelector('.iah-scroll'); if(sc2){ sc2.scrollTop=keepTop; sc2.scrollLeft=keepLeft; }
 }
 
-/* ---- ผังรวม: FPA_MC (VSM1/2/3) + FP4_MC ย่อส่วนลงกรอบ FPA_V4RECT ---- */
+/* ---- ผังรวม: FPA_MC (VSM1/2/3) + FP4_MC ย่อส่วนลงกรอบ FPA_V4RECT + QC (FPQ_MC) ----
+   ★ 2026-08-13 (req #3 — Sheet "IOT Total") QC วางตามตำแหน่งจริงในโรงงาน ซึ่งอยู่ "คนละมุม" กัน
+     · QCZ2 (OEM)          → มุมซ้ายบนของผังรวม (เหนือ VSM3)      → พิกัด y ติดลบ ผังจึงขยายขึ้นข้างบน
+     · QCZ1 (After market) → มุมขวาล่าง (ขวาของกรอบ VSM4)
+   ใช้พิกัดจริงจากผัง QC (ไม่ย่อ) แค่เลื่อนตาม FPQ_A_OFF ราย Zone · vk = คีย์สาย (สาย vsm ใช้ v:1-4 เป็นเลข)
+   ⚠️ 2 กลุ่มอยู่ห่างกันคนละมุม → กรอบพื้นที่ต้องตีแยกราย Zone (ดู gb ใน _iotAllRenderMap)
+      ถ้าตีกรอบเดียวรวมทั้งสาย กรอบจะกินทั้งผัง */
+const FPQ_A_OFF={ QCZ2:{x:0,y:-300}, QCZ1:{x:1340,y:1107} };
+let _fpaQcCache=null;
 function _iotAllBoxes(){
   if(!_fpaV4Cache){
     const R=FPA_V4RECT,CX=35,CY=15;
@@ -12043,21 +12246,36 @@ function _iotAllBoxes(){
     const sx=R.w/(mc*CX), sy=R.h/(mr*CY);
     _fpaV4Cache=FP4_MC.map(m=>({id:m.id,x:R.x+(m.c1*CX+2)*sx,y:R.y+(m.r1*CY+2)*sy,w:((m.c2-m.c1)*CX-4)*sx,h:((m.r2-m.r1)*CY-4)*sy,v:4}));
   }
-  return FPA_MC.concat(_fpaV4Cache);
+  if(!_fpaQcCache) _fpaQcCache=FPQ_MC.map(m=>{ const o=FPQ_A_OFF[m.z]||{x:0,y:0};
+    return {id:m.id,x:m.x+o.x,y:m.y+o.y,w:m.w,h:m.h,z:m.z,vk:'qc'}; });
+  return FPA_MC.concat(_fpaV4Cache,_fpaQcCache);
 }
+/* คีย์สายของกล่องบนผังรวม — สาย VSM ใช้เลข v:1-4 (ของเดิม) · สายที่เพิ่มใหม่ (QC) ระบุ vk มาตรง ๆ */
+function _iaBoxVsm(b){ return b.vk || ('vsm'+b.v); }
 function _iotAllRenderMap(keepScroll){
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
   const sl=keepScroll?vp.scrollLeft:0, st=keepScroll?vp.scrollTop:0;
   const boxes=_iotAllBoxes();
-  let maxX=0,maxY=0;
-  for(const b of boxes){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
-  for(const b of FPA_LB){ if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; }
-  const W=maxX, H=maxY, D=_iotAllD;
+  /* ★ 2026-08-13: เดิมคิดแค่ maxX/maxY แล้วยึดมุมซ้ายบน = 0,0 เสมอ
+     ตอนนี้ QC (OEM) อยู่เหนือ VSM3 = พิกัด y ติดลบ → ต้องคิด min ด้วย ไม่งั้นกลุ่มนั้นถูกตัดหายนอก viewBox */
+  let minX=0,minY=0,maxX=0,maxY=0;
+  const _ext=b=>{ if(b.x<minX)minX=b.x; if(b.y<minY)minY=b.y; if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; };
+  for(const b of boxes) _ext(b);
+  for(const b of FPA_LB) _ext(b);
+  const PADA=14;
+  const VBX=minX-PADA, VBY=minY-PADA;                      // มุมซ้ายบนจริงของผัง (รวมเผื่อขอบ)
+  const W=maxX-minX, H=maxY-minY, D=_iotAllD;
   _iotAllWH={W,H};   // เก็บไว้ให้ _iotAllRefit ใช้ตอนลากเส้นแบ่ง/ย่อขยายจอ
-  // กรอบพื้นสี + ชื่อสายของแต่ละ VSM (คำนวณ bbox ต่อสาย) — pointer-events:none ให้กดทะลุถึงเครื่องได้
-  const gb={};
-  for(const b of boxes){ const k='vsm'+b.v; const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]); if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h; }
-  const out=[`<rect x="-14" y="-14" width="${(W+28).toFixed(0)}" height="${(H+28).toFixed(0)}" fill="#e5e7eb"/>`];
+  /* กรอบพื้นสี + ชื่อสายของแต่ละ VSM (คำนวณ bbox ต่อสาย) — pointer-events:none ให้กดทะลุถึงเครื่องได้
+     ★ กล่องที่มี field z (QC) ตีกรอบ "ราย Zone" เพราะ 2 โซนอยู่คนละมุมผัง — กรอบเดียวจะกินทั้งผัง */
+  const gb={}, gvsm={}, gzone={};
+  for(const b of boxes){
+    const v=_iaBoxVsm(b), k=b.z? v+'#'+b.z : v;
+    gvsm[k]=v; if(b.z) gzone[k]=b.z;
+    const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]);
+    if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h;
+  }
+  const out=[`<rect x="${VBX.toFixed(0)}" y="${VBY.toFixed(0)}" width="${(W+PADA*2).toFixed(0)}" height="${(H+PADA*2).toFixed(0)}" fill="#e5e7eb"/>`];
   let nOn=0;
   // v3.30: งานที่กำลังผลิตของแต่ละเครื่อง แยกราย VSM (คำนวณครั้งเดียวต่อการวาด)
   // v3.30.2: เครื่องที่เดินอยู่แต่ไม่ได้ระบุเบอร์ ก็ใส่รายการว่างไว้ → ทุกเครื่องที่เดินมีชั้นข้อมูลเหมือนกัน
@@ -12077,16 +12295,20 @@ function _iotAllRenderMap(keepScroll){
   if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
   const jobFit=_jobFitPlan(boxes,jobAll,_iotAllScale||1);
   for(const v of VSM_KEYS){
-    const g=gb[v]; if(!g) continue;
-    const mt=_IA_VSM_META[v], p=6;
-    const bw=(g[2]-g[0]+p*2), bh=(g[3]-g[1]+p*2), lbw=mt.label.length*10.5+18;
-    out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${mt.tint}" fill-opacity="0.38" stroke="${mt.line}" stroke-opacity="0.8" stroke-width="2.5" stroke-dasharray="8 5" rx="12"/>`+
-      // ป้ายชื่อ VSM เป็น "ป้ายเม็ดยา" สีเข้มตัวอักษรขาว — อ่านง่ายกว่าตัวหนังสือลอยเดิม และไม่ปนกับชิปเครื่อง
-      `<rect x="${(g[0]-p+4).toFixed(1)}" y="${(g[1]-p+4).toFixed(1)}" width="${lbw.toFixed(1)}" height="22" rx="11" fill="${mt.line}"/>`+
-      `<text x="${(g[0]-p+4+lbw/2).toFixed(1)}" y="${(g[1]-p+19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="900" fill="#ffffff" font-family="Arial,sans-serif" letter-spacing="0.3">${mt.label}</text></g>`);
+    for(const k of Object.keys(gb)){
+      if(gvsm[k]!==v) continue;
+      const g=gb[k], mt=_IA_VSM_META[v], p=6;
+      // กลุ่มที่แยกราย Zone → ป้ายใช้ชื่อโซน (เช่น "QC OEM") เพราะ 2 กรอบของสายเดียวกันอยู่คนละมุม
+      const lb=gzone[k] ? (ZONE_LABEL[gzone[k]]||gzone[k]) : mt.label;
+      const bw=(g[2]-g[0]+p*2), bh=(g[3]-g[1]+p*2), lbw=lb.length*10.5+18;
+      out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${mt.tint}" fill-opacity="0.38" stroke="${mt.line}" stroke-opacity="0.8" stroke-width="2.5" stroke-dasharray="8 5" rx="12"/>`+
+        // ป้ายชื่อ VSM เป็น "ป้ายเม็ดยา" สีเข้มตัวอักษรขาว — อ่านง่ายกว่าตัวหนังสือลอยเดิม และไม่ปนกับชิปเครื่อง
+        `<rect x="${(g[0]-p+4).toFixed(1)}" y="${(g[1]-p+4).toFixed(1)}" width="${lbw.toFixed(1)}" height="22" rx="11" fill="${mt.line}"/>`+
+        `<text x="${(g[0]-p+4+lbw/2).toFixed(1)}" y="${(g[1]-p+19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="900" fill="#ffffff" font-family="Arial,sans-serif" letter-spacing="0.3">${escapeHtml(lb)}</text></g>`);
+    }
   }
   for(const b of boxes){
-    const v='vsm'+b.v, P=D.per[v];
+    const v=_iaBoxVsm(b), P=D.per[v]; if(!P) continue;
     const active=P.active.has(b.id);
     const oae=P.oae[b.id]||0;
     if(active) nOn++;
@@ -12136,7 +12358,7 @@ function _iotAllRenderMap(keepScroll){
     out.push(`<g class="ia-lb" data-lb="${escapeHtml(lb.id)}"${rk?` role="img" aria-label="TOP ${rk} · ${escapeHtml(lb.id)}"`:' aria-hidden="true"'}>${parts.join('')}</g>`);
   }
   if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
-  vp.innerHTML=`<svg id="iotAllSvg" viewBox="-14 -14 ${(W+28).toFixed(0)} ${(H+28).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="width:${Math.round((W+28)*_iotAllScale)}px;height:auto">${out.join('')}</svg>`;
+  vp.innerHTML=`<svg id="iotAllSvg" viewBox="${VBX.toFixed(0)} ${VBY.toFixed(0)} ${(W+PADA*2).toFixed(0)} ${(H+PADA*2).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="width:${Math.round((W+PADA*2)*_iotAllScale)}px;height:auto">${out.join('')}</svg>`;
   vp.scrollLeft=sl; vp.scrollTop=st;
   iotPanSync();
   const info=document.getElementById('iotAllInfo');
@@ -12317,11 +12539,14 @@ const HO_ORDER = ['machine','induction'];
 function _hoType(t){ return t==='induction' ? 'induction' : 'machine'; }
 /* P1-20 (2026-07-16): VSM1/VSM2 รวมหัวข้อ Machine + Induction → เหลือ "Forge" อันเดียว
    เก็บข้อมูลเป็น type เดิม (machine/induction) — แค่ "แสดงรวม" และโน้ตใหม่บันทึกเป็น machine */
-function _hoMergedVsm(v){ return v==='vsm1' || v==='vsm2'; }
+/* ★ 2026-08-13 — QC ก็บอร์ดเดียว (ไม่มี Induction) แต่ป้ายเป็น "QC" ไม่ใช่ "Forge" */
+function _hoMergedVsm(v){ return v==='vsm1' || v==='vsm2' || v==='qc'; }
 function _hoTypeMeta(t){
   const c = HO_TYPES[_hoType(t)];
-  if (_hoType(t)==='machine' && _hoMergedVsm(_fpVsm()))
+  if (_hoType(t)==='machine' && _hoMergedVsm(_fpVsm())) {
+    if (_fpVsm()==='qc') return { ...c, label:'QC', icon:'🔎', grad:'linear-gradient(135deg,#0E7490,#134E4A)' };
     return { ...c, label:'Forge', icon:'⚒️', grad:'linear-gradient(135deg,#B45309,#7C2D12)' };
+  }
   return c;
 }
 // หมวดต่อกะ (req: แบ่ง 3 ส่วน) — broken=เครื่องเสีย/ค้าง (คอลัมน์ 1) · note=ข้อมูลทั่วไป (คอลัมน์ 2→3 ไหลอัตโนมัติ)
@@ -20009,7 +20234,9 @@ function mcProcess(m) {
 // จึงเข้ารหัสชื่อ process → เลข (FNV-1a) แล้วถอดกลับด้วย vocabulary ที่ทุกเครื่องมีเหมือนกัน
 const MCPROC_PREFIX = 'mcproc.';
 // รายชื่อ process ทั้งหมดที่รู้จัก (ฝังในโค้ด = ทุกเครื่องเหมือนกัน) ใช้ถอดรหัสเลขกลับเป็นชื่อ
-const PROC_VOCAB_FALLBACK = ["AW","BLEND","BUFF","CAR","CB","CBN","CCOT","COPY","COPY CUP","COT","COT+TIP","COT1","COT2","CUP","D/B","DOUBLE","F. IND","F.IND","FACE IND","FACE IND.","FFT","FG","FH","HOD","HOD&FRG","HOD'C","HOD+FG","IND","IND P\"","IND P'","IND T\"","P/T","POL","PQ","QC","RADIUS","RE/R","RED","RED.","RED/F","RED/R","REDUC","ROLL","ROLL M.","SEMI","SFG","SFG1","SFG2","SRG","SRG*2","SRG*3","SRG*5","SRG*6","SRG1-3","SRG2","SRG5","SSG","SSG*2","SSG*3","SSG*4","SSG*6","SSG+RED","SSG3","SSS","SWIRL","T. IND","T.IND","T/T","TG","TG-R","TH","TIP C\"","TIP IND","TIP IND.","TIPC\"","TL","TOP","TOP&HOD","TRG","TRG.","TW","UN/H","UND","UNDER","UNDER H.","VET","XRAY","TOP&HOD","CB","DONE"];
+const PROC_VOCAB_FALLBACK = ["AW","BLEND","BUFF","CAR","CB","CBN","CCOT","COPY","COPY CUP","COT","COT+TIP","COT1","COT2","CUP","D/B","DOUBLE","F. IND","F.IND","FACE IND","FACE IND.","FFT","FG","FH","HOD","HOD&FRG","HOD'C","HOD+FG","IND","IND P\"","IND P'","IND T\"","P/T","POL","PQ","QC","RADIUS","RE/R","RED","RED.","RED/F","RED/R","REDUC","ROLL","ROLL M.","SEMI","SFG","SFG1","SFG2","SRG","SRG*2","SRG*3","SRG*5","SRG*6","SRG1-3","SRG2","SRG5","SSG","SSG*2","SSG*3","SSG*4","SSG*6","SSG+RED","SSG3","SSS","SWIRL","T. IND","T.IND","T/T","TG","TG-R","TH","TIP C\"","TIP IND","TIP IND.","TIPC\"","TL","TOP","TOP&HOD","TRG","TRG.","TW","UN/H","UND","UNDER","UNDER H.","VET","XRAY","TOP&HOD","CB","DONE",
+// ★ 2026-08-13 — process ของเครื่อง QC (Sheet Machine ของเอกสาร OAE Lay out QC) เพื่อให้ทุกเครื่องถอดรหัสชื่อได้ตรงกัน
+"Leak&Visual","Visual","Mark identify","Crack detec","Packing"];
 // FNV-1a 32-bit → เลขบวก ≤ 2^30 (กัน column ชนิด INTEGER ล้น) บวก 1 กันชนค่า 0
 function procCode(name) {
   let h = 0x811c9dc5;
