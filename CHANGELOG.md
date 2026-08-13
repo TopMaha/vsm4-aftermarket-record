@@ -1,8 +1,16 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.54 — 2026-08-13 — เพิ่มสาย "QC" เข้าระบบทั้งชุด (Man · Machine · 2 Zone · ผัง IOT · IOT รวม) · VSM3 เปลี่ยนเป็นสีโทนเย็น  ⏳ กำลัง deploy
+## v3.54 — 2026-08-13 — เพิ่มสาย "QC" เข้าระบบทั้งชุด (Man · Machine · 2 Zone · ผัง IOT · IOT รวม) · VSM3 เปลี่ยนเป็นสีโทนเย็น  ✅ deployed
 
-**ยังไม่ deploy** — แก้เฉพาะไฟล์ในเครื่อง (`index.html`) · ต้อง push GitHub Pages แยกอีกที (Worker ไม่ต้องแก้ — QC ใช้ตาราง/endpoint เดิมทั้งหมด)
+**✅ deployed 2026-08-13** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `654d533` · run [31653056136](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/31653056136) → `success` |
+| Worker `vsm4-api` | Version ID `837610a8-1703-42af-89a6-804231802137` (bundle `index.html` ใหม่) |
+
+ตัว Worker **ไม่ได้แก้โค้ด** (QC ใช้ตาราง/endpoint เดิมทั้งหมด) แต่ต้อง deploy ซ้ำเพราะมันบันเดิล `index.html` ไว้ในตัว
+ยืนยันของจริงแล้วด้วย curl ทั้งสอง URL → เจอ `key:'qc'` + `vsm3:{tint:'#CCFBF1',line:'#0D9488'}` ครบทั้งคู่
 สำรองไฟล์ก่อนแก้ไว้ที่ `backups/index.before-qc-20260813.html`
 
 ### ที่มา
