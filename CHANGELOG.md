@@ -1,8 +1,39 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.55 — 2026-08-15 — กราฟรายวัน + สรุปเทียบ Order แยกเดือน · แก้ WIP พองเป็นล้าน · แก้คิว Cloud ค้างถาวร · หน้าวางแผนใหม่ · ดับเบิลคลิกแก้แผน  ⏳ ยังไม่ deploy
+## v3.55 — 2026-08-15 — กราฟรายวัน + สรุปเทียบ Order แยกเดือน · แก้ WIP พองเป็นล้าน · แก้คิว Cloud ค้างถาวร · หน้าวางแผนใหม่ · ดับเบิลคลิกแก้แผน  ✅ deployed
+
+**✅ deployed 2026-08-15** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `eb0c727` · run [31892399812](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/31892399812) (#141) → `success` |
+| Worker `vsm4-api` | Version ID `0c6a7928-9ebb-4cc4-a149-8703e9106b8b` (bundle `index.html` ใหม่) |
+
+ตัว Worker **ไม่ได้แก้โค้ด** แต่ต้อง deploy ซ้ำเพราะมันบันเดิล `index.html` ไว้ในตัว
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.55` · ขนาดเท่ากันเป๊ะ 1,818,200 bytes ·
+เจอ `orderReconHtml` / `dailyChartHtml` / `planCellEdit` / `planValveEdit` / `_pendWDead` / `noIntake` ครบทั้งคู่
+API ยังตอบปกติ (`/api/plans` 200 · `/api/kpi` 200) · เปิดหน้าจริงบน Pages แล้ว **ไม่มี console error**
 
 สำรองไฟล์ก่อนแก้: `backups/index.before-wip-charts-20260815.html`
+
+### ตรวจก่อน deploy (ตามที่ผู้ใช้สั่ง)
+
+| # | หัวข้อ | ผล |
+|---|---|---|
+| 1 | Syntax ทั้งไฟล์ (parse 3 script blocks ด้วย `new Function`) | 0 error |
+| 2 | ID ซ้ำ / ID เดิมหายหลังรื้อ HTML หน้าวางแผน | ไม่ซ้ำ · ครบทั้ง 23 ตัว |
+| 3 | ฟังก์ชันใน inline handler (ทั้ง static + ที่ generate ตอน render) | resolve ครบ · บอร์ด 150 ช่องมี dblclick จริง |
+| 4 | ตัวเลข reconcile 2 ชุด | diff = 0 ทั้งคู่ |
+| 5 | Performance | เจอปัญหา → แก้ (ดูล่าง) |
+| 6 | ทน localStorage เสีย (`{{{` / `null` / `"x"` / `{"cmp":1}`) | ตกไป default ทุกเคส |
+| 7 | ทนข้อมูลว่าง (สายที่ไม่มีแผน/ไม่มีใบรับเข้า) | ไม่ crash |
+| 8 | External dependency เพิ่มไหม | เหมือน backup เป๊ะ (ไม่เพิ่ม) |
+| 9 | มือถือ 375px — home / วางแผน / 3 ป๊อปอัป / ป๊อปอัปแก้แผน | 0 ตัวโดนตัด · 0 เลื่อนแนวนอน · ปุ่ม −/+ 34×34px |
+| 10 | 2 ภาษา × 5 สาย × ทุกมุมมอง × ทุกตัวกรองเดือน/สถานะ | 0 error |
+
+**⚡ ที่แก้จากผลตรวจข้อ 5** — `computeWipBuckets()` เรียก `computePostFgAll()` ซ้ำสองรอบ
+(รอบละ 262ms บนข้อมูล 20,000 แถว) รอบแรกหา "ล็อตที่ถึง FG แล้ว" รอบสองหา "ยอด FG ต่อล็อต"
+ทั้งที่เป็นชุดเดียวกัน → คำนวณครั้งเดียวแล้วใช้ซ้ำ: **924ms → 609ms (−34%)** ตัวเลขทุกตัวเท่าเดิมเป๊ะ
 
 ### 🐞 บั๊กที่แก้
 
