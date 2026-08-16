@@ -1044,6 +1044,10 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .dc-sum{margin-left:auto;font-size:12px;font-weight:700;color:var(--text)}
 .dc-sum b{font-size:15px;color:var(--blue);font-variant-numeric:tabular-nums}
 .dc-sum small{font-weight:700;color:var(--muted);font-size:10.5px}
+/* ★ 2026-08-16 — บรรทัดกำกับใต้หัวกราฟ: บอกว่านี่คือ "ยอดเข้าใหม่รายวัน" ไม่ใช่ "ยอดคงค้าง"
+   (ผู้ใช้อ่านสลับกับตัวเลขบนการ์ดที่ชื่อเหมือนกันแต่คนละความหมาย) */
+.dc-note{font-size:11px;font-weight:700;color:var(--blue-dark);background:var(--blue-light);
+  border:1px solid var(--blue-soft);border-radius:8px;padding:4px 8px;margin-bottom:6px;line-height:1.55}
 .dc-lgs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
 .dc-lg{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--text);
   background:#F8FAFC;border:1px solid #E2E8F0;border-radius:999px;padding:2px 8px;white-space:nowrap}
@@ -1067,6 +1071,63 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .or-mrow td{background:#F8FAFC;border-top:2px solid var(--blue-soft)}
 .or-bar{display:inline-block;width:52px;height:7px;border-radius:99px;background:#E5E7EB;overflow:hidden;vertical-align:middle;margin-right:4px}
 .or-bar i{display:block;height:100%;border-radius:99px}
+/* ══ ป๊อปอัป WIP IN 1.5 — จัดหน้าใหม่ 2026-08-16 (req) ═══════════════════════
+   ปัญหาเดิมที่ผู้ใช้แจ้ง ("ดูยากมาก"): เปิดมาเจอกราฟ + ตารางเทียบ Order + แถบเตือน
+   3 สี + ตารางแผนขาย + ตารางรายการ กางพร้อมกันหมด ยาวเกิน 5 จอ ไม่รู้ต้องดูอะไรก่อน
+   ใหม่: ① ตัวกรองรวมเป็นแถบเดียวบนสุด (.wi-bar) ② กราฟกางไว้อย่างเดียว
+        ③ ที่เหลือพับเป็นแถวสรุปหน้าตาเดียวกันหมด (.wi-fold) ต่างแค่สีขอบซ้ายตามระดับ
+   หน้าตาเดียวทุกก้อน = สแกนหาของที่ต้องการได้ในแนวตั้งเดียว ไม่ต้องอ่านทุกกล่อง */
+.wi-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--blue-light);
+  border:1.5px solid var(--blue-soft);border-radius:12px;padding:7px 9px;margin-bottom:10px}
+.wi-vsm{display:inline-flex;align-items:center;gap:5px;background:var(--blue);color:#fff;border-radius:999px;
+  padding:6px 11px;font-size:11.5px;font-weight:900;white-space:nowrap;letter-spacing:.2px;flex:0 0 auto}
+.wi-bar select,.wi-bar input[type=search]{height:38px;min-width:0;border:1.5px solid var(--blue-soft);
+  border-radius:9px;background:#fff;font-family:inherit;font-weight:700;color:var(--text);box-sizing:border-box}
+.wi-bar select{flex:1 1 118px;padding:0 8px;font-size:12.5px}
+.wi-bar input[type=search]{flex:2 1 200px;padding:0 11px;font-size:13px;font-weight:500}
+.wi-bar select:focus-visible,.wi-bar input:focus-visible{outline:2.5px solid #93C5FD;outline-offset:1px}
+/* กล่องพับ — โครงเดียวกันทุกก้อน · สีขอบซ้ายบอกระดับ: i=ข้อมูล w=ควรตรวจ b=ผิดพลาด g=ครบแล้ว */
+.wi-fold{border:1.5px solid var(--border);border-left:4px solid var(--muted2);border-radius:11px;
+  background:var(--card);margin-bottom:8px}
+.wi-fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:9px 11px;min-height:40px;box-sizing:border-box;font-size:12.5px;font-weight:800;color:var(--text);
+  border-radius:9px}
+.wi-fold>summary::-webkit-details-marker{display:none}
+.wi-fold>summary::after{content:'▸';margin-left:auto;font-size:11px;font-weight:900;color:var(--muted);flex:0 0 auto}
+.wi-fold[open]>summary::after{content:'▾'}
+.wi-fold>summary:focus-visible{outline:2.5px solid #93C5FD;outline-offset:-2px}
+/* เนื้อในกล่อง: เว้นขอบให้เท่ากันทุกก้อน โดยไม่ต้องแก้ HTML ของแต่ละที่ (orderReconHtml ใช้ร่วมกับหน้าอื่น) */
+.wi-fold>*:not(summary){margin-left:11px;margin-right:11px}
+.wi-fold>*:not(summary):last-child{margin-bottom:11px}
+.wi-fold table{background:var(--card)}
+/* .or-sm (สรุปตัวเลขบนหัวข้อ) กินที่ว่างทั้งหมดแล้วชิดขวา — ลูกศรพับจึงอยู่ริมสุดเสมอ */
+.wi-fold>summary .or-sm{margin-left:0;flex:1 1 auto;text-align:right}
+.wi-fold.i{border-left-color:var(--blue)}   .wi-fold.i>summary{color:var(--blue-dark)}
+.wi-fold.w{border-left-color:var(--orange);background:var(--orange-bg)} .wi-fold.w>summary{color:#92400E}
+.wi-fold.b{border-left-color:var(--red);background:var(--red-bg)}      .wi-fold.b>summary{color:#B91C1C}
+.wi-fold.g{border-left-color:var(--green);background:var(--green-bg)}  .wi-fold.g>summary{color:#057A55}
+.wi-sub{font-weight:700;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wi-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 9px;font-size:11px;
+  font-weight:900;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.wi-pill.i{background:var(--blue-soft);color:var(--blue-dark)} .wi-pill.w{background:#FDE68A;color:#92400E}
+.wi-pill.b{background:#FECACA;color:#991B1B}                   .wi-pill.g{background:#A7F3D0;color:#065F46}
+/* เนื้อหาในกล่องพับ (ตัวหนังสืออธิบาย/รายการย่อย) — ก้อนเดียวคุมทุกกล่อง */
+.wi-tx{font-size:12px;line-height:1.7;color:var(--text)}
+.wi-tx .m{color:var(--muted);font-size:11px}
+.wi-note{font-size:11px;font-weight:700;color:var(--muted);line-height:1.6;margin-top:5px}
+/* ชิปสลับบนหัวกราฟ ("นับเฉพาะเดือนที่มี Order") */
+.wi-tg{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 10px;border-radius:999px;
+  border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);font-family:inherit;
+  font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.wi-tg.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.wi-tg:focus-visible{outline:2.5px solid #93C5FD;outline-offset:1px}
+@media(max-width:640px){
+  /* มือถือ: ปุ่ม/ช่องกรอกต้องแตะติดง่าย (≥44px ตามมาตรฐาน touch target) และไม่บีบจนอ่านไม่ออก */
+  .wi-bar select{flex:1 1 46%;height:46px;font-size:13px}
+  .wi-bar input[type=search]{flex:1 1 100%;height:46px;font-size:16px}  /* 16px กัน iOS ซูมเองตอนโฟกัส */
+  .wi-fold>summary{min-height:48px;font-size:12px}
+  .wi-tg{height:44px;padding:0 14px;font-size:11.5px}
+}
 /* ══ หน้าวางแผน — จัดรูปแบบใหม่ 2026-08-15 (ฟังก์ชันเดิมทุกอย่าง) ══════════ */
 .pl-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:9px}
 .pl-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative}
@@ -2084,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.55</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.56</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3367,6 +3428,63 @@ const VSM_EMP_MAP = {
   'S-054':'qc',     // นาย รังสรรค์ ดุลมา
   'T-604':'qc',     // นาย วาทิศ วินทไชย
   'PST786':'qc',    // น.ส. อังควิภา จามะรีย์
+
+  /* === VSM4 — ★ 2026-08-16 (req) ปักหมุดให้ชัด ไม่ปล่อยให้ตกค่าเริ่มต้น ==============
+     ทำไมต้องมี: เดิม "ไม่อยู่ในแมป = vsm4" ทำให้ VSM4 ไม่เคยถูกเขียนไว้จริงสักคน
+     ผลคือ record ที่ไม่มี zone ให้ยึด (ใบรับเข้า WIP IN 1.5 · บันทึกต่อกะ) รอดมาได้
+     เพราะ "ตราประทับ vsm ตอนบันทึก" อย่างเดียว — ตราหลุดเมื่อไร (บันทึกออฟไลน์รุ่นเก่า
+     / round-trip กับ D1 / แก้ข้อมูลมือ) ยอดจะเงียบ ๆ ไหลไป vsm4 โดยไม่มีสัญญาณเตือน
+     ของ VSM4 เองยังถูก แต่ถ้าเป็นคนสายอื่นที่ไม่อยู่ในแมป = ยอดข้ามสายทันที
+
+     ที่มาของรายชื่อ (ไม่ได้เดา): ไล่ record จริงทุกใบของแต่ละคน แล้วดู zone ที่บันทึก
+     — zone เป็นคอลัมน์ที่รอด D1 round-trip เสมอ จึงเป็นหลักฐานที่เชื่อได้ที่สุด
+     ทั้ง 44 คนนี้มี record อยู่ใน ZONE1/2/3 (โซนของ VSM4) เท่านั้น · ไม่มีใครปนสายอื่นเลย
+     ⚠️ คนที่ "ไม่มี record ให้ตรวจ" ไม่ถูกใส่ไว้ที่นี่ — ปล่อยให้ตั้งจากหน้าตั้งค่าได้ตามเดิม
+        (รหัสในแมปนี้เป็นกฎกลาง ทับค่าที่ admin ตั้งเอง ใส่มั่วแล้วแก้ในแอปไม่ได้)  */
+  'L-603':'vsm4',    // นายรุ่งโรจน์ วรรณสุทธะ · 23 rec
+  'L-1058':'vsm4',   // นายสรศักดิ์ สุริยะ · 44 rec
+  'L-1101':'vsm4',   // นายเดชา คำพิมูล · 45 rec
+  'L-1598':'vsm4',   // นายสัญญา คิดโสดา · 44 rec
+  'L-1763':'vsm4',   // นายสมชาย พรมชาติ · 120 rec
+  'L-1827':'vsm4',   // นายสุทิศ ภูถมดี · 29 rec
+  'L-1879':'vsm4',   // นายวิฑูรย์ สุขเลิศ · 114 rec
+  'L-1928':'vsm4',   // นายกันยา สวนธิ · 26 rec
+  'L-2101':'vsm4',   // นายนพรัตน์ พวงพันธ์ · 10 rec
+  'L-2480':'vsm4',   // นายสมคิด ทรทึก · 47 rec
+  'L-2488':'vsm4',   // นายสราวุฒิ ปานทอง · 70 rec
+  'L-2499':'vsm4',   // นายทรงศักดิ์ สืบเสระ · 36 rec
+  'L-2634':'vsm4',   // นายภูณัทกิจ อ่อนวิมล · 62 rec
+  'L-2658':'vsm4',   // น.ส.มาลิณี จอดพิมาย · 18 rec
+  'L-2659':'vsm4',   // นายณรงค์ จอดพิมาย · 35 rec
+  'L-2677':'vsm4',   // นายชาคริต บุญศิริกร · 79 rec
+  'L-2929':'vsm4',   // นายสุวรรณ สุขสถิตย์ · 41 rec
+  'L-2935':'vsm4',   // นายพิสิษฐ์ อิ่มเพ็ง · 42 rec
+  'L-3012':'vsm4',   // นายจีราวัฒน์ บวรเกษมพงศ์ · 100 rec
+  'L-3015':'vsm4',   // นายวิรุต การุณรัตน์ · 48 rec
+  'L-3035':'vsm4',   // นายจักรินทร์ นิสสัยดี · 66 rec
+  'L-3062':'vsm4',   // นายอภิวัฒน์ หาดจันทร์ · 76 rec
+  'L-3096':'vsm4',   // นายบรรหาญ แสงอ่อน · 41 rec
+  'L-3374':'vsm4',   // นายปัญญา ประวันนา · 43 rec
+  'L-3431':'vsm4',   // นายกฤษณ์ ซื้อจริง · 36 rec
+  'L-3501':'vsm4',   // นายสุภัค โจนรัมย์ · 33 rec
+  'L-3527':'vsm4',   // นายเกียรติศักดิ์ หล้ามณี · 44 rec
+  'L-3582':'vsm4',   // นายกิตติภพ บัวองค์ · 79 rec
+  'L-3583':'vsm4',   // นายวันทนา สอนไชย · 114 rec
+  'L-3591':'vsm4',   // นายณัฐพงษ์ สีสันงาม · 4 rec
+  'L-3608':'vsm4',   // นายประเวท กิ่งพุ่ม · 49 rec
+  'L-3609':'vsm4',   // นายภคินัย สาผม · 38 rec
+  'L-3610':'vsm4',   // นายวัชรินทร์ คำศรี · 49 rec
+  'L-3611':'vsm4',   // นายธีรพัฒน์ อินทร์สีดา · 78 rec
+  'PST709':'vsm4',   // นายวัชรินทร์ ยอดดี · 48 rec
+  'PST742':'vsm4',   // นางสาวจีรนันท์ ลดาพัน · 34 rec
+  'PST755':'vsm4',   // นายอำนาจ ดำรงกิจ · 64 rec
+  'PST802':'vsm4',   // นายวรรณชัย โพธิ์หล้า · 31 rec
+  'PST814':'vsm4',   // นายสุชิน อินธิราช · 58 rec
+  'S-046':'vsm4',    // นายสมศักดิ์ เครือลัดดา · 7 rec · ต่อกะ 1
+  'S-057':'vsm4',    // นายวิภาวัส จันทะคาม · 46 rec · ใบรับเข้า WIP IN 1.5 588 ใบ (ทั้งหมดของสาย)
+  'S-067':'vsm4',    // นายจำเนียร ทาเทพ · 13 rec
+  'T-204':'vsm4',    // นายวิรัตน์ หวังชอบ · 57 rec
+  'T-441':'vsm4',    // นายธนาศักดิ์ สุกระวัน · 64 rec
   // === เพิ่มรหัสพนักงาน VSM1 / VSM2 เพิ่มเติมที่นี่ได้ ===
 };
 
@@ -3413,18 +3531,56 @@ function delEmpVsmOv(id) {
    เดิม D1 ไม่มีคอลัมน์นี้ → คนที่ admin เพิ่มใหม่ผูก VSM ได้เฉพาะเครื่องที่เพิ่ม (localStorage)
    เครื่องอื่นเห็นเป็น VSM4 หมด. ตอนนี้เก็บลง D1 แล้ว → ทุกเครื่องเห็นตรงกัน                */
 let _empVsmCloud = {};
+/* ★ 2026-08-16 (req) — ค่าที่ "มาจาก D1 จริง ๆ" ต้องเก็บแยกตอนรับมา ห้ามอ่านย้อนจาก state.employees
+
+   บั๊กที่เจอตอนแก้: loadEmpVsmCloud() เดิมอ่าน e.vsm จาก state.employees — แต่ normalizeEmployeeVsm()
+   เขียน e.vsm = resolveEmpVsm(e.id) ทับทุกคนก่อนหน้านั้น และ resolveEmpVsm() ตกท้ายที่ DEFAULT_VSM
+   ⇒ "ค่าที่ระบบเดาเอง" ถูกฟอกกลับมาเป็น "ค่าจากฐานข้อมูล" ในรอบถัดไป แล้วบันทึกลง localStorage ค้างไว้
+   วัดของจริงวันที่แก้: /api/init คืนพนักงาน 55 คน — มี vsm มาด้วย 0 คน แต่ในแอปขึ้นว่ามาจาก D1 หมด
+   ผลเสีย: แยกไม่ออกระหว่าง "เป็น VSM4 จริง" กับ "ไม่รู้ เลยเดาว่า VSM4" → คนสายอื่นที่ยังไม่ถูกระบุ
+   จะเอายอดไปโผล่ VSM4 เงียบ ๆ โดยไม่มีใครเห็น (เรื่องเดียวกับที่เพิ่งปักหมุด VSM_EMP_MAP ไป)
+
+   ตอนนี้: _empVsmApi = snapshot ค่าที่ D1 ส่งมาเท่านั้น (เก็บ localStorage ให้รอดตอนเปิดแบบออฟไลน์)
+   ผลการ resolve ไม่เปลี่ยนเลย — ชั้นที่ถอดออกเป็นค่าที่ซ้ำกับ default อยู่แล้ว (ตรวจแล้ว 0 record ขยับ) */
+const LS_EMP_VSM_API = 'vsm4_emp_vsm_api';
+let _empVsmApi = (() => { try { return JSON.parse(localStorage.getItem(LS_EMP_VSM_API)) || {}; } catch (e) { return {}; } })();
+let _empVsmApiSeen = !!localStorage.getItem(LS_EMP_VSM_API);   // false = ยังไม่เคยซิงก์ → อย่าเพิ่งฟันธงว่า "ยังไม่ระบุ"
+/* เรียกทันทีที่ได้ employees จาก API — ก่อน normalizeEmployeeVsm() จะเขียนทับ e.vsm */
+function captureEmpVsmFromApi(list) {
+  if (!Array.isArray(list)) return;
+  const m = {};
+  for (const e of list) { const v = normVsmKey(e && e.vsm); if (v && e && e.id) m[String(e.id).toUpperCase()] = v; }
+  _empVsmApi = m; _empVsmApiSeen = true;
+  try { localStorage.setItem(LS_EMP_VSM_API, JSON.stringify(m)); } catch (e) {}
+}
 function loadEmpVsmCloud() {
-  _empVsmCloud = {};
-  for (const e of (state.employees || [])) {
-    const v = normVsmKey(e && e.vsm);
-    if (v && e.id) _empVsmCloud[String(e.id).toUpperCase()] = v;
-  }
+  _empVsmCloud = { ..._empVsmApi };
 }
 // ลำดับความสำคัญ: โค้ด (VSM_EMP_MAP) = กฎกลาง > override ในเครื่อง > ค่าจากฐานข้อมูล > vsm4
 function resolveEmpVsm(id) {
   const up = String(id||'').toUpperCase();
   return normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || _empVsmCloud[up] || DEFAULT_VSM;
 }
+/* ★ 2026-08-16 (req) — "ค่านี้มาจากไหน" — คู่กับ resolveEmpVsm ต้องเรียงลำดับเดียวกันเป๊ะ
+   ที่ต้องมี: 'default' = ไม่มีใครระบุสายให้คนนี้เลย ระบบเดาให้เป็น VSM4 เอง
+   ของเดิมมองไม่เห็นความต่างระหว่าง "เป็น VSM4 จริง" กับ "ไม่รู้ เลยเดาว่า VSM4"
+   → คนสายอื่นที่ยังไม่ถูกใส่ในแมป จะเอายอดไปโผล่ VSM4 แบบเงียบ ๆ (ต้นเหตุที่เพิ่งแก้ไป)
+   คืน: 'code' | 'local' | 'cloud' | 'default' | 'unsynced' */
+function empVsmSrc(id) {
+  const up = String(id||'').toUpperCase();
+  if (normVsmKey(VSM_EMP_MAP[up])) return 'code';
+  if (normVsmKey(_empVsmOv[up]))   return 'local';
+  if (_empVsmCloud[up])            return 'cloud';
+  // ยังไม่เคยซิงก์กับ D1 เลย = ยังไม่รู้ว่ามีค่าอยู่ไหม → ห้ามฟันธงว่า "ยังไม่ระบุ" (จะขึ้นธงแดงยกเข่งทั้งที่ยังไม่ได้ดู)
+  return _empVsmApiSeen ? 'default' : 'unsynced';
+}
+const EMP_SRC_LB = {
+  code:     ['🔒 โค้ด',        'ระบุไว้ใน VSM_EMP_MAP (กฎกลางทุกเครื่อง) — แก้ในแอปไม่ได้ ต้องแก้ที่ index.html'],
+  local:    ['💾 เครื่องนี้',   'ตั้งไว้ในเครื่องนี้ (localStorage) — เครื่องอื่นอาจเห็นไม่ตรงกัน'],
+  cloud:    ['☁️ ฐานข้อมูล',   'มาจากคอลัมน์ employees.vsm ใน D1 — ทุกเครื่องเห็นตรงกัน'],
+  default:  ['⚠️ ยังไม่ระบุ',  'ไม่มีใครระบุสายให้รหัสนี้ ระบบเดาให้เป็น VSM4 — ถ้าคนนี้ไม่ใช่ VSM4 ยอดจะไปโผล่ผิดสาย ให้เลือกสายให้ถูกต้อง'],
+  unsynced: ['… ยังไม่ซิงก์',  'ยังไม่ได้โหลดข้อมูลพนักงานจาก Cloud รอบนี้ จึงยังไม่รู้ว่ามีค่าสายอยู่ในฐานข้อมูลไหม'],
+};
 // บังคับ VSM ให้พนักงานทุกคนจาก map/override/cloud
 function normalizeEmployeeVsm() {
   if (!Array.isArray(state.employees)) return;
@@ -7549,7 +7705,7 @@ async function reload() {
     const _ok = a => Array.isArray(a) ? a.length > 0 : (a && typeof a === 'object' && Object.keys(a).length > 0);
     if (_ok(res.valves))    state.valves    = res.valves;
     if (_ok(res.machines))  state.machines  = res.machines;
-    if (_ok(res.employees)) state.employees = res.employees;
+    if (_ok(res.employees)) { captureEmpVsmFromApi(res.employees); state.employees = res.employees; }   // ★ 2026-08-16: เก็บ vsm ที่ D1 ส่งมาก่อนถูกเขียนทับ
     if (_ok(res.targets))   state.targets   = res.targets;
     if (_ok(res.ids))       state.ids       = res.ids; else state.ids = state.ids || [];
     ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
@@ -8825,7 +8981,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.55":"Production Record + KPI · v3.55",
+"ระบบบันทึกผลิต + KPI · v3.56":"Production Record + KPI · v3.56",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -13890,11 +14046,29 @@ function _saveWipin(){ _wipinVer++; try{ localStorage.setItem(LS_WIPIN, JSON.str
 function _loadWipinPending(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_WIPIN_PEND)||'[]')); }catch(e){ return new Set(); } }
 function _saveWipinPending(){ try{ localStorage.setItem(LS_WIPIN_PEND, JSON.stringify([..._wipinPending])); }catch(e){} }
 // VSM ของ entry — สืบจากรหัสผู้บันทึก (byId) เหมือน _hoVsm → แต่ละ VSM เห็นเฉพาะของตัวเอง (Admin เห็นทีละสายที่เลือก)
+/* ★ 2026-08-16 (bug) — สลับลำดับให้ยึด "ตราประทับตอนบันทึก" ก่อนรหัสผู้บันทึก
+   ให้ตรงกับ _hoVsm() ของบันทึกต่อกะ (เดิมสองที่ใช้คนละลำดับ = ใบเดียวกันตอบคนละสาย)
+   เหตุผล: ตราประทับ = "ใบนี้ถูกลงให้สายไหน" ซึ่งเป็นสิ่งที่ต้องการจริง ๆ
+           ส่วนรหัสผู้บันทึก = "ใครเป็นคนกด" ซึ่งไม่ใช่เรื่องเดียวกัน —
+           Admin สายหนึ่งลงข้อมูลให้อีกสายได้ (เคส 2026-08-15 ดู addWipin)
+   รหัสผู้บันทึกยังใช้เป็นทางสำรองสำหรับใบเก่าที่ไม่มีตราประทับ
+   ตรวจแล้ว: ข้อมูลปัจจุบัน 594 ใบ ไม่มีใบไหนย้ายสายจากการสลับลำดับนี้ (ทุกใบมีตราประทับครบ) */
 function _wipinVsm(e){
+  const v=normVsmKey(e&&e.vsm); if(v) return v;
   const id=String((e&&e.byId)||'').trim().toUpperCase();
   if(id){ const m=normVsmKey(VSM_EMP_MAP[id])||normVsmKey(_empVsmOv[id])||_empVsmCloud[id]; if(m) return m; }
-  return normVsmKey(e&&e.vsm)||DEFAULT_VSM;
+  return DEFAULT_VSM;
 }
+/* ★ 2026-08-16 (req) — ใบนี้ "คนลงรับเข้าเอง" หรือ "ระบบลงย้อนหลังให้"?
+   ปุ่ม "ลืมลง WIP IN 1.5" (หน้าตั้งค่า) สร้างใบจากยอดผลิตที่ SSG ย้อนหลัง โดยใช้
+   **วันเริ่มทำ SSG เป็นวันที่รับเข้า** (ดู backfillWipinAll → addWipin(...,it.first))
+   → ใบพวกนี้บอก "ของล็อตนี้เคยมาถึงแน่ ๆ" ได้ แต่บอก "มาถึงวันไหน" ไม่ได้
+   วัดจริงวันที่แก้: 481 ใบ 1,063,817 ชิ้น = 89.4% ของยอดทั้งหมด — เอาไปทำกราฟรายวัน
+   ทำให้ยอดพองจาก ~9,000/วัน (ของจริง) เป็น ~41,000/วัน ตามที่ผู้ใช้ทักว่า "มันไม่ใช่"
+   ⚠️ ห้ามตัดออกจากฐาน WIP — ยอด WIP/Output ยึดใบพวกนี้อยู่ ตัดแล้วยอดพังทั้งระบบ
+      กันไว้ใช้ "แยกแสดง" ในกราฟรายวันเท่านั้น */
+const _WIPIN_BACKFILL_RE = /ลงย้อนหลัง/;
+function _wipinIsBackfill(e){ return _WIPIN_BACKFILL_RE.test(String((e&&e.note)||'')); }
 // รายการที่ยังไม่ลบ + เฉพาะ VSM ที่กำลังดู (ใหม่ล่าสุดก่อน)
 function _wipinList(){
   return Object.values(_wipin).filter(e=>e && !e.deleted && _wipinVsm(e)===viewVsm())
@@ -13964,7 +14138,15 @@ function addWipin(valve, lot, qty, note, prodDate){
   const ts=/^\d{4}-\d{2}-\d{2}$/.test(String(prodDate||''))?prodDate+'T00:00:00.000Z':now;
   const entry={
     id:'wi_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-    vsm:myVsm(), valve, lot, qty,
+    /* ★ 2026-08-16 (bug) — เดิม myVsm() = สายของ "คนที่ล็อกอิน" ไม่ใช่สายที่กำลังทำงานอยู่
+       เคสจริง 2026-08-15: S-057 (พนักงาน VSM4 + Admin) สลับไปดู VSM3 แล้วกดปุ่ม
+       "ลงบันทึก WIP IN ทั้งหมด" — แผงนั้นลิสต์ล็อตของ VSM3 (ใช้ filterVsm = viewVsm)
+       แต่ใบที่สร้างถูก stamp เป็น vsm4 ทุกใบ → งาน OEM ของ VSM3 กลายเป็นยอดรับเข้าของ VSM4
+       วัดจริง: 247 ใบที่กดวันนั้น มีแค่ 9 ใบ (12,631 ชิ้น) ที่ SSG อยู่ VSM4 จริง
+                อีก 212 ใบ (514,028 ชิ้น) SSG อยู่ VSM3 ล้วน → ยอด ส.ค. พองจาก ~13,000 เป็น 41,366/วัน
+       viewVsm() = สายที่กำลังดู/ทำงานอยู่ · ผู้ใช้ทั่วไปถูกล็อกที่สายตัวเองอยู่แล้ว = ค่าเท่าเดิม
+       เปลี่ยนเฉพาะเคส Admin ที่สลับสาย ซึ่งเป็นเคสที่ทำข้อมูลเพี้ยนพอดี */
+    vsm:viewVsm(), valve, lot, qty,
     byId:(u&&u.id)||OP||'', byName:(u&&u.name)||'',
     note:String(note||'').trim(),
     ts, deleted:0, updatedAt:now,
@@ -14536,7 +14718,8 @@ function computeWipBuckets(){
     let machines=[];
     const g=groups[k];
     if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
-    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan,startedNoProd});
+    wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan,startedNoProd,
+      back:_wipinIsBackfill(e)});   // ★ 2026-08-16: ระบบลงย้อนหลังให้ (วันที่ = วันเริ่มผลิต ไม่ใช่วันรับเข้า)
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -15247,6 +15430,19 @@ let _wipInFilter={month:null,customer:'',status:''};   // month:null = ยัง
 let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
 let _wipOutCust='';                           // ★ req #4: กรองกลุ่มลูกค้าใน WIP OUT ('' = ทุกกลุ่ม)
 let _wipNoIntakeView=false;                   // ★ 2026-08-15: สลับดู "ผลิตอยู่แต่ไม่มีใบรับเข้า" ในถัง WIP
+/* ★ 2026-08-16 (req) — ป๊อปอัป WIP IN 1.5: สถานะการพับ + กติกาการนับเดือน
+   _wiFold : กล่องไหนกางอยู่ — ต้องเก็บไว้นอกฟังก์ชันวาด เพราะ _refreshWipDetail() วาดใหม่ทั้งก้อน
+             ถ้าไม่เก็บ กล่องจะหุบเองทุกครั้งที่กดตัวกรอง (ค่าเริ่มต้น = พับหมด ตามที่ผู้ใช้ขอ)
+   _wiAllMonths : false = นับเฉพาะเดือนที่มี Order (กติกาใหม่ · ค่าเริ่มต้น)
+                  true  = นับทุกเดือน (ทางออกให้ตรวจของที่ถูกตัดออก — ยอดต้องไม่หายเงียบ) */
+let _wiFold={recon:false,np:false,nop:false,diag:false,plan:false,list:false};
+let _wiAllMonths=false;
+/* ★ 2026-08-16 (req รอบสาม) — true = นับรวมใบที่ลงผ่านระบบ "ลืมลงบันทึก WIP IN 1.5" ด้วย (ค่าเริ่มต้น)
+   ผู้ใช้ยืนยัน: ของพวกนั้น "ลืมจริง จนมีการผลิตแล้ว" = ของที่รับเข้าจริง ต้องนับ ไม่ใช่ของปลอม
+   (รอบก่อนผมตั้ง default ไว้ที่ false — ผิด เพราะไปตัดของจริงทิ้ง)
+   ปุ่มสลับยังอยู่ เพราะวันที่บนใบพวกนี้คือ "วันเริ่มผลิต SSG" ไม่ใช่วันที่ของมาถึงจริง
+   → เวลาสงสัยว่ากราฟรายวันเพี้ยนเพราะอะไร กดดูเฉพาะใบที่คนลงเองเทียบได้ */
+let _wiWithBackfill=true;
 function _wipMonthsFromItems(items){
   const set=new Set();
   for(const it of items){ const m=String(it.ts||it.date||'').slice(0,7); if(m) set.add(m); }
@@ -15260,8 +15456,10 @@ function _wipMonthsFromItems(items){
    ได้ 274 รายการ / Order 321,211 ชิ้น เท่ากันเป๊ะทั้งสี่สาย ทั้งที่ใบรับเข้าของ
    vsm1/vsm2 มี 0 ใบ → ตรงกับที่ผู้ใช้แจ้งว่า "เหมือนกันทุกแผนก และทุกเดือนด้วย"
    ym = 'YYYY-MM' กรองตามเดือนวันที่ขาย ('' หรือไม่ส่ง = ทุกเดือน) */
-function _wipPlanRows(ym){
-  const wip=_wipinList();
+function _wipPlanRows(ym, months){
+  /* ★ 2026-08-16 (req) — months = Set เดือนที่มี Order · ส่งมาแล้วยอด "รับเข้า" จะนับ
+     เฉพาะใบที่รับเข้าในเดือนพวกนั้น ให้ตรงกับกราฟและตารางเทียบ Order ในป๊อปอัปเดียวกัน */
+  const wip=_wipinList().filter(e=>!months || months.has(String(e.ts||'').slice(0,7)));
   const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve) && (lot?lotKey(e.lot)===lotKey(lot):true))
                                .reduce((s,e)=>s+(Number(e.qty)||0),0);
   return filterVsm(state.plans||[])
@@ -15285,8 +15483,8 @@ const WIP_PLAN_PER_PAGE=20;
 let _wipPlanCtl={sort:'date',page:1,open:false};
 function _wipPlanSetSort(v){ _wipPlanCtl.sort=v; _wipPlanCtl.page=1; _wipPlanCtl.open=true; _refreshWipDetail(); }
 function _wipPlanGo(p){ _wipPlanCtl.page=p; _wipPlanCtl.open=true; _refreshWipDetail(); }
-function _wipInPlanHtml(ym){
-  const rows=_wipPlanRows(ym);
+function _wipInPlanHtml(ym, months){
+  const rows=_wipPlanRows(ym, months);
   if(!rows.length) return '';
   const doneN=rows.filter(r=>r.enough).length, totMiss=rows.reduce((s,r)=>s+r.missing,0);
   const allIn=totMiss===0;
@@ -15324,27 +15522,30 @@ function _wipInPlanHtml(ym){
       <button type="button" class="wip-pgbtn" ${pg>=pages?'disabled':''} onclick="_wipPlanGo(${pg+1})">${TT('ถัดไป','Next')} ›</button>
     </div>`:'';
   // P1-14: ตั้งต้นพับซ่อน (ไม่มี open) — กางค้างไว้ระหว่างกดเรียง/เปลี่ยนหน้า (_wipPlanCtl.open)
+  // ★ 2026-08-16 — ใช้โครงกล่องพับชุดเดียวกับก้อนอื่นในป๊อปอัป (.wi-fold) ให้สแกนได้ในแนวเดียว
   return `
-   <details ${_wipPlanCtl.open?'open':''} ontoggle="_wipPlanCtl.open=this.open" style="margin-bottom:10px;border:1.5px solid ${allIn?'#84E1BC':'#FCA5A5'};border-radius:11px;background:${allIn?'#F3FAF7':'#FEF2F2'};padding:8px 10px">
-     <summary style="cursor:pointer;font-weight:800;font-size:13px;color:${allIn?'#057A55':'#B91C1C'};list-style:none">
-       📋 ${TT('งานขายที่วางแผน (เทียบยอดรับเข้า)','Planned sales vs received')} —
-       ${allIn?TT('เข้าครบทุกรายการ ✓','all received ✓'):`${TT('รับครบ','complete')} ${doneN}/${rows.length} · ${TT('ยังขาดรวม','still short')} <b>${nn(totMiss)}</b> ${TT('ชิ้น','pcs')}`}
-       <span style="font-weight:700;font-size:11px;color:var(--muted)"> · ${TT('กดเพื่อเปิด/ปิด','tap to open/close')}</span>
+   <details class="wi-fold ${allIn?'g':'b'}" ${_wipPlanCtl.open?'open':''} ontoggle="_wipPlanCtl.open=this.open">
+     <summary>📋 ${TT('งานขายที่วางแผน (เทียบยอดรับเข้า)','Planned sales vs received')}
+       ${allIn?`<span class="wi-pill g">${TT('เข้าครบทุกรายการ ✓','all received ✓')}</span>`
+              :`<span class="wi-pill b">${TT('ยังขาด','short')} ${nn(totMiss)} ${TT('ชิ้น','pcs')}</span>
+                <span class="wi-sub">${TT('รับครบ','complete')} ${doneN}/${rows.length}</span>`}
      </summary>
-     <div class="row mt-8" style="gap:6px;align-items:center;flex-wrap:wrap">
-       <label style="font-size:11.5px;font-weight:800;color:var(--muted);margin:0">${TT('เรียงตาม','Sort by')}</label>
-       <select onchange="_wipPlanSetSort(this.value)" style="border:1px solid var(--blue-soft);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:700">
-         <option value="date" ${srt==='date'?'selected':''}>${TT('วันที่ขาย','Sell date')}</option>
-         <option value="customer" ${srt==='customer'?'selected':''}>${TT('ลูกค้า','Customer')}</option>
-         <option value="valve" ${srt==='valve'?'selected':''}>Valve No</option>
-         <option value="status" ${srt==='status'?'selected':''}>${TT('สถานะ (ขาดขึ้นก่อน)','Status (short first)')}</option>
-       </select>
+     <div class="wi-bd">
+       <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+         <label style="font-size:11.5px;font-weight:800;color:var(--muted);margin:0">${TT('เรียงตาม','Sort by')}</label>
+         <select onchange="_wipPlanSetSort(this.value)" style="border:1.5px solid var(--blue-soft);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:700;font-family:inherit;background:#fff">
+           <option value="date" ${srt==='date'?'selected':''}>${TT('วันที่ขาย','Sell date')}</option>
+           <option value="customer" ${srt==='customer'?'selected':''}>${TT('ลูกค้า','Customer')}</option>
+           <option value="valve" ${srt==='valve'?'selected':''}>Valve No</option>
+           <option value="status" ${srt==='status'?'selected':''}>${TT('สถานะ (ขาดขึ้นก่อน)','Status (short first)')}</option>
+         </select>
+       </div>
+       <div class="tbl-wrap"><table><thead><tr>
+         <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>
+         <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">${TT('จัดการ','Manage')}</th>
+       </tr></thead><tbody>${body}</tbody></table></div>
+       ${pager}
      </div>
-     <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr>
-       <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>
-       <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">${TT('จัดการ','Manage')}</th>
-     </tr></thead><tbody>${body}</tbody></table></div>
-     ${pager}
    </details>`;
 }
 /* แก้ไข/ลบแผนขายจากป๊อปอัป WIP IN — เขียนลงฐานข้อมูลแผน (production_plans) โดยตรง
@@ -15510,14 +15711,35 @@ function custColor(c){ return CUST_COLOR[custGroup(c)] || CUST_COLOR.Other; }
 
 /* ── ยอดรายวันแยกกลุ่มลูกค้า → { 'YYYY-MM-DD': {MSI:n, SWE:n, …} } ─────────
    ym = 'YYYY-MM' เอาเฉพาะเดือนนั้น ('' = ทุกเดือน) */
-function _dailyWipIn(items, ym){
+function _dailyWipIn(items, ym, months){
   const out={};
   for(const i of (items||[])){
     const d=String(i.ts||'').slice(0,10); if(!d) continue;
     if(ym && d.slice(0,7)!==ym) continue;
+    /* ★ 2026-08-16 (req) — "ต้องมี Order ในเดือนนั้นเท่านั้น ถึงจะนับ"
+       months = เดือนที่สายนี้มีแผนขายจริง (_planIndex().months) · ไม่ส่ง = นับทุกเดือนแบบเดิม */
+    if(months && !months.has(d.slice(0,7))) continue;
     (out[d]=out[d]||{})[custGroup(i.customer)] = (out[d][custGroup(i.customer)]||0) + (Number(i.qty)||0);
   }
   return out;
+}
+/* ── บัญชียอดรับเข้าของสายนี้ แบ่ง 3 กองตามกติกาใหม่ ────────────────────────
+   นับ     = รับเข้าในเดือนที่มี Order + จับคู่แผนได้
+   นอกแผน  = รับเข้าในเดือนที่มี Order แต่หาแผนคู่กันไม่เจอ (ของจริงที่ต้องตาม)
+   ไม่นับ  = รับเข้าในเดือนที่ไม่มี Order เลย → ตามกติกาใหม่ไม่เอามานับ
+   สามกองบวกกันต้องเท่ายอดรับเข้าทั้งหมดเสมอ — ต้องโชว์กองที่ตัดออกด้วย ไม่งั้น
+   ยอดหายไปเงียบ ๆ แล้วคนอ่านจะเลิกเชื่อทั้งหน้า (ยอดที่ไม่ reconcile = ยอดที่ใช้ไม่ได้) */
+function _wipInMonthSplit(){
+  const months=_planIndex().months;
+  let counted=0, noPlan=0, skipped=0, skipN=0, all=0;
+  const skipMonths=new Set();
+  for(const e of _wipinList()){
+    const q=Number(e.qty)||0, m=String(e.ts||'').slice(0,7);
+    all+=q;
+    if(!months.has(m)){ skipped+=q; skipN++; if(m) skipMonths.add(m); continue; }
+    if(_planMissWhy(e.valve,e.lot)) noPlan+=q; else counted+=q;
+  }
+  return {months,all,counted,noPlan,skipped,skipN,skipMonths:[...skipMonths].sort()};
 }
 /* WIP OUT ต้องตัดยอดด้วย fgByDate รายวัน — ห้ามใช้วันที่ระดับล็อต
    (ล็อตที่ผ่าน FG คร่อมหลายวัน จะเทกองลงวันเดียวจนกราฟผิดรูป และรวมแล้วไม่เท่าการ์ด) */
@@ -15541,10 +15763,22 @@ function _dailyWipOut(b, ym){
 let _chartSeq=0;
 function dailyChartHtml(daily, opts){
   opts=opts||{};
-  const days=Object.keys(daily).sort();
+  let days=Object.keys(daily).sort();
   if(!days.length) return `<div class="muted" style="font-size:12px;padding:8px 2px">${TT('ยังไม่มีข้อมูลในช่วงนี้','No data for this range')}</div>`;
-  const groups=CUST_GROUPS.filter(g=>days.some(d=>(daily[d][g]||0)>0));
-  const totOf=d=>groups.reduce((s,g)=>s+(daily[d][g]||0),0);
+  /* ★ 2026-08-16 (req) — opts.fillDays: เติมวันที่ "ยอด 0" ให้ครบทุกวันในช่วง
+     ของเดิมวาดเฉพาะวันที่มีของ → แกนกระโดด 01 → 04 → 05 ทำให้ดูเหมือนรับเข้าทุกวัน
+     ผู้ใช้ย้ำว่า "บางวัน 0 เลย" — วันที่ไม่มีของก็เป็นข้อมูล ต้องเห็นเป็นช่องว่าง
+     (ค่าเฉลี่ยยังหารด้วย "วันที่มีงาน" เหมือนเดิม — วันหยุดไม่ควรถ่วงค่าเฉลี่ยกำลังผลิต) */
+  if(opts.fillDays && days.length>1){
+    const out=[], d=new Date(days[0]+'T00:00:00Z'), end=new Date(days[days.length-1]+'T00:00:00Z');
+    let guard=0;
+    while(d<=end && guard++<400){ out.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate()+1); }
+    days=out;
+  }
+  // วันที่เติมเข้ามา (ยอด 0) ไม่มี key ใน daily → ใช้ D[] แทน daily[] ทุกจุด กัน undefined
+  const _EMPTY={}, D=d=>daily[d]||_EMPTY;
+  const groups=CUST_GROUPS.filter(g=>days.some(d=>(D(d)[g]||0)>0));
+  const totOf=d=>groups.reduce((s,g)=>s+(D(d)[g]||0),0);
   const totals=days.map(totOf);
   const grand=totals.reduce((s,v)=>s+v,0);
   const max=Math.max(1,...totals);
@@ -15568,11 +15802,14 @@ function dailyChartHtml(daily, opts){
     const x=PADL+i*CW+5, bw=CW-10;
     let acc=0, seg='';
     for(const g of groups){
-      const v=daily[d][g]||0; if(!v) continue;
+      const v=D(d)[g]||0; if(!v) continue;
       const h=(v/max)*H; acc+=v;
       seg+=`<rect x="${x}" y="${y(acc)}" width="${bw}" height="${Math.max(1,h)}" fill="${CUST_COLOR[g]}" rx="1.5"><title>${escapeHtml(d)} · ${escapeHtml(g)} · ${nn(v)}</title></rect>`;
     }
-    const cap=`${d} · ${TT('รวม','total')} ${nn(totOf(d))} — `+(groups.map(g=>`${g} ${nn(daily[d][g]||0)}`).join(' · '));
+    // วันที่ยอด 0 — ขีดบาง ๆ ที่เส้นฐาน ให้อ่านออกว่า "วันนี้ไม่มีของเข้า" ไม่ใช่ "ไม่มีข้อมูล"
+    if(!acc) seg+=`<rect x="${x}" y="${PADT+H-1.5}" width="${bw}" height="1.5" fill="#CBD5E1" rx="1"><title>${escapeHtml(d)} · ${escapeHtml(TT('ไม่มีของรับเข้า','no intake'))}</title></rect>`;
+    const cap=totOf(d)?`${d} · ${TT('รวม','total')} ${nn(totOf(d))} — `+(groups.map(g=>`${g} ${nn(D(d)[g]||0)}`).join(' · '))
+                      :`${d} · ${TT('ไม่มีของรับเข้าวันนี้','no intake this day')}`;
     const dd=Number(d.slice(8,10));
     bars+=`<g class="dcol" data-cap="${escapeHtml(cap)}" onclick="_dcPick(this)" style="cursor:pointer">
         <rect x="${PADL+i*CW}" y="${PADT}" width="${CW}" height="${H}" fill="transparent"/>
@@ -15585,7 +15822,7 @@ function dailyChartHtml(daily, opts){
   const avgLine=`<line x1="${PADL-4}" y1="${avgY}" x2="${W-4}" y2="${avgY}" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="5 3"/>
     <text x="${W-6}" y="${avgY-4}" text-anchor="end" font-size="9.5" font-weight="800" fill="#DC2626">${TT('เฉลี่ย','avg')} ${nn(avg)}</text>`;
   const legend=groups.map(g=>{
-    const t=days.reduce((s,d)=>s+(daily[d][g]||0),0);
+    const t=days.reduce((s,d)=>s+(D(d)[g]||0),0);
     return `<span class="dc-lg"><i style="background:${CUST_COLOR[g]}"></i>${escapeHtml(g)} <b>${nn(t)}</b>
       <small>${TT('เฉลี่ย','avg')} ${nn(Math.round(t/actN))}/${TT('วัน','d')}</small></span>`;
   }).join('');
@@ -15595,6 +15832,7 @@ function dailyChartHtml(daily, opts){
       <span class="dc-sum">${TT('เฉลี่ย','Avg')} <b>${nn(avg)}</b> ${TT('ชิ้น/วัน','pcs/day')}
         <small>· ${nn(actN)} ${TT('วันที่มีงาน','active days')} · ${TT('รวม','total')} ${nn(grand)}</small></span>
     </div>
+    ${opts.note?`<div class="dc-note">${opts.note}</div>`:''}
     <div class="dc-lgs">${legend}</div>
     <div class="dc-scroll"><svg viewBox="0 0 ${W} ${VH}" width="${W}" height="${VH}" role="img"
       aria-label="${escapeHtml(opts.title||'')} ${TT('เฉลี่ย','avg')} ${nn(avg)}">
@@ -15640,19 +15878,32 @@ function _orderAlloc(supplyOf){
 }
 /* ยอด "ของจริง" ต่อ (valve::lot) ของแต่ละมุมมอง — VSM-scoped ทั้งคู่
      in  = ยอดที่รับเข้า WIP IN 1.5 (ทุกใบของล็อตนั้น)
-     out = ยอดที่ผ่าน FG แล้ว (สะสมทุกช่วงเวลา — ถามว่า "ออกไปแล้วเท่าไร" ไม่ใช่ "เดือนนี้เท่าไร") */
-function _orderSupplyMap(kind){
+     out = ยอดที่ผ่าน FG แล้ว (สะสมทุกช่วงเวลา — ถามว่า "ออกไปแล้วเท่าไร" ไม่ใช่ "เดือนนี้เท่าไร")
+
+   ★ 2026-08-16 (req) — months = Set ของ 'YYYY-MM' ที่ "มี Order จริง"
+     ส่งมาเมื่อไร = นับเฉพาะของที่รับเข้า/ผ่าน FG ในเดือนพวกนั้น (ไม่ส่ง = ทุกช่วงเวลาแบบเดิม) */
+function _orderSupplyMap(kind, months){
   const m={};
   if(kind==='out'){
-    for(const i of (getWipBuckets().wipOut.items||[])) m[jobKey(i.valve,i.lot)]=(m[jobKey(i.valve,i.lot)]||0)+(Number(i.qty)||0);
+    for(const i of (getWipBuckets().wipOut.items||[])){
+      let q=Number(i.qty)||0;
+      if(months){                       // ตัดยอดรายวันด้วย fgByDate — ล็อตที่คร่อมเดือนจะเอาเฉพาะส่วนที่เข้าเกณฑ์
+        q=0; const bd=i.fgByDate||{};
+        for(const d in bd) if(months.has(d.slice(0,7))) q+=Number(bd[d])||0;
+      }
+      if(q) m[jobKey(i.valve,i.lot)]=(m[jobKey(i.valve,i.lot)]||0)+q;
+    }
   }else{
-    for(const e of _wipinList()) m[jobKey(e.valve,e.lot)]=(m[jobKey(e.valve,e.lot)]||0)+(Number(e.qty)||0);
+    for(const e of _wipinList()){
+      if(months && !months.has(String(e.ts||'').slice(0,7))) continue;
+      m[jobKey(e.valve,e.lot)]=(m[jobKey(e.valve,e.lot)]||0)+(Number(e.qty)||0);
+    }
   }
   return m;
 }
 /* แถวสรุป: แผนขายทุกใบของสายนี้ + ของจริงที่จัดสรรให้ + เดือนของ Order (= เดือนวันที่ขาย) */
-function _orderReconRows(kind){
-  const supply=_orderSupplyMap(kind);
+function _orderReconRows(kind, months){
+  const supply=_orderSupplyMap(kind, months);
   /* แผนที่ไม่ระบุ Lot → ยึดยอดรวมทุกล็อตของเบอร์นั้น (กติกาจับคู่เดียวกับ _wipPlanRows)
      ตอนตรวจข้อมูลจริงไม่มีแผนแบบนี้เลย แต่กันไว้ ถ้าวันหนึ่งมีจะได้ไม่หายเงียบ */
   const byValve={};
@@ -15705,7 +15956,7 @@ function _orderUnplanned(kind){
 let _orMonth={in:'',out:'',plan:''};      // '' = ทุกเดือน · เลือกเดือนแล้วกางรายการค้างของเดือนนั้น
 function orderReconHtml(kind, opts){
   opts=opts||{};
-  const rows=_orderReconRows(kind);
+  const rows=_orderReconRows(kind, opts.months);
   if(!rows.length) return '';
   const un=_orderUnplanned(kind);
   const lbGot = kind==='out' ? TT('ผ่าน FG แล้ว','Passed FG') : TT('รับเข้าแล้ว','Received');
@@ -15753,7 +16004,7 @@ function orderReconHtml(kind, opts){
   // รายการที่ยังไม่เข้า/ยังไม่ครบ ของเดือนที่เลือก
   const open=rows.filter(r=>r.missing>0 && (!sel||r.ym===sel)).sort((a,b)=>String(a.due).localeCompare(String(b.due)));
   const openHtml=`
-    <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0 6px">
+    <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;margin-bottom:6px">
       <label style="font-size:11.5px;font-weight:800;color:var(--muted);margin:0">${TT('ดูรายการค้างของ','Show pending for')}</label>
       <select onchange="_orMonth['${escapeHtml(opts.key||kind)}']=this.value;${opts.refresh||'_refreshWipDetail()'}"
         style="border:1px solid var(--blue-soft);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:700">
@@ -15779,17 +16030,23 @@ function orderReconHtml(kind, opts){
        :`<tr><td colspan="8" class="center muted">${TT('เข้าครบทุกรายการ ✓','all complete ✓')}</td></tr>`}
     </tbody></table>${open.length>300?`<div class="muted" style="font-size:11px;padding:4px">… +${nn(open.length-300)}</div>`:''}</div>`;
   const gTot=Object.values(mTot).reduce((a,t)=>({order:a.order+t.order,got:a.got+t.got,missing:a.missing+t.missing}),{order:0,got:0,missing:0});
-  return `<details class="or-box" ${opts.open?'open':''}>
+  /* ★ 2026-08-16 (req) — opts.months = โหมด "นับเฉพาะเดือนที่มี Order"
+     คำอธิบายต้องเปลี่ยนตามกติกาด้วย ไม่งั้นหัวข้อจะบอกคนละเรื่องกับตัวเลขข้างล่าง */
+  const _mOnly=!!opts.months;
+  return `<details class="${escapeHtml(opts.cls||'or-box')}" ${opts.open?'open':''} ${opts.ontoggle?`ontoggle="${escapeHtml(opts.ontoggle)}"`:''}>
     <summary>📊 ${escapeHtml(opts.title||TT('เทียบกับรายการขาย — แยกตามเดือนของ Order','vs sales orders — by order month'))}
       <span class="or-sm">Order <b>${nn(gTot.order)}</b> · ${escapeHtml(lbGot)} <b>${nn(gTot.got)}</b> · ${TT('ยังขาด','short')} <b style="color:${gTot.missing?'#DC2626':'#059669'}">${nn(gTot.missing)}</b></span>
     </summary>
-    <div class="muted" style="font-size:11px;line-height:1.65;margin:2px 0 8px">
+    ${/* margin แยกบน/ล่าง — ห้ามใช้ margin ย่อ เพราะจะทับค่าซ้าย/ขวาที่ .wi-fold ตั้งให้ (inline ชนะ CSS) */''}
+    <div class="muted" style="font-size:11px;line-height:1.65;margin-top:2px;margin-bottom:8px">
       ${TT('“เดือนของ Order” = เดือนของวันที่ขายในแผน · ของล็อตเดียวที่ขายหลายงวด ถูกแบ่งตามลำดับวันส่ง (งวดที่ถึงก่อนได้ก่อน)','“Order month” = month of the plan’s sell date · a lot sold across several dues is split earliest-due-first')}
-      <br><b>${TT('ตารางนี้นับของทุกช่วงเวลา','This table counts all periods')}</b> ${TT('(ไม่ใช่เฉพาะเดือนที่เลือกในกราฟด้านบน) — ถามว่า “ของที่สั่งไว้ เข้ามาครบหรือยัง”','(not just the month in the chart above) — it answers “has everything ordered arrived yet?”')}
-      ${(un.noPlan||un.outOfRange)?`<div style="margin-top:5px;padding-top:4px;border-top:1px dashed var(--blue-soft)">
+      ${_mOnly
+        ? `<br><b style="color:var(--blue-dark)">${TT('นับเฉพาะของที่รับเข้าใน “เดือนที่มี Order”','Counts only intake from months that have an Order')}</b> ${TT('— เดือนที่ไม่มีแผนขายเลย ไม่ถูกนับในตารางนี้','— months with no sales plan at all are excluded')}`
+        : `<br><b>${TT('ตารางนี้นับของทุกช่วงเวลา','This table counts all periods')}</b> ${TT('(ไม่ใช่เฉพาะเดือนที่เลือกในกราฟด้านบน) — ถามว่า “ของที่สั่งไว้ เข้ามาครบหรือยัง”','(not just the month in the chart above) — it answers “has everything ordered arrived yet?”')}`}
+      ${(un.noPlan||(!_mOnly&&un.outOfRange))?`<div style="margin-top:5px;padding-top:4px;border-top:1px dashed var(--blue-soft)">
         ${TT('ยอดที่ไม่ได้อยู่ในตารางนี้','Not included in this table')}:
         ${un.noPlan?`<br><span style="color:#B45309;font-weight:700">⚠️ ${nn(un.noPlan)} ${TT('ชิ้น — รับเข้าในเดือนที่มีแผน แต่หาแผนคู่กันไม่เจอ (ของนอกแผนจริง ต้องตาม)','pcs — arrived in a month that has plans, but no matching plan (genuinely unplanned)')}</span>`:''}
-        ${un.outOfRange?`<br><span style="color:var(--muted);font-weight:700">ℹ️ ${nn(un.outOfRange)} ${TT('ชิ้น — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนเลย จึงไม่มีอะไรให้เทียบ (ไม่ใช่ความผิดพลาด)','pcs — arrived in months with no plan data at all, so there is nothing to compare (not an error)')}</span>`:''}
+        ${(!_mOnly&&un.outOfRange)?`<br><span style="color:var(--muted);font-weight:700">ℹ️ ${nn(un.outOfRange)} ${TT('ชิ้น — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนเลย จึงไม่มีอะไรให้เทียบ (ไม่ใช่ความผิดพลาด)','pcs — arrived in months with no plan data at all, so there is nothing to compare (not an error)')}</span>`:''}
       </div>`:''}
     </div>
     <div class="tbl-wrap"><table><thead><tr>
@@ -15803,13 +16060,24 @@ function orderReconHtml(kind, opts){
 function wipDetailBody(bucket){
   const b=getWipBuckets();
   if(bucket==='in'){
-    const months=_wipMonthsFromItems(b.wipIn.items);
+    /* ★ 2026-08-16 (req) — กติกาใหม่ 2 ข้อ ใช้กับ "ทุกตัวเลข" ในป๊อปอัปนี้พร้อมกัน
+       ① สายใครสายมัน: b.wipIn.items มาจาก _wipinList() ซึ่ง filter ด้วย viewVsm() อยู่แล้ว
+          → VSM4 เห็นเฉพาะใบที่ VSM4 กดรับเข้าเอง ไม่ปนสายอื่น (ติดป้ายสายไว้บนแถบกรองให้เห็นชัด)
+       ② นับเฉพาะเดือนที่มี Order: ของที่รับเข้าในเดือนที่สายนี้ไม่มีแผนขายเลย ไม่ถูกนับ
+          — ตัดที่ "ต้นทาง" ชุดเดียว (baseItems) แล้วทุกก้อนด้านล่างจะพูดตรงกันหมดโดยอัตโนมัติ
+          ของที่ตัดออกไม่ได้หายไปเฉย ๆ: สรุปไว้ใต้กราฟ + มีปุ่มสลับดูทุกเดือนได้เสมอ */
+    const _spl=_wipInMonthSplit();
+    const _ms=_wiAllMonths?null:_spl.months;
+    const baseItems=_ms? b.wipIn.items.filter(i=>_ms.has(String(i.ts||'').slice(0,7))) : b.wipIn.items;
+    const months=_wipMonthsFromItems(baseItems);
     if(_wipInFilter.month===null) _wipInFilter.month=months[0]||'';   // ครั้งแรก = เดือนล่าสุด · '' = ทุกเดือน (ผู้ใช้เลือกเอง ไม่เด้งกลับ)
-    const custs=[...new Set(b.wipIn.items.map(i=>i.customer))].sort();
+    // สลับโหมดแล้วเดือนที่เลือกไว้อาจหลุดออกจากรายการ → ตกไปเป็น "ทุกเดือน" แทนที่จะโชว์ตารางว่าง
+    if(_wipInFilter.month && !months.includes(_wipInFilter.month)) _wipInFilter.month='';
+    const custs=[...new Set(baseItems.map(i=>i.customer))].sort();
     const statusF=_wipInFilter.status||'';                         // '' = ทุกสถานะ · 'waiting' = รอผลิต · 'started' = เริ่มผลิตแล้ว · 'stuck' = รอผลิต+ค้างนาน · 'noplan' = ไม่มีในแผนขาย
     const _stuckCut=_wipStuckCutoff();
     const _ignoreMonth=(statusF==='stuck')||(statusF==='noplan')||_wipInOnlyUnknown;   // "ค้างนาน"/"ไม่มีในแผน"/"ไม่มีใน Master" อยู่คนละเดือน → ดูทุกเดือน
-    const filt=b.wipIn.items.filter(i=>{
+    const filt=baseItems.filter(i=>{
       if(_wipInOnlyUnknown && !i.unknown) return false;
       if(!_ignoreMonth && _wipInFilter.month && String(i.ts||'').slice(0,7)!==_wipInFilter.month) return false;
       if(_wipInFilter.customer && i.customer!==_wipInFilter.customer) return false;
@@ -15831,7 +16099,10 @@ function wipDetailBody(bucket){
     });
     const rowFn=i=>`
       <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started&&!i.unknown?'opacity:.5':''}${i.unknown?';background:#FEF2F2':''}">
-        <td>${escapeHtml(String(i.ts||'').slice(0,10))}</td>
+        <td>${escapeHtml(String(i.ts||'').slice(0,10))}
+          ${/* ★ 2026-08-16: ใบที่ระบบลงย้อนหลังให้ — วันที่คือวันเริ่มผลิต ไม่ใช่วันรับเข้าจริง */''}
+          ${i.back?`<div><span class="tag" style="font-size:9px;background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;white-space:nowrap"
+            title="${escapeHtml(TT('ระบบลงย้อนหลังให้จากยอดผลิตที่ SSG (ปุ่ม “ลืมลง WIP IN 1.5” หน้าตั้งค่า) — วันที่บนใบคือวันเริ่มผลิต ไม่ใช่วันที่ของมาถึงจริง','back-filled by the app from SSG production — this date is the production start, not the real arrival date'))}">🤖 ${TT('ลงย้อนหลัง','back-filled')}</span></div>`:''}</td>
         <td><b>${escapeHtml(i.valve)}</b>${i.unknown?` <span class="tag tag-red" style="font-size:10px" title="${escapeHtml((i.bad||[]).join(' · '))}">⚠</span>`:''}
           ${i.unknown?`<div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml((i.bad||[]).join(' · '))}</div>`:''}
           ${/* ★ req — ป้ายบอกตรงแถวว่า "รายการนี้ไม่มีในแผนขาย" + เหตุผลย่อ (คำเต็มอยู่ใน tooltip) */''}
@@ -15856,75 +16127,141 @@ function wipDetailBody(bucket){
          ตอนนี้ยึดเดือนที่เลือกในตัวกรองเดียวกับตารางด้านล่าง — เลือก "ทุกเดือน" ก็ยังดูรวมได้
          ยกเว้นโหมดที่ตั้งใจข้ามเดือนอยู่แล้ว (ค้างนาน / ไม่มีในแผน / ไม่มีใน Master) */
     const _mScope=_ignoreMonth?'':(_wipInFilter.month||'');
-    const _scoped=_mScope? b.wipIn.items.filter(i=>String(i.ts||'').slice(0,7)===_mScope) : b.wipIn.items;
+    const _scoped=_mScope? baseItems.filter(i=>String(i.ts||'').slice(0,7)===_mScope) : baseItems;
     const _mLb=_mScope?` · 📅 ${_mScope}`:` · 📅 ${TT('ทุกเดือน','all months')}`;
     const _dg=_wipInWaitDiag(_scoped);
     /* ★ 2026-08-03 (req) — แถบเตือน "ไม่มีในแผนขาย" แยกออกมาเป็นก้อนของตัวเอง
        ไม่เอาไปรวมกับกล่อง "ตรวจสอบยอดรอผลิต" เพราะคนละเรื่องกัน:
        อันนั้น = ยอดเพี้ยน · อันนี้ = ของเข้ามาโดยไม่มีแผนรองรับ (ต้องตามหาคนสั่ง/คนวางแผน) */
     const _npHtml=_dg.npN?`
-      <div style="background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
-        <div style="font-weight:800;color:#92400E">📋 ${TT('รับเข้าแล้ว แต่ไม่มีในแผนขาย','Received but not in any sales plan')} — <b>${nn(_dg.npN)}</b> ${TT('รายการ','items')} · <b>${nn(_dg.npQty)}</b> ${TT('ชิ้น','pcs')}<span style="font-weight:700;font-size:11px;color:#A16207">${_mLb}</span></div>
-        <div style="color:#A16207">${Object.entries(_dg.npBy).map(([w,n])=>`• ${escapeHtml(planMissLabel(w))} <b>${nn(n)}</b> ${TT('รายการ','items')}`).join('<br>')}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(_dg.npList.slice(0,4).join(' · '))}${_dg.npList.length>4?` +${_dg.npList.length-4}`:''}</div>
-        <div style="font-size:11px;color:#92400E;margin-top:3px">${TT('ตรวจว่า: ลืมวางแผน? · ลง Valve/Lot ผิด? · แผนอยู่คนละสาย? — แล้วแก้ที่หน้า 📅 วางแผน หรือแก้รายการรับเข้าด้วย ✏️','Check: plan forgotten? wrong valve/lot? plan on another line? — fix on 📅 Planning or edit the intake with ✏️')}
-          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#92400E;border-color:#FCD34D" onclick="wipinShowNoPlan()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>
-      </div>`:'';
+      <details class="wi-fold w" ${_wiFold.np?'open':''} ontoggle="_wiFold.np=this.open">
+        <summary>📋 ${TT('รับเข้าแล้ว แต่ไม่มีในแผนขาย','Received but not in any sales plan')}
+          <span class="wi-pill w">${nn(_dg.npN)} ${TT('รายการ','items')} · ${nn(_dg.npQty)} ${TT('ชิ้น','pcs')}</span>
+          <span class="wi-sub">${_mLb}</span></summary>
+        <div class="wi-bd wi-tx" style="color:#A16207">
+          ${Object.entries(_dg.npBy).map(([w,n])=>`• ${escapeHtml(planMissLabel(w))} <b>${nn(n)}</b> ${TT('รายการ','items')}`).join('<br>')}
+          <div class="m" style="margin-top:2px">${escapeHtml(_dg.npList.slice(0,4).join(' · '))}${_dg.npList.length>4?` +${_dg.npList.length-4}`:''}</div>
+          <div style="color:#92400E;margin-top:4px;font-size:11px">${TT('ตรวจว่า: ลืมวางแผน? · ลง Valve/Lot ผิด? · แผนอยู่คนละสาย? — แล้วแก้ที่หน้า 📅 วางแผน หรือแก้รายการรับเข้าด้วย ✏️','Check: plan forgotten? wrong valve/lot? plan on another line? — fix on 📅 Planning or edit the intake with ✏️')}
+            <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#92400E;border-color:#FCD34D" onclick="wipinShowNoPlan()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>
+        </div>
+      </details>`:'';
     /* ★ req #2 — แถบอธิบายเคส "ขึ้นว่าเริ่มผลิตแล้ว แต่หน้าค้นหา Process ไม่มีข้อมูล" */
     const _nopHtml=_dg.nopN?`
-      <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
-        <div style="font-weight:800;color:#B91C1C">🔗 ${TT('ขึ้นว่า "เริ่มผลิตแล้ว" แต่ไม่มีแถวยอดผลิต','Marked "started" but has no production row')} — <b>${nn(_dg.nopN)}</b> ${TT('รายการ','items')} · <b>${nn(_dg.nopQty)}</b> ${TT('ชิ้น','pcs')}</div>
-        <div style="color:#7F1D1D">${TT('งานพวกนี้มี KPI แล้ว แต่ยังไม่มี "ยอดผลิต" คู่กัน — หน้า 🔍 ค้นหา Process จาก Valve No อ่านจากยอดผลิต จึงยังว่างเปล่า','These have KPI rows but no matching production rows — the Process search reads production rows, so it looks empty')}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(_dg.nopList.slice(0,4).join(' · '))}${_dg.nopList.length>4?` +${_dg.nopList.length-4}`:''}</div>
-        <div style="font-size:11px;color:#B91C1C;margin-top:3px">${TT('สาเหตุที่พบบ่อย: บันทึกตอนเน็ตหลุด (KPI ขึ้นแล้ว ยอดผลิตยังไม่ขึ้น) → ถ้าเครื่องที่บันทึกยังมีของค้าง จะมีแถบส้ม "ยังไม่ขึ้น Cloud" ให้กดส่งใหม่','Common cause: a half-finished save while the connection dropped — the device that saved will show the orange "not on Cloud yet" bar to retry')}</div>
-      </div>`:'';
-    const diagHtml=(_dg.dupGroups||_dg.stuckN||_dg.unkN)?`
-      <div style="background:var(--orange-bg,#FFF7ED);border:1.5px solid var(--orange-bd,#FED7AA);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;line-height:1.7">
-        <div style="font-weight:800;color:var(--orange,#C2410C);margin-bottom:2px">🔎 ${TT('ตรวจสอบยอด "รอผลิต"','Check the "waiting" total')} — ${nn(_dg.waitN)} ${TT('รายการ','items')} · ${nn(_dg.totQty)} ${TT('ชิ้น','pcs')}<span style="font-weight:700;font-size:11px;color:#A16207">${_mLb}</span></div>
-        ${_dg.dupGroups?`<div>• ${TT('ซ้ำ','Duplicate')} <b>${nn(_dg.dupGroups)}</b> ${TT('กลุ่ม (Valve/Lot เดียวกันลงหลายครั้ง) ~ เกิน','groups (same valve/lot logged twice) ~ extra')} <b>${nn(_dg.dupExtraQty)}</b> ${TT('ชิ้น','pcs')} — ${TT('กด ✏️/🗑 ในตารางเพื่อแก้/ลบ','use ✏️/🗑 in the table to fix/remove')}</div>`:''}
-        ${_dg.stuckN?`<div>• ${TT('ค้างเกิน','Stuck over')} ${_WIP_STUCK_DAYS} ${TT('วัน','days')} <b>${nn(_dg.stuckN)}</b> ${TT('รายการ','items')} (${nn(_dg.stuckQty)} ${TT('ชิ้น','pcs')}) — ${TT('อาจลง Valve/Lot ผิด ยังไม่ตรงยอดผลิต · เลือกสถานะ "ค้างนาน" เพื่อดูแล้วกด ✏️ แก้','possibly wrong valve/lot — pick "long-stuck" then ✏️ to fix')}</div>`:''}
-        ${_dg.unkN?`<div style="color:#B91C1C">• ⚠️ ${TT('ข้อมูล Valve / Lot ผิดรูป','Malformed Valve / Lot')} <b>${nn(_dg.unkN)}</b> ${TT('รายการ','items')} (${nn(_dg.unkQty)} ${TT('ชิ้น','pcs')}) — ${escapeHtml(_dg.unkList.slice(0,4).join(' · '))}${_dg.unkList.length>4?` +${_dg.unkList.length-4}`:''}
-          <br><span style="font-size:11px">${TT('ตามไปหาในหน้าบันทึกข้อมูลไม่เจอ (เบอร์ไม่มีใน Master / พิมพ์ 2 เบอร์ติดกัน / Lot สั้นผิดปกติ) แต่ยอดถูกนับรวมไปแล้ว','not findable on the entry page (valve not in Master / two numbers typed together / lot too short) yet the qty is already counted')}</span>
-          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B91C1C;border-color:#FCA5A5" onclick="wipinShowUnknown()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>`:''}
-      </div>`:'';
+      <details class="wi-fold b" ${_wiFold.nop?'open':''} ontoggle="_wiFold.nop=this.open">
+        <summary>🔗 ${TT('ขึ้นว่า "เริ่มผลิตแล้ว" แต่ไม่มีแถวยอดผลิต','Marked "started" but has no production row')}
+          <span class="wi-pill b">${nn(_dg.nopN)} ${TT('รายการ','items')} · ${nn(_dg.nopQty)} ${TT('ชิ้น','pcs')}</span></summary>
+        <div class="wi-bd wi-tx" style="color:#7F1D1D">
+          ${TT('งานพวกนี้มี KPI แล้ว แต่ยังไม่มี "ยอดผลิต" คู่กัน — หน้า 🔍 ค้นหา Process จาก Valve No อ่านจากยอดผลิต จึงยังว่างเปล่า','These have KPI rows but no matching production rows — the Process search reads production rows, so it looks empty')}
+          <div class="m" style="margin-top:2px">${escapeHtml(_dg.nopList.slice(0,4).join(' · '))}${_dg.nopList.length>4?` +${_dg.nopList.length-4}`:''}</div>
+          <div style="color:#B91C1C;margin-top:4px;font-size:11px">${TT('สาเหตุที่พบบ่อย: บันทึกตอนเน็ตหลุด (KPI ขึ้นแล้ว ยอดผลิตยังไม่ขึ้น) → ถ้าเครื่องที่บันทึกยังมีของค้าง จะมีแถบส้ม "ยังไม่ขึ้น Cloud" ให้กดส่งใหม่','Common cause: a half-finished save while the connection dropped — the device that saved will show the orange "not on Cloud yet" bar to retry')}</div>
+        </div>
+      </details>`:'';
+    const _dgN=(_dg.dupGroups?1:0)+(_dg.stuckN?1:0)+(_dg.unkN?1:0);
+    const diagHtml=_dgN?`
+      <details class="wi-fold ${_dg.unkN?'b':'w'}" ${_wiFold.diag?'open':''} ontoggle="_wiFold.diag=this.open">
+        <summary>🔎 ${TT('ตรวจสอบยอด "รอผลิต"','Check the "waiting" total')}
+          <span class="wi-pill ${_dg.unkN?'b':'w'}">${TT('พบ','found')} ${_dgN} ${TT('เรื่อง','issues')}</span>
+          <span class="wi-sub">${nn(_dg.waitN)} ${TT('รายการ','items')} · ${nn(_dg.totQty)} ${TT('ชิ้น','pcs')}${_mLb}</span></summary>
+        <div class="wi-bd wi-tx" style="color:#92400E">
+          ${_dg.dupGroups?`<div>• ${TT('ซ้ำ','Duplicate')} <b>${nn(_dg.dupGroups)}</b> ${TT('กลุ่ม (Valve/Lot เดียวกันลงหลายครั้ง) ~ เกิน','groups (same valve/lot logged twice) ~ extra')} <b>${nn(_dg.dupExtraQty)}</b> ${TT('ชิ้น','pcs')} — ${TT('กด ✏️/🗑 ในตารางเพื่อแก้/ลบ','use ✏️/🗑 in the table to fix/remove')}</div>`:''}
+          ${_dg.stuckN?`<div>• ${TT('ค้างเกิน','Stuck over')} ${_WIP_STUCK_DAYS} ${TT('วัน','days')} <b>${nn(_dg.stuckN)}</b> ${TT('รายการ','items')} (${nn(_dg.stuckQty)} ${TT('ชิ้น','pcs')}) — ${TT('อาจลง Valve/Lot ผิด ยังไม่ตรงยอดผลิต · เลือกสถานะ "ค้างนาน" เพื่อดูแล้วกด ✏️ แก้','possibly wrong valve/lot — pick "long-stuck" then ✏️ to fix')}</div>`:''}
+          ${_dg.unkN?`<div style="color:#B91C1C">• ⚠️ ${TT('ข้อมูล Valve / Lot ผิดรูป','Malformed Valve / Lot')} <b>${nn(_dg.unkN)}</b> ${TT('รายการ','items')} (${nn(_dg.unkQty)} ${TT('ชิ้น','pcs')}) — ${escapeHtml(_dg.unkList.slice(0,4).join(' · '))}${_dg.unkList.length>4?` +${_dg.unkList.length-4}`:''}
+            <br><span class="m">${TT('ตามไปหาในหน้าบันทึกข้อมูลไม่เจอ (เบอร์ไม่มีใน Master / พิมพ์ 2 เบอร์ติดกัน / Lot สั้นผิดปกติ) แต่ยอดถูกนับรวมไปแล้ว','not findable on the entry page (valve not in Master / two numbers typed together / lot too short) yet the qty is already counted')}</span>
+            <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B91C1C;border-color:#FCA5A5" onclick="wipinShowUnknown()">${TT('ดูเฉพาะรายการนี้','Show only these')}</button></div>`:''}
+        </div>
+      </details>`:'';
     /* ★ 2026-08-15 (req #1) — กราฟยอดรับเข้ารายวันแยกลูกค้า + ค่าเฉลี่ยต่อวัน
        นับ "ทุกใบที่รับเข้า" ในเดือนที่เลือก (ไม่หักที่เริ่มผลิตแล้ว) เพราะคำถามคือ
-       "แต่ละวันของเข้ามาเท่าไร" ไม่ใช่ "ตอนนี้เหลือรออยู่เท่าไร" */
-    const _chart=dailyChartHtml(_dailyWipIn(_scoped, ''), {title:TT('รับเข้า WIP IN 1.5 รายวัน','WIP IN 1.5 received per day')+_mLb});
+       "แต่ละวันของเข้ามาเท่าไร" ไม่ใช่ "ตอนนี้เหลือรออยู่เท่าไร"
+       ★ 2026-08-16 — กราฟคือของชิ้นเดียวที่กางไว้ ที่เหลือพับหมด (ผู้ใช้: "ดูยากมาก ซ่อน ๆ ไว้") */
+    /* ★ 2026-08-16 (req) — ผู้ใช้อ่านกราฟนี้สลับกับตัวเลขบนการ์ด แล้วนึกว่ากราฟสะสมยอด
+       ของจริง: การ์ด = "คงค้างรอผลิตตอนนี้" (stock · ขึ้นเมื่อรับเข้า ลดเมื่อเอาไปผลิต)
+                กราฟ  = "รับเข้าใหม่ของวันนั้น" (flow · ของวันใครวันมัน ไม่ยกยอดข้ามวัน)
+       เดือน ส.ค. วัดจริง: รับเข้า 620,488 − เริ่มผลิตไปแล้ว 616,711 = ค้าง 3,777
+       เลขต่างกันเป็นร้อยเท่าทั้งที่ป้ายเดิมเขียน "WIP IN 1.5" เหมือนกันทั้งคู่ → ต้องกำกับให้ชัด */
+    /* ★ 2026-08-16 (req รอบสอง) — กราฟต้องเป็น "ยอดรับเข้าจริงรายวัน"
+       ใบที่ระบบลงย้อนหลังให้ (ปุ่ม "ลืมลง WIP IN 1.5") ใช้วันเริ่มผลิต SSG เป็นวันที่รับเข้า
+       → เอามาทำกราฟรายวันไม่ได้ · วัดจริง: 481/588 ใบ = 89.4% ของยอด ทำให้กราฟพอง ~4.6 เท่า
+         (ของจริง ~9,000/วัน บางวัน 0 · ที่โชว์เดิม ~41,000/วัน ทุกวันมีของ)
+       กราฟจึงตัดใบพวกนี้ออกเป็นค่าเริ่มต้น — ส่วนตารางเทียบ Order / ตารางรายการ ยังนับครบเหมือนเดิม
+       เพราะคนละคำถามกัน: กราฟถาม "ของมาถึงวันไหน" (ต้องมีวันที่เชื่อได้)
+                          ตารางถาม "ของที่สั่งมาถึงครบยัง" (ของที่ผลิตไปแล้วก็คือมาถึงแล้ว) */
+    const _chartItems=_wiWithBackfill?_scoped:_scoped.filter(i=>!i.back);
+    const _bf=_scoped.filter(i=>i.back);
+    const _bfQty=_bf.reduce((s,i)=>s+(Number(i.qty)||0),0);
+    const _flowQty=_chartItems.reduce((s,i)=>s+(Number(i.qty)||0),0);
+    const _waitQty=_chartItems.reduce((s,i)=>s+(i.started?0:(Number(i.qty)||0)),0);
+    const _chart=dailyChartHtml(_dailyWipIn(_chartItems, ''), {
+      fillDays:true,          // ★ วันที่ไม่มีของเข้าต้องเห็นเป็นช่องว่าง ไม่ใช่หายไปจากแกน
+      title:(_wiWithBackfill?TT('ยอดรับเข้า รายวัน (รวมที่ลงย้อนหลัง)','Intake per day (incl. backfilled)')
+                            :TT('ยอดรับเข้าจริง รายวัน','Actual intake per day'))+_mLb,
+      note:`▶ ${TT('แต่ละแท่ง = <b>ของที่รับเข้าในวันนั้น</b> เท่านั้น — ไม่ยกยอดค้างจากวันก่อนมาบวก','Each bar = <b>what arrived that day</b> only — nothing is carried over from previous days')}
+        <br>${TT('รับเข้า','Intake')} <b>${nn(_flowQty)}</b> · ${TT('เอาไปผลิตแล้ว','already started')} <b>${nn(_flowQty-_waitQty)}</b> · ${TT('ยังค้างรอผลิต','still waiting')} <b>${nn(_waitQty)}</b>
+        <span style="font-weight:700;color:var(--muted)">← ${TT('ตัวนี้คือเลขบนการ์ด 📥 WIP IN 1.5','this one is the number on the 📥 WIP IN 1.5 card')}</span>`});
+    /* แถบสลับ + คำอธิบายว่าทำไมถึงตัดใบลงย้อนหลังออกจากกราฟ (ยอดที่ตัดต้องเห็นเสมอ) */
+    const _bfHtml=_bf.length?`
+      <div class="wi-note" style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:-4px 0 10px;padding:0 2px">
+        <button type="button" class="wi-tg ${_wiWithBackfill?'':'on'}" aria-pressed="${_wiWithBackfill?'false':'true'}"
+          onclick="_wiWithBackfill=false;_wipPg.page=1;_refreshWipDetail()">✋ ${TT('เฉพาะที่ลงรับเข้าจริง','Hand-logged intake only')}</button>
+        <button type="button" class="wi-tg ${_wiWithBackfill?'on':''}" aria-pressed="${_wiWithBackfill?'true':'false'}"
+          onclick="_wiWithBackfill=true;_wipPg.page=1;_refreshWipDetail()">🤖 ${TT('รวมที่ลงย้อนหลัง','Incl. backfilled')}</button>
+        <span>${_wiWithBackfill?TT('รวมอยู่แล้ว','included'):TT('กราฟไม่รวม','chart excludes')}
+          <b style="color:${_wiWithBackfill?'var(--blue)':'#B45309'};font-variant-numeric:tabular-nums">${nn(_bfQty)}</b> ${TT('ชิ้น','pcs')} (${nn(_bf.length)} ${TT('ใบ','slips')})
+          — ${TT('ของที่ลืมลงจนผลิตไปแล้ว แล้วมาลงย้อนหลังผ่านแผง “ลืมลงบันทึก WIP IN 1.5” · <b>เป็นของที่รับเข้าจริง</b> แต่วันที่บนใบคือวันเริ่มผลิต SSG ไม่ใช่วันที่ของมาถึง — กดปุ่มซ้ายเพื่อดูเฉพาะใบที่ลงรับเข้าเองตอนรับจริง','goods logged late via the “forgot to log” panel · <b>these really did arrive</b>, but their date is the SSG production start, not the arrival date — use the left button to see only slips logged at receiving time')}</span>
+      </div>`:'';
+    /* บรรทัดบัญชีใต้กราฟ — บอกตรง ๆ ว่ากติกา "เฉพาะเดือนที่มี Order" ตัดอะไรออกไปเท่าไร
+       ตัวเลขที่ถูกตัดต้องเห็นได้เสมอ ไม่งั้นเท่ากับทำยอดหายเงียบ ๆ */
+    const _skipHtml=(_spl.skipped||_wiAllMonths)?`
+      <div class="wi-note" style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:-4px 0 10px;padding:0 2px">
+        <button type="button" class="wi-tg ${_wiAllMonths?'':'on'}" onclick="_wiAllMonths=false;_wipPg.page=1;_refreshWipDetail()"
+          aria-pressed="${_wiAllMonths?'false':'true'}">✅ ${TT('นับเฉพาะเดือนที่มี Order','Only months with an Order')}</button>
+        <button type="button" class="wi-tg ${_wiAllMonths?'on':''}" onclick="_wiAllMonths=true;_wipPg.page=1;_refreshWipDetail()"
+          aria-pressed="${_wiAllMonths?'true':'false'}">📦 ${TT('นับทุกเดือน','Count every month')}</button>
+        ${_spl.skipped?`<span>${_wiAllMonths?TT('กำลังนับรวม','now including'):TT('ไม่นับ','excluded')} <b style="color:${_wiAllMonths?'var(--blue)':'#B45309'};font-variant-numeric:tabular-nums">${nn(_spl.skipped)}</b> ${TT('ชิ้น','pcs')}
+          (${nn(_spl.skipN)} ${TT('ใบ','slips')}) — ${TT('รับเข้าเดือน','intake in')} ${escapeHtml(_spl.skipMonths.join(', '))} ${TT('ที่ยังไม่มี Order','which have no Order')}</span>`:''}
+      </div>`:'';
+    // ค้นหา/เลือกสถานะอยู่ = ผู้ใช้กำลังตามหาแถว → กางตารางให้อัตโนมัติ (ไม่งั้นพิมพ์แล้วเหมือนไม่มีอะไรเกิดขึ้น)
+    const _openList=_wiFold.list || !!_wipPg.q || !!statusF || _wipInOnlyUnknown;
     return `
      <div data-wipbody>
+      <div class="wi-bar">
+        <span class="wi-vsm" title="${TT('ป๊อปอัปนี้นับเฉพาะใบรับเข้าของสายนี้เท่านั้น ไม่รวมสายอื่น','This popup counts intake slips of this line only')}">🏭 ${escapeHtml(VSM_LABEL[viewVsm()]||viewVsm())} ${TT('เท่านั้น','only')}</span>
+        <select aria-label="${TT('เดือน','Month')}" onchange="_wipInFilter.month=this.value;_wipPg.page=1;_refreshWipDetail()">
+          <option value="">📅 ${TT('ทุกเดือน','All months')}</option>
+          ${months.map(m=>`<option value="${m}" ${_wipInFilter.month===m?'selected':''}>📅 ${m}</option>`).join('')}
+        </select>
+        <select aria-label="${TT('ลูกค้า','Customer')}" onchange="_wipInFilter.customer=this.value;_wipPg.page=1;_refreshWipDetail()">
+          <option value="">👤 ${TT('ลูกค้าทั้งหมด','All customers')}</option>
+          ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>👤 ${escapeHtml(c)}</option>`).join('')}
+        </select>
+        <select aria-label="${TT('สถานะ','Status')}" onchange="_wipInFilter.status=this.value;_wipPg.page=1;_refreshWipDetail()">
+          <option value="" ${statusF===''?'selected':''}>🔵 ${TT('ทุกสถานะ','All statuses')}</option>
+          <option value="waiting" ${statusF==='waiting'?'selected':''}>🟠 ${TT('รอผลิต','Waiting')}</option>
+          <option value="stuck" ${statusF==='stuck'?'selected':''}>⏳ ${TT('ค้างนาน (>'+_WIP_STUCK_DAYS+' วัน)','Long-stuck (>'+_WIP_STUCK_DAYS+'d)')}</option>
+          <option value="started" ${statusF==='started'?'selected':''}>🟢 ${TT('เริ่มผลิตแล้ว','Started')}</option>
+          <option value="noplan" ${statusF==='noplan'?'selected':''}>📋 ${TT('ไม่มีในแผนขาย','Not in any sales plan')}</option>
+        </select>
+        <input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)"
+          aria-label="${TT('ค้นหา Valve No หรือ Lot','Search valve no or lot')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      </div>
       ${_chart}
-      ${orderReconHtml('in',{open:true, key:'in'})}
+      ${_bfHtml}
+      ${_skipHtml}
+      ${orderReconHtml('in',{key:'in', months:_ms, cls:'wi-fold i', open:_wiFold.recon, ontoggle:"_wiFold.recon=this.open"})}
       ${_npHtml}
       ${_nopHtml}
       ${diagHtml}
-      ${_wipInPlanHtml(_mScope)}
-      <div class="fg-auto mb-8">
-        <div class="fr" style="margin:0"><label>${TT('เดือน','Month')}</label>
-          <select onchange="_wipInFilter.month=this.value;_wipPg.page=1;_refreshWipDetail()">
-            <option value="">${TT('ทุกเดือน','All months')}</option>
-            ${months.map(m=>`<option value="${m}" ${_wipInFilter.month===m?'selected':''}>${m}</option>`).join('')}
-          </select></div>
-        <div class="fr" style="margin:0"><label>${TT('ลูกค้า','Customer')}</label>
-          <select onchange="_wipInFilter.customer=this.value;_wipPg.page=1;_refreshWipDetail()">
-            <option value="">${TT('ทั้งหมด','All')}</option>
-            ${custs.map(c=>`<option value="${escapeHtml(c)}" ${_wipInFilter.customer===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
-          </select></div>
-        <div class="fr" style="margin:0"><label>${TT('สถานะ','Status')}</label>
-          <select onchange="_wipInFilter.status=this.value;_wipPg.page=1;_refreshWipDetail()">
-            <option value="" ${statusF===''?'selected':''}>${TT('ทั้งหมด','All')}</option>
-            <option value="waiting" ${statusF==='waiting'?'selected':''}>🟠 ${TT('รอผลิต','Waiting')}</option>
-            <option value="stuck" ${statusF==='stuck'?'selected':''}>⏳ ${TT('รอผลิต · ค้างนาน (>'+_WIP_STUCK_DAYS+' วัน)','Waiting · long-stuck (>'+_WIP_STUCK_DAYS+'d)')}</option>
-            <option value="started" ${statusF==='started'?'selected':''}>🟢 ${TT('เริ่มผลิตแล้ว','Started')}</option>
-            <option value="noplan" ${statusF==='noplan'?'selected':''}>📋 ${TT('ไม่มีในแผนขาย','Not in any sales plan')}</option>
-          </select></div>
-      </div>
-      <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve No / Lot…','Search Valve No / Lot…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
-        style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
-      ${custRows.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${custRows.map(([c,q])=>`<span class="tag tag-blue" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
-      <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
-        <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
-      <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
+      ${_wipInPlanHtml(_mScope, _ms)}
+      <details class="wi-fold i" ${_openList?'open':''} ontoggle="_wiFold.list=this.open">
+        <summary>📄 ${TT('รายการรับเข้าทั้งหมด','All intake slips')}
+          <span class="wi-pill i">${nn(s.filt.length)} ${TT('รายการ','items')}</span>
+          ${custRows.length?`<span class="wi-sub">${TT('รอผลิต','waiting')}: ${custRows.map(([c,q])=>`${escapeHtml(c)} ${nn(q)}`).join(' · ')}</span>`:''}</summary>
+        <div class="wi-bd">
+          <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่รับเข้า','In date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">-</th></tr></thead>
+            <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
+          <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
+        </div>
+      </details>
      </div>`;
   }
   // wip / out
@@ -16022,6 +16359,11 @@ function showWipDetail(bucket, fromIot, keepCust){
   _wipPg={q:'',page:1};                        // เปิดป๊อปอัปใหม่ = เริ่มหน้า 1 คำค้นว่าง
   _wipInOnlyUnknown=false;                     // ล้างโหมด "ดูเฉพาะเบอร์ที่ไม่มีใน Master"
   _wipNoIntakeView=false;                      // เปิดใหม่ = เห็นยอด WIP จริงก่อนเสมอ
+  // ★ 2026-08-16: เปิดใหม่ = พับทุกกล่อง (เห็นกราฟก่อน) + กลับไปใช้กติกา "เฉพาะเดือนที่มี Order"
+  _wiFold={recon:false,np:false,nop:false,diag:false,plan:false,list:false};
+  _wiAllMonths=false;
+  _wiWithBackfill=true;                        // ★ req: ของที่ลงผ่านระบบ "ลืมลงบันทึก" = ของที่รับเข้าจริง ต้องนับด้วย
+  _wipPlanCtl.open=false;
   if(!keepCust) _wipOutCust='';                // ★ req #4: เปิดจากการ์ด = เห็นทุกกลุ่ม (กรองเฉพาะตอนกดชิปกลุ่ม)
   const title=_wipTitle(bucket), body=`<div class="wip-detail-box">${wipDetailBody(bucket)}</div>`;
   if(fromIot && document.getElementById('iotCard')?.classList.contains('iot-fs')){
@@ -21186,15 +21528,27 @@ function renderEmployeeList() {
   const tally = $('empVsmTally');
   if (tally) {
     const cnt = {};
-    for (const e of state.employees) { const k = resolveEmpVsm(e.id); cnt[k] = (cnt[k] || 0) + 1; }
-    tally.textContent = '(' + VSM_KEYS.map(k => `${VSM_LABEL[k]}: ${cnt[k] || 0}`).join(' · ') + ')';
+    let nDef = 0;
+    for (const e of state.employees) { const k = resolveEmpVsm(e.id); cnt[k] = (cnt[k] || 0) + 1;
+      if (empVsmSrc(e.id) === 'default') nDef++; }
+    /* ★ 2026-08-16 — นับ "ยังไม่ระบุสาย" ไว้ที่หัวตาราง: ตัวเลขนี้ควรเป็น 0
+       ถ้าไม่ใช่ 0 = มีคนที่ระบบเดาสายให้เอง (เดาเป็น VSM4 เสมอ) → ยอดของคนสายอื่นจะข้ามสาย */
+    tally.textContent = '(' + VSM_KEYS.map(k => `${VSM_LABEL[k]}: ${cnt[k] || 0}`).join(' · ') + ')'
+      + (nDef ? `  ⚠️ ยังไม่ระบุสาย ${nDef} คน` : '  ✓ ระบุสายครบทุกคน');
+    tally.style.color = nDef ? '#B45309' : '';
   }
   const vsmSelect = (e) => `<select onchange="setEmployeeVsm('${escapeHtml(e.id)}',this.value)" style="border:1px solid var(--blue-soft);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;background:#fff">${
     VSM_LIST.map(v => `<option value="${v.key}"${resolveEmpVsm(e.id)===v.key?' selected':''}>${v.label}</option>`).join('')
   }</select>`;
+  // ★ 2026-08-16 — ป้ายบอก "ค่าสายมาจากไหน" ต่อท้าย dropdown (ดู empVsmSrc)
+  const SRC_COL = { default:['#FEF3C7','#92400E','#FDE68A'], code:['#EEF2FF','#3730A3','#C7D2FE'],
+                    cloud:['#ECFDF5','#065F46','#A7F3D0'],   local:['#F1F5F9','#334155','#CBD5E1'],
+                    unsynced:['#F8FAFC','#64748B','#E2E8F0'] };
+  const srcTag = (e) => { const s = empVsmSrc(e.id), lb = EMP_SRC_LB[s], col = SRC_COL[s] || SRC_COL.local;
+    return `<span class="tag" title="${escapeHtml(lb[1])}" style="font-size:10px;white-space:nowrap;background:${col[0]};color:${col[1]};border:1px solid ${col[2]}">${escapeHtml(lb[0])}</span>`; };
   const _epage = _clampPage('emp', list.length);
   const rows = list.slice(_epage * LIST_PAGE, (_epage + 1) * LIST_PAGE)
-    .map(e => `<tr><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td>${vsmSelect(e)}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
+    .map(e => `<tr${empVsmSrc(e.id)==='default'?' style="background:#FFFBEB"':''}><td><b>${escapeHtml(e.id)}</b></td><td>${escapeHtml(e.name||'-')}</td><td style="white-space:nowrap">${vsmSelect(e)} ${srcTag(e)}</td><td><button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" onclick="delEmployee('${escapeHtml(e.id)}')">ลบ</button></td></tr>`).join('');
   $('empTable').querySelector('tbody').innerHTML = rows || '<tr><td colspan="4" class="center muted">ไม่มีข้อมูล</td></tr>';
   if ($('empPagination')) $('empPagination').innerHTML = _listPagerHtml('emp', list.length, 'empGoPage');
 }
