@@ -1,11 +1,19 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.56 — 2026-08-16 — ป๊อปอัป WIP IN 1.5: นับเฉพาะเดือนที่มี Order · จัดหน้าใหม่ (พับหมด เหลือกราฟ) · ปักหมุด VSM ให้พนักงาน 44 คน + เลิกฟอกค่าเดาเป็น "ค่าจาก D1"  ⏳ ยังไม่ deploy
+## v3.56 — 2026-08-16 — ป๊อปอัป WIP IN 1.5: นับเฉพาะเดือนที่มี Order · จัดหน้าใหม่ (พับหมด เหลือกราฟ) · แก้บั๊ก Admin สลับสายแล้วข้อมูลไปผิดสาย · ปักหมุด VSM ให้พนักงาน 44 คน  ✅ deployed
 
-> **ยังไม่ได้ deploy** — แก้เฉพาะ `index.html` ในเครื่อง · Worker `vsm4-api` บันเดิล `index.html` ไว้ในตัว
-> ถ้าจะขึ้นของจริงต้อง deploy **ทั้ง GitHub Pages และ Worker** แล้ว curl เช็ค `v3.56` ทั้งสอง URL
+**✅ deployed 2026-08-16** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `2e70ddc` · run [31958142817](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/31958142817) → `success` |
+| Worker `vsm4-api` | Version ID `f5bf53ee-c2b3-4e39-aeb6-e031057b886e` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.56` · **ขนาดเท่ากันเป๊ะ 1,863,909 bytes · cmp แล้วเหมือนกันทุก byte**
+เจอโค้ดใหม่ครบทั้งคู่: `vsm:viewVsm()` ×5 · `_wipinIsBackfill` ×2 · `wi-fold` ×24 · `fillDays` ×3 · `_empVsmApi` ×6
 
 สำรองไฟล์ก่อนแก้: `backups/index.before-wipin-redesign-2026-08-16.html`
+สำรองข้อมูลที่ลบ: `backups/wipin-vsm3-mislabelled-20260816.json` (212 แถว · 514,028 ชิ้น)
 
 ### สิ่งที่ผู้ใช้สั่ง
 
