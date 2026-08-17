@@ -1,8 +1,19 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.57 — 2026-08-16 — ยกเครื่อง "รับเข้า WIP IN 1.5 อัตโนมัติ": แก้ 3 บั๊ก (จอไม่อัปเดต · อ่านแค่ cache · เก็บยอดได้ครั้งเดียวต่อล็อต)  ⏳ ยังไม่ deploy
+## v3.57 — 2026-08-16 — ยกเครื่อง "รับเข้า WIP IN 1.5 อัตโนมัติ": แก้ 3 บั๊ก (จอไม่อัปเดต · อ่านแค่ cache · เก็บยอดได้ครั้งเดียวต่อล็อต)  ✅ deployed
 
-**⏳ ยังไม่ deploy** — แก้ที่ไฟล์ในเครื่องแล้ว ยังไม่ได้ push ขึ้น GitHub Pages / Worker
+**✅ deployed 2026-08-17** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `81d6c48` · run [32036323598](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/32036323598) → `success` |
+| Worker `vsm4-api` | Version ID `8c4d1390-3e3a-4454-a0a1-b7deb0ba22b5` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.57` · **ขนาดเท่ากันเป๊ะ 1,881,449 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+เจอโค้ดใหม่ครบทั้งคู่: `_wipinGapScan` ×3 · `_wipinShortItems` ×2 · `wipinAddAllShort` ×2 · `_wbWiVer` ×3 · `_wipDetailOpen` ×5
+เปิดหน้า Pages จริงแล้วรัน: ฟังก์ชันใหม่มาครบ · คีย์ cache มี `_wipinVer` แล้ว (`_wbWiVer===wv`)
+
+สำรองไฟล์ก่อนแก้: `backups/index.before-wipin-gapscan-2026-08-16.html` (v3.56 ที่ deploy อยู่จริง ดึงจาก repo)
 
 ### อาการที่ผู้ใช้แจ้ง
 
