@@ -1,6 +1,17 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.58 — 2026-08-17 — เครื่องที่ "มีบนผัง IOT แต่ลงบันทึกไม่ได้" → เติมเข้า Machine Master ครบทุกสาย (VSM1 +24 · VSM2 +4)  ⏳ ยังไม่ deploy
+## v3.58 — 2026-08-17 — เครื่องที่ "มีบนผัง IOT แต่ลงบันทึกไม่ได้" → เติมเข้า Machine Master ครบทุกสาย (VSM1 +24 · VSM2 +4)  ✅ deployed
+
+**✅ deployed 2026-08-17** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `9958a01` · run [32038449555](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/32038449555) → `success` |
+| Worker `vsm4-api` | Version ID `1641d3a5-dd9c-494c-bffb-e88d7f01d784` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.58` · **ขนาดเท่ากันเป๊ะ 1,885,110 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+เปิดหน้า Worker จริงแล้วรัน: `SEED_VSM_MACHINES` = V1Z2 23 · V1Z3 35 · V2Z1 19 · V2Z3 25 ·
+วนทุกกล่องของ `FP1_MC`/`FP2_MC`/`FP3_MC`/`FP4_MC`/`FPQ_MC` เทียบ Master → **ขาด 0 ทุกสาย**
 
 สำรองไฟล์ก่อนแก้: `backups/index.before-mc-iot-sync-2026-08-17.html` (v3.57 ที่ deploy อยู่จริง)
 แก้ที่ `VSM12_MACHINES` เท่านั้น (บรรทัด ~3732) — **ไม่แตะผัง IOT** (`FP1_MC`/`FP2_MC`) ตามที่สั่ง
