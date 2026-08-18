@@ -2145,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.59</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.60</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9002,7 +9002,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.59":"Production Record + KPI · v3.59",
+"ระบบบันทึกผลิต + KPI · v3.60":"Production Record + KPI · v3.60",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -21917,11 +21917,26 @@ function _valveProcList(valve) {
 }
 // คีย์เทียบชื่อ process แบบไม่สนเครื่องหมาย: 'P/T'→'PT' · 'T/T'→'TT' · 'HOD/REM.'→'HODREM'
 function _pfKey(p) { return String(p || '').trim().toUpperCase().replace(/[^A-Z0-9&]/g, ''); }
-function postFgFlowFor(valve) {
+/* ลำดับขั้นหลัง FG ของงานหนึ่ง ๆ
+   ★ 2026-08-19: ส่ง lot มาด้วย → "ข้าม" ขั้นที่ลงยอดไปแล้ว เพราะของเดินผ่านจริงแล้ว
+     ไม่ใช่ handoff ที่ต้องรอกดยืนยัน (V76053A0: FG · SFG · P/T · POL · QC → SFG
+     ลงยอดแล้ว จึงชี้ P/T เลย ไม่ต้องกดผ่าน SFG ก่อน)
+   • งานปลายทาง (P/T · T/T · QC · POL · BUFF) คงไว้เสมอ — เป็นจุดส่งต่อแผนกที่ต้องกดเอง
+   • keep = ขั้นที่งานยืนอยู่ตอนนี้ คงไว้เสมอ ไม่งั้นปุ่ม "↩︎ ถอย" จะหายไป          */
+function postFgFlowFor(valve, lot, keep) {
   const procs = _valveProcList(valve);
   if (procs.length) {
     const i = procs.findIndex(p => _pfKey(p) === 'FG');
-    if (i >= 0) return [...procs.slice(i), 'DONE'];
+    if (i >= 0) {
+      let tail = procs.slice(i + 1);
+      if (lot != null) {
+        const q = postFgQtyOf(valve, lot);
+        tail = tail.filter(p => POST_FG_OK_AFTER.has(_pfKey(p))
+                             || (keep && _pfKey(p) === _pfKey(keep))
+                             || !(Number(q[_procCanon(String(p).trim())]) > 0));
+      }
+      return [procs[i], ...tail, 'DONE'];
+    }
   }
   return POST_FG_FLOW;
 }
@@ -21933,7 +21948,9 @@ function postFgFlowFor(valve) {
      SFG FG T/T QC          ✓        FG SFG2 QC              ✗
      FG QC                  ✓        SFG T/T IND TG FG QC    ✓ (หลัง FG เหลือแค่ QC)
      FG BUFF P/T QC         ✓
-   วาล์วที่ยังไม่มี Process Master → ถือว่าเข้าข่าย (ไม่งั้นงานหายจากกล่องโดยไม่มีเหตุผล) */
+   วาล์วที่ยังไม่มี Process Master → ถือว่าเข้าข่าย (ไม่งั้นงานหายจากกล่องโดยไม่มีเหตุผล)
+   ⚠️ 2026-08-19 — ตารางตัวอย่างข้างบนคือ "กฎชื่อ process ล้วน" ซึ่งผ่อนแล้ว:
+      ตัว ✗ ที่ process นั้น "ลงยอดครบแล้ว" ถือว่าเข้าข่ายจบ (ดู postFgEligibility) */
 const POST_FG_OK_AFTER = new Set(['PT', 'TT', 'QC', 'POL', 'BUFF']);
 // process ที่อยู่ "หลัง FG" ตาม Master ของวาล์วเบอร์นี้ (ไม่รวม FG เอง) — [] = ไม่รู้/ไม่มี
 function postFgTail(valve) {
@@ -21941,15 +21958,47 @@ function postFgTail(valve) {
   const i = procs.findIndex(p => _pfKey(p) === 'FG');
   return i >= 0 ? procs.slice(i + 1) : [];
 }
-// คืน { ok, bad[] } — bad = process หลัง FG ที่ทำให้ยังจบไม่ได้
-function postFgEligibility(valve) {
+/* ★ 2026-08-19 (กฎจากผู้ใช้): ตัดสินด้วย "ยอดจริง" ไม่ใช่ชื่อ process อย่างเดียว
+   เคสที่เจอ: V76053A0 (MSI) ลำดับ Master คือ … TG · FG · SFG · P/T · POL · QC
+   → SFG อยู่หลัง FG จริงตามหน้างาน แต่ล็อตนั้นลง SFG ครบแล้ว (2611S120002 = 11,619)
+   กติกาเดิมดูแค่ชื่อ เลยตีว่า "ยังมี process ผลิตต่อ" แล้วบล็อกทั้งที่ของเดินจบไปแล้ว
+   ตอนนี้: process หลัง FG ที่ "มียอดผลิตแล้ว" = ทำเสร็จจริง → ไม่บล็อก
+           เหลือบล็อกเฉพาะตัวที่ยังไม่มียอด และไม่ใช่งานปลายทาง (P/T·T/T·QC·POL·BUFF)   */
+// ยอดผลิตรายชื่อ process ของแต่ละงาน (valve::lot) — รวมสายพี่น้อง VSM3⇄VSM4
+//   ต้องรวมสายพี่น้อง เพราะล็อตเดียวกันวิ่งข้ามสายได้ — ถ้าดูแค่สายที่เปิดอยู่
+//   งานที่ไปลง SFG ที่อีกสายจะดูเหมือน "ยังไม่มียอด" แล้วโดนบล็อกทั้งที่ทำแล้ว
+let _pfQtyCache = null, _pfQtyVer = -1, _pfQtySrc = null;
+function _postFgQtyByProc() {
+  const src = filterVsmPeer(_postFgRecs || _wipKpiSrc());
+  if (_pfQtyCache && _pfQtyVer === _fvVer && _pfQtySrc === src) return _pfQtyCache;
+  const mcProc = {};
+  for (const z of Object.keys(state.machines || {}))
+    for (const m of (state.machines[z] || [])) mcProc[m.id] = mcProcess(m);
+  const map = {};
+  for (const r of (src || [])) {
+    const q = Number(r.opr) || 0;
+    if (!(q > 0)) continue;
+    const jk = jobKey((r.valve_no || r.valveNo || '').trim(), (r.lot || '').trim());
+    const p  = _procCanon(mcProc[r.machine_id] || 'SSG');
+    (map[jk] = map[jk] || {})[p] = (map[jk][p] || 0) + q;
+  }
+  _pfQtyCache = map; _pfQtyVer = _fvVer; _pfQtySrc = src;
+  return map;
+}
+// ยอดรายชื่อ process ของงานเดียว (ใช้กับ eligibility) — ไม่มีข้อมูล = {}
+function postFgQtyOf(valve, lot) { return _postFgQtyByProc()[jobKey(valve, lot)] || {}; }
+// คืน { ok, bad[] } — bad = process หลัง FG ที่ทำให้ยังจบไม่ได้ (ยังไม่มียอด + ไม่ใช่งานปลายทาง)
+//   qtyByProc = ยอดผลิตรายชื่อ process ของงานนั้น (จาก postFgQtyOf) · ไม่ส่ง = ตัดสินด้วยชื่อล้วนแบบเดิม
+function postFgEligibility(valve, qtyByProc) {
   const procs = _valveProcList(valve);
   if (!procs.length) return { ok: true, bad: [] };                 // ไม่มี Master → ไม่ตัดสิน
   if (procs.findIndex(p => _pfKey(p) === 'FG') < 0) return { ok: true, bad: [] };   // ไม่มี FG ในสาย → ปล่อยตามเดิม
-  const bad = postFgTail(valve).filter(p => !POST_FG_OK_AFTER.has(_pfKey(p)));
+  const q = qtyByProc || {};
+  const bad = postFgTail(valve).filter(p =>
+    !POST_FG_OK_AFTER.has(_pfKey(p)) && !(Number(q[_procCanon(String(p).trim())]) > 0));
   return { ok: bad.length === 0, bad };
 }
-function postFgEligible(valve) { return postFgEligibility(valve).ok; }
+function postFgEligible(valve, lot) { return postFgEligibility(valve, postFgQtyOf(valve, lot)).ok; }
 const JOBPROC_PREFIX  = 'jobproc.';    // process code ที่ขยับไป
 const JOBPROCD_PREFIX = 'jobprocd.';   // วันที่ขยับ/จบ (เลข YYYYMMDD)
 const JOBPROCQ_PREFIX = 'jobprocq.';   // ยอดชิ้น (OPR ที่ FG) สแน็ปช็อตตอนขยับ — ใช้รวมยอด "ผลิตเสร็จ" ได้โดยไม่ต้องพึ่ง KPI ย้อนหลัง
@@ -22039,13 +22088,15 @@ function computePostFgAll(recs) {
   return out;
 }
 // งานที่ยังไม่จบ (อยู่ใน FG/P/T/POL/QC) — สำหรับกล่องจัดการ
-// ★ ติดธง eligible/badProcs ตามกฎ "หลัง FG เหลือได้แค่ P/T · T/T · QC · POL · BUFF"
+// ★ ติดธง eligible/badProcs — "หลัง FG ต้องไม่เหลือ process ผลิตที่ยังไม่มียอด"
+//   (P/T · T/T · QC · POL · BUFF = งานปลายทาง ผ่านได้เสมอ · ตัวอื่นผ่านได้ถ้าลงยอดแล้ว)
 //   ไม่กรองทิ้งที่นี่ — ผู้เรียกเลือกเองว่าจะโชว์กลุ่มไหน (กล่องหลัก = เข้าข่าย · กล่องรอง = ยังไม่เข้าข่าย)
 function computePostFgJobs(recs) {
+  const qm = _postFgQtyByProc();   // ยอดรายชื่อ process ของทุกงาน (คำนวณครั้งเดียว)
   // กล่องจัดการงานหลัง FG = เฉพาะวาล์วที่มีใน Master (วาล์วผิด → ไปแก้ที่กล่อง Unknown ก่อน)
   return computePostFgAll(recs)
     .filter(j => !j.unknown && j.cur !== 'DONE')
-    .map(j => { const el = postFgEligibility(j.valve); return { ...j, eligible: el.ok, badProcs: el.bad }; })
+    .map(j => { const el = postFgEligibility(j.valve, qm[jobKey(j.valve, j.lot)]); return { ...j, eligible: el.ok, badProcs: el.bad }; })
     .sort((a, b) => b.qty - a.qty);
 }
 // เฉพาะงานที่ "เข้าข่ายจบได้" — ใช้กับปุ่มจบงานทั้งหมด/รายการหลัก
@@ -22146,7 +22197,7 @@ function renderPostFgJobs() {
   const head = `
     <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px">
       VSM4 จบที่ <b>FG</b> · ส่งต่อ <b>ตามลำดับ process ของวาล์วเบอร์นั้น</b> (Master valve) จนจบงาน — บางเบอร์ <b>FG → QC</b> เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม "→" ไปขั้นถัดไปของเบอร์นั้นเอง
-      <br>✅ เข้าข่ายจบได้ = <b>หลัง FG เหลือได้แค่ P/T · T/T · QC · POL · BUFF</b> เท่านั้น — ถ้ายังมี process ผลิตต่อ (SFG, COT, IND, TG…) จะอยู่กลุ่ม "ยังจบไม่ได้" ด้านล่าง
+      <br>✅ เข้าข่ายจบได้ = หลัง FG เหลือแค่ <b>P/T · T/T · QC · POL · BUFF</b> <b>หรือ</b> process ผลิตที่เหลือ <b>ลงยอดครบแล้ว</b> — ถ้ายังมี process ผลิต (SFG, COT, IND, TG…) ที่ <b>ยังไม่มียอด</b> จะอยู่กลุ่ม "ยังจบไม่ได้" ด้านล่าง
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <input type="search" id="postFgSearch" value="${escapeHtml(_postFgQuery)}" placeholder="🔎 ค้นหา Valve หรือ Lot" oninput="onPostFgSearch(this.value)" style="flex:1;min-width:160px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px">
@@ -22156,7 +22207,7 @@ function renderPostFgJobs() {
     <div style="font-size:11px;color:var(--muted);margin-bottom:10px">📦 งานค้างหลัง FG <b>${nn(allActive.length)}</b> รายการ${q ? ` · ตรงคำค้น <b>${nn(_postFgList.length)}</b>` : ''}${allBlock.length ? ` · <span style="color:#B45309">⛔ ยังจบไม่ได้ <b>${nn(allBlock.length)}</b></span>` : ''}
       · <span class="tag tag-blue" style="font-size:10.5px">🔒 เฉพาะ ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}</span></div>`;
   const activeHtml = _postFgList.length ? _postFgList.map((j, i) => {
-    const flow = postFgFlowFor(j.valve);              // ลำดับเฉพาะของวาล์วเบอร์นี้
+    const flow = postFgFlowFor(j.valve, j.lot, j.cur);   // ลำดับเฉพาะของงานนี้ (ข้ามขั้นที่ลงยอดแล้ว)
     let idx    = flow.indexOf(j.cur);
     if (idx < 0) idx = 0;                             // สถานะเดิม (legacy) ไม่อยู่ในลำดับ → เริ่มที่ FG
     const next = flow[idx + 1] || 'DONE';
@@ -22177,22 +22228,23 @@ function renderPostFgJobs() {
     </div>`;
   }).join('') : `<div class="muted center" style="padding:14px">${q ? 'ไม่พบงานค้างที่ตรงกับคำค้น' : 'ไม่มีงานค้างหลัง FG 🎉'}</div>`;
   /* ⛔ กลุ่ม "ยังจบไม่ได้" — ผ่าน FG แล้วก็จริง แต่ Master ของเบอร์นั้นยังมี process ผลิตต่อ
-     (เช่น SFG FG COT IND T/T QC) → ไม่ให้กดจบ แต่ยัง "เห็น" ได้ ไม่ให้งานหายเงียบ */
+     ที่ "ยังไม่ลงยอด" (เช่น SFG FG COT IND T/T QC แล้ว COT/IND ยังว่าง)
+     → ไม่ให้กดจบ แต่ยัง "เห็น" ได้ ไม่ให้งานหายเงียบ · พอลงยอดครบจะเด้งขึ้นรายการหลักเอง */
   const blockHtml = _postFgBlockList.length ? `
     <details style="margin-top:6px;border:1.5px solid #FCD34D;border-radius:10px;overflow:hidden">
       <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:#B45309;background:#FFFBEB;list-style:none">
-        ⛔ ยังไม่เข้าข่ายจบ (${_postFgBlockList.length}) — หลัง FG ยังมี process ผลิตต่อ
+        ⛔ ยังไม่เข้าข่ายจบ (${_postFgBlockList.length}) — หลัง FG ยังมี process ที่ยังไม่ลงยอด
       </summary>
       <div style="padding:8px 10px">
         <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px">
-          จบได้เมื่อหลัง FG เหลือเฉพาะ <b>P/T · T/T · QC · POL · BUFF</b> — ถ้าลำดับ process ของเบอร์นี้ผิด ให้ไปแก้ที่ <b>Master Valve</b>
+          จบได้เมื่อหลัง FG เหลือเฉพาะ <b>P/T · T/T · QC · POL · BUFF</b> หรือ process ผลิตที่เหลือ <b>ลงยอดครบแล้ว</b> — ถ้าของทำเสร็จจริงแต่ยังติดอยู่ตรงนี้ แปลว่า <b>ยังไม่มีใครลงยอด process นั้น</b> (หรือลำดับใน <b>Master Valve</b> ผิด)
         </div>
         ${_postFgBlockList.map(d => `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #FDE68A">
             <div style="min-width:0">
               <div style="font-weight:800;font-size:12.5px">${escapeHtml(d.valve)}</div>
               <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${nn(d.qty)} ชิ้น · อยู่ที่ ${escapeHtml(d.cur)}</div>
-              <div style="font-size:10.5px;color:#B45309">ติดที่: ${(d.badProcs || []).map(p => `<span class="tag tag-orange" style="font-size:10px;padding:1px 5px">${escapeHtml(p)}</span>`).join(' ')}</div>
+              <div style="font-size:10.5px;color:#B45309">ติดที่ (ยังไม่ลงยอด): ${(d.badProcs || []).map(p => `<span class="tag tag-orange" style="font-size:10px;padding:1px 5px">${escapeHtml(p)}</span>`).join(' ')}</div>
             </div>
             <span class="tag" style="background:#FEF3C7;color:#92400E;white-space:nowrap">ยังจบไม่ได้</span>
           </div>`).join('')}
@@ -22229,7 +22281,7 @@ async function undoneJobAt(i) {
   _advancingJob = true;
   showBusy('กำลังเอางานกลับ…');
   try {
-    const flow = postFgFlowFor(d.valve);
+    const flow = postFgFlowFor(d.valve, d.lot);
     const back = flow[flow.length - 2] || 'QC';      // ขั้นสุดท้ายก่อน DONE ของวาล์วเบอร์นี้
     await setJobProc(d.valve, d.lot, back, d.qty);   // กลับไปขั้นก่อนจบ (ยังไม่จบ)
     hideBusy();
@@ -22247,16 +22299,16 @@ async function advanceJobAt(i, dir) {
   if (_advancingJob) return;                 // กันกดซ้ำระหว่างกำลังบันทึก
   const j = _postFgList[i];
   if (!j) return;
-  const flow = postFgFlowFor(j.valve);       // ลำดับเฉพาะของวาล์วเบอร์นี้ (ตาม Master valve)
+  const flow = postFgFlowFor(j.valve, j.lot, j.cur);   // ลำดับเฉพาะของงานนี้ (ข้ามขั้นที่ลงยอดแล้ว)
   let idx = flow.indexOf(j.cur);
   if (idx < 0) idx = 0;                       // สถานะเดิมไม่อยู่ในลำดับ → เริ่มที่ FG
   const ni  = idx + dir;
   if (ni < 0 || ni >= flow.length) return;
   const to = flow[ni];
-  // กันจบงานที่หลัง FG ยังมี process ผลิตต่อ (เช่น SFG/COT/IND) — กฎเดียวกับกล่อง "ยังไม่เข้าข่ายจบ"
+  // กันจบงานที่หลัง FG ยังมี process ผลิตต่อ "ที่ยังไม่มียอด" — กฎเดียวกับกล่อง "ยังไม่เข้าข่ายจบ"
   if (to === 'DONE') {
-    const el = postFgEligibility(j.valve);
-    if (!el.ok) { toast(`⛔ ${j.valve} ยังจบไม่ได้ — หลัง FG ยังมี ${el.bad.join(', ')}`, 'orange'); return; }
+    const el = postFgEligibility(j.valve, postFgQtyOf(j.valve, j.lot));
+    if (!el.ok) { toast(`⛔ ${j.valve} ยังจบไม่ได้ — หลัง FG ยังไม่ลงยอด ${el.bad.join(', ')}`, 'orange'); return; }
   }
   if (!API) {
     // ไม่มีการเชื่อมต่อ Cloud → ห้ามขยับ เพราะจะทำให้เครื่องอื่นเห็นไม่ตรงกัน
