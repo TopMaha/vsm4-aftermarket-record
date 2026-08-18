@@ -2145,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.58</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.59</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2581,7 +2581,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
     </div>
   </details>
 
-  <!-- P1-19: เตือนงานที่ผลิตที่ SSG แล้วแต่ยังไม่ลงบันทึกรับเข้า WIP IN 1.5 — ซ่อนไว้ กดหัวข้อเพื่อเปิด -->
+  <!-- P1-19: เตือนงานที่ผลิตที่ Process แรกแล้วแต่ยังไม่ลงบันทึกรับเข้า WIP IN 1.5 — ซ่อนไว้ กดหัวข้อเพื่อเปิด -->
   <div id="wipinMissing"></div>
 
   <div class="section-title">📦 รับงานเข้า Process ถัดไป (หลัง FG)</div>
@@ -9002,7 +9002,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.58":"Production Record + KPI · v3.58",
+"ระบบบันทึกผลิต + KPI · v3.59":"Production Record + KPI · v3.59",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -14081,8 +14081,8 @@ function _wipinVsm(e){
   return DEFAULT_VSM;
 }
 /* ★ 2026-08-16 (req) — ใบนี้ "คนลงรับเข้าเอง" หรือ "ระบบลงย้อนหลังให้"?
-   ปุ่ม "ลืมลง WIP IN 1.5" (หน้าตั้งค่า) สร้างใบจากยอดผลิตที่ SSG ย้อนหลัง โดยใช้
-   **วันเริ่มทำ SSG เป็นวันที่รับเข้า** (ดู backfillWipinAll → addWipin(...,it.first))
+   ปุ่ม "ลืมลง WIP IN 1.5" (หน้าตั้งค่า) สร้างใบจากยอดผลิตที่ "Process แรกของวาล์วนั้น" ย้อนหลัง
+   โดยใช้ **วันเริ่มทำ Process แรกเป็นวันที่รับเข้า** (ดู backfillWipinAll → addWipin(...,it.first))
    → ใบพวกนี้บอก "ของล็อตนี้เคยมาถึงแน่ ๆ" ได้ แต่บอก "มาถึงวันไหน" ไม่ได้
    วัดจริงวันที่แก้: 481 ใบ 1,063,817 ชิ้น = 89.4% ของยอดทั้งหมด — เอาไปทำกราฟรายวัน
    ทำให้ยอดพองจาก ~9,000/วัน (ของจริง) เป็น ~41,000/วัน ตามที่ผู้ใช้ทักว่า "มันไม่ใช่"
@@ -14151,7 +14151,7 @@ async function _wipinFlush(){
 }
 // เพิ่มงานรับเข้า 1 รายการ (valve, lot, qty[, note[, prodDate]]) — ประทับ VSM/ผู้บันทึกจาก Lock-in
 // note = เหตุผล กรณีบันทึกซ้ำ/เกินแผน (P1-18) — Worker เก็บลงคอลัมน์ note
-// prodDate (YYYY-MM-DD, ไม่บังคับ) = วันที่ผลิตที่ SSG — ใช้ตอนลงย้อนหลังอัตโนมัติ ให้ยอดตกวันผลิตจริง ไม่ใช่วันที่กด
+// prodDate (YYYY-MM-DD, ไม่บังคับ) = วันที่ผลิตที่ Process แรก — ใช้ตอนลงย้อนหลังอัตโนมัติ ให้ยอดตกวันผลิตจริง ไม่ใช่วันที่กด
 function addWipin(valve, lot, qty, note, prodDate){
   valve=vKey(valve); lot=String(lot||'').trim(); qty=Math.max(0,Math.round(Number(qty)||0));
   if(!valve || !qty) return null;
@@ -15120,13 +15120,13 @@ function renderWipInSummary(){
 function TF(th,en){ return (typeof TT==='function') ? TT(th,en) : th; }
 
 /* ═══ P1-19 (2026-07-16): เตือนเมื่อลืมลงบันทึก WIP IN 1.5 ═══
-   เงื่อนไข: (valve, lot) มียอดผลิตที่ Process SSG แล้ว แต่ยังไม่มีรายการรับเข้าใน WIP IN 1.5
+   เงื่อนไข: (valve, lot) มียอดผลิตที่ "Process แรกของวาล์วนั้น" แล้ว แต่ยังไม่มีรายการรับเข้าใน WIP IN 1.5
    (ตัวอย่าง: VV2125A0 LOT 2604S040250) — แสดงในหน้า "ตั้งค่า" พับซ่อนไว้ · กดลงบันทึกเพิ่มได้
 
    ★ 2026-08-16 (bug ×2 · ผู้ใช้ถามว่า "วันที่ 16 ทำไมไม่มี") ────────────────────
    ① แหล่งข้อมูลผิด: เดินจาก state.prodRecords (cache ~1,000 แถว · 31 ก.ค.–16 ส.ค.)
       ทั้งที่ WIP ทุกตัวใช้ _wipProdSrc() (ครบทุกช่วง 5,278 แถว · 25 พ.ค.–16 ส.ค.)
-      วัดจริงวันที่แก้: แผงนี้มองเห็น SSG แค่ 58 ล็อต จากของจริง 373 ล็อต = ตาบอด 315 ล็อต
+      วัดจริงวันที่แก้: แผงนี้มองเห็นแค่ 58 ล็อต จากของจริง 373 ล็อต = ตาบอด 315 ล็อต
       (กติกาเดิมของระบบ: WIP/WIP IN เป็น "สถานะปัจจุบัน" ต้องมองครบทุกช่วง ห้ามใช้ cache)
    ② เก็บยอดได้ครั้งเดียวต่อล็อต: เดิม `if(inKeys.has(k)) continue;` = พอล็อตไหนมีใบแล้ว
       ก็ข้ามทั้งล็อตตลอดกาล → SSG ที่ผลิตเพิ่ม "หลังวันที่กดปุ่ม" ไม่มีใครเก็บอีกเลย
@@ -15134,7 +15134,7 @@ function TF(th,en){ return (typeof TT==='function') ? TT(th,en) : th; }
         30 ก.ค. SSG 1,700 → กดปุ่ม ได้ใบ 1,700 ✓
         31 ก.ค. 1,500 · 5 ส.ค. 2,120 · 6 ส.ค. 1,850 → ใบยังเป็น 1,700 (ขาด 5,470)
       ทั้งสาย VSM4: 59 ล็อต ขาดรวม 96,646 ชิ้น
-   ผู้ใช้ยืนยันกติกา: SSG = process แรก ผลิตได้เท่าไรแปลว่าของมาถึงเท่านั้น ⇒ ยอดที่ขาดคือ
+   ผู้ใช้ยืนยันกติกา: Process แรก ผลิตได้เท่าไรแปลว่าของมาถึงเท่านั้น ⇒ ยอดที่ขาดคือ
    ของรับเข้าที่หายไป ต้องเก็บให้ครบ — แต่ให้ "เตือนก่อน กดยืนยันเอง" ไม่ลงให้อัตโนมัติ */
 let _wipinScanCache=null, _wipinScanKey='';
 function _wipinGapScan(){
@@ -15148,17 +15148,40 @@ function _wipinGapScan(){
     const k=jobKey(e.valve,e.lot);
     inQty[k]=(inQty[k]||0)+(Number(e.qty)||0);
   }
+  /* ★ 2026-08-18 (req) — "Process แรก" ต้องยึด flow ของวาล์วจริง ไม่ใช่ SSG ตายตัว
+     กติกาที่ผู้ใช้ย้ำ: ทุกล็อตต้องเดิน WIP IN 1.5 → WIP กำลังผลิต → FG/WIP OUT
+       ⇒ มียอดที่ "Process แรก" เท่าไร = ของมาถึงเท่านั้น ต้องมีใบรับเข้ารองรับให้ครบทุกล็อต
+     เดิมฮาร์ดโค้ด proc!=='SSG' ทั้งที่ Master มี 50 เบอร์ที่ขึ้นต้นด้วย IND / SRG / TW /
+     RADIUS / SSG*3 — วัดจริงวันที่แก้ (VSM3+VSM4 · 479 ล็อตที่มียอดที่ Process แรก):
+       • 33 ล็อต 108,391 ชิ้น ไม่โผล่ในแผงเลย เพราะไม่มี record SSG สักแถว
+         (เช่น VV4730A0/2604S040281 = 15,190 ชิ้นที่ SRG · VV7364M0 flow = "IND,QC" 6 ล็อต)
+       • อีก 79 ล็อตโผล่แต่ยอดผิด — เอายอด SSG (process ที่ 2 ของสาย) มาเป็นยอดรับเข้า
+         ต่างจากยอด Process แรกจริงสุทธิ 170,993 ชิ้น
+     memo ต่อเบอร์วาล์ว: _valveFlow() ไล่หาใน state.valves ทีละตัว (1,200+ เบอร์) ถ้าเรียก
+     ทุกแถวของ _wipProdSrc() (20,000+ แถว) จะกลายเป็นงานหลายสิบล้านครั้งต่อการสแกนหนึ่งรอบ */
+  const _fpMemo=new Map();
+  const _firstProcOf=vno=>{
+    const vk=vKey(vno);
+    let p=_fpMemo.get(vk);
+    if(p===undefined){
+      // ไม่มีเบอร์นี้ใน Master → _valveFlow คืน PROC_ORDER (ขึ้นต้น SSG) = พฤติกรรมเดิม
+      const f=_valveFlow(vk).map(x=>_procCanon(String(x||'').trim().toUpperCase()));
+      p=f[0]||'SSG';
+      _fpMemo.set(vk,p);
+    }
+    return p;
+  };
   const seen=new Map();
   for(const r of filterVsm(_wipProdSrc())){
-    const proc=_procCanon(String(r.current_process||r.currentProcess||'').trim().toUpperCase());
-    if(proc!=='SSG') continue;
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
+    const proc=_procCanon(String(r.current_process||r.currentProcess||'').trim().toUpperCase());
+    if(!proc || proc!==_firstProcOf(vno)) continue;
     const k=jobKey(vno,lot);
-    const cur=seen.get(k)||{valve:vno,lot,qty:0,first:'',days:{}};
+    const cur=seen.get(k)||{valve:vno,lot,qty:0,first:'',days:{},proc};
     const q=Number(r.quantity)||0;
     cur.qty+=q;
-    // วันเริ่มทำ SSG (วันแรกที่มี record) — ใช้เป็นวันที่ลงบันทึก WIP IN ตอนกดอัตโนมัติ
+    // วันเริ่มทำ Process แรก (วันแรกที่มี record) — ใช้เป็นวันที่ลงบันทึก WIP IN ตอนกดอัตโนมัติ
     // ไม่ใช่วันที่กดปุ่ม และไม่ใช่วันล่าสุด — เพื่อให้รู้ว่างานเข้ามาเดือนไหนจริง
     const d=String(r.shift_date||r.record_date||r.timestamp||'').slice(0,10);
     if(d){ cur.days[d]=(cur.days[d]||0)+q; if(!cur.first || d<cur.first) cur.first=d; }
@@ -15167,10 +15190,10 @@ function _wipinGapScan(){
   const miss=[], short=[];
   for(const [k,cur] of seen){
     const got=inQty[k]||0;
-    if(!got){ miss.push({valve:cur.valve,lot:cur.lot,qty:cur.qty,first:cur.first}); continue; }
+    if(!got){ miss.push({valve:cur.valve,lot:cur.lot,qty:cur.qty,first:cur.first,proc:cur.proc}); continue; }
     const gap=cur.qty-got;
     if(gap<=0) continue;                       // ใบครบ (หรือเกิน) แล้ว
-    /* วันของ "ส่วนที่ขาด" — เดินวัน SSG จากเก่าไปใหม่แบบ FIFO แล้วหาวันที่ยอดสะสม
+    /* วันของ "ส่วนที่ขาด" — เดินวัน Process แรกจากเก่าไปใหม่แบบ FIFO แล้วหาวันที่ยอดสะสม
        เริ่มเกินของที่ลงใบไว้แล้ว = วันที่ของก้อนที่ยังไม่มีใบเริ่มเข้ามา
        (ท่าเดียวกับที่ตารางเทียบ Order ใช้แบ่งล็อตขายหลายงวด — งวดที่ถึงก่อนได้ก่อน) */
     let cum=0, at=cur.first;
@@ -15178,7 +15201,7 @@ function _wipinGapScan(){
       cum+=cur.days[d];
       if(cum>got){ at=d; break; }
     }
-    short.push({valve:cur.valve,lot:cur.lot,qty:gap,first:at,ssg:cur.qty,intake:got});
+    short.push({valve:cur.valve,lot:cur.lot,qty:gap,first:at,ssg:cur.qty,intake:got,proc:cur.proc});
   }
   miss.sort((a,b)=>String(b.first).localeCompare(String(a.first)));
   short.sort((a,b)=>b.qty-a.qty);              // ยอดขาดเยอะสุดขึ้นก่อน (ตรวจง่าย)
@@ -15232,11 +15255,11 @@ function renderWipinMissing(){
     <details style="margin-top:8px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:9px;padding:8px 10px">
       <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:12.5px;color:var(--blue-dark)">
         ➕ ยอดรับเข้าขาด ${shortOk.length} ล็อต · ${nn(shortTot)} ชิ้น
-        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · มีใบรับเข้าแล้ว แต่ SSG ผลิตเพิ่มทีหลัง — กดเพื่อดู</span>
+        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · มีใบรับเข้าแล้ว แต่ Process แรกผลิตเพิ่มทีหลัง — กดเพื่อดู</span>
       </summary>
       <div style="font-size:11px;color:var(--muted);line-height:1.6;margin:6px 0">
-        ใบเดิมเก็บยอด ณ วันที่กดปุ่มครั้งก่อน · ของที่ผลิตที่ SSG เพิ่มหลังจากนั้นยังไม่มีใบรองรับ
-        <br><b style="color:var(--blue-dark)">ตรวจตัวเลขก่อนกด</b> — ถ้าล็อตไหนผ่าน SSG ซ้ำ (rework) ยอดจะดูขาดทั้งที่ของไม่ได้เข้าเพิ่ม ให้ข้ามล็อตนั้นไป
+        ใบเดิมเก็บยอด ณ วันที่กดปุ่มครั้งก่อน · ของที่ผลิตที่ Process แรกเพิ่มหลังจากนั้นยังไม่มีใบรองรับ
+        <br><b style="color:var(--blue-dark)">ตรวจตัวเลขก่อนกด</b> — ถ้าล็อตไหนผ่าน Process แรกซ้ำ (rework) ยอดจะดูขาดทั้งที่ของไม่ได้เข้าเพิ่ม ให้ข้ามล็อตนั้นไป
       </div>
       <button type="button" class="btn btn-blue btn-block" style="margin:0 0 6px;padding:9px;font-size:13px"
         onclick="wipinAddAllShort()">➕ ลงส่วนที่ขาดทั้งหมด (${shortOk.length} ล็อต · ${nn(shortTot)} ชิ้น)</button>
@@ -15244,13 +15267,13 @@ function renderWipinMissing(){
         <div data-vl="${escapeHtml((it.valve+' '+(it.lot||'')).toLowerCase())}" style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #DBEAFE">
           <div style="flex:1;min-width:0">
             <b style="color:var(--blue)">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
-            <div style="font-size:11px;color:var(--muted)">SSG <b>${nn(it.ssg)}</b> · รับเข้าแล้ว <b>${nn(it.intake)}</b> · <b style="color:#B45309">ขาด ${nn(it.qty)}</b> · ลงเป็นวันที่ ${escapeHtml(it.first||'-')}</div>
+            <div style="font-size:11px;color:var(--muted)">${escapeHtml(it.proc||'SSG')} <b>${nn(it.ssg)}</b> · รับเข้าแล้ว <b>${nn(it.intake)}</b> · <b style="color:#B45309">ขาด ${nn(it.qty)}</b> · ลงเป็นวันที่ ${escapeHtml(it.first||'-')}</div>
           </div>
           <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;color:var(--blue);border-color:var(--blue-soft)"
             title="แก้ Valve No / Lot ที่พนักงานลงผิด (แก้ยอดผลิตต้นทาง)"
             onclick="wipinMissingEdit('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}')">✏️</button>
           <button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
-            onclick="wipinShortAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}',${it.ssg},${it.intake})">➕ ลงส่วนที่ขาด</button>
+            onclick="wipinShortAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}',${it.ssg},${it.intake},'${encodeURIComponent(it.proc||'')}')">➕ ลงส่วนที่ขาด</button>
         </div>`).join('')}
       ${shortOk.length>CAP?`<div class="muted" style="font-size:11px;padding:6px 0">… +${shortOk.length-CAP} ล็อต</div>`:''}
     </details>`:'';
@@ -15263,7 +15286,7 @@ function renderWipinMissing(){
         <div style="flex:1;min-width:0">
           <b style="color:#B91C1C">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
           <div style="font-size:11px;color:#B91C1C">${escapeHtml(it.why.join(' · '))}</div>
-          <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ SSG ${escapeHtml(it.first||'-')}</div>
+          <div style="font-size:11px;color:var(--muted)">ผลิตที่ ${escapeHtml(it.proc||'SSG')} แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ ${escapeHtml(it.proc||'SSG')} ${escapeHtml(it.first||'-')}</div>
         </div>
         <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;color:#B91C1C;border-color:#FCA5A5"
           onclick="wipinMissingEdit('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}')">✏️ แก้ต้นทาง</button>
@@ -15273,19 +15296,19 @@ function renderWipinMissing(){
     <div data-vl="${escapeHtml((it.valve+' '+(it.lot||'')).toLowerCase())}" style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #FDE68A">
       <div style="flex:1;min-width:0">
         <b style="color:var(--blue)">${escapeHtml(it.valve)}</b> / ${escapeHtml(it.lot||'-')}
-        <div style="font-size:11px;color:var(--muted)">ผลิตที่ SSG แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ SSG ${escapeHtml(it.first||'-')}</div>
+        <div style="font-size:11px;color:var(--muted)">ผลิตที่ ${escapeHtml(it.proc||'SSG')} แล้ว ${nn(it.qty)} ชิ้น · เริ่มทำ ${escapeHtml(it.proc||'SSG')} ${escapeHtml(it.first||'-')}</div>
       </div>
       <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;color:var(--blue);border-color:var(--blue-soft)"
         title="แก้ Valve No / Lot ที่พนักงานลงผิด (แก้ยอดผลิตต้นทาง)"
         onclick="wipinMissingEdit('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}')">✏️ แก้</button>
       <button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
-        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}')">➕ ลงบันทึก</button>
+        onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}','${encodeURIComponent(it.proc||'')}')">➕ ลงบันทึก</button>
     </div>`).join('');
   box.innerHTML=`
     <details ${_wipinMissQ?'open':''} style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
       <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:13.5px;color:var(--orange)">
         🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length+bad.length+shortOk.length}</span>
-        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ SSG แล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู${bad.length?` · ⛔ ${bad.length} รายการต้องแก้ต้นทางก่อน`:''}${shortOk.length?` · ➕ ${shortOk.length} ล็อตยอดขาด`:''}</span>
+        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ Process แรกแล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู${bad.length?` · ⛔ ${bad.length} รายการต้องแก้ต้นทางก่อน`:''}${shortOk.length?` · ➕ ${shortOk.length} ล็อตยอดขาด`:''}</span>
       </summary>
       ${items.length?`<button type="button" class="btn btn-blue btn-block" style="margin-top:8px;padding:10px;font-size:14px"
         onclick="wipinAddAllMissing()">➕ ลงบันทึก WIP IN ทั้งหมด (${items.length} รายการ)</button>`:''}
@@ -15302,10 +15325,11 @@ function renderWipinMissing(){
    note ยังขึ้นต้นด้วย "ลงย้อนหลัง" → _wipinIsBackfill() จับได้เหมือนเดิม ⇒ ใบพวกนี้
    ถูกกันออกจากกราฟรายวันโดยอัตโนมัติ (วันที่บนใบคือวันผลิต SSG ไม่ใช่วันของมาถึงจริง) */
 const _WIPIN_SHORT_NOTE='ลงย้อนหลัง (ส่วนที่ขาด) จากแผง "ลืมลงบันทึก WIP IN 1.5"';
-async function wipinShortAdd(valveEnc,lotEnc,qty,prodDate,ssg,intake){
+async function wipinShortAdd(valveEnc,lotEnc,qty,prodDate,ssg,intake,procEnc){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
+  const P=decodeURIComponent(procEnc||'')||'SSG';        // Process แรกของวาล์วนี้ (ไม่ใช่ SSG เสมอไป)
   if(!(await confirmModal(
-    `ลงบันทึก "ส่วนที่ขาด" ของล็อตนี้?\n\n${valve}${lot?' / '+lot:''}\nผลิตที่ SSG ${nn(ssg)} ชิ้น · ลงใบรับเข้าไว้แล้ว ${nn(intake)} ชิ้น\nจะลงเพิ่มอีก ${nn(qty)} ชิ้น (รวมเป็น ${nn(ssg)})\n📅 ลงเป็นวันที่ ${prodDate||'-'} (วันที่ SSG เริ่มผลิตส่วนที่เกินใบเดิม)`,
+    `ลงบันทึก "ส่วนที่ขาด" ของล็อตนี้?\n\n${valve}${lot?' / '+lot:''}\nผลิตที่ ${P} (Process แรก) ${nn(ssg)} ชิ้น · ลงใบรับเข้าไว้แล้ว ${nn(intake)} ชิ้น\nจะลงเพิ่มอีก ${nn(qty)} ชิ้น (รวมเป็น ${nn(ssg)})\n📅 ลงเป็นวันที่ ${prodDate||'-'} (วันที่ ${P} เริ่มผลิตส่วนที่เกินใบเดิม)`,
     {danger:false,yes:'ลงส่วนที่ขาด'}))) return;
   const _b0=getWipBuckets(), _w0=_b0.wipIn.total, _p0=_b0.wip.total;
   addWipin(valve,lot,qty,_WIPIN_SHORT_NOTE,prodDate);
@@ -15317,9 +15341,9 @@ async function wipinAddAllShort(){
   const {ok:items}=_wipinShortSplit();
   if(!items.length){ toast('ไม่มีล็อตที่ยอดขาด','orange'); renderWipinMissing(); return; }
   const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
-  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · SSG ${nn(it.ssg)} − รับเข้า ${nn(it.intake)} = ขาด ${nn(it.qty)} · ${it.first||'-'}`).join('\n');
+  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${it.proc||'SSG'} ${nn(it.ssg)} − รับเข้า ${nn(it.intake)} = ขาด ${nn(it.qty)} · ${it.first||'-'}`).join('\n');
   if(!(await confirmModal(
-    `ลงบันทึก "ส่วนที่ขาด" ทั้งหมด ${items.length} ล็อต · รวม ${nn(total)} ชิ้น?\n\n⚠️ ตรวจตัวเลขก่อน — ล็อตที่ผ่าน SSG ซ้ำ (rework) จะดูเหมือนยอดขาดทั้งที่ของไม่ได้เข้าเพิ่ม\n📅 ลงตามวันที่ SSG ผลิตส่วนที่เกินใบเดิมของแต่ละล็อต (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} ล็อต`:''}`,
+    `ลงบันทึก "ส่วนที่ขาด" ทั้งหมด ${items.length} ล็อต · รวม ${nn(total)} ชิ้น?\n\n⚠️ ตรวจตัวเลขก่อน — ล็อตที่ผ่าน Process แรกซ้ำ (rework) จะดูเหมือนยอดขาดทั้งที่ของไม่ได้เข้าเพิ่ม\n📅 ลงตามวันที่ Process แรกผลิตส่วนที่เกินใบเดิมของแต่ละล็อต (ไม่ใช่วันที่กด)\n\n${preview}${items.length>8?`\n… +${items.length-8} ล็อต`:''}`,
     {danger:false,yes:'ลงทั้งหมด'}))) return;
   const _b0=getWipBuckets(), _w0=_b0.wipIn.total, _p0=_b0.wip.total;
   for(const it of items) addWipin(it.valve,it.lot,it.qty,_WIPIN_SHORT_NOTE,it.first);
@@ -15328,13 +15352,13 @@ async function wipinAddAllShort(){
   toast(`✅ ลงส่วนที่ขาดแล้ว ${items.length} ล็อต · รวม ${nn(total)} ชิ้น${_wipinLandedMsg(_b0,_w0,_p0)}`,'green');
 }
 
-/* ปุ่มเดียวลงบันทึกรับเข้าย้อนหลังทุกรายการที่ค้าง (ยอดตามที่ผลิตที่ SSG ของแต่ละ Valve/Lot) */
+/* ปุ่มเดียวลงบันทึกรับเข้าย้อนหลังทุกรายการที่ค้าง (ยอดตามที่ผลิตที่ "Process แรก" ของแต่ละ Valve/Lot) */
 async function wipinAddAllMissing(){
   const {ok:items,bad}=_wipinMissingSplit();   // ★ ข้ามรายการที่ Valve/Lot ต้นทางผิดรูป
   if(!items.length){ toast(bad.length?`เหลือแต่รายการที่ต้องแก้ต้นทางก่อน ${bad.length} รายการ`:'ไม่มีรายการค้าง','orange'); renderWipinMissing(); return; }
   const total=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
-  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น · ${it.first||'-'}`).join('\n');
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่เริ่มทำ SSG ของแต่ละรายการ (ไม่ใช่วันที่กด)${bad.length?`\n\n⛔ ข้าม ${bad.length} รายการที่ Valve/Lot ต้นทางผิดรูป (ต้องแก้ที่ยอดผลิตก่อน)`:''}\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
+  const preview=items.slice(0,8).map(it=>`• ${it.valve}${it.lot?' / '+it.lot:''} · ${nn(it.qty)} ชิ้น (${it.proc||'SSG'}) · ${it.first||'-'}`).join('\n');
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลังทั้งหมด ${items.length} รายการ · รวม ${nn(total)} ชิ้น?\n📅 ลงตามวันที่เริ่มทำ Process แรกของแต่ละรายการ (ไม่ใช่วันที่กด)${bad.length?`\n\n⛔ ข้าม ${bad.length} รายการที่ Valve/Lot ต้นทางผิดรูป (ต้องแก้ที่ยอดผลิตก่อน)`:''}\n\n${preview}${items.length>8?`\n… +${items.length-8} รายการ`:''}`,{danger:false,yes:'ลงบันทึกทั้งหมด'}))) return;
   const _b0=getWipBuckets(), _w0=_b0.wipIn.total, _p0=_b0.wip.total;
   for(const it of items) addWipin(it.valve,it.lot,it.qty,'ลงย้อนหลังทั้งหมดจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',it.first);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
@@ -15351,7 +15375,7 @@ function _wipDetailOpen(){
   return !!shown && !!document.querySelector('[data-wipbody]');
 }
 /* ★ 2026-08-16 (bug) — บอกว่ายอดที่เพิ่งลง "ไปโผล่ที่ถังไหน"
-   ใบที่ลงย้อนหลังคือของที่ผลิตที่ SSG ไปแล้ว ⇒ นับเป็น WIP กำลังผลิต ไม่ใช่ "รอผลิต"
+   ใบที่ลงย้อนหลังคือของที่ผลิตที่ Process แรกไปแล้ว ⇒ นับเป็น WIP กำลังผลิต ไม่ใช่ "รอผลิต"
    เลขบนการ์ด 📥 WIP IN 1.5 = เฉพาะที่ยังไม่เริ่มผลิต → กดปุ่มแล้วการ์ดไม่ขยับเป็นเรื่องปกติ
    ถ้าไม่บอกไว้ คนกดจะอ่านว่า "ลงแล้วแต่ข้อมูลไม่ขึ้น" (เคสที่ผู้ใช้แจ้งมา) */
 function _wipinLandedMsg(b0,w0,p0){
@@ -15362,9 +15386,10 @@ function _wipinLandedMsg(b0,w0,p0){
   if(dP>0) parts.push(`▶ WIP กำลังผลิต +${nn(dP)}`);
   return parts.length ? ` → ${parts.join(' · ')}` : ' → เข้าถังแล้ว (ล็อตนี้ผ่าน FG ไปหมดแล้ว ยอดจึงไม่ค้าง)';
 }
-async function wipinQuickAdd(valveEnc,lotEnc,qty,prodDate){
+async function wipinQuickAdd(valveEnc,lotEnc,qty,prodDate,procEnc){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
-  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ SSG)\n📅 ลงเป็นวันที่เริ่มทำ SSG ${prodDate||'-'} (ไม่ใช่วันที่กด)`,{danger:false,yes:'ลงบันทึก'}))) return;
+  const P=decodeURIComponent(procEnc||'')||'SSG';        // Process แรกของวาล์วนี้ (ไม่ใช่ SSG เสมอไป)
+  if(!(await confirmModal(`ลงบันทึกรับเข้า WIP IN 1.5 ย้อนหลัง?\n\n${valve}${lot?' / '+lot:''} · ${nn(qty)} ชิ้น (ตามยอดผลิตที่ ${P} = Process แรก)\n📅 ลงเป็นวันที่เริ่มทำ ${P} ${prodDate||'-'} (ไม่ใช่วันที่กด)`,{danger:false,yes:'ลงบันทึก'}))) return;
   const _b0=getWipBuckets(), _w0=_b0.wipIn.total, _p0=_b0.wip.total;
   addWipin(valve,lot,qty,'ลงย้อนหลังจากแจ้งเตือน "ลืมลง WIP IN 1.5" (หน้าตั้งค่า)',prodDate);
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
@@ -16279,7 +16304,7 @@ function wipDetailBody(bucket){
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}
           ${/* ★ 2026-08-16: ใบที่ระบบลงย้อนหลังให้ — วันที่คือวันเริ่มผลิต ไม่ใช่วันรับเข้าจริง */''}
           ${i.back?`<div><span class="tag" style="font-size:9px;background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;white-space:nowrap"
-            title="${escapeHtml(TT('ระบบลงย้อนหลังให้จากยอดผลิตที่ SSG (ปุ่ม “ลืมลง WIP IN 1.5” หน้าตั้งค่า) — วันที่บนใบคือวันเริ่มผลิต ไม่ใช่วันที่ของมาถึงจริง','back-filled by the app from SSG production — this date is the production start, not the real arrival date'))}">🤖 ${TT('ลงย้อนหลัง','back-filled')}</span></div>`:''}</td>
+            title="${escapeHtml(TT('ระบบลงย้อนหลังให้จากยอดผลิตที่ Process แรก (ปุ่ม “ลืมลง WIP IN 1.5” หน้าตั้งค่า) — วันที่บนใบคือวันเริ่มผลิต ไม่ใช่วันที่ของมาถึงจริง','back-filled by the app from first-process production — this date is the production start, not the real arrival date'))}">🤖 ${TT('ลงย้อนหลัง','back-filled')}</span></div>`:''}</td>
         <td><b>${escapeHtml(i.valve)}</b>${i.unknown?` <span class="tag tag-red" style="font-size:10px" title="${escapeHtml((i.bad||[]).join(' · '))}">⚠</span>`:''}
           ${i.unknown?`<div style="font-size:10px;color:#B91C1C;line-height:1.4">${escapeHtml((i.bad||[]).join(' · '))}</div>`:''}
           ${/* ★ req — ป้ายบอกตรงแถวว่า "รายการนี้ไม่มีในแผนขาย" + เหตุผลย่อ (คำเต็มอยู่ใน tooltip) */''}
@@ -16384,7 +16409,7 @@ function wipDetailBody(bucket){
           onclick="_wiWithBackfill=true;_wipPg.page=1;_refreshWipDetail()">🤖 ${TT('รวมที่ลงย้อนหลัง','Incl. backfilled')}</button>
         <span>${_wiWithBackfill?TT('รวมอยู่แล้ว','included'):TT('กราฟไม่รวม','chart excludes')}
           <b style="color:${_wiWithBackfill?'var(--blue)':'#B45309'};font-variant-numeric:tabular-nums">${nn(_bfQty)}</b> ${TT('ชิ้น','pcs')} (${nn(_bf.length)} ${TT('ใบ','slips')})
-          — ${TT('ของที่ลืมลงจนผลิตไปแล้ว แล้วมาลงย้อนหลังผ่านแผง “ลืมลงบันทึก WIP IN 1.5” · <b>เป็นของที่รับเข้าจริง</b> แต่วันที่บนใบคือวันเริ่มผลิต SSG ไม่ใช่วันที่ของมาถึง — กดปุ่มซ้ายเพื่อดูเฉพาะใบที่ลงรับเข้าเองตอนรับจริง','goods logged late via the “forgot to log” panel · <b>these really did arrive</b>, but their date is the SSG production start, not the arrival date — use the left button to see only slips logged at receiving time')}</span>
+          — ${TT('ของที่ลืมลงจนผลิตไปแล้ว แล้วมาลงย้อนหลังผ่านแผง “ลืมลงบันทึก WIP IN 1.5” · <b>เป็นของที่รับเข้าจริง</b> แต่วันที่บนใบคือวันเริ่มผลิตที่ Process แรก ไม่ใช่วันที่ของมาถึง — กดปุ่มซ้ายเพื่อดูเฉพาะใบที่ลงรับเข้าเองตอนรับจริง','goods logged late via the “forgot to log” panel · <b>these really did arrive</b>, but their date is the first-process production start, not the arrival date — use the left button to see only slips logged at receiving time')}</span>
       </div>`:'';
     /* บรรทัดบัญชีใต้กราฟ — บอกตรง ๆ ว่ากติกา "เฉพาะเดือนที่มี Order" ตัดอะไรออกไปเท่าไร
        ตัวเลขที่ถูกตัดต้องเห็นได้เสมอ ไม่งั้นเท่ากับทำยอดหายเงียบ ๆ */
