@@ -1,6 +1,15 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.60 — 2026-08-19 — "จบงานหลัง FG" ยึดยอดจริง ไม่ใช่ชื่อ process  🚧 deploying
+## v3.60 — 2026-08-19 — "จบงานหลัง FG" ยึดยอดจริง ไม่ใช่ชื่อ process  ✅ deployed
+
+**✅ deployed 2026-08-19** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `2271405` · run [32199370079](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/32199370079) → `success` |
+| Worker `vsm4-api` | Version ID `f3121a23-7f6b-417f-b202-a60f91bebf15` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.60` · **ขนาดเท่ากันเป๊ะ 1,894,255 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
 
 **อาการที่ผู้ใช้แจ้ง:** V76053A0 (MSI) Lot `2611S120002` — ของเดินครบถึง SFG แล้ว (11,619 ชิ้น)
 แต่ **กดจบงานไม่ได้ และหาไม่เจอในกล่องงานค้างหลัง FG** ทั้งที่จริง ๆ มันต้องจบแล้ว
