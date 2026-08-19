@@ -1,6 +1,16 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.61 — 2026-08-19 — ผัง IOT VSM2: กล่อง C-206 ที่ซ้ำ → C-208  ⏳ กำลัง deploy
+## v3.61 — 2026-08-19 — ผัง IOT VSM2: กล่อง C-206 ที่ซ้ำ → C-208  ✅ deployed
+
+**✅ deployed 2026-08-19** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `8d34823` · run [32250422278](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/32250422278) → `success` |
+| Worker `vsm4-api` | Version ID `8ce0455f-c1a9-48bb-a7e1-e22be3b32794` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.61` · **ขนาดเท่ากันเป๊ะ 1,894,870 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+และ grep ในไฟล์ที่เสิร์ฟจริงเจอ `{id:'C-208',x:888,y:506,…}` (Pages) · `{id:'C-208',x:1705,y:1025,…,v:2}` (Worker)
 
 **สิ่งที่ผู้ใช้แจ้ง:** บนผัง IOT ของ VSM2 มีกล่องชื่อ `C-206` สองใบติดกัน (แถวบน + แถวล่าง)
 ใบที่วงไว้ (แถวบน ระหว่าง `W-1128` กับ `C-207`) หน้างานจริงคือ **`C-208`**
