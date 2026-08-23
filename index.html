@@ -2145,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.61</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.62</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9002,7 +9002,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.61":"Production Record + KPI · v3.61",
+"ระบบบันทึกผลิต + KPI · v3.62":"Production Record + KPI · v3.62",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -12193,6 +12193,8 @@ function _iotAllShow(){
         <span>🆘 SOS</span>
         <span>👆 ${TT('กดที่เครื่อง/การ์ด VSM เพื่อดูรายละเอียด','Tap a machine / VSM card for details')}</span>
         <span>✋ ${TT('ลากพื้นที่ว่างในผัง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space in the map to pan · wheel to zoom')}</span>
+        <button type="button" id="iotAllTidyBtn" class="ia-lbltgl${_iaTidyOn?' on':''}" onclick="iotAllToggleTidy()" aria-pressed="${_iaTidyOn}"
+          title="${TT('ยกผังของแต่ละสายมาวางเรียงเป็นบล็อก — แถวบน VSM1 · VSM2 · QC / แถวล่าง VSM3 · VSM4 (ผังข้างในแต่ละสายเหมือนเดิมเป๊ะ) · ปิด = ผังตามตำแหน่งจริงในโรงงาน','Lay each line’s own floor plan out as blocks — top row VSM1 · VSM2 · QC / bottom row VSM3 · VSM4 (each plan itself is untouched) · off = real factory positions')}">🧩 ${TT('จัดบล็อกใหม่','Tidy blocks')}</button>
         <button type="button" id="iotAllLblBtn" class="ia-lbltgl${_iotJobLbl?' on':''}" onclick="iotAllToggleLbl()" aria-pressed="${_iotJobLbl}"
           title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่ · ชี้ที่เครื่องเพื่อดู Valve/Lot เต็ม','Print the valve no. inside every running machine box · hover a machine for full Valve/Lot')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
       </span>
@@ -13068,28 +13070,121 @@ function _iotAllBoxes(){
 }
 /* คีย์สายของกล่องบนผังรวม — สาย VSM ใช้เลข v:1-4 (ของเดิม) · สายที่เพิ่มใหม่ (QC) ระบุ vk มาตรง ๆ */
 function _iaBoxVsm(b){ return b.vk || ('vsm'+b.v); }
+
+/* ═══════════ โหมด "จัดบล็อกใหม่" ของผังรวม ═══════════
+   ★ 2026-08-23 (ผู้ใช้ขอ) — ผังรวมเดิมวางตามตำแหน่งจริงในโรงงาน ทำให้แต่ละสายอยู่คนละมุม
+     (QC OEM ลอยเหนือ VSM3 · VSM4 อยู่กรอบขวาล่าง) มีที่ว่างคั่นเยอะ มองหาเครื่องยาก
+   โหมดนี้ **ไม่แตะผังข้างในของแต่ละสายเลย** — ยกทั้งบล็อกมาวางเรียงใหม่เท่านั้น:
+        แถวบน :  VSM 1  ·  VSM 2
+        แถวล่าง:  VSM 3  ·  VSM 4  ·  QC (OEM บน / After market ล่าง)
+   ตำแหน่ง/ขนาดกล่องภายในสายเดิมเป๊ะทุกจุด (ไม่ย่อ ไม่ขยาย) → คนหน้างานยังจำผังของสายตัวเองได้
+   ปิดโหมดนี้ = กลับไปผังตามตำแหน่งจริงแบบเดิมทั้งหมด (ปุ่ม 🧩 ในหัวหน้าต่าง · จำค่าไว้)
+   ────────────────────────────────────────────────────────────────────────── */
+/* PADX/PADTOP = ขอบในของกรอบบล็อก (PADTOP เผื่อที่ให้ป้ายชื่อสายโดยเฉพาะ ไม่ทับกล่องเครื่องเหมือนผังจริง)
+   GAPX/GAPY = ช่องไฟระหว่างบล็อก/ระหว่างแถว · QGAP = ช่องไฟระหว่าง 2 บล็อกย่อยของ QC */
+const IAB={PADX:14,PADTOP:30,GAPX:64,GAPY:60,QGAP:40};
+/* ผังแต่ละแถว: 1 ช่อง = 1 คอลัมน์ (วางบล็อกซ้อนลงล่างได้หลายบล็อก เช่น QC 2 โซน) */
+const IAB_ROWS=[[['vsm1'],['vsm2']],[['vsm3'],['vsm4'],['qc#QCZ2','qc#QCZ1']]];
+let _iaTidyOn=true;
+try{ _iaTidyOn=localStorage.getItem('vsm4_iotall_tidy')!=='0'; }catch(e){}
+let _iaBlockCache=null;
+/* จับกล่องของผังจริงเป็นบล็อก + หา bbox ของแต่ละบล็อก (QC แยกราย Zone เพราะ 2 โซนอยู่คนละมุมผังจริง) */
+function _iaBlockGroups(){
+  const g={}, G=k=>g[k]||(g[k]={key:k,boxes:[],labels:[]});
+  for(const b of _iotAllBoxes()){
+    const v=_iaBoxVsm(b);
+    G(b.z?v+'#'+b.z:v).boxes.push(b);
+  }
+  for(const l of FPA_LB) G('vsm3').labels.push(l);      // ป้ายไลน์เหลืองเป็นส่วนหนึ่งของผัง VSM3
+  for(const k in g){
+    const a=g[k]; let x0=9e9,y0=9e9,x1=-9e9,y1=-9e9;
+    for(const b of a.boxes) { if(b.x<x0)x0=b.x; if(b.y<y0)y0=b.y; if(b.x+b.w>x1)x1=b.x+b.w; if(b.y+b.h>y1)y1=b.y+b.h; }
+    for(const b of a.labels){ if(b.x<x0)x0=b.x; if(b.y<y0)y0=b.y; if(b.x+b.w>x1)x1=b.x+b.w; if(b.y+b.h>y1)y1=b.y+b.h; }
+    a.x0=x0; a.y0=y0; a.w=x1-x0; a.h=y1-y0;
+    a.v=k.split('#')[0]; a.zone=k.includes('#')?k.split('#')[1]:null;
+  }
+  return g;
+}
+/* วางบล็อกตาม IAB_ROWS → คืน {boxes,labels,frames,W,H} (พิกัดชุดใหม่ · เนื้อผังในบล็อกไม่เปลี่ยน) */
+function _iaBlockLayout(){
+  if(_iaBlockCache) return _iaBlockCache;              // ผังจริงเป็นค่าคงที่ → คิดครั้งเดียวพอ
+  const g=_iaBlockGroups(), {PADX,PADTOP,GAPX,GAPY,QGAP}=IAB;
+  const boxes=[], labels=[], frames=[];
+  let y=0, W=0;
+  for(const row of IAB_ROWS){
+    const cols=row.map(keys=>keys.map(k=>g[k]).filter(Boolean)).filter(c=>c.length);
+    if(!cols.length) continue;
+    let x=0, rowH=0;
+    for(const col of cols){
+      const colW=Math.max(...col.map(a=>a.w+PADX*2));
+      let cy=y;
+      for(const a of col){
+        const tx=x+PADX, ty=cy+PADTOP, dx=tx-a.x0, dy=ty-a.y0;
+        for(const b of a.boxes)  boxes.push({...b,x:b.x+dx,y:b.y+dy});
+        for(const l of a.labels) labels.push({...l,x:l.x+dx,y:l.y+dy});
+        // ป้ายบล็อก: QC ใช้ชื่อโซน (มี 2 บล็อก) · สายอื่นใช้ชื่อสาย — เหมือนผังจริงเดิม
+        frames.push({kind:'vsm',v:a.v,label:a.zone?(ZONE_LABEL[a.zone]||a.zone):(_IA_VSM_META[a.v]||{}).label||a.v,
+          x:x,y:cy,w:colW,h:a.h+PADTOP+PADX});
+        cy+=a.h+PADTOP+PADX+QGAP;
+      }
+      rowH=Math.max(rowH,cy-QGAP-y);
+      x+=colW+GAPX;
+      W=Math.max(W,x-GAPX);
+    }
+    y+=rowH+GAPY;
+  }
+  _iaBlockCache={boxes,labels,frames,W,H:Math.max(0,y-GAPY)};
+  return _iaBlockCache;
+}
+/* สลับ "จัดบล็อกใหม่" ⇄ "ผังจริง" — ค่าเริ่มต้นคือจัดบล็อกใหม่ (ผู้ใช้ขอให้ดูง่าย) */
+function iotAllToggleTidy(){
+  _iaTidyOn=!_iaTidyOn;
+  try{ localStorage.setItem('vsm4_iotall_tidy',_iaTidyOn?'1':'0'); }catch(e){}
+  const b=document.getElementById('iotAllTidyBtn');
+  if(b){ b.classList.toggle('on',_iaTidyOn); b.setAttribute('aria-pressed',String(_iaTidyOn)); }
+  _iotAllScale=null;                 // สลับโหมด = ขนาดผังเปลี่ยน → fit ใหม่
+  _iotAllRenderMap(false);
+}
 function _iotAllRenderMap(keepScroll){
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
   const sl=keepScroll?vp.scrollLeft:0, st=keepScroll?vp.scrollTop:0;
-  const boxes=_iotAllBoxes();
+  // จัดบล็อกใหม่ = ยกผังของแต่ละสายมาวางเรียง (VSM1·VSM2·QC / VSM3·VSM4) · null = ผังตามตำแหน่งจริงในโรงงาน
+  const LAY=_iaTidyOn?_iaBlockLayout():null;
+  const boxes=LAY?LAY.boxes:_iotAllBoxes();
+  const lbs=LAY?LAY.labels:FPA_LB;                         // ป้ายไลน์เหลือง VSM3
   /* ★ 2026-08-13: เดิมคิดแค่ maxX/maxY แล้วยึดมุมซ้ายบน = 0,0 เสมอ
      ตอนนี้ QC (OEM) อยู่เหนือ VSM3 = พิกัด y ติดลบ → ต้องคิด min ด้วย ไม่งั้นกลุ่มนั้นถูกตัดหายนอก viewBox */
   let minX=0,minY=0,maxX=0,maxY=0;
   const _ext=b=>{ if(b.x<minX)minX=b.x; if(b.y<minY)minY=b.y; if(b.x+b.w>maxX)maxX=b.x+b.w; if(b.y+b.h>maxY)maxY=b.y+b.h; };
   for(const b of boxes) _ext(b);
-  for(const b of FPA_LB) _ext(b);
+  for(const b of lbs) _ext(b);
+  if(LAY) for(const f of LAY.frames) _ext(f);              // กรอบบล็อกกว้างกว่ากล่องขอบนอกสุด (มีขอบใน + ที่ให้ป้ายชื่อ)
   const PADA=14;
   const VBX=minX-PADA, VBY=minY-PADA;                      // มุมซ้ายบนจริงของผัง (รวมเผื่อขอบ)
   const W=maxX-minX, H=maxY-minY, D=_iotAllD;
+  // ขนาดผังเปลี่ยน (สลับโหมดจัดบล็อก ⇄ ผังจริง) → คำนวณพอดีจอใหม่ ไม่งั้นค้างสเกลเก่าจนล้นกรอบ
+  if(_iotAllWH&&(_iotAllWH.W!==W||_iotAllWH.H!==H)) _iotAllScale=null;
   _iotAllWH={W,H};   // เก็บไว้ให้ _iotAllRefit ใช้ตอนลากเส้นแบ่ง/ย่อขยายจอ
-  /* กรอบพื้นสี + ชื่อสายของแต่ละ VSM (คำนวณ bbox ต่อสาย) — pointer-events:none ให้กดทะลุถึงเครื่องได้
-     ★ กล่องที่มี field z (QC) ตีกรอบ "ราย Zone" เพราะ 2 โซนอยู่คนละมุมผัง — กรอบเดียวจะกินทั้งผัง */
-  const gb={}, gvsm={}, gzone={};
-  for(const b of boxes){
-    const v=_iaBoxVsm(b), k=b.z? v+'#'+b.z : v;
-    gvsm[k]=v; if(b.z) gzone[k]=b.z;
-    const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]);
-    if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h;
+  /* กรอบพื้นสี + ชื่อสายของแต่ละ VSM — pointer-events:none ให้กดทะลุถึงเครื่องได้
+     · ผังจริง: คำนวณ bbox ต่อสาย · กล่องที่มี field z (QC) ตีกรอบ "ราย Zone" เพราะ 2 โซนอยู่คนละมุมผัง
+     · จัดบล็อกใหม่: ใช้กรอบที่ _iaBlockLayout วางมาแล้ว (1 กรอบ = 1 บล็อก) */
+  const frames=[];
+  if(LAY) frames.push(...LAY.frames);
+  else{
+    const gb={}, gvsm={}, gzone={};
+    for(const b of boxes){
+      const v=_iaBoxVsm(b), k=b.z? v+'#'+b.z : v;
+      gvsm[k]=v; if(b.z) gzone[k]=b.z;
+      const g=gb[k]||(gb[k]=[9e9,9e9,-9e9,-9e9]);
+      if(b.x<g[0])g[0]=b.x; if(b.y<g[1])g[1]=b.y; if(b.x+b.w>g[2])g[2]=b.x+b.w; if(b.y+b.h>g[3])g[3]=b.y+b.h;
+    }
+    for(const v of VSM_KEYS) for(const k of Object.keys(gb)){
+      if(gvsm[k]!==v) continue;
+      const g=gb[k], p=6;
+      // กลุ่มที่แยกราย Zone → ป้ายใช้ชื่อโซน (เช่น "QC OEM") เพราะ 2 กรอบของสายเดียวกันอยู่คนละมุม
+      frames.push({kind:'vsm',v,label:gzone[k]?(ZONE_LABEL[gzone[k]]||gzone[k]):(_IA_VSM_META[v]||{}).label||v,
+        x:g[0]-p,y:g[1]-p,w:g[2]-g[0]+p*2,h:g[3]-g[1]+p*2});
+    }
   }
   const out=[`<rect x="${VBX.toFixed(0)}" y="${VBY.toFixed(0)}" width="${(W+PADA*2).toFixed(0)}" height="${(H+PADA*2).toFixed(0)}" fill="#e5e7eb"/>`];
   let nOn=0;
@@ -13110,18 +13205,13 @@ function _iotAllRenderMap(keepScroll){
   // ต้อง fit ก่อนคิดขนาดป้าย (วาดครั้งแรก _iotAllScale ยังเป็น null → ไม่งั้นคิดจาก k=1 แล้วป้ายเล็กเกิน)
   if(_iotAllScale==null) _iotAllFitScale(vp,W,H);
   const jobFit=_jobFitPlan(boxes,jobAll,_iotAllScale||1);
-  for(const v of VSM_KEYS){
-    for(const k of Object.keys(gb)){
-      if(gvsm[k]!==v) continue;
-      const g=gb[k], mt=_IA_VSM_META[v], p=6;
-      // กลุ่มที่แยกราย Zone → ป้ายใช้ชื่อโซน (เช่น "QC OEM") เพราะ 2 กรอบของสายเดียวกันอยู่คนละมุม
-      const lb=gzone[k] ? (ZONE_LABEL[gzone[k]]||gzone[k]) : mt.label;
-      const bw=(g[2]-g[0]+p*2), bh=(g[3]-g[1]+p*2), lbw=lb.length*10.5+18;
-      out.push(`<g pointer-events="none"><rect x="${(g[0]-p).toFixed(1)}" y="${(g[1]-p).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${mt.tint}" fill-opacity="0.38" stroke="${mt.line}" stroke-opacity="0.8" stroke-width="2.5" stroke-dasharray="8 5" rx="12"/>`+
-        // ป้ายชื่อ VSM เป็น "ป้ายเม็ดยา" สีเข้มตัวอักษรขาว — อ่านง่ายกว่าตัวหนังสือลอยเดิม และไม่ปนกับชิปเครื่อง
-        `<rect x="${(g[0]-p+4).toFixed(1)}" y="${(g[1]-p+4).toFixed(1)}" width="${lbw.toFixed(1)}" height="22" rx="11" fill="${mt.line}"/>`+
-        `<text x="${(g[0]-p+4+lbw/2).toFixed(1)}" y="${(g[1]-p+19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="900" fill="#ffffff" font-family="Arial,sans-serif" letter-spacing="0.3">${escapeHtml(lb)}</text></g>`);
-    }
+  for(const f of frames){
+    const mt=_IA_VSM_META[f.v]||{tint:'#E2E8F0',line:'#475569',label:f.v};
+    const lbw=f.label.length*10.5+18;
+    out.push(`<g pointer-events="none"><rect x="${f.x.toFixed(1)}" y="${f.y.toFixed(1)}" width="${f.w.toFixed(1)}" height="${f.h.toFixed(1)}" fill="${mt.tint}" fill-opacity="0.38" stroke="${mt.line}" stroke-opacity="0.8" stroke-width="2.5" stroke-dasharray="8 5" rx="12"/>`+
+      // ป้ายชื่อ VSM เป็น "ป้ายเม็ดยา" สีเข้มตัวอักษรขาว — อ่านง่ายกว่าตัวหนังสือลอยเดิม และไม่ปนกับชิปเครื่อง
+      `<rect x="${(f.x+4).toFixed(1)}" y="${(f.y+4).toFixed(1)}" width="${lbw.toFixed(1)}" height="22" rx="11" fill="${mt.line}"/>`+
+      `<text x="${(f.x+4+lbw/2).toFixed(1)}" y="${(f.y+19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="900" fill="#ffffff" font-family="Arial,sans-serif" letter-spacing="0.3">${escapeHtml(f.label)}</text></g>`);
   }
   for(const b of boxes){
     const v=_iaBoxVsm(b), P=D.per[v]; if(!P) continue;
@@ -13161,11 +13251,13 @@ function _iotAllRenderMap(keepScroll){
     out.push(`<g class="ia-mc" data-mc="${escapeHtml(b.id)}" data-v="${v}" role="button" tabindex="0" aria-label="${aria}" onclick="iotAllMcTap('${v}','${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();iotAllMcTap('${v}','${b.id}');}"><title>${tip}</title>${parts.join('')}</g>`);
   }
   // ป้ายไลน์สีเหลือง (VSM3) — TOP OAE ต่ำสุดของ VSM3 จัดอันดับรายไลน์ → badge/กรอบแดงอยู่ที่ป้ายนี้
-  for(const lb of FPA_LB){
-    const fs=Math.max(7,Math.min(lb.w/(lb.id.length*0.62),lb.h*0.55,12));
+  for(const lb of lbs){
+    const txt=lb.name||lb.id;                              // ป้ายไลน์ใช้ id เหมือนเดิม (รองรับ name เผื่อมีชื่อเต็ม)
+    const fs=Math.max(7,Math.min(lb.w/(txt.length*0.62),lb.h*0.55,12));
     const rk=_iotAllTop.rank[_iaTopKey('vsm3',lb.id)];
-    const parts=[`<rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="${rk?'#DC2626':'#111827'}" stroke-width="${rk?2.5:1.5}" rx="4"/>`,
-      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${lb.id}</text>`];
+    const parts=[`<title>${escapeHtml(lb.id+(txt!==lb.id?' — '+txt:''))}</title>`,
+      `<rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" fill="#FDE047" stroke="${rk?'#DC2626':'#111827'}" stroke-width="${rk?2.5:1.5}" rx="4"/>`,
+      `<text x="${(lb.x+lb.w/2).toFixed(1)}" y="${(lb.y+lb.h/2+fs*0.38).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="800" fill="#111827" font-family="'Courier New',monospace">${escapeHtml(txt)}</text>`];
     if(rk){
       const bx=lb.x+lb.w-1.5, by=lb.y+1.5;
       parts.push(`<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="8.5" fill="#DC2626" stroke="#fff" stroke-width="1.6"/>`
@@ -13191,6 +13283,7 @@ function _iotAllFitScale(vp,W,H){
    (เดิมคำนวณ fit ครั้งเดียวตอนเปิด → ลากเส้นแบ่งแล้วผังไม่ย่อขยายตาม ต้องกดซูมเอง) */
 function _iotAllRefit(){
   const vp=document.getElementById('iotAllVp'), svg=document.getElementById('iotAllSvg');
+  // ทั้งสองโหมดมีขนาดผังคงที่ (จัดบล็อกใหม่ไม่ขึ้นกับขนาดกรอบ) → refit = แค่คิดสเกลใหม่ ไม่ต้องวาดผังใหม่
   if(vp&&svg&&_iotAllWH){
     _iotAllFitScale(vp,_iotAllWH.W,_iotAllWH.H);
     svg.style.width=Math.round((_iotAllWH.W+28)*_iotAllScale)+'px';
