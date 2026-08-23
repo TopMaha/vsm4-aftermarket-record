@@ -1,6 +1,16 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.62 — 2026-08-23 — IOT รวมทุกสาย: โหมด "จัดบล็อกใหม่" (VSM1·VSM2·QC / VSM3·VSM4)  ⏳ ยังไม่ deploy
+## v3.62 — 2026-08-23 — IOT รวมทุกสาย: โหมด "จัดบล็อกใหม่" (VSM1·VSM2 / VSM3·VSM4·QC)  ✅ deployed
+
+**✅ deployed 2026-08-23** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `700d4a7` · run [32646958662](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/32646958662) → `success` |
+| Worker `vsm4-api` | Version ID `c0632116-2dab-49db-8bde-08e65659d9b4` (bundle `index.html` ใหม่) |
+
+ยืนยันของจริงด้วย curl ทั้งสอง URL → ได้ `v3.62` · **ขนาดเท่ากันเป๊ะ 1,903,430 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+และ grep ในไฟล์ที่เสิร์ฟจริงเจอ `IAB_ROWS=[[['vsm1'],['vsm2']],[['vsm3'],['vsm4'],['qc#QCZ2','qc#QCZ1']]]` ทั้ง 2 ฝั่ง
 
 **สิ่งที่ผู้ใช้แจ้ง:** ผังรวมเดิมวางตามตำแหน่งจริงในโรงงาน → แต่ละสายอยู่คนละมุม มีที่ว่างคั่นเยอะ
 (QC OEM ลอยเหนือ VSM3 · QC After market อยู่ขวาล่าง · VSM4 อยู่ในกรอบขวาล่าง) มองหาเครื่องยาก
