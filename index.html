@@ -2145,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.62</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.63</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2993,7 +2993,8 @@ const DEFAULT_MACHINES = {
     {id:'H-224',target:2500,man_std:0.5},{id:'G-219',target:2000,man_std:0.33},
     {id:'G-2023',target:0,man_std:0.5},{id:'G-2022',target:0,man_std:0.5},
     {id:'G-243',target:2000,man_std:0.5},{id:'G-2080',target:0,man_std:0.33},
-    {id:'G-248',target:0,man_std:0.33},{id:'G-273',target:2000,man_std:0.5}
+    {id:'G-248',target:0,man_std:0.33},{id:'G-273',target:2000,man_std:0.5},
+    {id:'W-202',target:0,man_std:0.5}   /* ★ 2026-08-26 — เครื่องใหม่ zone IND (มีกล่องในผัง FP4_MC ด้วย) */
   ],
   ZONE3: [
     {id:'G-1109',target:2000,man_std:0.33},{id:'G-241',target:0,man_std:0.33},
@@ -4077,6 +4078,23 @@ function ensureVsmZones() {
         if (!have.has(String(sm.id).toUpperCase())) cur.push(JSON.parse(JSON.stringify(sm)));
       }
     }
+  }
+  /* ★ 2026-08-26 — VSM4 (ZONE1/2/3) ก็ต้องได้เครื่องใหม่เหมือน VSM1/2/3
+     เดิม VSM4 ใช้ DEFAULT_MACHINES เป็นแค่ default ของ lsLoad → คนที่เคยเปิดแอปแล้ว
+     (มี state.machines ใน localStorage) จะไม่มีวันเห็นเครื่องที่เพิ่มใหม่เลย
+     ⚠️ VSM4 ต่างจาก VSM1/2/3: โซนจริงบนคลาวด์ "ไม่ตรง" DEFAULT_MACHINES อยู่หลายตัว
+        (แอดมินย้ายโซนเองไว้ — จริง: H-205/H-207/H-222 → ZONE2 · G-219/G-2022/G-2023 → ZONE1)
+        ถ้าเช็กแค่ "ขาดในโซนนี้ไหม" เครื่องเดิม 6 ตัวจะโผล่ซ้ำ 2 โซน → เช็กรวมทุกโซน VSM4 ก่อน
+     เติมเฉพาะตัวที่ไม่มีจริง — ไม่ลบ ไม่ย้ายโซน ไม่ทับ target/man_std/process ที่ตั้งไว้ */
+  const V4Z = Object.keys(DEFAULT_MACHINES);
+  for (const z of V4Z) if (!Array.isArray(state.machines[z])) state.machines[z] = [];
+  const v4Have = new Set();
+  for (const z of V4Z) for (const m of state.machines[z]) v4Have.add(String((m && m.id) || '').toUpperCase());
+  for (const z of V4Z) for (const dm of DEFAULT_MACHINES[z]) {
+    const k = String(dm.id).toUpperCase();
+    if (v4Have.has(k)) continue;                                  // มีอยู่แล้วในโซนไหนก็ได้ = ไม่ต้องเติม
+    state.machines[z].push(JSON.parse(JSON.stringify(dm)));
+    v4Have.add(k);
   }
 }
 
@@ -9002,7 +9020,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.62":"Production Record + KPI · v3.62",
+"ระบบบันทึกผลิต + KPI · v3.63":"Production Record + KPI · v3.63",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9861,6 +9879,7 @@ const FP4_MC=[
     {id:'G-262', r1:26,c1:3, r2:29,c2:4},
     {id:'H-222', r1:31,c1:1, r2:36,c2:3},
     {id:'H-213', r1:2, c1:7, r2:5, c2:9},
+    {id:'W-202', r1:5, c1:7, r2:8, c2:9},
     {id:'H-214', r1:2, c1:9, r2:5, c2:11},
     {id:'H-219', r1:5, c1:9, r2:8, c2:11},
     {id:'H-220', r1:8, c1:7, r2:11,c2:9},
