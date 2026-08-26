@@ -1,6 +1,19 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.63 — 2026-08-26 — เพิ่มเครื่อง W-202 เข้า Zone IND (VSM4)
+## v3.63 — 2026-08-26 — เพิ่มเครื่อง W-202 เข้า Zone IND (VSM4)  ✅ deployed
+
+**✅ deployed 2026-08-26** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `249b8ea` · run [33006076689](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/33006076689) → `success` |
+| Worker `vsm4-api` | Version ID `24b46d46-33ae-4662-8603-45f9bef2d8b6` |
+
+ยืนยันด้วย curl ทั้งสอง URL → ได้ `v3.63` · **ขนาดเท่ากันเป๊ะ 1,905,470 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+และ grep ในไฟล์ที่เสิร์ฟจริงเจอ `{id:'W-202', r1:5, c1:7, r2:8, c2:9}` ทั้ง 2 ฝั่ง
+
+⚠️ **รีโปนี้กู้ git กลับมาด้วย** — โฟลเดอร์โปรเจกต์ไม่มี `.git` แล้ว (น่าจะหลุดตอนจัดระเบียบโฅลดเมื่อ 26 ส.ค.)
+ต่อ `origin` → fetch → `git reset --mixed origin/main` (ไม่แตะไฟล์ในเครื่อง) → commit → push · ประวัติเดิมครบ ไม่มีไฟล์ไหนหาย
 
 **สิ่งที่ผู้ใช้สั่ง:** เพิ่มเครื่อง `W-202` ใน zone IND ของ VSM4 บนผัง Layout
 
