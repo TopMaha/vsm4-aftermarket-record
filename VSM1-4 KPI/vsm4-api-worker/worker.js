@@ -133,7 +133,7 @@ export default {
       if (path === '/api/valves/delete' && m === 'POST') return ok(await deleteValve(env, await readJson(request)));
 
       // production records
-      if (path === '/api/records'         && m === 'GET')  return ok({ records: await getRecords(env, url.searchParams) });
+      if (path === '/api/records'         && m === 'GET')  return ok(await withSync(env, url.searchParams, 'prod', getRecords));
       if (path === '/api/records'         && m === 'POST') return ok(await addRecord(env, await readJson(request)));
       if (path === '/api/records/bulk'    && m === 'POST') return ok(await bulkAddRecords(env, await readJson(request)));
       if (path === '/api/records/update'  && m === 'POST') return ok(await updateRecord(env, await readJson(request)));
@@ -151,7 +151,7 @@ export default {
       if (path === '/api/employees/delete' && m === 'POST') return ok(await deleteEmployee(env, await readJson(request)));
 
       // kpi
-      if (path === '/api/kpi'          && m === 'GET')  return ok({ records: await getKpiRecords(env, url.searchParams) });
+      if (path === '/api/kpi'          && m === 'GET')  return ok(await withSync(env, url.searchParams, 'kpi', getKpiRecords));
       // produced set = full-table DISTINCT scan · หลายเครื่อง poll ทุก 60 วิ → cache ที่ edge 60 วิ กันสแกน D1 ซ้ำ
       if (path === '/api/kpi/produced' && m === 'GET')  return await servedCached(ctx, url, 'produced-v1', 60,
                                                                 async () => ok({ pairs: await getProducedJobs(env) }));
@@ -196,9 +196,19 @@ export default {
 //   → WIP IN 1.5 / WIP OUT ไม่มีเครื่องจักรโชว์หลัง sync ข้ามเครื่อง (บั๊ก P0-7)
 //   ALTER ซ้ำจะ throw "duplicate column" → try/catch ข้ามได้ปลอดภัย
 // ============================================================
+/* ⚡ 2026-08-07 — ข้ามงาน migration เมื่อฐานข้อมูลอัปเดตแล้ว
+   _schemaReady เป็นตัวแปรใน isolate → Cloudflare สร้าง isolate ใหม่บ่อย = รันชุดนี้ใหม่เรื่อย ๆ
+   แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
+   เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
+   เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
+const SCHEMA_VER = '2026-08-07-incremental';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
+  try {
+    const cur = await env.DB.prepare("SELECT v FROM schema_meta WHERE k = 'ver'").first();
+    if (cur && cur.v === SCHEMA_VER) { _schemaReady = true; return; }
+  } catch (e) { /* ยังไม่มีตาราง schema_meta → ลงมือ migration เต็มชุด */ }
   for (const sql of [
     'ALTER TABLE production_records ADD COLUMN machine_id TEXT',
     'ALTER TABLE production_records ADD COLUMN zone TEXT',
@@ -220,10 +230,123 @@ async function ensureSchema(env) {
     'ALTER TABLE production_records ADD COLUMN kpi_record_id TEXT',
     'CREATE INDEX IF NOT EXISTS idx_prod_kpi_rid ON production_records(kpi_record_id)',
     'CREATE INDEX IF NOT EXISTS idx_prod_shift_date ON production_records(shift_date)',
+    /* ★ 2026-08-07 — index ของ kpi_records (เดิมไม่มีสักตัว)
+       วัดจริงก่อนแก้: EXPLAIN QUERY PLAN = "SCAN kpi_records" + "USE TEMP B-TREE FOR ORDER BY"
+       → ขอข้อมูลวันเดียว (574 แถว) ต้องอ่านทั้งตาราง 15,617 แถวแล้ว sort ใหม่ทุกครั้ง
+         และเปิดแอป 1 ครั้งยิง /api/kpi ถึง 12 คำขอ = สแกนเต็มตาราง 12 รอบ
+       ⇒ ยิ่งข้อมูลสะสมมากยิ่งช้าลงเป็นเส้นตรง (9,400 แถวเมื่อ ก.ค. → 15,617 แถวเมื่อ 7 ส.ค.)
+       shift_date  = คอลัมน์ที่ทุก query กรองช่วงวัน
+       saved_at    = คอลัมน์ที่ทุก query ORDER BY DESC (ตัด temp b-tree ทิ้ง)
+       prod timestamp = /api/records ก็ ORDER BY timestamp DESC เหมือนกัน */
+    /* ❗แก้ความเข้าใจผิดของผู้เขียน (2026-08-07): ตอนแรกคิดว่า kpi_records ไม่มี index เลย
+       ที่จริงมีอยู่ก่อนแล้ว 5 ตัว รวม idx_kpi_date ON kpi_records(shift_date) ซึ่งตรงกับที่ต้องใช้เป๊ะ
+       ต้นเหตุที่ query ยัง SCAN ทั้งตารางคือ WHERE ใช้ COALESCE(shift_date, record_date)
+       = นิพจน์ → SQLite ใช้ index ไม่ได้ · พอตัด COALESCE ออก index เดิมก็ทำงานทันที
+       ⇒ ตัวที่แก้ปัญหาจริงคือการตัด COALESCE ไม่ใช่การเพิ่ม index
+       เหลือไว้เฉพาะ idx_kpi_saved_at ที่ยังไม่เคยมี (ใช้กับ ORDER BY saved_at DESC —
+       ตัด temp b-tree ทิ้ง และทำให้ query "เอา 500 ล่าสุด" อ่านแค่ 500 แถวแทน 15,600)
+       ส่วน production_records(timestamp) มี idx_prod_ts อยู่แล้ว จึงไม่ต้องเพิ่ม */
+    'CREATE INDEX IF NOT EXISTS idx_kpi_saved_at ON kpi_records(saved_at)',
+
+    /* ★ 2026-08-07 — โหลดแบบ incremental (?since=) ต้องรู้ 2 อย่าง: "อะไรเปลี่ยน" กับ "อะไรถูกลบ"
+       ① updated_at — ประทับเวลาทุกครั้งที่แถวถูกเขียน
+          ❗ใช้ trigger ไม่ใช่ไล่แก้โค้ดทีละจุด เพราะมีจุดเขียน 2 ตารางนี้ถึง 12 แห่ง
+            (insert/update/upsert/cascade/reconcile/เปลี่ยนชื่อเครื่อง) ตกหล่นแค่จุดเดียว =
+            เครื่องที่ใช้ cache จะไม่เห็นการแก้ไขนั้นตลอดไป → ยอดเพี้ยนแบบหาสาเหตุยากมาก
+            ให้ฐานข้อมูลเป็นคนประทับเอง = ไม่มีทางตกหล่น รวมถึงโค้ดที่จะเขียนเพิ่มในอนาคต
+          รูปแบบเวลาตรงกับ new Date().toISOString() เป๊ะ → เทียบด้วย > ตรง ๆ ได้
+          (ทดสอบบน D1 แล้ว: UPDATE ในตัว trigger ของตารางเดียวกันไม่วน ไม่ error)
+       ② deleted_records — ทะเบียนแถวที่ถูกลบ (tombstone)
+          ถ้าไม่มี: query แบบ since ไม่มีทางบอกได้ว่ามีอะไรถูกลบ (มันไม่มีแถวให้คืน)
+          → cache ในเครื่องจะเก็บของที่ลบไปแล้วไว้ตลอดกาล ยอด WIP/FG บวมขึ้นเรื่อย ๆ
+       ⚠️ ของที่ลบ "ก่อน" วันที่ใส่ระบบนี้ ไม่มีในทะเบียน → เครื่องที่มี cache เก่าค้างอยู่
+          ต้องล้าง cache แล้วโหลดเต็มหนึ่งรอบ (ฝั่ง client บังคับด้วย CACHE_VER) */
+    'ALTER TABLE kpi_records        ADD COLUMN updated_at TEXT',
+    'ALTER TABLE production_records ADD COLUMN updated_at TEXT',
+    "UPDATE kpi_records        SET updated_at = saved_at  WHERE COALESCE(updated_at,'') = ''",
+    "UPDATE production_records SET updated_at = timestamp WHERE COALESCE(updated_at,'') = ''",
+    'CREATE INDEX IF NOT EXISTS idx_kpi_updated_at  ON kpi_records(updated_at)',
+    'CREATE INDEX IF NOT EXISTS idx_prod_updated_at ON production_records(updated_at)',
+    `CREATE TRIGGER IF NOT EXISTS trg_kpi_ins AFTER INSERT ON kpi_records FOR EACH ROW
+       BEGIN UPDATE kpi_records SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE record_id = NEW.record_id; END`,
+    `CREATE TRIGGER IF NOT EXISTS trg_kpi_upd AFTER UPDATE ON kpi_records FOR EACH ROW
+       BEGIN UPDATE kpi_records SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE record_id = NEW.record_id; END`,
+    `CREATE TRIGGER IF NOT EXISTS trg_prod_ins AFTER INSERT ON production_records FOR EACH ROW
+       BEGIN UPDATE production_records SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE record_id = NEW.record_id; END`,
+    `CREATE TRIGGER IF NOT EXISTS trg_prod_upd AFTER UPDATE ON production_records FOR EACH ROW
+       BEGIN UPDATE production_records SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE record_id = NEW.record_id; END`,
+    `CREATE TABLE IF NOT EXISTS deleted_records (
+       record_id TEXT NOT NULL, kind TEXT NOT NULL, deleted_at TEXT NOT NULL,
+       PRIMARY KEY (record_id, kind))`,
+    'CREATE INDEX IF NOT EXISTS idx_del_at ON deleted_records(deleted_at)',
+    'CREATE TABLE IF NOT EXISTS schema_meta (k TEXT PRIMARY KEY, v TEXT)',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
+  // ปั๊มเวอร์ชันไว้ → isolate ถัดไปเช็คทีเดียวแล้วข้ามทั้งชุด
+  try {
+    await env.DB.prepare(
+      "INSERT INTO schema_meta (k,v) VALUES ('ver',?) ON CONFLICT(k) DO UPDATE SET v = excluded.v"
+    ).bind(SCHEMA_VER).run();
+  } catch (e) { /* ปั๊มไม่สำเร็จ = รอบหน้ารัน migration ซ้ำ (idempotent ทุกคำสั่ง) ไม่เสียหาย */ }
   _schemaReady = true;
+}
+
+/* ── ห่อ /api/kpi กับ /api/records ให้รองรับการโหลดแบบ incremental ───────────
+   ไม่ส่ง since → พฤติกรรมเดิมเป๊ะ (คืน {records}) แค่แถม sync_time มาให้เก็บไว้ใช้รอบหน้า
+   ส่ง since   → คืน {records: เฉพาะที่เปลี่ยน, deleted: [id ที่ถูกลบ], sync_time}
+
+   ❗sync_time ต้องอ่าน "ก่อน" ยิง query เสมอ:
+     ถ้าอ่านหลัง query แถวที่ถูกเขียนระหว่างที่ query กำลังวิ่งจะมี updated_at น้อยกว่า sync_time
+     → รอบหน้าไม่มีทางถูกดึงมา = ข้อมูลหายถาวรโดยไม่มีใครรู้
+   ❗หักเพิ่มอีก 5 วินาทีกันเหลื่อมเวลา/ลำดับ commit — ผลคือรอบหน้าอาจได้แถวซ้ำมาบ้าง
+     ซึ่งไม่เป็นไรเลย เพราะฝั่ง client merge ด้วย record_id (ทับของเดิม ไม่ใช่บวกเพิ่ม) */
+async function withSync(env, params, kind, fn) {
+  const sync_time = new Date(Date.now() - 5000).toISOString();
+  const res = await fn(env, params);
+  // getKpiRecords/getRecords คืน { rows, truncated, limit } — ห่อให้เป็นรูปแบบเดิมของ API
+  const records = res.rows;
+  const cap = res.truncated ? { truncated: true, limit: res.limit } : null;
+  const since = params.get('since');
+  if (!since) return { records, sync_time, ...cap };
+  /* ❗ต้องกรอง "id ที่ถูกลบแล้วสร้างใหม่ด้วย id เดิม" ออกจากรายการลบ
+     เจอตอนทดสอบจริง: record_id เป็น idempotency key ที่ client เป็นคนตั้ง
+     → ลบทิ้งแล้วบันทึกซ้ำ (ส่งซ้ำตอนเน็ตสะดุด / กดบันทึกใหม่) ได้ id เดิมเป๊ะ
+     ผลคือ API คืน id นั้นทั้งใน records (เพราะเพิ่งเขียน) และใน deleted (ทะเบียนเก่ายังอยู่)
+     ฝั่ง client ถือว่า deleted ชนะเสมอ → แถวที่ยังมีชีวิตอยู่จะถูกลบทิ้งจาก cache เงียบ ๆ
+     แก้ที่ต้นทาง: ถ้าแถวนั้น "ยังอยู่ในตารางจริง" แปลว่าทะเบียนลบใบนั้นหมดอายุแล้ว ไม่ต้องรายงาน
+     (ลบซ้ำอีกรอบ ทะเบียนจะถูกอัปเดต deleted_at ใหม่ผ่าน ON CONFLICT → กลับมารายงานถูกต้อง) */
+  /* ⚠️ tbl ถูกต่อเข้า SQL ตรง ๆ (bind ชื่อตารางไม่ได้) — ปลอดภัยเพราะ kind มาจาก
+     router ที่ส่งค่าคงที่ 'kpi'/'prod' เท่านั้น · ถ้าวันหลังมีใครเอา query param มาส่งเป็น kind
+     จะกลายเป็นช่อง SQL injection ทันที → ล็อกด้วย whitelist ไว้ตรงนี้ กันพลาดในอนาคต */
+  const TBL_OF = { kpi: 'kpi_records', prod: 'production_records' };
+  const tbl = TBL_OF[kind];
+  if (!tbl) throw new Error('withSync: kind ไม่ถูกต้อง');
+  const { results } = await env.DB.prepare(
+    `SELECT d.record_id FROM deleted_records d
+      WHERE d.kind = ? AND d.deleted_at > ?
+        AND NOT EXISTS (SELECT 1 FROM ${tbl} t WHERE t.record_id = d.record_id)`
+  ).bind(kind, since).all();
+  return { records, deleted: (results || []).map(r => r.record_id), sync_time, ...cap };
+}
+
+/* ── ทะเบียนแถวที่ถูกลบ (tombstone) ────────────────────────────────────────
+   เรียกทุกครั้งที่ลบ kpi_records / production_records — ห้ามลืมแม้แต่จุดเดียว
+   ไม่งั้นเครื่องที่โหลดแบบ incremental จะไม่มีทางรู้ว่าแถวนั้นหายไปแล้ว
+   kind: 'kpi' | 'prod' · ลบซ้ำ id เดิม = อัปเดตเวลา (ON CONFLICT) ไม่พังและไม่ซ้ำแถว */
+async function tombstone(env, kind, ids) {
+  const list = [...new Set((ids || []).filter(Boolean).map(String))];
+  if (!list.length) return 0;
+  const now = new Date().toISOString();
+  const st = env.DB.prepare(
+    `INSERT INTO deleted_records (record_id, kind, deleted_at) VALUES (?,?,?)
+     ON CONFLICT(record_id, kind) DO UPDATE SET deleted_at = excluded.deleted_at`);
+  try {
+    for (let i = 0; i < list.length; i += 200) {
+      await env.DB.batch(list.slice(i, i + 200).map(id => st.bind(id, kind, now)));
+    }
+  } catch (e) { /* บันทึกทะเบียนพลาด → ไม่ทำให้การลบล้มเหลว (client มี full reload กันไว้) */ }
+  return list.length;
 }
 
 /* "วันผลิตจริง" ของ production record — ใช้ตัวเดียวกันทั้ง query และรายงาน
@@ -346,19 +469,32 @@ async function getRecords(env, params) {
   if (params.get('lot'))    { conds.push('lot = ?');             args.push(params.get('lot')); }
   // ★ 2026-08-04: กรองด้วย "วันผลิตจริง" ไม่ใช่เวลาที่กดบันทึก — ให้ตรงกับ /api/kpi ที่ใช้ shift_date
   //   เดิมกรอง timestamp ดิบ → งานกะดึกที่บันทึกตอนเช้าตกไปอยู่คนละวันกับ KPI ของตัวเอง
-  if (params.get('from'))   { conds.push(`${PROD_DATE_COL} >= ?`); args.push(String(params.get('from')).slice(0, 10)); }
-  if (params.get('to'))     { conds.push(`${PROD_DATE_COL} <= ?`); args.push(String(params.get('to')).slice(0, 10)); }
+  // ⚡ 2026-08-07: ช่วงกว้างมาก → ปิดการใช้ index ด้วย unary + (เหตุผลเดียวกับ getKpiRecords
+  //    วัดจริง: 30,642 → 15,321 rows_read · ผลลัพธ์ 15,321 แถวเท่ากันทั้งสองแบบ)
+  const _pFrom = params.get('from') && String(params.get('from')).slice(0, 10);
+  const _pTo   = params.get('to')   && String(params.get('to')).slice(0, 10);
+  const _pWide = _pFrom && _pTo &&
+    (Date.parse(_pTo + 'T00:00:00Z') - Date.parse(_pFrom + 'T00:00:00Z')) / 86400000 > 400;
+  const _pSince = params.get('since');   // ⚡ เอาเฉพาะที่เปลี่ยนหลังเวลานี้ (ดู getKpiRecords)
+  const _pcol = (_pWide && !_pSince) ? `+${PROD_DATE_COL}` : PROD_DATE_COL;
+  if (_pSince)              { conds.push('updated_at > ?'); args.push(_pSince); }
+  if (params.get('from'))   { conds.push(`${_pcol} >= ?`); args.push(_pFrom); }
+  if (params.get('to'))     { conds.push(`${_pcol} <= ?`); args.push(_pTo); }
   if (params.get('proc'))   { conds.push('current_process = ?'); args.push(params.get('proc')); }
   if (params.get('status')) { conds.push('status = ?');          args.push(params.get('status')); }
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
   // เช่นเดียวกับ /api/kpi: ถ้ามีช่วง from+to → คืนครบทั้งช่วง (เดิม cap 1000/5000 ตัดงานเก่าทิ้ง)
-  const RECS_MAX = 50000;
+  /* ⚡ 2026-08-07 — ขยับ 50,000 → 200,000 + ส่ง truncated กลับไปเมื่อชนเพดาน (ดู getKpiRecords)
+     prod ≈ 477 ไบต์/แถว → 200,000 แถว ≈ 95 MB ยังอยู่ในเพดาน Worker 128 MB (แบบเฉียด)
+     ถ้าโตจนชนจริง จะได้ error ดัง ๆ หรือธง truncated — ทั้งคู่ดีกว่ายอดผิดแบบเงียบ ๆ */
+  const RECS_MAX = 200000;
   const hasRange = params.get('from') && params.get('to');
   const dflt = hasRange ? RECS_MAX : 1000;
   const limit = Math.min(parseInt(params.get('limit') || String(dflt), 10), RECS_MAX);
   const sql = `SELECT * FROM production_records ${where} ORDER BY timestamp DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
-  return await _resolveShiftDates(env, results || []);
+  const raw = results || [];
+  return { rows: await _resolveShiftDates(env, raw), truncated: raw.length >= limit, limit };
 }
 
 /* ★ 2026-08-04 (รอบ 2) — เติม "วันทำงาน" ให้แถวที่ยังไม่ได้ซ่อม โดยดูจาก KPI ตอนอ่าน
@@ -596,11 +732,13 @@ async function deleteRecord(env, body) {
   const row = await env.DB.prepare('SELECT kpi_record_id FROM production_records WHERE record_id = ?').bind(id).first();
   const kid = body.cascade === true ? row?.kpi_record_id : null;
   const r = await env.DB.prepare('DELETE FROM production_records WHERE record_id = ?').bind(id).run();
+  if (r.meta?.changes) await tombstone(env, 'prod', [id]);   // ★ ลงทะเบียนการลบ
   if (kid) {
     const left = await env.DB.prepare('SELECT COUNT(*) n FROM production_records WHERE kpi_record_id = ?').bind(kid).first();
     if ((left?.n || 0) === 0) {
       const k = await env.DB.prepare('DELETE FROM kpi_records WHERE record_id = ?').bind(kid).run();
       kpiDeleted = k.meta?.changes || 0;
+      if (kpiDeleted) await tombstone(env, 'kpi', [kid]);
     }
   }
   return { deleted: r.meta?.changes || 0, kpi_deleted: kpiDeleted };
@@ -781,8 +919,33 @@ const KPI_COLS = [
 async function getKpiRecords(env, params) {
   const conds = [];
   const args  = [];
-  if (params.get('from'))    { conds.push('COALESCE(shift_date, record_date) >= ?'); args.push(params.get('from')); }
-  if (params.get('to'))      { conds.push('COALESCE(shift_date, record_date) <= ?'); args.push(params.get('to')); }
+  /* ⚡ 2026-08-07 — กรองด้วยคอลัมน์เปล่า ๆ เพื่อให้ใช้ idx_kpi_shift_date ได้
+     (บทเรียนเดียวกับ PROD_DATE_COL เมื่อ 4 ส.ค. — เอานิพจน์ไปใส่ WHERE = index ใช้ไม่ได้)
+
+     ❗พิสูจน์แล้วว่าผลลัพธ์เท่าเดิมเป๊ะ ไม่ใช่แค่ "น่าจะเท่า":
+       ① ตรวจข้อมูลจริงทั้ง 15,617 แถว — มี shift_date ครบ 100% ไม่มีแถวไหนว่าง/NULL
+          ⇒ COALESCE ไม่เคยได้ใช้ fallback อยู่แล้ว
+       ② addKpiRecords แปลง undefined/null → '' (สตริงว่าง) ก่อนเขียนเสมอ
+          COALESCE แทนที่เฉพาะ NULL ไม่แทน '' ⇒ แถวที่ shift_date ว่างจะได้ '' ซึ่ง
+          '' < วันที่ทุกค่า = ถูกกรองทิ้งอยู่แล้วทั้งสูตรเก่าและสูตรใหม่ (พฤติกรรมตรงกัน)
+       ③ กันอนาคต: ใส่ fallback record_date ตอน "เขียน" แทน (ดู addKpiRecords ข้างล่าง)
+          → ย้ายงาน COALESCE จาก read-time (ทุกคำขอ) ไป write-time (ครั้งเดียว) */
+  /* ⚡ ช่วงกว้างมาก (ensureAllJobsLoaded ส่ง from=2020-01-01 = "เอาทั้งหมด") → index กลับทำให้ช้าลง
+     เพราะต้องอ่าน index 1 รอบ + ตามไปอ่านแถวจริงอีก 1 รอบ = 2 เท่า (วัดจริง 15,634 → 31,266 rows_read)
+     ใส่ unary + หน้าคอลัมน์ = บอก SQLite ว่า "อย่าใช้ index กับเงื่อนไขนี้" โดยผลลัพธ์เท่าเดิมทุกประการ
+     (unary + ไม่แปลงค่า ไม่เปลี่ยนการเปรียบเทียบ แค่ตัดสิทธิ์การใช้ index ของเทอมนั้น)
+     → แผนกลายเป็น SCAN ... USING INDEX idx_kpi_saved_at = อ่าน 15,634 เท่าเดิม แต่ไม่ต้อง temp b-tree sort
+     วัดแล้วทั้ง 3 สูตร (COALESCE เดิม / shift_date / +shift_date) คืน 15,633 แถวเท่ากันเป๊ะ */
+  const _spanDays = (a, b) => (Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000;
+  const _wide = params.get('from') && params.get('to') && _spanDays(params.get('from'), params.get('to')) > 400;
+  /* ⚡ since= → เอาเฉพาะแถวที่ "ถูกเขียนหลังเวลานี้" (ใหม่หรือถูกแก้ก็ตาม)
+     ใช้ index idx_kpi_updated_at → ปกติได้ไม่กี่สิบแถว แทนที่จะลากทั้งตารางมาใหม่
+     เมื่อมี since แล้วไม่ต้องบังคับ full scan อีก (ช่วงกว้างแต่แถวน้อย = index คุ้มแน่นอน) */
+  const _since = params.get('since');
+  const _dcol = (_wide && !_since) ? '+shift_date' : 'shift_date';
+  if (_since)                { conds.push('updated_at > ?'); args.push(_since); }
+  if (params.get('from'))    { conds.push(`${_dcol} >= ?`); args.push(params.get('from')); }
+  if (params.get('to'))      { conds.push(`${_dcol} <= ?`); args.push(params.get('to')); }
   if (params.get('zone'))    { conds.push('zone = ?');                                args.push(params.get('zone')); }
   if (params.get('shift'))   { conds.push('shift_type = ?');                          args.push(params.get('shift')); }
   if (params.get('machine')) { conds.push('LOWER(machine_id) LIKE ?');                args.push('%' + params.get('machine').toLowerCase() + '%'); }
@@ -796,13 +959,38 @@ async function getKpiRecords(env, params) {
   // ❗เดิม: default 500 / max 5000 + ORDER BY saved_at DESC → query ตามช่วงวันกว้างถูกตัดเหลือ
   //   "500 แถวล่าสุด" (≈1.5 วันสุดท้าย) เงียบ ๆ → ยอดรวมราย process / dashboard ต่ำกว่าจริง ~20-25 เท่า
   // ใหม่: ถ้ามีช่วง from+to → คืน "ครบทั้งช่วง" (default = เพดานสูง) · ไม่มีช่วง (ดึงล่าสุด) → คง 500 ตามเดิม
-  const KPI_MAX = 50000;
+  /* ⚡ 2026-08-07 — เพดานแถว: ต้องสูงพอ "และ" ต้องส่งเสียงเมื่อชน
+     บทเรียนเดิม (LIMIT 500) คือการตัดแบบเงียบ ๆ ทำให้ยอดต่ำกว่าจริง 20-25 เท่าโดยไม่มีใครรู้
+     ⇒ ปัญหาไม่ใช่ "เพดานต่ำ" อย่างเดียว แต่คือ "ตัดแล้วไม่บอก" · ขยับเพดานเฉย ๆ = เลื่อนวันระเบิด
+     ตอนนี้จึงคืน truncated กลับไปด้วยเมื่อจำนวนแถวเท่ากับ limit พอดี (สัญญาณว่าน่าจะโดนตัด)
+
+     เพดานแยกตามขนาดแถว เพราะ Worker มีเพดานหน่วยความจำ 128 MB:
+       slim (12 คอลัมน์)  ≈ 250 ไบต์/แถว  → 200,000 แถว ≈ 50 MB   ไหว
+       เต็ม (32 คอลัมน์)  ≈ 1,040 ไบต์/แถว → 200,000 แถว ≈ 208 MB  ตาย ⇒ คงไว้ที่ 50,000
+     ก้อนประวัติทั้งหมดใช้ slim อยู่แล้ว ส่วน query เต็มมีแต่ช่วงสั้น ๆ จากหน้าจอ
+     ถ้าชนเพดานจริงจะได้ truncated กลับไปเตือน ดีกว่าปล่อยให้ยอดผิดเงียบ ๆ */
+  const KPI_MAX = (params.get('slim') === '1') ? 200000 : 50000;
   const hasRange = params.get('from') && params.get('to');
   const dflt = hasRange ? KPI_MAX : 500;
   const limit = Math.min(parseInt(params.get('limit') || String(dflt), 10), KPI_MAX);
-  const sql = `SELECT * FROM kpi_records ${where} ORDER BY saved_at DESC LIMIT ?`;
+  /* ⚡ 2026-08-07 — slim=1: คืนเฉพาะคอลัมน์ที่ "ก้อนประวัติทั้งหมด" ต้องใช้จริง
+     ใช้ที่เดียวคือ ensureAllJobsLoaded() ซึ่งดึงทุกแถวมาคิด 3 ถัง WIP + กล่องงานหลัง FG
+     วัดจริง: 32 คอลัมน์ → 12 คอลัมน์ = raw 16.26 MB → 3.91 MB (−76%) · gzip 1,360 → 363 KB (−73%)
+     ตัวที่กินที่สุดคือ shifts (รายละเอียดรายกะ ~176 ตัวอักษร/แถว) ซึ่งเส้นทาง WIP ไม่ได้อ่านเลย
+     ก้อน raw ที่เล็กลงสำคัญกว่า gzip ด้วยซ้ำ เพราะ JSON.parse 16 MB บนมือถือกินเวลาเป็นวินาที
+
+     ❗พิสูจน์ในเบราว์เซอร์แล้วว่าตัดได้จริง: โหลดข้อมูลเต็ม → เก็บผลลัพธ์ไว้ → ลบ 20 คอลัมน์นี้
+       ออกจาก _allKpi → ล้าง cache ทุกชั้น → คำนวณใหม่ → เทียบกัน "ต่างกัน 0 รายการ"
+       (ครอบคลุม 3 ถัง WIP รายตัว, Output ของ Process, การ์ด KPI, กล่องงานหลัง FG, _jobVsmOwner)
+     ❗client รุ่นเก่าที่ไม่ส่ง slim ยังได้ 32 คอลัมน์เหมือนเดิม — deploy สลับลำดับกันได้ ไม่พัง
+     ❗ห้ามใช้ slim กับหน้าประวัติ/แก้ไข: หน้านั้นต้องใช้ shifts/operator/oae/dle/pplh ครบ */
+  const KPI_SLIM = 'record_id,saved_at,record_date,shift_date,shift_type,zone,machine_id,opr,scrap,valve_no,lot,last_process';
+  const cols = params.get('slim') === '1' ? KPI_SLIM : '*';
+  const sql = `SELECT ${cols} FROM kpi_records ${where} ORDER BY saved_at DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
-  return results || [];
+  const rows = results || [];
+  // ได้แถวเท่ากับ limit พอดี = น่าจะยังมีต่ออีกแต่ถูกตัด → บอก client ไปด้วย (ห้ามเงียบ)
+  return { rows, truncated: rows.length >= limit, limit };
 }
 
 // เซ็ต (valve_no, lot) ที่ "เคยผลิตแล้ว" ทั้งหมด (distinct · ทุกช่วงเวลา) — payload เบา (2 คอลัมน์)
@@ -837,6 +1025,11 @@ async function addKpiRecords(env, body) {
       record_id: id,
       saved_at: r.saved_at || now,
       shifts: typeof r.shifts === 'string' ? r.shifts : JSON.stringify(r.shifts || []),
+      /* ★ 2026-08-07 — การันตีว่า shift_date ไม่มีวันว่าง (getKpiRecords กรองด้วยคอลัมน์นี้ตรง ๆ
+         เพื่อใช้ index) เดิมเป็น COALESCE(shift_date, record_date) ตอนอ่าน → ย้ายมาทำตอนเขียน
+         ข้อมูลปัจจุบันมี shift_date ครบทุกแถวอยู่แล้ว บรรทัดนี้จึงไม่กระทบยอดใด ๆ
+         เป็นแค่กันไว้เผื่อ client รุ่นเก่า/รุ่นอื่นส่งมาไม่ครบ จะได้ไม่หายไปจากทุกช่วงวันเงียบ ๆ */
+      shift_date: String(r.shift_date || '').trim() || String(r.record_date || '').trim(),
     };
     return stmt.bind(...KPI_COLS.map(c => {
       const v = row[c];
@@ -923,11 +1116,24 @@ async function deleteKpiRecords(env, body) {
   if (!ids.length) throw new Error('ids required');
   const stmt = env.DB.prepare('DELETE FROM kpi_records WHERE record_id = ?');
   const r = await env.DB.batch(ids.map(id => stmt.bind(id)));
+  await tombstone(env, 'kpi', ids);                          // ★ ลงทะเบียนการลบ
   // ★ 2026-08-04 — ลบ KPI แล้วต้องลบ prod ที่ผูกกันด้วย ไม่งั้นเหลือเป็น "แถวผี"
   //   ที่หน้าติดตามงานยังโชว์ยอดอยู่ ทั้งที่หน้าประวัติลบไปแล้ว (พบค้างอยู่ 170 แถว)
+  /* ★ 2026-08-07 — ต้องรู้ "record_id ของ prod ที่กำลังจะโดนลบ" ก่อนลบ
+     เพราะ DELETE ... WHERE kpi_record_id = ? ไม่บอกว่าลบแถวไหนไปบ้าง
+     ถ้าไม่เก็บไว้ ทะเบียน tombstone จะขาดแถวเหล่านี้ → เครื่องอื่นเห็นยอดผลิตค้างตลอดไป */
+  const linked = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100);
+    const { results } = await env.DB.prepare(
+      `SELECT record_id FROM production_records WHERE kpi_record_id IN (${chunk.map(() => '?').join(',')})`
+    ).bind(...chunk).all();
+    for (const x of results || []) linked.push(x.record_id);
+  }
   const pstmt = env.DB.prepare('DELETE FROM production_records WHERE kpi_record_id = ?');
   const pr = await env.DB.batch(ids.map(id => pstmt.bind(id)));
   let prodDeleted = pr.reduce((s, x) => s + (x.meta?.changes || 0), 0);
+  await tombstone(env, 'prod', linked);
   /* ★ ข้อมูลที่ยังไม่ได้กดซ่อม คอลัมน์ kpi_record_id ยังว่างใน D1 → WHERE ด้านบนหาไม่เจอ
      client จึงส่ง prod_ids ที่มันผูกไว้ (ผูกตอนอ่าน) มาให้ลบตรง id — ไม่งั้นเครื่องที่กดลบ
      เห็นหายไปแล้ว แต่เครื่องอื่นยังเห็นยอดค้างอยู่ใน D1 (กลายเป็นแถวผีตัวใหม่) */
@@ -938,6 +1144,7 @@ async function deleteKpiRecords(env, body) {
       const res = await env.DB.batch(pids.slice(i, i + 200).map(p => dstmt.bind(p)));
       prodDeleted += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
     }
+    await tombstone(env, 'prod', pids);                      // ★ ลงทะเบียนการลบ
   }
   return {
     deleted:      r.reduce((s, x) => s + (x.meta?.changes || 0), 0),
@@ -1160,6 +1367,7 @@ async function reconcileApply(env, body) {
       const res = await env.DB.batch(delable.slice(i, i + 200).map(g => dstmt.bind(g.record_id)));
       ghostDeleted += res.reduce((s, x) => s + (x.meta?.changes || 0), 0);
     }
+    await tombstone(env, 'prod', delable.map(g => g.record_id));   // ★ ลงทะเบียนการลบแถวผี
   }
   return { ...a.stats, linked, ghost_deleted: ghostDeleted,
            fields_synced: fieldsSynced, fields_skipped: fieldsSkipped,
