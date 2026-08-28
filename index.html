@@ -2145,7 +2145,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.63</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.64</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9020,7 +9020,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.63":"Production Record + KPI · v3.63",
+"ระบบบันทึกผลิต + KPI · v3.64":"Production Record + KPI · v3.64",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -12152,6 +12152,93 @@ const _IA_VSM_META={
   qc:  {tint:'#CFFAFE',line:'#0E7490',label:'QC'},     // ★ 2026-08-13 ฟ้าน้ำทะเล (ไม่ชนเขียว/ส้ม/แดงของสถานะเครื่อง)
 };
 
+/* ════════════════════════════════════════════════════════════
+   IOT รวม — โหมด GHOST (เปิดด้วย IOT_ALL_GHOST_CODE)
+   เปิดหน้า IOT รวมด้วย "ข้อมูลของวันก่อนหน้า" แล้วสวมวันที่เป็นวันปัจจุบัน
+   แล้วทยอยเผยทีละชั่วโมงตามนาฬิกาจริง (เวลา 10:00 → เห็นถึงคอลัมน์ 10–11
+   ส่วน 11–12 เป็นต้นไปยังขึ้น "·" จนกว่านาฬิกาจะเดินถึง)
+
+   ★ ทั้งก้อนนี้เป็นชั้น "แสดงผล" อย่างเดียว — โดยตั้งใจ:
+     · ไม่แตะ state.kpiRecords · ไม่ lsSave · ไม่ POST/PUT กลับ D1
+     · record ที่สวมวันที่แล้วเป็น clone ใหม่ และ record_id ขึ้นต้นด้วย GHOST-
+       (กันชนกับของจริง ถ้าวันหลังมีโค้ดอื่นเผลอหยิบไปเซฟ)
+     → ฐานข้อมูลการผลิต/สอบย้อนกลับ lot ยังเป็นของจริงทั้งหมด ไม่มีอะไรถูกเขียนทับ
+   ════════════════════════════════════════════════════════════ */
+const IOT_ALL_GHOST_CODE='Toptap123456789';
+const IA_GHOST_BACK_DAYS=1;                     // ย้อนหลังกี่วัน (1 = ใช้ข้อมูลเมื่อวาน)
+const IA_GHOST_MAX_BACK=7;                      // ถ้าวันนั้นไม่มีข้อมูล (วันหยุด) ถอยหลังต่อได้ถึงกี่วัน
+let _iaGhostOff=IA_GHOST_BACK_DAYS;             // จำนวนวันที่ถอยหลังจริง ๆ ของชุดที่โหลดมาได้
+let _iaGhost=false;                             // ตอนนี้อยู่ในโหมด ghost หรือไม่
+let _iaGhostRaw=[];                             // record ดิบของวันต้นทาง (ยังไม่สวมวันที่)
+let _iaGhostKey='';                             // ช่วงวันที่ที่โหลดไว้แล้ว — ข้อมูลย้อนหลังนิ่ง จึงไม่ต้องดึงซ้ำทุกรอบ
+let _iaGhostShifted=null, _iaGhostShiftKey='';  // cache ผลการสวมวันที่
+
+function _iaISOAdd(iso,days){
+  const d=new Date(String(iso).slice(0,10)+'T00:00:00');
+  if(isNaN(d.getTime())) return iso;
+  d.setDate(d.getDate()+days);
+  return `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+}
+/* ช่วงวันที่ที่จอกำลังขอ (ปกติ = วันนี้) และช่วงต้นทางที่ต้องไปดึงจริง (= ย้อนหลัง N วัน) */
+function _iaGhostRange(off){
+  const today=todayISO();
+  const dFrom=$('dashFrom')?.value||today, dTo=$('dashTo')?.value||dFrom;
+  const n=(off==null)?_iaGhostOff:off;
+  return {dFrom,dTo,off:n,srcFrom:_iaISOAdd(dFrom,-n),srcTo:_iaISOAdd(dTo,-n)};
+}
+/* ชั่วโมงปัจจุบันบนแกน "วันผลิต" (08:00 → 08:00 วันรุ่งขึ้น = 8..31 · ใช้ฐานเดียวกับ _IAHT_H0) */
+function _iaGhostNowH(){
+  const h=new Date().getHours();
+  return h<_IAHT_H0 ? h+24 : h;
+}
+/* ชั่วโมงเริ่มของ record บนแกนเดียวกัน — null = ในบันทึกไม่มีเวลา */
+function _iaGhostRecH(r){
+  const s=_iahRecTimes(r).s;
+  if(s==null) return null;
+  const h=Math.floor(s/60);
+  return h<_IAHT_H0 ? h+24 : h;
+}
+/* ดึงข้อมูลวันต้นทางเก็บไว้ "แยกถัง" — ไม่ merge เข้า state.kpiRecords และไม่ lsSave */
+async function _iaGhostSync(){
+  if(!API) return;
+  const R0=_iaGhostRange(IA_GHOST_BACK_DAYS), key=R0.dFrom+'|'+R0.dTo;
+  if(_iaGhostKey===key&&_iaGhostRaw.length) return;   // โหลดแล้ว — ของย้อนหลังไม่เปลี่ยนอีก
+  // ถอยหลังทีละวันจนเจอวันที่มีข้อมูลจริง — กันจอว่างเมื่อ "เมื่อวาน" เป็นวันหยุด/ไม่ได้เดินเครื่อง
+  try{
+    for(let off=IA_GHOST_BACK_DAYS; off<=IA_GHOST_MAX_BACK; off++){
+      const R=_iaGhostRange(off);
+      const k=await api('/api/kpi?'+new URLSearchParams({from:R.srcFrom,to:R.srcTo,limit:'50000'})).catch(()=>null);
+      if(k?.records?.length){ _iaGhostRaw=k.records; _iaGhostOff=off; _iaGhostKey=key; _iaGhostShifted=null; return; }
+    }
+  }catch(e){}
+}
+/* สวมวันที่ +IA_GHOST_BACK_DAYS ให้ทุก record — clone ใหม่ ของเดิมไม่ถูกแตะเลย */
+function _iaGhostShiftAll(){
+  const R=_iaGhostRange(), key=_iaGhostKey+'>'+R.dFrom+'>'+_iaGhostOff;
+  if(_iaGhostShifted&&_iaGhostShiftKey===key) return _iaGhostShifted;
+  const out=[];
+  for(const r of _iaGhostRaw){
+    const g=Object.assign({},r);
+    g.record_id='GHOST-'+(r.record_id||'');
+    if(r.shift_date)  g.shift_date =_iaISOAdd(r.shift_date, _iaGhostOff);
+    if(r.record_date) g.record_date=_iaISOAdd(r.record_date,_iaGhostOff);
+    g.__ghost=true;
+    out.push(g);
+  }
+  _iaGhostShifted=out; _iaGhostShiftKey=key;
+  return out;
+}
+/* ชุด record ที่ "เผยแล้ว" ณ เวลานี้ = ชั่วโมงเริ่ม ≤ ชั่วโมงปัจจุบัน
+   record ที่ไม่มีเวลาในบันทึก ลงคอลัมน์ชั่วโมงไม่ได้อยู่แล้ว → โผล่เมื่อจบวันผลิต
+   (กันยอดรวมทั้งวันโผล่มาก่อนเวลา ซึ่งจะดูขัดกับคอลัมน์รายชั่วโมงที่ยังว่าง) */
+function _iaGhostRecords(){
+  const nowH=_iaGhostNowH(), endH=_IAHT_H0+23;
+  return _iaGhostShiftAll().filter(r=>{
+    const h=_iaGhostRecH(r);
+    return h==null ? nowH>=endH : h<=nowH;
+  });
+}
+
 function iotAllOpen(){
   if(_iotAllUnlocked){ _iotAllShow(); return; }
   // กล่องกรอกรหัสพิเศษ — แนบกับ fullscreenElement ถ้ากำลังเต็มจออยู่ (แนบ body จะมองไม่เห็น)
@@ -12164,7 +12251,7 @@ function iotAllOpen(){
   d.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.35)" role="dialog" aria-modal="true">
     <div style="font-size:15px;font-weight:900;color:#0f172a;display:flex;align-items:center;gap:8px;margin-bottom:4px">🔐 ${TT('IOT รวมทุก VSM','All-VSM IOT')}</div>
     <div style="font-size:11.5px;color:#64748b;font-weight:600;margin-bottom:10px">${TT('หน้านี้ล็อกไว้ — กรอกรหัสพิเศษเพื่อเปิด','This page is locked — enter the special code to open')}</div>
-    <input type="password" id="iotAllPwIn" inputmode="numeric" autocomplete="off" placeholder="${TT('รหัสพิเศษ','Special code')}"
+    <input type="password" id="iotAllPwIn" autocomplete="off" placeholder="${TT('รหัสพิเศษ','Special code')}"
       style="width:100%;padding:12px 14px;border:2px solid #C7D2FE;border-radius:10px;font-size:18px;letter-spacing:3px;outline:none;text-align:center"
       onkeydown="if(event.key==='Enter'){event.preventDefault();_iotAllSubmitPw();}else if(event.key==='Escape'){event.preventDefault();document.getElementById('iotAllPw').remove();}">
     <div id="iotAllPwErr" style="color:#DC2626;font-size:12px;font-weight:700;min-height:16px;margin-top:6px"></div>
@@ -12178,12 +12265,15 @@ function iotAllOpen(){
 }
 function _iotAllSubmitPw(){
   const el=document.getElementById('iotAllPwIn');
-  if((el?el.value:'')!==IOT_ALL_CODE){
+  const _pw=el?el.value:'';
+  if(_pw!==IOT_ALL_CODE&&_pw!==IOT_ALL_GHOST_CODE){
     const e=document.getElementById('iotAllPwErr'); if(e) e.textContent='❌ '+TT('รหัสไม่ถูกต้อง','Wrong code');
     if(el){ el.value=''; el.focus(); }
     return;
   }
   const d=document.getElementById('iotAllPw'); if(d) d.remove();
+  _iaGhost=(_pw===IOT_ALL_GHOST_CODE);              // รหัสที่กรอกเป็นตัวเลือกโหมด
+  if(_iaGhost){ _iaGhostKey=''; _iaGhostShifted=null; }   // เข้าโหมดใหม่ = โหลดวันต้นทางใหม่
   _iotAllUnlocked=true;   // จำเฉพาะรอบเปิดแอปนี้ — โหลดหน้าใหม่ต้องกรอกอีกครั้ง
   _iotAllShow();
 }
@@ -12240,11 +12330,12 @@ function _iotAllShow(){
   if(rq){ try{ const p=rq.call(ov); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
   // จอรวม 4 VSM = บอร์ดเฝ้าดูสด (แขวนจอไว้ดูสถานะเครื่อง) → ไม่ยืดเป็น 2 ชม.
   // แต่ลดจาก 60 วิ เป็น LIVE_SYNC_MS ให้เบาเครื่องลง (ผังคงตำแหน่งเลื่อนอยู่แล้ว = ไม่กระตุก)
-  _iotAllTimer=setInterval(async()=>{ if(document.hidden) return; await _iotAllSync(); if(document.getElementById('iotAllOv')) _iotAllRender(true); },LIVE_SYNC_MS);
+  _iotAllTimer=setInterval(async()=>{ if(document.hidden) return; await _iotAllSync(); if(document.getElementById('iotAllOv')) _iotAllRender(true); },_iaGhost?60000:LIVE_SYNC_MS);
   _iotAllSync().then(()=>{ if(document.getElementById('iotAllOv')) _iotAllRender(true); });   // ดึงข้อมูลสดทันทีตอนเปิด
 }
 function iotAllClose(){
   const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  if(_iaGhost){ _iaGhost=false; _iotAllUnlocked=false; _iaGhostRaw=[]; _iaGhostKey=''; _iaGhostShifted=null; _iaGhostOff=IA_GHOST_BACK_DAYS; }
   if(_iotAllTimer){ clearInterval(_iotAllTimer); _iotAllTimer=null; }
   document.removeEventListener('keydown',_iotAllKey,true);
   if(ov._iaClean){ for(const f of ov._iaClean){ try{f();}catch(e){} } }
@@ -12268,9 +12359,11 @@ function _iotAllData(){
   const today=todayISO();
   const dFrom=$('dashFrom')?.value||today, dTo=$('dashTo')?.value||dFrom;
   const shiftF=state.shiftFilter||'all';
+  // โหมด ghost = อ่านจากถังแยกที่สวมวันที่เป็นวันนี้แล้ว (ตัวกรองวันที่ด้านล่างจึงผ่านตามปกติ)
+  const SRC=_iaGhost?_iaGhostRecords():state.kpiRecords;
   const per={};
   for(const v of VSM_KEYS) per[v]={recs:[],active:new Set(),agg:{},oae:{},byMc:{},sos:new Set()};
-  for(const r of state.kpiRecords){
+  for(const r of SRC){
     const d=(r.shift_date||r.record_date||'').slice(0,10);
     if(d<dFrom||d>dTo) continue;
     if(shiftF!=='all'&&r.shift_type!==shiftF) continue;
@@ -12288,6 +12381,7 @@ function _iotAllData(){
   return {per,dFrom,dTo,shiftF,rangeLabel:`${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}`};
 }
 async function _iotAllSync(){
+  if(_iaGhost){ await _iaGhostSync(); return; }   // ghost: โหลดวันย้อนหลังเก็บแยก ไม่แตะ state.kpiRecords
   if(!API||_iotAllSyncing) return;
   _iotAllSyncing=true;
   try{
@@ -12802,6 +12896,11 @@ function _iaHourBuckets(recs){
       if(help&&help.text&&!b.sos.has(help.text)) b.sos.set(help.text,{open:help.status!=='done', mc:r.machine_id||''});
     }
   }
+  // ghost: ชั่วโมงที่ยังไม่ถึง ต้องว่างเสมอ — ล้างค่าที่ record คร่อมหลายชั่วโมงหย่อนล่วงหน้าไว้
+  if(_iaGhost){
+    const nh=_iaGhostNowH();
+    for(const b of B){ if(b.h>nh){ b.target=0; b.opr=0; b.nrec=0; b.mcs.clear(); b.rset.clear(); b.sos.clear(); } }
+  }
   for(const b of B) b.oae = b.target>0 ? b.opr/b.target : null;
   return {B, noTime};
 }
@@ -13028,7 +13127,7 @@ function _iotAllRenderHourly(){
     for(const z of zonesData){
       const zr=P.recs.filter(r=>r.zone===z);
       const cells=hours.map(h=>{
-        const rr=zr.filter(r=>_iahCovers(r,h));
+        const rr=(_iaGhost&&h>_iaGhostNowH())?[]:zr.filter(r=>_iahCovers(r,h));
         const val=_iahVal(rr,metric,z);
         const tip=val==null?'':`${_iahP2(h)}:00–${_iahP2(h+1)}:00 · ${_iahFmt(val,metric)}${rr.length?` · ${rr.length} rec`:''}`;
         return `<td class="iah-cell ${_iahCls(val,metric,z)}"${tip?` title="${escapeHtml(tip)}"`:''}>${_iahFmt(val,metric)}</td>`;
