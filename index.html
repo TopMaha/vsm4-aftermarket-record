@@ -1259,7 +1259,7 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .ho-card.newest{border-left-color:#1A56DB;box-shadow:0 1px 5px rgba(26,86,219,.14)}
 .ho-sec.broken .ho-card.newest{border-left-color:#ea580c;box-shadow:0 1px 5px rgba(234,88,12,.16)}
 .ho-text{font-size:14px;line-height:1.55;color:#0f172a;white-space:pre-wrap;word-break:break-word}
-.iot-fs .ho-text{font-size:15px;line-height:1.6}
+.iot-fs .ho-text{font-size:var(--ho-font,15px);line-height:1.6}
 .ho-sec.broken .ho-card .ho-text{font-weight:500}
 .ho-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:#94a3b8;font-weight:700}
 .ho-meta .ho-by{color:#475569;display:inline-flex;align-items:center;gap:4px}
@@ -1304,6 +1304,37 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
 .ho-card.done .ho-text{color:#94a3b8;text-decoration:line-through;text-decoration-color:#84E1BC;text-decoration-thickness:1.5px}
 .ho-done-meta{font-size:10.5px;font-weight:800;color:#057A55;margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .ho-sec-pend{font-size:9.5px;font-weight:800;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:999px;padding:1px 7px}
+/* ── ★ 2026-09-01 (req) ปรับแต่งแผงต่อกะเองได้ — ปุ่ม ⚙️ บนหัวการ์ด · ตัดบรรทัด · ลากปรับความสูงกล่อง ── */
+.ho-hd-b{width:26px;height:26px;min-width:26px;border:1px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.16);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;font-family:inherit}
+.ho-hd-b:hover{background:rgba(255,255,255,.32)}
+.ho-hd-b:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.ho-hd .ho-sp{margin-left:auto}
+.ho-hd .ho-win{font-size:9.5px;font-weight:800;background:rgba(255,255,255,.18);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.ho-text.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--ho-lines,3);overflow:hidden}
+.ho-sec-body.capped{overflow:auto}
+/* แถบลากปรับความสูงของกล่องแต่ละหมวด (ดับเบิลคลิก = กลับเป็นสูงอัตโนมัติ) */
+.ho-rsz{height:14px;margin:1px -4px -3px;display:flex;align-items:center;justify-content:center;cursor:ns-resize;touch-action:none}
+.ho-rsz i{display:block;width:46px;height:4px;border-radius:99px;background:#cbd5e1;transition:background .14s}
+.ho-rsz:hover i,.ho-rsz.drag i{background:#1A56DB}
+.ho-sec.broken .ho-rsz i{background:#FDBA74}
+.ho-sec.broken .ho-rsz:hover i,.ho-sec.broken .ho-rsz.drag i{background:#EA580C}
+/* ป๊อปอัปตั้งค่าการแสดงผลแผงต่อกะ */
+.hov-row{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;
+  border-bottom:1px dashed #e2e8f0;padding-bottom:10px}
+.hov-row:last-child{border-bottom:0;padding-bottom:0}
+.hov-row > label{font-size:12.5px;font-weight:800;color:#334155;flex:1 1 160px;min-width:0}
+.hov-row .hint{font-size:10.5px;font-weight:600;color:#94a3b8;display:block;margin-top:2px;line-height:1.5}
+.hov-seg{display:inline-flex;flex-wrap:wrap;gap:5px}
+.hov-seg button{border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;font-weight:800;font-size:12px;
+  padding:7px 11px;border-radius:9px;cursor:pointer;font-family:inherit;min-height:34px}
+.hov-seg button.on{border-color:#1A56DB;background:#EBF4FF;color:#1A56DB}
+.hov-ctl{display:inline-flex;align-items:center;gap:8px}
+.hov-ctl b{min-width:64px;text-align:center;font-size:13.5px;font-variant-numeric:tabular-nums;color:#0f172a}
+.hov-b{width:34px;height:34px;min-width:34px;border:1.5px solid #BFDBFE;background:#EBF4FF;color:#1A56DB;
+  border-radius:9px;font-size:16px;font-weight:900;line-height:1;cursor:pointer;font-family:inherit}
+.hov-b:hover{background:#DBEAFE}
 
 /* modal เพิ่มต่อกะ (append เข้า #iotCard เพื่อให้โชว์ได้ใน native fullscreen) */
 .ho-modal-bg{inset:0;z-index:2200;background:rgba(13,17,23,.6);display:flex;align-items:center;justify-content:center;
@@ -1348,7 +1379,7 @@ body.is-loading #topbar.go ~ #loadBar{display:none}
   .iot-fs .ho-bd{overflow:visible}
   .iot-fs > #iotSplit{display:none}                                    /* จอแคบไม่มีเส้นแบ่งลาก — เลื่อนทั้งหน้าแทน */
   /* การ์ดต่อกะบนมือถือ: ตัวหนังสือ ≥16px กัน iOS ซูม + meta ≥12px อ่านออก */
-  .iot-fs .ho-text{font-size:16px}
+  .iot-fs .ho-text{font-size:var(--ho-font,16px)}
   .ho-meta{font-size:12px}
   .ho-acts{display:none}                                               /* ปุ่ม ✏️🗑️ เล็กเกินบนจอสัมผัส — แตะการ์ดเปิดเมนูใหญ่แทน */
   /* TOP ปัญหาบนมือถือ: ชิปสูง ≥44px แตะง่าย (จอสัมผัส) + จำกัดความยาวสาเหตุ */
@@ -1893,11 +1924,24 @@ tr.s-short .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .iah-metrics{display:flex;gap:4px}
 .iah-mbtn{flex:1 1 0;min-width:0;padding:6px 3px;border-radius:9px;border:1.5px solid rgba(255,255,255,.26);
   background:rgba(255,255,255,.10);color:#fff;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;
-  line-height:1.05;transition:background .12s,transform .1s;text-align:center}
+  line-height:1.05;transition:background .12s,transform .1s;text-align:center;
+  display:flex;flex-direction:column;justify-content:center}   /* จัดกึ่งกลางแนวตั้ง — ปุ่มที่ไม่มีบรรทัดหน่วย (PPLH เท่านั้นที่มี) จะไม่ลอยขึ้นบน */
 .iah-mbtn small{display:block;font-size:8px;font-weight:700;opacity:.7;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ค่ารวมทุกสาย (VSM1-4 · ไม่รวม QC) บนปุ่ม KPI — เห็นภาพรวมทั้งโรงงานโดยไม่ต้องกดสลับ */
+.iah-mbtn b{display:block;font-size:12.5px;font-weight:900;line-height:1.15;margin-top:2px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iah-mbtn .mv-good{color:#4ADE80}
+.iah-mbtn .mv-warn{color:#FDBA74}
+.iah-mbtn .mv-bad{color:#FCA5A5}
+.iah-mbtn .mv-none{color:rgba(255,255,255,.5)}
 .iah-mbtn:hover{background:rgba(255,255,255,.2)}
 .iah-mbtn:active{transform:scale(.96)}
 .iah-mbtn.on{background:#fff;color:#1E3A8A;border-color:#fff;box-shadow:0 2px 9px rgba(0,0,0,.28)}
+/* ปุ่มที่เลือกอยู่พื้นขาว → ต้องใช้สีเข้มแทน ไม่งั้นอ่านไม่ออก */
+.iah-mbtn.on .mv-good{color:#15803D}
+.iah-mbtn.on .mv-warn{color:#C2410C}
+.iah-mbtn.on .mv-bad{color:#B91C1C}
+.iah-mbtn.on .mv-none{color:#94A3B8}
 .iah-hours{display:flex;align-items:center;gap:6px}
 .iah-hbtn{width:30px;height:28px;flex:0 0 auto;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);
   background:rgba(255,255,255,.12);color:#fff;font-size:17px;font-weight:800;cursor:pointer;line-height:1;
@@ -2145,7 +2189,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.64</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.65</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2471,7 +2515,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
 
     <!-- ★ 2026-08-05 (req) Filter — ช่องค้นหาเดียวจบ + ช่วงวันที่ · ตัวกรองราย "คอลัมน์" อยู่ที่หัวตาราง (แบบ Excel) -->
     <div class="pl-filter">
-      <input type="search" id="planSearch" placeholder="🔎 ค้นหา Valve / Lot / หมายเหตุ / วันที่ — พิมพ์บางส่วนก็ได้" oninput="planSearchInput(this.value)"
+      <input type="search" id="planSearch" placeholder="🔎 ค้นหา Valve No / หมายเหตุ / วันที่ — พิมพ์บางส่วนก็ได้" oninput="planSearchInput(this.value)"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="ค้นหาแผน">
       <span class="pl-dates">
         <label for="planFrom">วันที่ขาย</label>
@@ -2531,8 +2575,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
           <th class="center" style="width:36px"><input type="checkbox" class="pl-ck" id="planSelAll" onclick="planSelAll(this.checked)" title="เลือกทุกแถวที่กรองอยู่"></th>
           <th class="pl-th" style="width:122px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('date')" title="กดเพื่อเรียงตามวันที่ขาย">📅 วันที่ขาย<span class="ps-ar" data-psk="date"></span></span><button type="button" class="pl-fb" data-pfc="date" onclick="openPlanFilter(event,'date')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:126px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:138px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="กดเพื่อเรียงตาม Lot">Lot<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:92px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="pl-th" style="width:110px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (ระบบกำหนดเอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:150px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="center" style="width:116px">จัดการ</th>
@@ -5520,7 +5563,7 @@ function _planDateBad(s){ if(!s) return false; return _planDateISO(s) !== String
    ทำไมถึงต้องมี: บอร์ดติดตามงานขาย (IOT หน้า 2) และตารางเทียบยอดใน WIP IN 1.5
    สร้างขึ้นจาก state.plans ล้วน ๆ → ของที่ "รับเข้ามาจริง" แต่ไม่มีใครวางแผนไว้
    จะไม่โผล่ที่ไหนเลยสักที่เดียว หายเงียบทั้งใบ ไม่มีสัญญาณอะไรบอก
-   กฎจับคู่ = กฎเดียวกับ _wipPlanRows (เบอร์ตรง + แผนที่ไม่ระบุ Lot ถือว่าตรงทุก Lot)
+   กฎจับคู่ = กฎเดียวกับ _wipPlanRows (★ 2026-09-01: เบอร์วาล์วตรงอย่างเดียว ไม่ดู Lot)
    ═══════════════════════════════════════════════════════════════════════ */
 let _planIdxCache=null, _planIdxVer=-1, _planIdxVsm='';
 function _planIndex(){
@@ -5541,18 +5584,17 @@ function _planIndex(){
 }
 /* คืน "เหตุผลที่ไม่มีในแผน" — '' = มีในแผนปกติ (ไม่ต้องเตือน)
      none      = ไม่มีแผนของเบอร์นี้เลย (ลืมวางแผน / รับงานนอกแผน)
-     lot       = มีเบอร์นี้ในแผน แต่คนละ Lot (ลง Lot ผิด หรือแผนยังไม่ได้ใส่ Lot ที่ผลิตจริง)
+     lot       = (เลิกใช้ตั้งแต่ 2026-09-01 — แผนไม่ผูก Lot แล้ว · คงป้ายไว้ให้ข้อมูลเก่าอ่านออก)
      cancelled = มีแผนอยู่ แต่ถูกยกเลิกไปแล้ว (ยกเลิกแผนแต่ของยังเข้ามา)
      vsm       = แผนอยู่ที่สายอื่น (งานข้ามสาย — ไม่ใช่ความผิด แต่ต้องรู้ว่าทำไมบอร์ดสายนี้ไม่ขึ้น) */
 function _planMissWhy(valve, lot){
   const vk=vKey(valve); if(!vk) return '';
   const {mine,all}=_planIndex();
-  const lk=lotKey(lot);
-  const fit=arr=>(arr||[]).filter(p=>{ const pl=lotKey(p.lot); return !pl || pl===lk; });
-  const hitMine=fit(mine[vk]);
+  /* ★ 2026-09-01 (req) — เลิกผูก Lot: จับคู่ด้วย "Valve No" ล้วน ๆ
+     (ผู้ใช้: "Lot ไม่จำเป็นต้องตรง แค่มีงานเข้ามาพอ") → เหตุผล 'lot' จึงไม่เกิดอีก */
+  const hitMine=mine[vk]||[];
   if(hitMine.length) return hitMine.every(p=>p.status==='cancelled') ? 'cancelled' : '';
-  if(fit(all[vk]).length) return 'vsm';        // มีแผน แต่ผูกกับสายอื่น
-  if((mine[vk]||[]).length || (all[vk]||[]).length) return 'lot';
+  if((all[vk]||[]).length) return 'vsm';        // มีแผน แต่ผูกกับสายอื่น
   return 'none';
 }
 const PLAN_MISS_LB = {
@@ -5583,8 +5625,8 @@ function planMissingIntake(ym){
     if(ym && m!==ym) continue;
     const why=_planMissWhy(e.valve,e.lot); if(!why) continue;
     if(!months.has(m)){ skipped++; continue; }      // เดือนนั้นไม่มีแผนเลย → ไม่มีอะไรให้เทียบ
-    const k=jobKey(e.valve,e.lot);
-    const c=by[k]||(by[k]={valve:e.valve,lot:e.lot||'',qty:0,n:0,ts:'',why});
+    const k=vKey(e.valve);                       // ★ 2026-09-01 รวมยอดระดับ "เบอร์วาล์ว" — ไม่แยกตาม Lot อีกแล้ว
+    const c=by[k]||(by[k]={valve:e.valve,lot:'',qty:0,n:0,ts:'',why});
     c.qty+=Number(e.qty)||0; c.n++;
     if(String(e.ts||'')>c.ts) c.ts=String(e.ts||'');
   }
@@ -5601,12 +5643,12 @@ function planMissingIntake(ym){
    "ยกเลิกแผน" ยังเป็นของคนกดอยู่ (คนละเรื่องกับความคืบหน้าการผลิต) */
 function _planAutoStatus(p){
   const vk = vKey(p.valve_no||''); if(!vk) return null;
-  const lk = lotKey(p.lot||'');
-  if(getJobProc(p.valve_no||'', p.lot||'') === 'DONE')
+  /* ★ 2026-09-01 (req) — แผน 1 ใบ = Valve No + จำนวน + วันที่ส่ง · จับคู่ของจริงด้วยเบอร์วาล์วล้วน */
+  if(_valveJobDone(p.valve_no||''))
     return { code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:'DONE', color:'#15803d', bg:'#DCFCE7' };
   const v = (state.valves||[]).find(x => vKey(x.valveNo)===vk);
   const order = (v && Array.isArray(v.processes)) ? v.processes : [];
-  const match = r => vKey(r.valve_no||r.valveNo)===vk && (lk ? lotKey(r.lot)===lk : true);
+  const match = r => vKey(r.valve_no||r.valveNo)===vk;      // ★ 2026-09-01 ไม่ดู Lot แล้ว
   const recs = (state.kpiRecords||[]).filter(match);
   if(recs.length){
     let best='', bestIdx=-2, bestTs='';                       // process ที่ไกลสุดตามลำดับของวาล์ว
@@ -5631,7 +5673,7 @@ function _planAutoStatus(p){
       return { code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:best, color:'#15803d', bg:'#DCFCE7' };
     return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:best||'', color:'#c2410c', bg:'#FFEDD5' };
   }
-  if(typeof _producedJobs!=='undefined' && _producedJobs.has(jobKey(p.valve_no||'', p.lot||'')))
+  if(typeof _producedValveSet!=='undefined' && _producedValveSet.has(vk))
     return { code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc:TT('เริ่มผลิตแล้ว','started'), color:'#c2410c', bg:'#FFEDD5' };
   /* ★ req #5: "เข้า WIP IN 1.5 แล้ว" = ของมาถึงไลน์แล้ว รอผลิตที่ Process แรก → กำลังผลิต
      (ก่อนหน้านี้ยังขึ้นว่า "ยังไม่เริ่ม" เพราะดูแต่ยอดผลิต ทำให้แผนที่ของเข้ามาแล้วดูเหมือนยังไม่ขยับ) */
@@ -5647,7 +5689,7 @@ function planEffStatus(p){
   const a = planAutoStatus(p);
   return (a && a.code) || 'planned';
 }
-/* ยอดที่ "รับเข้า WIP IN 1.5" แล้วของ (valve, lot) — แผนที่ไม่ระบุ Lot = นับทุก Lot ของเบอร์นั้น
+/* ยอดที่ "รับเข้า WIP IN 1.5" แล้ว — ★ 2026-09-01 นับรวมทุก Lot ของเบอร์วาล์วนั้นเสมอ
    ทำเป็น index + cache เพราะตารางแผนเรียกทีละหลายร้อยแถว (ไล่ทั้งรายการรับเข้าทุกแถว = ช้ามาก) */
 let _wipinIdxCache=null, _wipinIdxVer=-1;
 function _wipinRecvIndex(){
@@ -5666,10 +5708,30 @@ function _wipinRecvIndex(){
   _wipinIdxCache={byJob,byValve}; _wipinIdxVer=ver;
   return _wipinIdxCache;
 }
+/* ★ 2026-09-01 (req) — เลิกผูก Lot: นับยอดรับเข้าของ "เบอร์วาล์ว" ทั้งหมดทุก Lot เสมอ */
 function _wipinReceivedQty(valve, lot){
   const vk=vKey(valve||''); if(!vk) return 0;
-  const idx=_wipinRecvIndex();
-  return lotKey(lot||'') ? (idx.byJob[jobKey(valve,lot)]||0) : (idx.byValve[vk]||0);
+  return _wipinRecvIndex().byValve[vk]||0;
+}
+/* ★ 2026-09-01 — "จบงานแล้ว" ระดับเบอร์วาล์ว: มีล็อตไหนของเบอร์นี้ถูก admin กดจบงาน (หลัง FG) หรือยัง
+   ใช้แทน getJobProc(valve,lot)==='DONE' ในทุกจุดที่เลิกผูก Lot แล้ว (แผนขาย / บอร์ดติดตามงานขาย)
+   cache ด้วย (จำนวนคีย์ targets + _fvVer) — ตารางแผนเรียกทีละหลายร้อยแถว สแกน targets ทุกครั้งไม่ไหว */
+let _vJobDoneSet=null, _vJobDoneSig='';
+function _valveJobDone(valve){
+  const vk=vKey(valve||''); if(!vk) return false;
+  const t=state.targets||{};
+  const keys=Object.keys(t);
+  const sig=keys.length+'/'+_fvVer;
+  if(!_vJobDoneSet || _vJobDoneSig!==sig){
+    const set=new Set();
+    for(const k of keys){
+      if(k.indexOf(JOBPROC_PREFIX)!==0) continue;
+      if(procFromCode(t[k])!=='DONE') continue;
+      set.add(k.slice(JOBPROC_PREFIX.length).split('::')[0]);
+    }
+    _vJobDoneSet=set; _vJobDoneSig=sig;
+  }
+  return _vJobDoneSet.has(vk);
 }
 
 /* ── บันทึกแผน 1 ใบขึ้น Cloud แบบ "ไม่หายแน่นอน" (req #6) ──
@@ -5764,13 +5826,13 @@ function renderPlanMonths(){
 
 /* ════════════════════════════════════════════════════════════════
    req #7 — ระบบตรวจสอบการย้ายวาล์วไปขายเดือนถัดไป
-   เจอเมื่อ "Valve No + Lot + Q'ty เดียวกัน" โผล่ทั้งเดือนเก่าและเดือนใหม่
-     เช่น VF1349 Lot 1234 ขาย 30/07/2026  แล้วเดือนใหม่มี 30/08/2026 อีกแถว
+   เจอเมื่อ "Valve No + Q'ty เดียวกัน" โผล่ทั้งเดือนเก่าและเดือนใหม่ (★ 2026-09-01 เลิกดู Lot)
+     เช่น VF1349 ขาย 30/07/2026  แล้วเดือนใหม่มี 30/08/2026 อีกแถว
      → แปลว่ารายการนี้ถูกเลื่อนไปขายเดือน 08 แล้ว · แถวเดือน 07 คือของค้าง
    ปุ่มเดียวจบ: ลบแถวเดือนเก่าทิ้ง เหลือแถวเดือนใหม่ + ตั้งสถานะให้อัตโนมัติจากการผลิตจริง
    ════════════════════════════════════════════════════════════════ */
 function _planMoveKey(p) {
-  return `${(p.valve_no||'').trim().toUpperCase()}::${lotKey(p.lot||'')}::${Number(p.quantity)||0}`;
+  return `${(p.valve_no||'').trim().toUpperCase()}::${Number(p.quantity)||0}`;
 }
 function findPlanRollovers() {
   const byKey = {};
@@ -5812,7 +5874,7 @@ function renderPlanRollover() {
   const rows = list.map(r => `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid #FDE68A;flex-wrap:wrap">
       <div style="min-width:0">
-        <div style="font-size:12.5px;font-weight:800;color:var(--text)">${escapeHtml(r.valve)} <span style="color:var(--blue)">/ ${escapeHtml(r.lot||'-')}</span>
+        <div style="font-size:12.5px;font-weight:800;color:var(--text)">${escapeHtml(r.valve)}
           <span style="font-weight:700;color:var(--muted);font-size:11px">· ${nn(r.qty)} ชิ้น</span></div>
         <div style="font-size:11px;color:#92400E;font-weight:700">
           ${r.fromDates.map(_fmtThDate).join(', ')} <span style="color:#B45309">➡️</span> <b>${_fmtThDate(r.toDate)}</b>
@@ -5840,7 +5902,7 @@ async function applyPlanRollovers() {
   const list = findPlanRollovers();
   if (!list.length) { toast('ไม่พบรายการที่ถูกย้ายเดือน', 'blue'); return; }
   const delIds = list.flatMap(r => r.fromIds);
-  const preview = list.slice(0, 8).map(r => `• ${r.valve} / ${r.lot||'-'} · ${nn(r.qty)} ชิ้น → ${_fmtThDate(r.toDate)}`).join('\n');
+  const preview = list.slice(0, 8).map(r => `• ${r.valve} · ${nn(r.qty)} ชิ้น → ${_fmtThDate(r.toDate)}`).join('\n');
   const okGo = await confirmModal(
     `ย้ายงาน ${list.length} รายการไปเดือนถัดไป?\n\n` +
     `• ลบแถวของเดือนเก่า ${delIds.length} แถว\n` +
@@ -5887,7 +5949,7 @@ async function applyPlanRollovers() {
 
 function planNewId() { return 'P-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
-/* ── เรียงตารางแผน (req #5): กดหัวคอลัมน์เพื่อเรียง — วันที่ / Valve / Lot / Qty / สถานะ ──
+/* ── เรียงตารางแผน (req #5): กดหัวคอลัมน์เพื่อเรียง — วันที่ / Valve / Qty / สถานะ ──
    กดคอลัมน์เดิมซ้ำ = สลับ น้อย→มาก ⇄ มาก→น้อย · ค่าเริ่มต้น = วันที่ขาย น้อย→มาก (เหมือนเดิม) */
 let _planSort = { key: 'date', dir: 1 };
 const _PLAN_STATUS_RANK = { planned: 0, in_progress: 1, done: 2, cancelled: 3 };
@@ -5900,7 +5962,6 @@ function setPlanSort(key) {
 function _planSortVal(p, key) {
   switch (key) {
     case 'valve':  return (p.valve_no || '').toUpperCase();
-    case 'lot':    return (p.lot || '').toUpperCase();
     case 'qty':    return Number(p.quantity) || 0;
     case 'note':   return (p.note || '').toUpperCase();
     // "สถานะ" เรียงตามสถานะจริงจากการผลิต (ที่ผู้ใช้เห็นเป็นป้ายสี) ไม่ใช่ค่า override
@@ -5944,8 +6005,6 @@ const PLAN_COLS = {
             disp:v=>v ? _fmtThDate(v) : TT('(ไม่ระบุวันที่)','(no date)') },
   valve:  { lbl:['Valve No','Valve No'], key:p=>(p.valve_no||'').trim().toUpperCase(),
             disp:v=>v || TT('(ว่าง)','(blank)') },
-  lot:    { lbl:['Lot','Lot'], key:p=>(p.lot||'').trim(),
-            disp:v=>v || TT('(ไม่มี Lot)','(no lot)') },
   qty:    { lbl:["Q'ty","Q'ty"], key:p=>String(Math.round(Number(p.quantity)||0)),
             disp:v=>nn(+v)+' '+TT('ชิ้น','pcs'), num:true },
   status: { lbl:['สถานะ','Status'], key:p=>planEffStatus(p),
@@ -5968,7 +6027,7 @@ function filteredPlans(skipCol, ignoreRange) {
     if (from && d && d < from) return false;
     if (to   && d && d > to)   return false;
     if (q) {
-      const hay = `${p.valve_no||''} ${p.lot||''} ${p.note||''} ${d} ${_fmtThDate(d)} ${p.quantity||''}`.toLowerCase();
+      const hay = `${p.valve_no||''} ${p.note||''} ${d} ${_fmtThDate(d)} ${p.quantity||''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     for (const c of cols) if (!_planColF[c].has(PLAN_COLS[c].key(p))) return false;
@@ -6515,7 +6574,7 @@ async function planBulkCancel() {
 async function planBulkDelete() {
   const rows = planSelRows(); if (!rows.length) return;
   const qty = rows.reduce((s,p) => s + (Number(p.quantity)||0), 0);
-  const preview = rows.slice(0,8).map(p => `• ${_fmtThDate(_planDateISO(p.plan_date))} · ${p.valve_no||'-'} / ${p.lot||'-'} · ${nn(p.quantity||0)}`).join('\n');
+  const preview = rows.slice(0,8).map(p => `• ${_fmtThDate(_planDateISO(p.plan_date))} · ${p.valve_no||'-'} · ${nn(p.quantity||0)}`).join('\n');
   const ok = await confirmModal(
     TT(`ลบแผน ${rows.length} รายการ (รวม ${nn(qty)} ชิ้น)?\nลบแล้วเอากลับไม่ได้\n\n${preview}${rows.length>8?`\n…และอีก ${rows.length-8} รายการ`:''}`,
        `Delete ${rows.length} plans (${nn(qty)} pcs)?\nThis cannot be undone.\n\n${preview}${rows.length>8?`\n…and ${rows.length-8} more`:''}`),
@@ -6582,7 +6641,7 @@ function renderPlans() {
     }
   }
   tbody.innerHTML = rows.length ? pageRows.map(p => planRowHtml(p)).join('')
-    : `<tr><td colspan="8" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
+    : `<tr><td colspan="7" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
   // ลูกศรบอกคอลัมน์ที่กำลังเรียง (req #5)
   for (const el of document.querySelectorAll('#planTable .ps-ar')) {
     const on = el.dataset.psk === _planSort.key;
@@ -6712,7 +6771,7 @@ function renderPlanCompare(visibleRows){
   const warnBlk=(icon,cls,title,arr)=>arr.length?`
     <div class="pc-w ${cls}">
       <div class="pc-wt">${icon} ${escapeHtml(title)} — <b>${nn(arr.length)}</b> ${TT('รายการ','items')} · <b>${nn(sumQ(arr))}</b> ${TT('ชิ้น','pcs')}</div>
-      <div class="pc-wl">${arr.slice(0,6).map(r=>`<span>${escapeHtml(r.due||'-')} <b>${escapeHtml(r.valve)}</b>${r.lot?' / '+escapeHtml(r.lot):''} · ${TT('ขาด','short')} ${nn(r.short)}</span>`).join('')}
+      <div class="pc-wl">${arr.slice(0,6).map(r=>`<span>${escapeHtml(r.due||'-')} <b>${escapeHtml(r.valve)}</b> · ${TT('ขาด','short')} ${nn(r.short)}</span>`).join('')}
         ${arr.length>6?`<span class="muted">… +${nn(arr.length-6)}</span>`:''}</div>
     </div>`:'';
   const anyWarn=W.late.length||W.soon.length||W.noIn.length;
@@ -6762,38 +6821,37 @@ function renderPlanNoPlan(){
       </div>
       <div class="tbl-wrap" style="max-height:330px">
         <table><thead><tr>
-          <th style="width:104px">วันที่รับเข้า</th><th style="width:118px">Valve No</th><th style="width:130px">Lot</th>
+          <th style="width:104px">วันที่รับเข้า</th><th style="width:130px">Valve No</th>
           <th class="center" style="width:78px">ชิ้น</th><th>ทำไมไม่มีในแผน</th><th class="center" style="width:112px">จัดการ</th>
         </tr></thead><tbody>
         ${view.map(r=>`<tr>
           <td>${escapeHtml(String(r.ts||'').slice(0,10)||'-')}</td>
           <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
-          <td style="font-size:11.5px">${escapeHtml(r.lot||'-')}</td>
           <td class="center"><b>${nn(r.qty)}</b></td>
           <td style="font-size:12px;color:#92400E">${escapeHtml(planMissLabel(r.why))}</td>
           <td class="center"><button type="button" class="btn btn-blue btn-sm" style="white-space:nowrap"
-            onclick="openAddPlanFor('${encodeURIComponent(r.valve)}','${encodeURIComponent(r.lot||'')}',${r.qty})">➕ เพิ่มแผน</button></td>
+            onclick="openAddPlanFor('${encodeURIComponent(r.valve)}','',${r.qty})">➕ เพิ่มแผน</button></td>
         </tr>`).join('')}
         </tbody></table>
       </div>
       ${list.length>CAP?`<div class="muted" style="font-size:11px;padding:6px 0">… และอีก ${nn(list.length-CAP)} รายการ</div>`:''}
       <div style="font-size:11px;color:#92400E;line-height:1.7;margin-top:6px">
-        💡 ถ้าเบอร์/Lot ถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด <b>📥 WIP IN 1.5</b> (หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่
+        💡 ถ้าเบอร์วาล์วถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด <b>📥 WIP IN 1.5</b> (หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่
         ${list.skipped?`<br>ℹ️ ข้ามการตรวจ <b>${nn(list.skipped)}</b> รายการ — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนให้เทียบเลย (ตารางแผนเก็บย้อนหลังไม่กี่เดือน)`:''}
       </div>
     </details>`;
 }
-/* ➕ เพิ่มแผนขายจากรายการที่รับเข้ามาแล้ว — เติม Valve/Lot/จำนวน ให้ล่วงหน้า เหลือแค่ใส่วันที่ขาย */
+/* ➕ เพิ่มแผนขายจากรายการที่รับเข้ามาแล้ว — เติม Valve/จำนวน ให้ล่วงหน้า เหลือแค่ใส่วันที่ส่ง
+   ★ 2026-09-01 (req) แผนไม่ผูก Lot แล้ว — พารามิเตอร์ lotEnc คงไว้เพื่อความเข้ากันได้ แต่ไม่ถูกใช้ */
 function openAddPlanFor(valveEnc, lotEnc, qty){
-  const valve=decodeURIComponent(valveEnc||''), lot=decodeURIComponent(lotEnc||'');
+  const valve=decodeURIComponent(valveEnc||''), lot='';
   openModal('➕ เพิ่มแผนขาย (จากงานที่รับเข้าแล้ว)',`
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12px;color:var(--blue-dark);line-height:1.7;margin-bottom:10px">
       งานนี้ <b>รับเข้า WIP IN 1.5 แล้ว</b> แต่ยังไม่มีแผนขาย — ใส่วันที่ขายแล้วบันทึก เพื่อให้ขึ้นบนบอร์ดติดตามงานขาย<br>
-      <span class="muted" style="font-size:11px">ถ้าเบอร์/Lot ผิด ให้ไปแก้ที่รายการรับเข้าแทน อย่าเพิ่งเพิ่มแผน</span>
+      <span class="muted" style="font-size:11px">ถ้าเบอร์วาล์วผิด ให้ไปแก้ที่รายการรับเข้าแทน อย่าเพิ่งเพิ่มแผน</span>
     </div>
     <div class="fg">
       <div class="fr"><label>Valve No</label><input type="text" id="napValve" value="${escapeHtml(valve)}" style="text-transform:uppercase;font-weight:700"></div>
-      <div class="fr"><label>Lot</label><input type="text" id="napLot" value="${escapeHtml(lot)}" placeholder="(ไม่บังคับ)"></div>
     </div>
     <div class="fg">
       <div class="fr"><label>วันที่ขาย</label><input type="date" id="napDate" value="${escapeHtml(todayISO())}"></div>
@@ -6809,7 +6867,7 @@ function openAddPlanFor(valveEnc, lotEnc, qty){
 }
 async function saveAddPlanFor(){
   const valve=vKey($('napValve')?.value||'');
-  const lot=String($('napLot')?.value||'').trim();
+  const lot='';                                   // ★ 2026-09-01 แผนไม่ผูก Lot แล้ว
   const date=$('napDate')?.value||'';
   const qty=Math.max(0,Math.round(fnum($('napQty')?.value||'')));
   if(!valve){ toast('กรอก Valve No','orange'); return; }
@@ -7140,7 +7198,6 @@ function planRowHtml(p) {
     <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
     <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
     <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:800;color:var(--blue);font-size:12.5px;width:100%;text-transform:uppercase"></td>
-    <td><input type="text" class="pl-in pl-lot" value="${escapeHtml(p.lot||'')}" oninput="updatePlan('${pid}','lot',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="2606S070028" title="${escapeHtml(p.lot||'')}"></td>
     <td><input type="number" class="pl-in pl-qty" value="${p.quantity||''}" oninput="updatePlan('${pid}','quantity',this.value)" min="0" placeholder="0"></td>
     <td>${autoBadge}${sel}</td>
     <td><input type="text" class="pl-in pl-note" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${pid}','note',this.value)" placeholder="หมายเหตุ" title="${escapeHtml(p.note||'')}"></td>
@@ -7152,9 +7209,11 @@ function planRowHtml(p) {
   </tr>`;
 }
 
-// คีย์ระบุแผนซ้ำ = วาล์ว + lot + วันที่ (ไม่สนตัวพิมพ์)
+/* คีย์ระบุแผนซ้ำ — ★ 2026-09-01 (req) เลิกใช้ Lot: วาล์ว + วันที่ส่ง + จำนวน
+   ใส่ "จำนวน" ไว้ด้วยเพราะเบอร์เดียวกัน วันเดียวกัน แต่คนละยอด = คนละรายการจริง ไม่ใช่ของซ้ำ
+   (ถ้าตัดเหลือ วาล์ว+วันที่ ระบบจะลบแถวที่ยอดต่างกันทิ้ง = ข้อมูลหาย) */
 function planKey(p) {
-  return `${(p.valve_no||'').trim().toUpperCase()}::${(p.lot||'').trim().toUpperCase()}::${_planDateISO(p.plan_date)}`;
+  return `${(p.valve_no||'').trim().toUpperCase()}::${_planDateISO(p.plan_date)}::${Number(p.quantity)||0}`;
 }
 // ลบแผนที่ซ้ำกับ keepId (เก็บ keepId = ข้อมูลใหม่ล่าสุด) — เรียกตอน commit (blur/เลือกวันที่)
 async function dedupePlanRow(keepId) {
@@ -7229,7 +7288,8 @@ function openPastePlan() {
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:10px;font-size:12px;color:var(--blue-dark);margin-bottom:10px;line-height:1.7">
       <b>วิธีใช้:</b> Copy cells จาก Excel (Ctrl+C) แล้ว Ctrl+V ในกล่องด้านล่าง<br>
       <b>คอลัมน์ที่ระบบรู้จัก (ตามลำดับ):</b><br>
-      &nbsp;&nbsp;1. วันที่ขาย/Date &nbsp; 2. Valve No &nbsp; 3. Lot &nbsp; 4. Qty &nbsp; 5. สถานะ &nbsp; 6. หมายเหตุ<br>
+      &nbsp;&nbsp;1. วันที่ขาย/Date &nbsp; 2. Valve No &nbsp; 3. Qty &nbsp; 4. สถานะ &nbsp; 5. หมายเหตุ<br>
+      <span class="muted" style="font-size:11px">★ แผนใช้แค่ Valve No · จำนวน · วันที่ขาย — ไม่ต้องมี Lot แล้ว (ถ้าไฟล์เดิมยังติดคอลัมน์ Lot มา ระบบข้ามให้เอง)</span><br>
       <span class="muted" style="font-size:11px">รองรับ: BE (พ.ศ.), Excel serial, DD/MM/YYYY, MM/DD/YYYY, ตัวเลข 1,000 (มี comma), ไทย "20 พ.ค. 2569"</span><br>
       <span class="muted" style="font-size:11px">ถ้ามี header row ระบบจะ auto-detect ลำดับ column ให้</span>
     </div>
@@ -7243,8 +7303,8 @@ function openPastePlan() {
       <span class="muted" style="font-size:10.5px">ถ้าวันที่เพี้ยน (เช่นไปกองวันเดียว) ลองสลับเป็น "เดือน/วัน/ปี"</span>
     </div>
     <textarea id="pasteArea" placeholder="ตัวอย่าง: copy ข้อมูล Excel แล้ว Ctrl+V ในกล่องนี้
-2026-05-20	VF1349M0	L1	1,000	planned	เร่งด่วน
-2026-05-21	VF1350M0	L2	500		" style="width:100%;min-height:160px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;white-space:pre" oninput="previewPaste()"></textarea>
+2026-05-20	VF1349M0	1,000	planned	เร่งด่วน
+2026-05-21	VF1350M0	500		" style="width:100%;min-height:160px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;white-space:pre" oninput="previewPaste()"></textarea>
     <div id="pastePreview" class="mt-8"></div>
     <div class="row mt-8" style="gap:8px;justify-content:flex-end">
       <button class="btn btn-outline btn-sm" onclick="closeModal()">ยกเลิก</button>
@@ -7255,7 +7315,22 @@ function openPastePlan() {
 }
 
 let _planPasteDateFmt = 'auto';   // รูปแบบวันที่ตอนวางจาก Excel: auto | dmy | mdy
+let _planPasteLotSkipped = false; // ชุดที่วางมีคอลัมน์ Lot ติดมาไหม (ข้ามให้แล้ว) — ใช้บอกในตัวอย่าง
 function setPasteDateFmt(f){ _planPasteDateFmt = f; previewPaste(); }
+
+/* ข้อมูลที่วาง (ไม่มี header) ยังติดคอลัมน์ Lot ที่ช่อง 3 มาไหม
+   ดูจากข้อมูลจริง: ช่อง 3 อ่านเป็นตัวเลขไม่ได้ (หรือว่าง) + ช่อง 4 เป็นตัวเลข = ช่อง 3 คือ Lot ไม่ใช่ Qty */
+function _pasteHasLotCol(dataLines, splitLine) {
+  const isNum = v => String(v).trim() !== '' && isFinite(Number(String(v).replace(/[,\s]/g, '')));
+  let lotLike = 0, qtyLike = 0;
+  for (const ln of dataLines.slice(0, 20)) {
+    const c = splitLine(ln);
+    if (c.length < 4) continue;
+    if (!isNum(c[2]) && isNum(c[3])) lotLike++;
+    else if (isNum(c[2]))            qtyLike++;
+  }
+  return lotLike > 0 && lotLike > qtyLike;
+}
 
 function parsePasteText(text) {
   if (!text) return [];
@@ -7278,8 +7353,14 @@ function parsePasteText(text) {
   const colMap = detectColumns(headers);
   const hasHeader = colMap !== null;
   const dataLines = hasHeader ? lines.slice(1) : lines;
-  const defaultOrder = ['plan_date','valve_no','lot','quantity','status','note'];
+  /* ★ 2026-09-01 (req) แผนใหม่ไม่ต้องมี Lot — ลำดับมาตรฐาน = วันที่ · Valve · Qty · สถานะ · หมายเหตุ
+     แต่ไฟล์เก่าที่ยังติดคอลัมน์ Lot ไว้ช่องที่ 3 ต้องไม่ทำให้ Qty เลื่อนไปอ่านผิดช่อง → เจอแล้วข้ามให้ */
+  const legacyLot = !hasHeader && _pasteHasLotCol(dataLines, splitLine);
+  const defaultOrder = legacyLot
+    ? ['plan_date','valve_no',null,'quantity','status','note']
+    : ['plan_date','valve_no','quantity','status','note'];
   const order = hasHeader ? colMap : defaultOrder;
+  _planPasteLotSkipped = hasHeader ? colMap.includes('lot') : legacyLot;
 
   const rows = [];
   for (const ln of dataLines) {
@@ -7291,7 +7372,7 @@ function parsePasteText(text) {
       const v = cols[i] || '';
       if (field === 'plan_date')      obj.plan_date = parseDate(v, _planPasteDateFmt);
       else if (field === 'valve_no')  obj.valve_no = v.toUpperCase().trim();
-      else if (field === 'lot')       obj.lot = v.trim();
+      /* field === 'lot' → ไม่เก็บ (แผนไม่ผูก Lot แล้ว) แค่กันไม่ให้คอลัมน์ถัดไปเลื่อน */
       else if (field === 'quantity')  obj.quantity = Number(v.replace(/[,\s]/g,'').replace(/[^\d.-]/g,'')) || 0;
       else if (field === 'status')    obj.status = parseStatus(v);
       else if (field === 'note')      obj.note = v.trim();
@@ -7421,18 +7502,19 @@ function previewPaste() {
   const badDates = rows.filter(r => !r.plan_date).length;
   const dateWarn = badDates ? `<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#B91C1C;font-weight:700;margin-bottom:6px">
       ⚠️ มี ${badDates} แถวที่อ่านวันที่ไม่ได้ — ลองเปลี่ยน "รูปแบบวันที่ในไฟล์" ด้านบน (เช่นเป็น เดือน/วัน/ปี)</div>` : '';
+  const lotNote = _planPasteLotSkipped ? `<div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#3730A3;font-weight:700;margin-bottom:6px">
+      ℹ️ ไฟล์นี้มีคอลัมน์ Lot ติดมา — ข้ามให้แล้ว (แผนไม่ใช้ Lot) · ถ้า Qty ด้านล่างไม่ตรง ให้ลบคอลัมน์ Lot ออกจาก Excel ก่อนวาง</div>` : '';
   prev.innerHTML = `
-    ${dateWarn}
+    ${dateWarn}${lotNote}
     <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">
       ✓ พบ ${rows.length} รายการ <span class="muted" style="font-weight:400;font-size:11px">(separator: ${sepUsed})</span>
     </div>
     <div class="tbl-wrap" style="max-height:180px">
       <table style="font-size:11px">
-        <thead><tr><th>วันที่</th><th>Valve</th><th>Lot</th><th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
+        <thead><tr><th>วันที่</th><th>Valve</th><th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
         <tbody>${rows.slice(0,12).map(r => `<tr>
           <td>${r.plan_date ? escapeHtml(r.plan_date) : '<span style="color:var(--red);font-weight:700">⚠️ อ่านไม่ได้</span>'}</td>
           <td><b>${escapeHtml(r.valve_no)}</b></td>
-          <td>${escapeHtml(r.lot)}</td>
           <td class="center">${nn(r.quantity)}</td>
           <td>${PLAN_STATUS[r.status]?.label || r.status}</td>
           <td>${escapeHtml(r.note||'')}</td>
@@ -7448,7 +7530,7 @@ function previewPaste() {
 async function confirmPaste() {
   const rows = window._pasteRows || [];
   if (!rows.length) return;
-  // ทำ dedupe: วาล์ว+lot+วันที่ ซ้ำ → ใช้ข้อมูลใหม่แทน (ทั้งซ้ำในชุดที่วาง และซ้ำกับของเดิม)
+  // ทำ dedupe: วาล์ว+วันที่ส่ง+จำนวน ซ้ำ → ใช้ข้อมูลใหม่แทน (ทั้งซ้ำในชุดที่วาง และซ้ำกับของเดิม)
   const existingByKey = {};
   for (const p of state.plans) existingByKey[planKey(p)] = p;
   const seen = {};            // key → plan (รายการล่าสุดชนะ)
@@ -7517,7 +7599,6 @@ function _exportPlanRows(rows, tag) {
   const data = rows.map(p => ({
     'วันที่ขาย': _planDateISO(p.plan_date),
     'Valve No': p.valve_no,
-    'Lot': p.lot,
     'Qty': p.quantity,
     // ★ req #5: สถานะ = ของจริงที่ระบบคิด (ยกเลิก = คนกด) · เพิ่ม process ล่าสุดเป็นอีกคอลัมน์
     'สถานะ': PLAN_STATUS[planEffStatus(p)]?.label || planEffStatus(p),
@@ -9020,7 +9101,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.64":"Production Record + KPI · v3.64",
+"ระบบบันทึกผลิต + KPI · v3.65":"Production Record + KPI · v3.65",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9186,7 +9267,7 @@ const I18N_X = {
 "📋 วางข้อมูลจาก Excel":"📋 Paste data from Excel","วิธีใช้:":"How to:",
 "Copy cells จาก Excel (Ctrl+C) แล้ว Ctrl+V ในกล่องด้านล่าง":"Copy cells in Excel (Ctrl+C) then Ctrl+V into the box below",
 "คอลัมน์ที่ระบบรู้จัก (ตามลำดับ):":"Recognized columns (in order):",
-"1. วันที่ขาย/Date 2. Valve No 3. Lot 4. Qty 5. สถานะ 6. หมายเหตุ":"1. Sale date/Date 2. Valve No 3. Lot 4. Qty 5. Status 6. Note",
+"1. วันที่ขาย/Date 2. Valve No 3. Qty 4. สถานะ 5. หมายเหตุ":"1. Sale date/Date 2. Valve No 3. Qty 4. Status 5. Note",
 "รองรับ: BE (พ.ศ.), Excel serial date, DD/MM/YYYY, ตัวเลข 1,000 (มี comma), ไทย \"20 พ.ค. 2569\"":"Supports: BE (Buddhist year), Excel serial date, DD/MM/YYYY, numbers with commas, Thai dates \"20 พ.ค. 2569\"",
 "ถ้ามี header row ระบบจะ auto-detect ลำดับ column ให้":"With a header row, column order is auto-detected",
 "💾 บันทึกแผน":"💾 Save plan","⚠️ ยัง parse ข้อมูลไม่ได้":"⚠️ Couldn't parse the data yet",
@@ -9316,7 +9397,9 @@ const I18N_X = {
 "📋 ยังไม่เริ่ม":"📋 Not started","📋 รับเข้าแล้ว แต่ไม่มีในแผนขาย":"📋 Received but not in the sales plan",
 "· ของเข้ามาแล้วแต่ไม่มีแผนรองรับ — กดเพื่อดูว่าทำไมถึงไม่มี":"· goods arrived with no plan to match — tap to see why",
 "วันที่รับเข้า":"Received on","ทำไมไม่มีในแผน":"Why it's not in the plan",
-"💡 ถ้าเบอร์/Lot ถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด":"💡 If the valve/lot was logged wrong on intake, fix it on the card",
+"💡 ถ้าเบอร์วาล์วถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด":"💡 If the valve number was logged wrong on intake, fix it on the card",
+"★ แผนใช้แค่ Valve No · จำนวน · วันที่ขาย — ไม่ต้องมี Lot แล้ว (ถ้าไฟล์เดิมยังติดคอลัมน์ Lot มา ระบบข้ามให้เอง)":"★ A plan only uses Valve No · Qty · Sale date — no Lot needed (if an old file still carries a Lot column it is skipped automatically)",
+"ℹ️ ไฟล์นี้มีคอลัมน์ Lot ติดมา — ข้ามให้แล้ว (แผนไม่ใช้ Lot) · ถ้า Qty ด้านล่างไม่ตรง ให้ลบคอลัมน์ Lot ออกจาก Excel ก่อนวาง":"ℹ️ This file still has a Lot column — skipped (plans don't use Lot) · if the Qty below looks wrong, remove the Lot column in Excel before pasting",
 "(หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่":"(Track page) with the ✏️ button instead of adding a new plan",
 "ℹ️ ข้ามการตรวจ":"ℹ️ Skipped",
 "รายการ — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนให้เทียบเลย (ตารางแผนเก็บย้อนหลังไม่กี่เดือน)":"items — received in months that have no plan data to compare against (plans are kept only a few months back)",
@@ -10228,7 +10311,6 @@ let _islNpOpen    = false;        // แถบ "ไม่มีในแผน�
 const _ISL_SORTS = [
   ['due',   'วันกำหนดส่ง',   'Due date'],
   ['part',  'Part No',       'Part No'],
-  ['lot',   'Lot No.',       'Lot No.'],
   ['cust',  'ลูกค้า',        'Customer'],
   ['order', 'ยอดสั่ง',       'Order'],
   ['qty',   "ยอดผลิตได้",    "Q'ty made"],
@@ -10236,12 +10318,12 @@ const _ISL_SORTS = [
   ['status','สถานะ',         'Status'],
   ['line',  'สายที่ผลิต',    'Line'],
 ];
-/* ★ 2026-08-09 — คีย์ที่ "ตารางขายรายวัน" เรียงได้จริง (1 แถว = 1 Valve No รวมทุกล็อต
-   → Lot No. / สายที่ผลิต ไม่ใช่ค่าของแถว ต้องตัดออก ไม่งั้นเลือกแล้วไม่มีอะไรเกิดขึ้น) */
+/* ★ 2026-08-09 — คีย์ที่ "ตารางขายรายวัน" เรียงได้จริง (1 แถว = 1 Valve No รวมทุกงวด
+   → "สายที่ผลิต" ไม่ใช่ค่าของแถว ต้องตัดออก ไม่งั้นเลือกแล้วไม่มีอะไรเกิดขึ้น) */
 const _ISM_SORT_OK = new Set(['due', 'part', 'cust', 'order', 'qty', 'pc', 'status']);
 /* ★ 2026-08-09 (req) — มุมมองของบอร์ด
    matrix = ตารางขายรายวัน (แถว=Valve No · คอลัมน์=วันที่)  ← ค่าเริ่มต้นตามที่ผู้ใช้สั่ง
-   list   = รายการรายล็อต (ตารางเดียว ไม่แบ่งซ้าย-ขวาแล้ว) — ยังเก็บไว้เพราะเห็น Lot/Due/Remark ครบในแถวเดียว
+   list   = รายการรายงวดส่ง (ตารางเดียว ไม่แบ่งซ้าย-ขวาแล้ว) — เห็น กำหนดส่ง/ยอด/สายที่ผลิต ครบในแถวเดียว
    _islDays: all = โชว์ทุกวันของเดือน (ปฏิทินเต็ม) · act = เฉพาะวันที่มีงานขาย (บีบให้แน่น) */
 const LS_ISL_VIEW = 'vsm4_isl_view', LS_ISL_DAYS = 'vsm4_isl_days';
 let _islView = (() => { try { return localStorage.getItem(LS_ISL_VIEW) === 'list' ? 'list' : 'matrix'; } catch (e) { return 'matrix'; } })();
@@ -10313,7 +10395,7 @@ function _islProdIndex() {
   const idx = {};
   for (const r of filterVsmPeer(_wipProdSrc())) {
     const vno = (r.valve_no || r.valveNo || '').trim(); if (!vno) continue;
-    const k = jobKey(vno, r.lot || '');
+    const k = vKey(vno);            // ★ 2026-09-01 (req) รวมยอดระดับ "เบอร์วาล์ว" — เลิกแยกตาม Lot
     const proc = _procCanon((r.current_process || r.currentProcess || '').trim());
     const e = idx[k] || (idx[k] = { byProc: {}, vsms: new Set(), last: '' });
     if (proc) e.byProc[proc] = (e.byProc[proc] || 0) + (Number(r.quantity) || 0);
@@ -10324,10 +10406,11 @@ function _islProdIndex() {
   _islAllocMap = _islBuildAlloc(idx);
   return idx;
 }
-/* ยอดที่ผลิตได้ของ "ทั้งล็อต" + process ที่ไกลสุดตาม flow ของวาล์วนั้น (= ตัวแทนสถานะ)
+/* ยอดที่ผลิตได้ของ "เบอร์วาล์วนั้นทั้งหมด" + process ที่ไกลสุดตาม flow (= ตัวแทนสถานะ)
+   ★ 2026-09-01 (req) เลิกผูก Lot — นับรวมทุก Lot ของเบอร์เดียวกัน
    แยกออกมาเพราะทั้งการจัดสรรงวดส่งและการวาดแถวต้องใช้เลขชุดเดียวกันเป๊ะ */
-function _islLotProd(valve, lot, idx) {
-  const e = idx[jobKey(valve, lot)];
+function _islLotProd(valve, idx) {
+  const e = idx[vKey(valve)];
   const flow = _valveFlow(valve).map(_procCanon);
   let proc = '', qty = 0, best = -2;
   if (e) for (const pr in e.byProc) {
@@ -10351,20 +10434,20 @@ function _islLotProd(valve, lot, idx) {
    • คีย์เป็นตัวแผนเอง (object) ไม่ใช่ plan_id — แถวที่ยังไม่มี id (เพิ่งเพิ่ม/เพิ่งนำเข้า) ก็จัดสรรได้ */
 let _islAllocMap = new Map();
 function _islBuildAlloc(idx) {
-  const byLot = new Map();
+  const byValve = new Map();          // ★ 2026-09-01 (req) จัดสรรระดับ "เบอร์วาล์ว" — เลิกแยกตาม Lot
   for (const p of filterVsm(state.plans || [])) {
     if (p.status === 'cancelled') continue;
     const valve = (p.valve_no || '').trim(); if (!valve) continue;
-    const k = jobKey(valve, (p.lot || '').trim());
-    let a = byLot.get(k); if (!a) byLot.set(k, a = []);
+    const k = vKey(valve);
+    let a = byValve.get(k); if (!a) byValve.set(k, a = []);
     a.push(p);
   }
   const out = new Map();
-  for (const ps of byLot.values()) {
+  for (const ps of byValve.values()) {
     // เรียงตามวันส่ง · วันเดียวกันตัดสินด้วย plan_id → ลำดับคงที่ ตัวเลขไม่สลับเองตอน auto-refresh
     ps.sort((a, b) => _planDateISO(a.plan_date).localeCompare(_planDateISO(b.plan_date))
                    || String(a.plan_id || '').localeCompare(String(b.plan_id || '')));
-    let left = _islLotProd((ps[0].valve_no || '').trim(), (ps[0].lot || '').trim(), idx).qty;
+    let left = _islLotProd((ps[0].valve_no || '').trim(), idx).qty;
     ps.forEach((p, i) => {
       let give = Math.min(left, Math.max(0, Number(p.quantity) || 0));
       left -= give;
@@ -10381,9 +10464,9 @@ function _islRow(p, idx) {
   const lot   = (p.lot || '').trim();
   const due   = _planDateISO(p.plan_date);
   const order = Number(p.quantity) || 0;
-  const pr    = _islLotProd(valve, lot, idx);
+  const pr    = _islLotProd(valve, idx);
   const e     = pr.e, proc = pr.proc;
-  const done  = pr.done || getJobProc(valve, lot) === 'DONE';
+  const done  = pr.done || _valveJobDone(valve);
   const lotQty = pr.qty;
   const qty    = _islAllocMap.has(p) ? _islAllocMap.get(p) : lotQty;
   const short  = Math.max(0, order - qty);
@@ -10437,7 +10520,7 @@ function _islFilterRows(rows) {
     if (_islSt === 'late') { if (!r.late) return false; }
     else if (_islSt !== 'all' && r.st !== _islSt) return false;
     if (!q) return true;
-    return (r.valve + ' ' + r.lot).toLowerCase().indexOf(q) >= 0;
+    return String(r.valve).toLowerCase().indexOf(q) >= 0;     // ★ 2026-09-01 ค้นด้วย Valve No อย่างเดียว
   });
 }
 /* นับวันถึงกำหนดขาย — บอก "เหลือกี่วัน / เลยมากี่วัน" ตรง ๆ (สิ่งที่คนดูอยากรู้จริง) */
@@ -10474,7 +10557,6 @@ function _islTable(rows) {
     return `<tr class="s-${r.late ? 'late' : r.st}" style="animation-delay:${Math.min(i, 14) * 18}ms">
       <td class="no">${i + 1}</td>
       <td class="isl-part">${_islHi(r.valve)}</td>
-      <td class="isl-lot">${r.lot ? _islHi(r.lot) : '—'}</td>
       ${/* ★ 2026-08-09 — เลิกแบ่งตารางซ้าย-ขวาตามกลุ่มลูกค้าแล้ว → ต้องมีคอลัมน์บอกว่าแถวนี้ของใคร */''}
       <td><span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span></td>
       <td style="text-align:right"><span class="isl-ord">${r.order ? nn(r.order) : '<span class="isl-dash">—</span>'}</span></td>
@@ -10482,7 +10564,7 @@ function _islTable(rows) {
       ${/* ★ 2026-08-12 — Q'ty = ของที่ "งวดนี้" ได้รับจัดสรร (ล็อตเดียวขายหลายงวด = แบ่งกันไป ไม่ใช่เต็มทุกงวด)
             ขาดเท่าไรบอกในช่องเดียวกัน พร้อม tooltip ว่าของทั้งล็อตมีเท่าไร — กันคนเทียบแล้วงงว่าเลขหายไปไหน */''}
       <td title="${escapeHtml(`${TT('ของพร้อมส่งงวดนี้','Ready for this delivery')} ${nn(r.qty)} / ${nn(r.order)}`
-          + (r.taken ? ` · ${TT('ของทั้งล็อต','whole lot')} ${nn(r.lotQty)} (${TT('งวดที่ถึงก่อนตัดไป','taken by earlier deliveries')} ${nn(r.taken)})` : '')
+          + (r.taken ? ` · ${TT('ของเบอร์นี้ทั้งหมด','all stock of this valve')} ${nn(r.lotQty)} (${TT('งวดที่ถึงก่อนตัดไป','taken by earlier deliveries')} ${nn(r.taken)})` : '')
           + (r.short ? ` · ${TT('ขาด','short')} ${nn(r.short)}` : ''))}"><div class="isl-q">
         <div class="n"><b>${r.qty ? nn(r.qty) : '<span class="isl-dash">—</span>'}</b>${r.order ? `<i>${pc}%</i>` : ''}${
           r.st === 'short' ? `<i class="sh">${TT('ขาด','short')} ${nn(r.short)}</i>` : ''}</div>
@@ -10496,7 +10578,6 @@ function _islTable(rows) {
     <thead><tr>
       <th style="width:38px">No</th>
       ${hd('part','Part No')}
-      ${hd('lot','Lot No.')}
       ${hd('cust',TT('ลูกค้า','Cust'))}
       ${hd('order','Order',' style="text-align:right"')}
       ${hd('due','Due date')}
@@ -10556,7 +10637,8 @@ function _islMatrix(rows, ym) {
     if (!e) { e = { valve: r.valve, cust: r.cust, cells: {}, order: 0, qty: 0, short: 0, seen: new Set(),
                     firstDue: r.due, nLate: 0, nDone: 0, nRun: 0, nShort: 0, n: 0 }; map.set(vk, e); }
     const c = e.cells[d] || (e.cells[d] = { order: 0, qty: 0, short: 0, taken: 0, items: [], seen: new Set() });
-    const jk = jobKey(r.valve, r.lot);
+    // ★ 2026-09-01 (req) แผนไม่ผูก Lot แล้ว → นับเป็น "รายการขาย" (1 แถวแผน = 1 รายการ) ไม่ใช่จำนวนล็อต
+    const jk = String(r.due || '') + '§' + String(r.order);
     // short ที่สะสมไว้ = เฉพาะส่วนที่ขาดเพราะถูกงวดก่อนหน้าตัดไป (ไม่ใช่ "ยังผลิตไม่ถึง" ซึ่งแถบ % บอกอยู่แล้ว)
     const sh = r.st === 'short' ? r.short : 0, tk = r.st === 'short' ? r.taken : 0;
     c.order += r.order; c.qty += r.qty; c.short += sh; c.taken += tk; c.items.push(r);
@@ -10569,7 +10651,7 @@ function _islMatrix(rows, ym) {
     dayOrder[d] += r.order; dayN[d]++;
   }
   const list = [...map.values()].map(e => {
-    e.lots = e.seen.size;
+    e.lots = e.n;                       // ★ 2026-09-01 = จำนวน "งวดขาย" ของเบอร์นี้ในเดือนนั้น
     e.st = e.nLate ? 'late' : e.nShort ? 'short' : (e.nDone === e.n ? 'done' : (e.nRun ? 'run' : 'none'));
     e.pc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
     return e;
@@ -10633,22 +10715,22 @@ function _ismHtml(rows, ym) {
       const st = _ismSt(c.items);
       const pc = c.order > 0 ? Math.max(0, Math.min(100, Math.round(c.qty / c.order * 100))) : 0;
       const iso = `${ym}-${P(m.d)}`;
-      const nLot = c.seen.size;   // จำนวน "ล็อตจริง" ไม่ใช่จำนวนบรรทัดแผน (แผนเดียวกันถูกแยกหลายบรรทัดได้)
+      const nLot = c.items.length;   // ★ 2026-09-01 จำนวน "รายการขาย" ของวันนั้น (แผนไม่ผูก Lot แล้ว)
       /* ★ 2026-08-12 — ของที่ "งวดวันนี้" ได้จริง หลังหักให้งวดที่ถึงก่อนไปแล้ว (ดู _islBuildAlloc)
          ขาดเท่าไรต้องเขียนไว้ในช่องเลย ไม่ใช่ให้ไปเปิดป๊อปอัปหาเอง */
       const shortNow = c.short > 0;
       const lab = `${e.valve} · ${_fmtThDate(iso)} · ${TT('ขาย', 'sell')} ${nn(c.order)} ${TT('ชิ้น', 'pcs')}`
-        + (nLot > 1 ? ` · ${nLot} ${TT('ล็อต', 'lots')}` : '')
+        + (nLot > 1 ? ` · ${nLot} ${TT('รายการ', 'rows')}` : '')
         + ` · ${TT('ของพร้อมส่งงวดนี้', 'ready for this delivery')} ${nn(c.qty)} (${pc}%)`
-        + (shortNow ? ` · ${TT('ขาด', 'short')} ${nn(c.short)} — ${TT('ของล็อตเดียวกันถูกงวดที่ถึงก่อนตัดไปแล้ว',
-              'the same lot’s stock was already taken by an earlier delivery')} ${nn(c.taken)} ${TT('ชิ้น', 'pcs')}` : '');
+        + (shortNow ? ` · ${TT('ขาด', 'short')} ${nn(c.short)} — ${TT('ของเบอร์นี้ถูกงวดที่ถึงก่อนตัดไปแล้ว',
+              'this valve’s stock was already taken by an earlier delivery')} ${nn(c.taken)} ${TT('ชิ้น', 'pcs')}` : '');
       // ★ 2026-08-15: คลิก = ดูรายละเอียด (เหมือนเดิม) · ดับเบิลคลิก/กดค้าง = แก้ยอดของวันนั้น
       return `<td class="ism-c${m.cls}"><button type="button" class="ism-q q-${st}"
-        aria-label="${escapeHtml(lab)}" title="${escapeHtml(lab + ' — ' + TT('กดดูล็อต/สถานะ · ดับเบิลคลิก (หรือกดค้าง) เพื่อแก้ยอด', 'tap for lots & status · double-click or long-press to edit qty'))}"
+        aria-label="${escapeHtml(lab)}" title="${escapeHtml(lab + ' — ' + TT('กดดูรายละเอียด/สถานะ · ดับเบิลคลิก (หรือกดค้าง) เพื่อแก้ยอด', 'tap for details & status · double-click or long-press to edit qty'))}"
         onclick="islTap('islCellPop','${vEnc}','${iso}')" ondblclick="islTap2('planCellEdit','${vEnc}','${iso}')"
         ontouchstart="islPressStart(event,'planCellEdit','${vEnc}','${iso}')" ontouchend="islPressEnd()" ontouchmove="islPressEnd()" ontouchcancel="islPressEnd()"
         ><b>${nn(c.order)}</b><span class="pb"><i style="width:${pc}%"></i></span>${
-        nLot > 1 ? `<span class="lt">${nLot} ${TT('ล็อต', 'lots')}</span>` : ''}${
+        nLot > 1 ? `<span class="lt">${nLot} ${TT('รายการ', 'rows')}</span>` : ''}${
         shortNow ? `<span class="lt sh">${TT('ขาด', 'short')} ${nn(c.short)}</span>` : ''}</button></td>`;
     }).join('');
     return `<tr class="s-${e.st}" style="animation-delay:${Math.min(i, 14) * 16}ms">
@@ -10657,10 +10739,10 @@ function _ismHtml(rows, ym) {
           <button type="button" class="vn"
             onclick="islTap('islValvePop','${vEnc}')" ondblclick="islTap2('planValveEdit','${vEnc}')"
             ontouchstart="islPressStart(event,'planValveEdit','${vEnc}')" ontouchend="islPressEnd()" ontouchmove="islPressEnd()" ontouchcancel="islPressEnd()"
-            title="${escapeHtml(e.valve + ' — ' + TT('กดดูทุกล็อตของเบอร์นี้ในเดือนนี้ · ดับเบิลคลิก (หรือกดค้าง) เพื่อเพิ่ม/ลบเบอร์นี้ในแผน', 'tap to see every lot this month · double-click or long-press to add/remove it from the plan'))}">${_islHi(e.valve)}</button>
+            title="${escapeHtml(e.valve + ' — ' + TT('กดดูทุกงวดขายของเบอร์นี้ในเดือนนี้ · ดับเบิลคลิก (หรือกดค้าง) เพื่อเพิ่ม/ลบเบอร์นี้ในแผน', 'tap to see every delivery this month · double-click or long-press to add/remove it from the plan'))}">${_islHi(e.valve)}</button>
           <span class="ism-cu ${cu.c}">${escapeHtml(cu.t)}</span>
         </span>
-        <span class="ism-sub">${e.lots} ${TT('ล็อต', 'lots')} · ${e.qty ? `${TT('ผลิตได้', 'made')} ${nn(e.qty)}` : TT('ยังไม่เริ่มผลิต', 'not started')}${
+        <span class="ism-sub">${e.lots} ${TT('งวด', 'rows')} · ${e.qty ? `${TT('ผลิตได้', 'made')} ${nn(e.qty)}` : TT('ยังไม่เริ่มผลิต', 'not started')}${
           e.short ? ` · <b class="sh">${TT('ขาด', 'short')} ${nn(e.short)}</b>` : ''}</span>
       </td>
       <td class="c-tot" title="${escapeHtml(`${e.valve} — ${TT('ขายทั้งเดือน', 'sold this month')} ${nn(e.order)} ${TT('ชิ้น', 'pcs')} (${TT('ผลรวมของทุกช่องวันที่ในแถวนี้', 'the sum of every day cell in this row')}) · ${TT('ผลิตได้', 'made')} ${nn(e.qty)}`)}"
@@ -10686,7 +10768,7 @@ function _ismHtml(rows, ym) {
       <span class="nm">📅 ${TT('ยอดขายรายวัน', 'Daily sales')} · ${escapeHtml(_fmtThMonth(ym))}</span>
       <button type="button" class="ism-rng" id="ismRange" hidden
         onclick="${_islDays === 'all' ? "islSetDays('act')" : "(function(b){var s=b.closest('.ism-wrap').querySelector('.ism-sc');s.scrollTo({left:0,behavior:'smooth'})})(this)"}"></button>
-      <span class="n">${nn(M.list.length)} ${TT('เบอร์', 'valves')} · ${nn(totLots)} ${TT('ล็อต', 'lots')} · ${nn(totQty)} / ${nn(totOrder)} ${TT('ชิ้น', 'pcs')}${totOrder ? ` · ${gp}%` : ''}</span>
+      <span class="n">${nn(M.list.length)} ${TT('เบอร์', 'valves')} · ${nn(totLots)} ${TT('งวด', 'rows')} · ${nn(totQty)} / ${nn(totOrder)} ${TT('ชิ้น', 'pcs')}${totOrder ? ` · ${gp}%` : ''}</span>
       <span class="gp"><i style="width:${gp}%"></i></span>
     </div>
     <div class="ism-sc">
@@ -10795,7 +10877,6 @@ function planCellEdit(vEnc, iso){
   const cust=custOfValve(valve);
   const line=r=>`
     <tr data-pid="${escapeHtml(r.plan_id||'')}">
-      <td><input type="text" class="pe-lot" value="${escapeHtml(r.lot||'')}" placeholder="${TT('(ไม่มี Lot)','(no lot)')}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
       <td class="center" style="white-space:nowrap">
         <button type="button" class="pe-stp" onclick="_peStep(this,-100)" title="−100">−</button>
         <input type="text" class="pe-qty" inputmode="numeric" value="${Math.round(Number(r.quantity)||0)}" onblur="evalFormula(this)"
@@ -10811,11 +10892,11 @@ function planCellEdit(vEnc, iso){
       ${TT('แก้ยอดขายของวันนี้ · เพิ่มลดด้วยปุ่ม − / + ทีละ 100 · พิมพ์สูตรได้ เช่น <b>1200+300</b>','Edit this day’s order · use − / + for ±100 · formulas like <b>1200+300</b> work')}
       <br>${TT('บันทึกแล้วจะอัปเดตทั้งฐานข้อมูลแผน หน้า “วางแผน” และบอร์ดนี้พร้อมกัน','Saving updates the plan database, the Planning page and this board together')}
     </div>
-    <div class="tbl-wrap"><table><thead><tr><th>Lot</th><th class="center">Q'ty</th><th class="center">-</th></tr></thead>
+    <div class="tbl-wrap"><table><thead><tr><th class="center">Q'ty</th><th class="center">-</th></tr></thead>
       <tbody id="peBody">${rows.length?rows.map(line).join('')
-        :`<tr><td colspan="3" class="center muted" style="padding:12px">${TT('ยังไม่มีแผนของเบอร์นี้ในวันนี้ — กด “เพิ่มล็อต” ด้านล่าง','No plan for this valve on this date — use “Add lot” below')}</td></tr>`}</tbody></table></div>
+        :`<tr><td colspan="2" class="center muted" style="padding:12px">${TT('ยังไม่มีแผนของเบอร์นี้ในวันนี้ — กด “เพิ่มรายการ” ด้านล่าง','No plan for this valve on this date — use “Add row” below')}</td></tr>`}</tbody></table></div>
     <div class="row mt-8" style="gap:6px;flex-wrap:wrap;align-items:center">
-      <button type="button" class="btn btn-outline btn-sm" onclick="_peAddRow()">➕ ${TT('เพิ่มล็อต','Add lot')}</button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="_peAddRow()">➕ ${TT('เพิ่มรายการ','Add row')}</button>
       <span class="muted" style="font-size:11px">${TT('ยอดรวมของช่องนี้','Cell total')}: <b id="peTot">0</b></span>
     </div>
     <input type="hidden" id="peValve" value="${escapeHtml(valve)}"><input type="hidden" id="peDate" value="${escapeHtml(iso)}">
@@ -10844,7 +10925,6 @@ function _peAddRow(){
   const tr=document.createElement('tr');
   tr.dataset.pid='';                      // ไม่มี id = แถวใหม่
   tr.innerHTML=`
-    <td><input type="text" class="pe-lot" placeholder="${TT('Lot (ไม่บังคับ)','Lot (optional)')}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
     <td class="center" style="white-space:nowrap">
       <button type="button" class="pe-stp" onclick="_peStep(this,-100)">−</button>
       <input type="text" class="pe-qty" inputmode="numeric" value="0" onblur="evalFormula(this)"
@@ -10862,12 +10942,11 @@ async function planCellSave(){
   const upd=[], del=[], add=[];
   for(const tr of trs){
     const pid=tr.dataset.pid||'';
-    const lot=String(tr.querySelector('.pe-lot')?.value||'').trim();
     const qty=Math.max(0,Math.round(fnum(tr.querySelector('.pe-qty')?.value||'0')));
     const rm=!!tr.querySelector('.pe-del')?.checked;
     if(pid && rm){ del.push(pid); continue; }
-    if(!pid){ if(!rm && qty>0) add.push({lot,qty}); continue; }   // แถวใหม่ที่ยอด 0 = ไม่ต้องสร้าง
-    upd.push({pid,lot,qty});
+    if(!pid){ if(!rm && qty>0) add.push({qty}); continue; }       // แถวใหม่ที่ยอด 0 = ไม่ต้องสร้าง
+    upd.push({pid,qty});
   }
   if(!upd.length && !del.length && !add.length){ closeModal(); return; }
   closeModal();
@@ -10876,7 +10955,7 @@ async function planCellSave(){
   try{
     for(const u of upd){
       const i=state.plans.findIndex(p=>p.plan_id===u.pid); if(i<0) continue;
-      state.plans[i].lot=u.lot; state.plans[i].quantity=u.qty;
+      state.plans[i].quantity=u.qty;                 // ★ 2026-09-01 แผนไม่ผูก Lot แล้ว
       const r=await _planSave(state.plans[i]); if(r.ok===false) queued++;
     }
     for(const id of del){
@@ -10884,7 +10963,7 @@ async function planCellSave(){
       const r=await _planSave(id,true); if(r.ok===false) queued++;
     }
     for(const a of add){
-      const np={ plan_id:planNewId(), valve_no:vKey(valve), lot:a.lot, plan_date:iso, quantity:a.qty,
+      const np={ plan_id:planNewId(), valve_no:vKey(valve), lot:'', plan_date:iso, quantity:a.qty,
                  status:'planned', note:'', created_by:CURRENT_USER?.id||'', vsm:viewVsm() };
       state.plans.unshift(np);
       const r=await _planSave(np); if(r.ok===false) queued++;
@@ -10911,17 +10990,16 @@ function planValveEdit(vEnc){
       ${TT('เพิ่ม/ลบเบอร์นี้ในแผนของเดือนนี้ — ติ๊ก “ลบ” เพื่อเอาออกจากวันนั้น หรือเพิ่มวันขายใหม่ด้านล่าง',
            'Add or remove this valve from this month’s plan — tick “Del” to drop a date, or add a new sell date below')}
     </div>
-    <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่ขาย','Sell date')}</th><th>Lot</th><th class="center">Q'ty</th><th class="center">-</th></tr></thead>
+    <div class="tbl-wrap"><table><thead><tr><th>${TT('วันที่ขาย','Sell date')}</th><th class="center">Q'ty</th><th class="center">-</th></tr></thead>
       <tbody id="pvBody">${rows.length?rows.map(r=>`
         <tr data-pid="${escapeHtml(r.plan_id||'')}">
           <td><input type="date" class="pv-date" value="${escapeHtml(_planDateISO(r.plan_date))}" style="padding:5px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
-          <td><input type="text" class="pv-lot" value="${escapeHtml(r.lot||'')}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
           <td class="center"><input type="text" class="pv-qty" inputmode="numeric" value="${Math.round(Number(r.quantity)||0)}" onblur="evalFormula(this)"
             style="width:82px;padding:6px;border:1.5px solid var(--blue-soft);border-radius:8px;font-size:13.5px;font-weight:800;text-align:center;font-family:inherit"></td>
           <td class="center"><label style="font-size:11px;font-weight:800;color:#DC2626;display:inline-flex;align-items:center;gap:4px;cursor:pointer">
             <input type="checkbox" class="pv-del" style="width:16px;height:16px;accent-color:#DC2626">${TT('ลบ','Del')}</label></td>
         </tr>`).join('')
-        :`<tr><td colspan="4" class="center muted" style="padding:12px">${TT('เบอร์นี้ยังไม่มีในแผนเดือนนี้','This valve is not in this month’s plan yet')}</td></tr>`}</tbody></table></div>
+        :`<tr><td colspan="3" class="center muted" style="padding:12px">${TT('เบอร์นี้ยังไม่มีในแผนเดือนนี้','This valve is not in this month’s plan yet')}</td></tr>`}</tbody></table></div>
     <div class="row mt-8"><button type="button" class="btn btn-outline btn-sm" onclick="_pvAddRow('${escapeHtml(ym)}')">➕ ${TT('เพิ่มวันขาย','Add sell date')}</button></div>
     <input type="hidden" id="pvValve" value="${escapeHtml(valve)}">
     <div class="row mt-12" style="gap:8px;justify-content:flex-end">
@@ -10937,7 +11015,6 @@ function _pvAddRow(ym){
   tr.dataset.pid='';
   tr.innerHTML=`
     <td><input type="date" class="pv-date" value="${d}" style="padding:5px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
-    <td><input type="text" class="pv-lot" placeholder="${TT('Lot (ไม่บังคับ)','Lot (optional)')}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit"></td>
     <td class="center"><input type="text" class="pv-qty" inputmode="numeric" value="0" onblur="evalFormula(this)"
       style="width:82px;padding:6px;border:1.5px solid var(--blue-soft);border-radius:8px;font-size:13.5px;font-weight:800;text-align:center;font-family:inherit"></td>
     <td class="center"><label style="font-size:11px;font-weight:800;color:#DC2626;display:inline-flex;align-items:center;gap:4px;cursor:pointer">
@@ -10952,12 +11029,11 @@ async function planValveSave(){
   for(const tr of trs){
     const pid=tr.dataset.pid||'';
     const date=String(tr.querySelector('.pv-date')?.value||'').trim();
-    const lot=String(tr.querySelector('.pv-lot')?.value||'').trim();
     const qty=Math.max(0,Math.round(fnum(tr.querySelector('.pv-qty')?.value||'0')));
     const rm=!!tr.querySelector('.pv-del')?.checked;
     if(pid && rm){ jobs.push({t:'del',pid}); continue; }
-    if(!pid){ if(!rm && qty>0 && date) jobs.push({t:'add',date,lot,qty}); continue; }
-    jobs.push({t:'upd',pid,date,lot,qty});
+    if(!pid){ if(!rm && qty>0 && date) jobs.push({t:'add',date,qty}); continue; }
+    jobs.push({t:'upd',pid,date,qty});
   }
   if(!jobs.length){ closeModal(); return; }
   closeModal();
@@ -10967,13 +11043,13 @@ async function planValveSave(){
       if(j.t==='del'){ state.plans=state.plans.filter(p=>p.plan_id!==j.pid);
         const r=await _planSave(j.pid,true); if(r.ok===false) queued++; n++; continue; }
       if(j.t==='add'){
-        const np={ plan_id:planNewId(), valve_no:vKey(valve), lot:j.lot, plan_date:j.date, quantity:j.qty,
+        const np={ plan_id:planNewId(), valve_no:vKey(valve), lot:'', plan_date:j.date, quantity:j.qty,
                    status:'planned', note:'', created_by:CURRENT_USER?.id||'', vsm:viewVsm() };
         state.plans.unshift(np);
         const r=await _planSave(np); if(r.ok===false) queued++; n++; continue;
       }
       const i=state.plans.findIndex(p=>p.plan_id===j.pid); if(i<0) continue;
-      state.plans[i].plan_date=j.date; state.plans[i].lot=j.lot; state.plans[i].quantity=j.qty;
+      state.plans[i].plan_date=j.date; state.plans[i].quantity=j.qty;   // ★ 2026-09-01 แผนไม่ผูก Lot แล้ว
       const r=await _planSave(state.plans[i]); if(r.ok===false) queued++; n++;
     }
     lsSave(LS.PLANS, state.plans);
@@ -10992,18 +11068,18 @@ function _planRefreshAllViews(){
   try{ if(typeof renderWipInSummary==='function') renderWipInSummary(); }catch(e){}
   try{ if(document.getElementById('modalBg')?.classList.contains('open')) {} else _refreshWipDetail(); }catch(e){}
 }
-/* ตอนนี้ล็อตนี้เดินไปถึงไหน — process ที่ไกลสุดตาม flow ของวาล์ว + เครื่องที่ทำ
-   ใช้ filterVsmPeer (VSM3 ⇄ VSM4 เป็นสายพี่น้อง ล็อตเดียววิ่งข้ามสายได้) */
-function _islJobAt(valve, lot, recsOfValve) {
-  const recs = (recsOfValve || filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve)))
-    .filter(r => lotKey(r.lot) === lotKey(lot));
+/* ตอนนี้ "เบอร์วาล์วนี้" เดินไปถึงไหน — process ที่ไกลสุดตาม flow ของวาล์ว + เครื่องที่ทำ
+   ★ 2026-09-01 (req) เลิกผูก Lot — รวมยอดผลิตทุก Lot ของเบอร์เดียวกัน
+   ใช้ filterVsmPeer (VSM3 ⇄ VSM4 เป็นสายพี่น้อง งานเดียววิ่งข้ามสายได้) */
+function _islJobAt(valve, recsOfValve) {
+  const recs = recsOfValve || filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve));
   const pop  = _wipPerProc(recs, valve);          // เรียงตาม flow แล้ว → ตัวท้าย = ไกลสุด
   const last = pop.length ? pop[pop.length - 1] : null;
   const flow = _valveFlow(valve).map(_procCanon);
   const fin  = flow[flow.length - 1] || '';
   const cur  = last ? _procCanon(last.proc) : '';
   return { pop, flow, cur, curQty: last ? last.qty : 0, curDate: last ? last.date : '',
-           machines: last ? last.machines : [], done: (!!cur && !!fin && cur === fin) || getJobProc(valve, lot) === 'DONE' };
+           machines: last ? last.machines : [], done: (!!cur && !!fin && cur === fin) || _valveJobDone(valve) };
 }
 function _islPop(valve, iso) {
   const ym  = _islMonth || todayISO().slice(0, 7);
@@ -11014,30 +11090,30 @@ function _islPop(valve, iso) {
     .map(p => _islRow(p, idx));
   const items = iso ? all.filter(r => r.due === iso) : all;
   const cu = _ismCu(items.length ? items[0].cust : custOfValve(valve));
-  // ยุบล็อตซ้ำ (แผนเดียวกันถูกแยกหลายบรรทัด) → 1 การ์ด = 1 ล็อต
-  const byLot = new Map();
+  /* ★ 2026-09-01 (req) — แผนไม่ผูก Lot แล้ว: 1 การ์ด = 1 "งวดส่ง" (วันเดียวกันยุบเป็นใบเดียว) */
+  const byDue = new Map();
   for (const r of items) {
-    const k = lotKey(r.lot);
-    let e = byLot.get(k);
-    if (!e) { e = { lot: r.lot, order: 0, qty: 0, short: 0, lotQty: r.lotQty, dues: [], rows: [], r }; byLot.set(k, e); }
+    const k = r.due || '';
+    let e = byDue.get(k);
+    if (!e) { e = { due: k, order: 0, qty: 0, short: 0, lotQty: r.lotQty, dues: [k], rows: [], r }; byDue.set(k, e); }
     // short = เฉพาะที่ขาดเพราะงวดก่อนหน้าตัดของไป (ไม่รวม "ยังผลิตไม่ถึง" ซึ่งดูได้จาก % อยู่แล้ว)
     e.order += r.order; e.qty += r.qty; e.short += (r.st === 'short' ? r.short : 0); e.rows.push(r);
-    if (e.dues.indexOf(r.due) < 0) e.dues.push(r.due);
   }
-  const lots = [...byLot.values()].sort((a, b) => (a.dues[0] || '').localeCompare(b.dues[0] || '') || String(a.lot).localeCompare(String(b.lot)));
+  const lots = [...byDue.values()].sort((a, b) => String(a.due).localeCompare(String(b.due)));
   const order = items.reduce((s, r) => s + r.order, 0);
   const qty = _islSumQty(items);   // r.qty จัดสรรรายงวดแล้ว → บวกตรง ๆ ไม่ซ้ำ (ดู _islBuildAlloc)
   const pc = order > 0 ? Math.round(qty / order * 100) : (qty > 0 ? 100 : 0);
   const nLate = items.filter(r => r.late).length;
   const nDone = items.filter(r => r.st === 'done').length;
 
-  // ดึง production ของ "เบอร์นี้" ครั้งเดียว แล้วค่อยแยกรายล็อต — ไม่ต้องกวาดทั้งกองซ้ำทุกล็อต
+  // ดึง production ของ "เบอร์นี้" ครั้งเดียว แล้วใช้ซ้ำทุกการ์ด (ทุกงวดใช้ยอดชุดเดียวกัน)
   const recsV = filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve));
+  const atV   = _islJobAt(valve, recsV);      // ★ 2026-09-01 สถานะการผลิตเป็นของ "เบอร์วาล์ว" ไม่ใช่รายล็อต
 
   const CAP = 40;
   const cards = lots.slice(0, CAP).map(e => {
     const r  = e.r;
-    const at = _islJobAt(valve, e.lot, recsV);
+    const at = atV;
     const st = r.late ? 'late' : e.short > 0 ? 'short' : (at.done || r.st === 'done') ? 'done'
              : (at.cur || r.st === 'run') ? 'run' : 'none';
     const stTxt = st === 'done' ? TT('ผลิตเสร็จ', 'Done') : st === 'late' ? TT('เลยกำหนดขาย', 'Overdue')
@@ -11045,12 +11121,12 @@ function _islPop(valve, iso) {
                 : st === 'run' ? TT('กำลังผลิต', 'Running') : TT('ยังไม่เริ่ม', 'Not started');
     const lpc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
     const rel = _islDueRel(e.dues[0]);
-    /* ★ 2026-08-12 — ล็อตเดียวถูกวางแผนขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง (FIFO)
-       ต้องกางให้เห็นว่า "งวดไหนตัดไปเท่าไร เหลือให้งวดนี้เท่าไร" ไม่งั้นเลขในช่องอธิบายตัวเองไม่ได้ */
-    const lotAll = all.filter(x => lotKey(x.lot) === lotKey(e.lot))
-                      .sort((a, b) => String(a.due).localeCompare(String(b.due)));
+    /* ★ 2026-08-12 — เบอร์เดียวถูกวางแผนขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง (FIFO)
+       ต้องกางให้เห็นว่า "งวดไหนตัดไปเท่าไร เหลือให้งวดนี้เท่าไร" ไม่งั้นเลขในช่องอธิบายตัวเองไม่ได้
+       ★ 2026-09-01 (req) แบ่งระดับ "เบอร์วาล์ว" แล้ว — ไม่ใช่รายล็อตอีกต่อไป */
+    const lotAll = all.slice().sort((a, b) => String(a.due).localeCompare(String(b.due)));
     const alloc = lotAll.length > 1 ? `<div class="ismp-alloc">
-        🧮 ${TT('ของทั้งล็อตที่ผลิตได้', 'Whole lot produced')} <b>${nn(e.lotQty)}</b> ${TT('ชิ้น', 'pcs')}
+        🧮 ${TT('ของเบอร์นี้ที่ผลิตได้ทั้งหมด', 'All stock produced for this valve')} <b>${nn(e.lotQty)}</b> ${TT('ชิ้น', 'pcs')}
         — ${TT('แบ่งให้แต่ละงวดตามลำดับวันส่ง', 'split across deliveries in due-date order')}:
         ${lotAll.map(x => `<span class="al ${x.st === 'short' ? 'bad' : x.qty >= x.order ? 'ok' : ''}${iso && x.due === iso ? ' on' : ''}">${
           escapeHtml(_fmtThDate(x.due))} · ${nn(x.qty)}/${nn(x.order)}${
@@ -11067,7 +11143,7 @@ function _islPop(valve, iso) {
       .map(p => `<span class="ismp-p xtra">${escapeHtml(p.proc)}<span class="n">${nn(p.qty)}</span></span>`).join('');
     return `<div class="ismp-lot ${st}">
       <div class="ismp-l1">
-        <span class="ismp-lotno">Lot ${escapeHtml(e.lot || '—')}</span>
+        <span class="ismp-lotno">${TT('งวดส่ง', 'Delivery')} ${escapeHtml(_fmtThDate(e.due))}</span>
         <span class="isl-st isl-st-${st === 'late' ? 'run' : st}">${stTxt}</span>
         <span style="font-size:11px;font-weight:800;color:var(--muted)">📅 ${e.dues.map(d => escapeHtml(_fmtThDate(d))).join(', ')}${rel ? ` <span style="color:${rel.cls === 'over' ? '#B91C1C' : rel.cls === 'warn' ? '#B45309' : 'var(--muted2)'}">(${rel.txt})</span>` : ''}</span>
         <span class="amt"><b>${nn(e.qty)}</b> / ${nn(e.order)} ${TT('ชิ้น', 'pcs')} · ${lpc}%${
@@ -11085,7 +11161,7 @@ function _islPop(valve, iso) {
       <div class="ismp-flow">${chips}${xtra}</div>
       <div class="ismp-ft">
         <button type="button" class="btn btn-outline btn-sm"
-          onclick="showWipHistory('${encodeURIComponent(valve)}','${encodeURIComponent(e.lot || '')}')">🕘 ${TT('ประวัติการผลิต', 'Production history')}</button>
+          onclick="showWipHistory('${encodeURIComponent(valve)}','',1)">🕘 ${TT('ประวัติการผลิต', 'Production history')}</button>
       </div>
     </div>`;
   }).join('');
@@ -11094,17 +11170,17 @@ function _islPop(valve, iso) {
     <div style="margin-bottom:4px">
       <span class="ismp-k"><div class="v">${nn(order)}</div><div class="k">${TT('ยอดขาย (Order)', 'Order')}</div></span>
       <span class="ismp-k${nDone && nDone === items.length ? ' done' : ''}"><div class="v">${nn(qty)} <span style="font-size:.62em;opacity:.7">${pc}%</span></div><div class="k">${iso ? TT('ของพร้อมส่งงวดนี้', 'Ready for this delivery') : TT('ผลิตได้', "Q'ty made")}</div></span>
-      <span class="ismp-k"><div class="v">${nn(lots.length)}</div><div class="k">${TT('ล็อต', 'Lots')}</div></span>
+      <span class="ismp-k"><div class="v">${nn(lots.length)}</div><div class="k">${TT('งวดส่ง', 'Deliveries')}</div></span>
       ${nLate ? `<span class="ismp-k late"><div class="v">${nn(nLate)}</div><div class="k">${TT('เลยกำหนด', 'Overdue')}</div></span>` : ''}
       <span class="ismp-k"><div class="v" style="font-size:12px;padding-top:2px">${escapeHtml(cu.t)}</div><div class="k">${TT('กลุ่มลูกค้า', 'Customer')}</div></span>
     </div>
     ${lots.length ? cards : `<div class="center muted" style="padding:14px 0;font-size:13px">${TT('ไม่มีรายการขายของเบอร์นี้ในช่วงที่เลือก', 'No sales rows for this valve in the selected range')}</div>`}
-    ${lots.length > CAP ? `<div style="font-size:11px;color:var(--muted);padding:2px 2px 6px">… ${TT('และอีก', 'and')} ${nn(lots.length - CAP)} ${TT('ล็อต', 'lots')}</div>` : ''}
+    ${lots.length > CAP ? `<div style="font-size:11px;color:var(--muted);padding:2px 2px 6px">… ${TT('และอีก', 'and')} ${nn(lots.length - CAP)} ${TT('งวด', 'deliveries')}</div>` : ''}
     <div class="ismp-hint">
       📍 ${TT('“ตอนนี้อยู่ที่” = process ที่ไกลสุดตาม flow ของวาล์วนี้ จากยอดผลิตที่บันทึกไว้จริง (รวมสายพี่น้อง VSM3 ⇄ VSM4)',
               '“Now at” = the farthest process along this valve’s flow, from recorded production (peer lines VSM3 ⇄ VSM4 included)')}<br>
-      🧮 ${TT('ล็อตเดียวที่ขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อนจนครบยอดสั่ง เหลือเท่าไรจึงตกเป็นของงวดถัดไป',
-              'One lot sold over several deliveries: the single stock is split in due-date order — the earliest delivery takes what it needs first, and only the remainder rolls to the next')}<br>
+      🧮 ${TT('เบอร์เดียวที่ขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อนจนครบยอดสั่ง เหลือเท่าไรจึงตกเป็นของงวดถัดไป (ไม่ดู Lot แล้ว)',
+              'One valve sold over several deliveries: the stock is split in due-date order — the earliest delivery takes what it needs first, and only the remainder rolls to the next (lots are ignored)')}<br>
       🟥 ${TT('“ของไม่พอส่ง” = ของที่ผลิตได้ถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ — ต้องผลิตเพิ่มให้ทันหรือเลื่อนงวดนี้',
               '“Short” = earlier deliveries already took the stock, leaving this one without enough — produce more in time or move this delivery')}<br>
       🟪 ${TT('ชิปสีม่วง = process ที่ลงไว้แต่ไม่อยู่ใน flow ของวาล์วนี้ — ควรตรวจว่าลงถูกขั้นไหม',
@@ -11186,7 +11262,7 @@ function renderIotSales(resetScroll) {
         <button type="button" class="${_islView==='matrix'?'on':''}" aria-pressed="${_islView==='matrix'}"
           onclick="islSetView('matrix')" title="${TT('ตารางขายรายวัน — แถวคือ Valve No คอลัมน์คือวันที่','Daily matrix — rows are Valve No, columns are dates')}">📅 <span class="vs-t">${TT('ตารางรายวัน','Daily grid')}</span></button>
         <button type="button" class="${_islView==='list'?'on':''}" aria-pressed="${_islView==='list'}"
-          onclick="islSetView('list')" title="${TT('รายการรายล็อต — เห็น Lot / กำหนดส่ง / สายที่ผลิต ครบในแถวเดียว','Per-lot list — Lot, due date and line in one row')}">📋 <span class="vs-t">${TT('รายการ','List')}</span></button>
+          onclick="islSetView('list')" title="${TT('รายการรายงวดส่ง — เห็น กำหนดส่ง / ยอด / สายที่ผลิต ครบในแถวเดียว','Per-delivery list — due date, qty and line in one row')}">📋 <span class="vs-t">${TT('รายการ','List')}</span></button>
       </span>
       ${_islView==='matrix' ? `<span class="isl-vseg" role="group" aria-label="${TT('ช่วงวันที่ที่แสดง','Days shown')}">
         <button type="button" class="${_islDays==='all'?'on':''}" aria-pressed="${_islDays==='all'}"
@@ -11198,15 +11274,15 @@ function renderIotSales(resetScroll) {
         <span class="isl-search">
           <span class="ic" aria-hidden="true">🔍</span>
           <input id="islQ" type="search" value="${escapeHtml(_islQ)}" autocomplete="off" spellcheck="false"
-            placeholder="${TT('ค้นหา Part No / Lot…','Search Part No / Lot…')}"
-            aria-label="${TT('ค้นหา Part No หรือ Lot','Search Part No or Lot')}"
+            placeholder="${TT('ค้นหา Part No…','Search Part No…')}"
+            aria-label="${TT('ค้นหา Part No','Search Part No')}"
             oninput="islSetQ(this.value)" onkeydown="if(event.key==='Escape'){event.preventDefault();islSetQ('')}">
           ${_islQ ? `<button type="button" class="x" onclick="islSetQ('')" aria-label="${TT('ล้างคำค้น','Clear search')}" title="${TT('ล้างคำค้น (Esc)','Clear search (Esc)')}">✕</button>` : ''}
         </span>
         <span class="isl-sortbox">
           <span>${TT('เรียงตาม','Sort by')}</span>
           <select aria-label="${TT('เรียงตาม','Sort by')}" onchange="islPickSort(this.value)">
-            ${/* ตารางรายวัน 1 แถว = 1 Valve No → ตัดคีย์ที่เป็นของ "รายล็อต" ออก (Lot No. / สายที่ผลิต) */''}
+            ${/* ตารางรายวัน 1 แถว = 1 Valve No → ตัดคีย์ที่เป็นของ "รายงวด" ออก (สายที่ผลิต) */''}
             ${_ISL_SORTS.filter(([k]) => _islView !== 'matrix' || _ISM_SORT_OK.has(k))
                .map(([k,th,en]) => `<option value="${k}" ${_islSort.key===k?'selected':''}>${TT(th,en)}</option>`).join('')}
           </select>
@@ -11261,14 +11337,14 @@ function renderIotSales(resetScroll) {
       ${_islView === 'matrix' ? `
       <span><b>${TT('ตัวเลขในช่อง','Cell number')}</b> ${TT('ยอดขายของวันนั้น (Order) · แถบใต้เลข = มีของพร้อมส่งงวดนั้นกี่ % ของยอดนั้น','sales for that day · the bar underneath = % of that day’s order that has stock ready')}</span>
       ${/* ★ 2026-08-12 — กติกาการแบ่งของต้องเขียนไว้บนบอร์ด ไม่ใช่ให้เดาจากสีเอา */''}
-      <span style="color:#B91C1C"><b>🧮 ${TT('ล็อตเดียวขายหลายงวด','One lot, several deliveries')}</b> ${TT('ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อน · ช่องแดงเส้นประ “ขาด …” = ของถูกงวดก่อนหน้าตัดไปจนงวดนั้นไม่เหลือพอ','the single stock is split in due-date order — the earliest delivery takes its share first · a dashed red “short …” cell means earlier deliveries took the stock and that one is left without enough')}</span>
-      <span style="color:var(--blue)"><b>👆</b> ${TT('กดที่ตัวเลข = ดูล็อตที่ขายวันนั้น + ตอนนี้อยู่ที่ process ไหน · กดที่ Valve No = ดูทั้งเดือน','tap a number for that day’s lots and where they are now · tap a Valve No for the whole month')}</span>
+      <span style="color:#B91C1C"><b>🧮 ${TT('เบอร์เดียวขายหลายงวด','One valve, several deliveries')}</b> ${TT('ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อน · ช่องแดงเส้นประ “ขาด …” = ของถูกงวดก่อนหน้าตัดไปจนงวดนั้นไม่เหลือพอ','the single stock is split in due-date order — the earliest delivery takes its share first · a dashed red “short …” cell means earlier deliveries took the stock and that one is left without enough')}</span>
+      <span style="color:var(--blue)"><b>👆</b> ${TT('กดที่ตัวเลข = ดูงวดที่ส่งวันนั้น + ตอนนี้อยู่ที่ process ไหน · กดที่ Valve No = ดูทั้งเดือน','tap a number for that day’s deliveries and where they are now · tap a Valve No for the whole month')}</span>
       ${/* ★ ย้ำให้ชัด: ช่องพื้นฟ้า "รวมทั้งเดือน" ไม่ใช่ยอดของวันใดวันหนึ่ง — เคยมีคนอ่านสลับกัน */''}
       <span style="color:var(--blue-dark)"><b>${TT('ช่องพื้นฟ้า “รวมทั้งเดือน”','Blue “month total” column')}</b> ${TT('= ผลรวมของทุกช่องวันที่ในแถวนั้น รวมวันที่ยังเลื่อนไม่ถึงด้วย — ไม่ใช่ยอดของวันใดวันหนึ่ง','= every day cell in that row added up, including days scrolled out of view — not any single day')}</span>
       <span><b>Σ</b> ${TT('แถวล่างสุด = ยอดขายรวมของแต่ละวัน · ช่องซ้ายสุดของแถวนั้นคือยอดทั้งเดือน','bottom row = each day’s total · its leftmost blue cell is the month total')}</span>`
       : `
       <span><b>Order</b> ${TT('ยอดตามแผนขาย','planned qty')}</span>
-      <span><b>Q'ty</b> ${TT('ของที่พร้อมส่ง “งวดนี้” + % ของยอดสั่ง — ล็อตเดียวขายหลายงวดจะถูกแบ่งตามลำดับวันส่ง','stock ready for THIS delivery + % of its order — one lot sold over several deliveries is split in due-date order')}</span>
+      <span><b>Q'ty</b> ${TT('ของที่พร้อมส่ง “งวดนี้” + % ของยอดสั่ง — เบอร์เดียวขายหลายงวดจะถูกแบ่งตามลำดับวันส่ง (ไม่ดู Lot)','stock ready for THIS delivery + % of its order — one valve sold over several deliveries is split in due-date order (lots ignored)')}</span>
       <span><b>Status</b> ${TT('process ล่าสุดจากการบันทึกผลิต · “ของไม่พอส่ง” = ของถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ','latest recorded process · “Short” = earlier deliveries took the stock, leaving this one without enough')}</span>
       <span><b>Remark</b> ${TT('สายที่ผลิตจริง','line that produced it')}</span>`}
       <span style="color:#B91C1C"><b>▌</b> ${TT('แถบสีข้างแถว = สถานะ (เทา ยังไม่เริ่ม · ส้ม กำลังผลิต · เขียว เสร็จ · แดง เลยกำหนด/ของไม่พอส่ง)','row rail = status')}</span>
@@ -11349,13 +11425,12 @@ function _islNoPlanHtml(list, ym) {
     </summary>
     <div class="isl-np-sc"><table class="isl-np-t">
       <thead><tr>
-        <th>${TT('วันที่รับเข้า','In date')}</th><th>Part No</th><th>Lot No.</th>
+        <th>${TT('วันที่รับเข้า','In date')}</th><th>Part No</th>
         <th style="text-align:right">${TT('ชิ้น','Pcs')}</th><th>${TT('ทำไมไม่มีในแผน','Why it is missing')}</th>
       </tr></thead>
       <tbody>${view.map(r => `<tr>
         <td>${escapeHtml(String(r.ts || '').slice(0, 10) || '—')}</td>
         <td style="font-family:'Courier New',monospace;font-weight:800;color:var(--blue-dark)">${escapeHtml(r.valve)}</td>
-        <td style="font-family:'Courier New',monospace">${escapeHtml(r.lot || '—')}</td>
         <td style="text-align:right;font-weight:800">${nn(r.qty)}</td>
         <td><span class="isl-np-why ${r.why}">${escapeHtml(planMissLabel(r.why))}</span></td>
       </tr>`).join('')}</tbody>
@@ -11363,7 +11438,7 @@ function _islNoPlanHtml(list, ym) {
     ${list.length > CAP ? `<div style="font-size:10.5px;color:#92400E;padding:4px 2px 0">… ${TT('และอีก','and')} ${nn(list.length - CAP)} ${TT('รายการ','items')}</div>` : ''}
     <div style="font-size:10.5px;color:#92400E;line-height:1.7;padding:5px 2px 0">
       ${TT('ตรวจที่หน้า','Check on the')} <b>📅 ${TT('วางแผน','Planning')}</b> ${TT('เดือน','month')} <b>${escapeHtml(ym)}</b> —
-      ${TT('ถ้าลืมวางแผนให้เพิ่มแผน · ถ้าเบอร์/Lot ผิดให้แก้ที่รายการรับเข้า WIP IN 1.5','add the missing plan, or fix a wrong valve/lot on the WIP IN 1.5 entry')}
+      ${TT('ถ้าลืมวางแผนให้เพิ่มแผน · ถ้าเบอร์วาล์วผิดให้แก้ที่รายการรับเข้า WIP IN 1.5','add the missing plan, or fix a wrong valve on the WIP IN 1.5 entry')}
       ${list.skipped ? `<br>${TT('(ข้ามการตรวจ','(skipped')} ${nn(list.skipped)} ${TT('รายการ — เดือนที่รับเข้ายังไม่มีข้อมูลแผนให้เทียบ)','items — their intake month has no plan data to compare against)')}` : ''}
     </div>
   </details>`;
@@ -12087,6 +12162,7 @@ function iotExitFs(card){
   iotCloseMcPop();                              // ปิดป๊อปอัปรายละเอียดเครื่องถ้าเปิดค้างอยู่
   closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
   closeHoHistory();                              // ปิดป๊อปอัปต่อกะย้อนหลังถ้าเปิดค้าง
+  closeHoView();                                 // ปิดป๊อปอัปตั้งค่าแผงต่อกะถ้าเปิดค้าง
   stopHandoverSync();                            // หยุด poll ต่อกะ
   stopIotClock();                               // หยุดนาฬิกาเรียลไทม์
   _iotMapReset(card);                            // เก็บสถานะกางผัง (มือถือ) กลับค่าเริ่มต้น
@@ -12107,6 +12183,7 @@ function iotExitFs(card){
 }
 function _iotFsKey(e){
   if(e.key==='Escape'){
+    if(document.getElementById('hoViewOv')){ e.preventDefault(); closeHoView(); return; }       // ปิดป๊อปอัปตั้งค่าแผงต่อกะก่อน
     if(document.getElementById('hoAddOv')){ e.preventDefault(); closeHandoverAdd(); return; }   // ปิด modal เพิ่มต่อกะก่อน
     if(document.getElementById('hoHistOv')){ e.preventDefault(); closeHoHistory(); return; }    // ปิดป๊อปอัปย้อนหลังก่อน
     if(document.getElementById('iotMcPop')){ e.preventDefault(); iotCloseMcPop(); return; } // ปิดป๊อปอัปก่อน แล้วค่อยออกเต็มจอ
@@ -13099,7 +13176,20 @@ function _iotAllRenderHourly(){
   const host=document.getElementById('iotAllHourly'); if(!host||!_iotAllD) return;
   const sc=host.querySelector('.iah-scroll'); const keepTop=sc?sc.scrollTop:0, keepLeft=sc?sc.scrollLeft:0;
   const metric=_iotAllMetric, W=_iahWindow(), hours=W.hours, nCol=hours.length+2;
-  const mbtns=_IAH_METRICS.map(m=>`<button type="button" class="iah-mbtn${m.k===metric?' on':''}" onclick="iotAllSetMetric('${m.k}')" aria-pressed="${m.k===metric}">${m.label}<small>${m.unit}</small></button>`).join('');
+  /* ★ ค่ารวม "ทั้งโรงงาน" บนปุ่ม KPI ทุกตัว = กอง record ของ VSM 1-4 มารวมกันแล้วคิดทีเดียว
+     ⚠️ VSM_KEYS มี 'qc' อยู่ด้วย (QC = สายที่ 5) — ผู้ใช้ขอ "ไม่นับ QC" จึงต้องกรองออกตรงนี้
+     ต้องคิดจากกองรวม ไม่ใช่เฉลี่ยค่าราย VSM — OAE/PPLH จึงเป็น ΣOPR÷ΣTarget / ΣOPR÷ΣWT ของทั้งโรงงานจริง ๆ */
+  const allRecs=[];
+  for(const v of VSM_KEYS){ if(v==='qc') continue; const P=_iotAllD.per[v]; if(P&&P.recs) for(const r of P.recs) allRecs.push(r); }
+  const mbtns=_IAH_METRICS.map(m=>{
+    const av=_iahVal(allRecs,m.k,'ALL');
+    const vcls='mv-'+_iahCls(av,m.k,'ALL').slice(4);
+    const tip=`${m.label} ${TT('รวมทุกสาย VSM 1-4 (ไม่รวม QC)','all VSM 1-4 (excl. QC)')} · ${_iahFmt(av,m.k)}${m.unit==='%'?'':' '+m.unit}`;
+    // หน่วย '%' ติดมากับตัวเลขอยู่แล้ว (73.97%) → ไม่ต้องขึ้นบรรทัด "%" ซ้ำ · เหลือแค่ PPLH ที่ยังต้องบอกหน่วย
+    const un=m.unit==='%'?'':`<small>${m.unit}</small>`;
+    return `<button type="button" class="iah-mbtn${m.k===metric?' on':''}" onclick="iotAllSetMetric('${m.k}')" aria-pressed="${m.k===metric}" title="${escapeHtml(tip)}">`
+      +`${m.label}<b class="${vcls}">${_iahFmt(av,m.k)}</b>${un}</button>`;
+  }).join('');
   const rangeLabel=`${_iahP2(hours[0])}:00–${_iahP2(hours[hours.length-1]+1)}:00`;
   const hourTh=hours.map(h=>`<th>${_iahP2(h)}–${_iahP2(h+1)}</th>`).join('');
   let rows='';
@@ -13141,7 +13231,7 @@ function _iotAllRenderHourly(){
   host.innerHTML=`<div class="iah-card">
     <div class="iah-top">
       <div class="iah-title">⏱ ${TT('KPI รายชั่วโมง','Hourly KPI')} <small>· ${TT('ราย Zone ของแต่ละ VSM','by Zone / VSM')}</small></div>
-      <div class="iah-metrics" role="group" aria-label="${TT('เลือก KPI','Select KPI')}">${mbtns}</div>
+      <div class="iah-metrics" role="group" aria-label="${TT('เลือก KPI · ตัวเลขบนปุ่ม = ค่ารวมทุกสาย VSM 1-4 (ไม่รวม QC)','Select KPI · number on each button = total of VSM 1-4 (excl. QC)')}">${mbtns}</div>
       <div class="iah-hours">
         <button type="button" class="iah-hbtn" ${W.start<=W.base?'disabled':''} onclick="iotAllHourNav(-1)" title="${TT('ช่วงก่อนหน้า','Earlier hours')}" aria-label="${TT('ช่วงก่อนหน้า','Earlier hours')}">‹</button>
         <span class="iah-hrange">🕐 ${rangeLabel}</span>
@@ -13812,7 +13902,7 @@ function _hoCardHtml(e,type,newest,withCat,opts){
   return `<div class="ho-card${newest?' newest':''}${done?' done':''}" role="button" tabindex="0" title="${TT('แตะเพื่อ อ่านเต็ม / แก้ไข / ลบ','Tap to read / edit / delete')}"
     onclick="hoCardTap('${e.id}')"
     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hoCardTap('${e.id}')}">
-    ${tag}<div class="ho-row">${chk}<div class="ho-text">${escapeHtml(e.text)}</div>${mv}</div>
+    ${tag}<div class="ho-row">${chk}<div class="ho-text${(_hoView.lines|0)>0?' clamp':''}">${escapeHtml(e.text)}</div>${mv}</div>
     ${doneMeta}
     ${_hoFootHtml(e,type)}
   </div>`;
@@ -13860,7 +13950,127 @@ function hoCardTap(id){
   </div>`;
   host.appendChild(ov);
 }
-const HO_SEC_CAP=40;      // เรนเดอร์ต่อ section (กัน DOM บวมเมื่อสะสมเป็นพันรายการ) — ที่เหลือดูในป๊อปอัปย้อนหลัง
+/* ═══ ★ 2026-09-01 (req) — ตั้งค่าการแสดงผล "แผงต่อกะ / เครื่องเสีย-ค้าง" บนบอร์ด IOT ═══
+   สิ่งที่ผู้ใช้แจ้ง: ① โน้ตและเครื่องเสียของเก่าค้างบนบอร์ด ดันของกะปัจจุบันตกจอ
+                    ② การ์ดข้อความยาว ๆ กินความสูงจนอีกหมวดมองไม่เห็น
+   แก้ที่ราก = ให้ผู้ใช้ตั้งเองได้ แล้วจำไว้ในเครื่อง (จอติดผนังกับมือถือหัวหน้าไลน์ต้องการคนละแบบ)
+     days   = แสดงย้อนหลังกี่วัน (0 = ทั้งหมด) · ของเก่ากว่านั้น "ไม่หาย" ยังกด 🕘 ดูย้อนหลังได้
+     cap    = จำนวนการ์ดสูงสุดต่อหมวด (กัน DOM บวมเมื่อสะสมเป็นพันรายการ)
+     lines  = ตัดข้อความเหลือกี่บรรทัด (0 = ไม่ตัด) — แตะการ์ดอ่านเต็มได้เสมอ
+     font   = ขนาดตัวอักษรในการ์ด (px)
+     hBroken / hNote = ความสูงกล่องแต่ละหมวด (px · 0 = อัตโนมัติ) — ลากแถบใต้กล่องปรับได้ */
+const LS_HO_VIEW='vsm4_ho_view';
+const HO_VIEW_DEF={days:2,cap:40,lines:0,font:15,hBroken:0,hNote:0};
+const HO_VIEW_LIM={days:[0,60],cap:[5,300],lines:[0,12],font:[11,26],hBroken:[0,3000],hNote:[0,3000]};
+let _hoView=(()=>{ try{ const v=JSON.parse(localStorage.getItem(LS_HO_VIEW)||'{}');
+  return {...HO_VIEW_DEF, ...((v&&typeof v==='object')?v:{})}; }catch(e){ return {...HO_VIEW_DEF}; } })();
+function _hoViewSave(){ try{ localStorage.setItem(LS_HO_VIEW,JSON.stringify(_hoView)); }catch(e){} }
+function hoViewSet(k,v){
+  const lim=HO_VIEW_LIM[k]; if(!lim) return;
+  _hoView[k]=Math.min(lim[1],Math.max(lim[0],Math.round(Number(v)||0)));
+  _hoViewSave(); renderHandoverPanels(); _hoViewRefresh();
+}
+function hoViewReset(){ _hoView={...HO_VIEW_DEF}; _hoViewSave(); renderHandoverPanels(); _hoViewRefresh();
+  toast(TT('คืนค่าเริ่มต้นแล้ว','Reset to defaults'),'green'); }
+/* การ์ดนี้ยัง "ใหม่พอ" ที่จะขึ้นบอร์ดไหม — นับจากเวลาที่แก้ไขล่าสุด (เพิ่งแก้ = ยังใช้งานอยู่)
+   ข้อ checklist ที่ยังไม่ติ๊กก็อยู่ใต้กติกานี้ด้วย — ตั้งเป็น "ทั้งหมด" ได้ถ้าอยากให้ค้างเหมือนเดิม */
+function _hoFresh(e){
+  const d=_hoView.days|0; if(d<=0) return true;
+  const t=new Date((e&&(e.editedAt||e.ts))||0).getTime();
+  if(!isFinite(t)||!t) return true;                       // ไม่มีเวลา = ตัดสินไม่ได้ → โชว์ไว้ก่อน
+  return t >= Date.now()-d*86400000;
+}
+const _hoSecKey=cat=>cat==='broken'?'hBroken':'hNote';
+/* ── ลากแถบใต้กล่องเพื่อปรับความสูงของหมวดนั้น · ดับเบิลคลิก = กลับเป็นสูงอัตโนมัติ ── */
+function hoRszStart(ev,cat){
+  const bar=ev.currentTarget, sec=bar.closest('.ho-sec');
+  const bd=sec&&sec.querySelector('.ho-sec-body'); if(!bd) return;
+  ev.preventDefault();
+  try{ bar.setPointerCapture(ev.pointerId); }catch(_){}
+  bar.classList.add('drag');
+  const y0=ev.clientY, h0=bd.getBoundingClientRect().height;
+  let cur=0;
+  const move=e=>{
+    cur=Math.min(HO_VIEW_LIM[_hoSecKey(cat)][1], Math.max(70, Math.round(h0+(e.clientY-y0))));
+    bd.style.maxHeight=cur+'px'; bd.classList.add('capped');
+  };
+  const up=()=>{
+    bar.removeEventListener('pointermove',move);
+    bar.removeEventListener('pointerup',up);
+    bar.removeEventListener('pointercancel',up);
+    bar.classList.remove('drag');
+    if(cur){ _hoView[_hoSecKey(cat)]=cur; _hoViewSave(); _hoViewRefresh(); }
+  };
+  bar.addEventListener('pointermove',move);
+  bar.addEventListener('pointerup',up);
+  bar.addEventListener('pointercancel',up);
+}
+function hoRszReset(cat){ _hoView[_hoSecKey(cat)]=0; _hoViewSave(); renderHandoverPanels(); _hoViewRefresh();
+  toast(TT('ความสูงกลับเป็นอัตโนมัติ','Height back to automatic'),'blue'); }
+/* ── ป๊อปอัปตั้งค่า (ปุ่ม ⚙️ บนหัวการ์ดต่อกะ) ── */
+function openHoView(){
+  closeHandoverAdd();
+  const old=document.getElementById('hoViewOv'); if(old) old.remove();
+  const card=document.getElementById('iotCard');
+  const fs=card&&card.classList.contains('iot-fs');
+  const host=fs?card:document.body;
+  const ov=document.createElement('div');
+  ov.id='hoViewOv'; ov.className='ho-modal-bg';
+  ov.style.position=fs?'absolute':'fixed';
+  ov.addEventListener('click',ev=>{ if(ev.target===ov) closeHoView(); });
+  ov.innerHTML=`<div class="ho-modal" role="dialog" aria-modal="true" aria-label="${TT('ปรับหน้าต่างต่อกะ','Handover panel settings')}" style="max-width:540px">
+    <div class="ho-modal-hd" style="background:linear-gradient(135deg,#334155,#0F172A)">
+      ⚙️ ${TT('ปรับหน้าต่าง ต่อกะ / เครื่องเสีย-ค้าง','Adjust handover & breakdown panels')}
+      <button class="iotpop-cl" onclick="closeHoView()" aria-label="${TT('ปิด','Close')}" style="margin-left:auto">✕</button>
+    </div>
+    <div class="ho-modal-bd" id="hoViewBd">${_hoViewBodyHtml()}</div>
+  </div>`;
+  host.appendChild(ov);
+}
+function closeHoView(){ const o=document.getElementById('hoViewOv'); if(o) o.remove(); }
+function _hoViewRefresh(){ const bd=document.getElementById('hoViewBd'); if(bd) bd.innerHTML=_hoViewBodyHtml(); }
+function _hoViewBodyHtml(){
+  const seg=(k,opts)=>`<div class="hov-seg">${opts.map(o=>
+    `<button type="button" class="${(_hoView[k]|0)===o[0]?'on':''}" onclick="hoViewSet('${k}',${o[0]})">${escapeHtml(o[1])}</button>`).join('')}</div>`;
+  const stepper=(k,step,unit)=>`<div class="hov-ctl">
+      <button type="button" class="hov-b" onclick="hoViewSet('${k}',${(_hoView[k]|0)-step})" aria-label="${TT('ลด','Decrease')}">−</button>
+      <b>${_hoView[k]|0}${escapeHtml(unit)}</b>
+      <button type="button" class="hov-b" onclick="hoViewSet('${k}',${(_hoView[k]|0)+step})" aria-label="${TT('เพิ่ม','Increase')}">＋</button>
+    </div>`;
+  const hTxt=k=>(_hoView[k]|0) ? `${_hoView[k]|0}px` : TT('อัตโนมัติ','auto');
+  return `
+    <div class="hov-row">
+      <label>🕒 ${TT('แสดงย้อนหลัง','Show entries from')}
+        <span class="hint">${TT('ของเก่ากว่านี้ไม่ขึ้นบอร์ด แต่ไม่ได้หาย — กด 🕘 ดูย้อนหลังได้ตลอด','Older notes leave the board but are never deleted — the 🕘 button still shows them')}</span></label>
+      ${seg('days',[[1,TT('1 วัน','1 day')],[2,TT('2 วัน','2 d')],[3,TT('3 วัน','3 d')],[7,TT('7 วัน','7 d')],[0,TT('ทั้งหมด','All')]])}
+    </div>
+    <div class="hov-row">
+      <label>✂️ ${TT('ตัดข้อความยาว','Trim long text')}
+        <span class="hint">${TT('การ์ดสูงเท่ากันหมด อ่านเต็มได้โดยแตะที่การ์ด','Keeps every card the same height — tap a card to read it in full')}</span></label>
+      ${seg('lines',[[0,TT('ไม่ตัด','Off')],[3,TT('3 บรรทัด','3 lines')],[5,TT('5 บรรทัด','5 lines')],[8,TT('8 บรรทัด','8 lines')]])}
+    </div>
+    <div class="hov-row">
+      <label>🔠 ${TT('ขนาดตัวอักษรในการ์ด','Card text size')}
+        <span class="hint">${TT('จอติดผนังใช้ตัวใหญ่ · นั่งดูใกล้ ๆ ใช้ตัวเล็กเห็นได้หลายรายการ','Bigger for a wall screen, smaller to fit more rows up close')}</span></label>
+      ${stepper('font',1,'px')}
+    </div>
+    <div class="hov-row">
+      <label>🗂️ ${TT('การ์ดสูงสุดต่อหมวด','Max cards per section')}</label>
+      ${stepper('cap',10,'')}
+    </div>
+    <div class="hov-row">
+      <label>📏 ${TT('ความสูงกล่อง','Section height')}
+        <span class="hint">${TT('ลากแถบสีใต้กล่องบนบอร์ดเพื่อปรับ · ดับเบิลคลิกที่แถบ = กลับเป็นอัตโนมัติ','Drag the bar under a section on the board · double-click it to go back to automatic')}</span></label>
+      <div class="hov-seg">
+        <button type="button" onclick="hoRszReset('broken')">🔧 ${TT('เครื่องเสีย/ค้าง','Breakdown')}: ${escapeHtml(hTxt('hBroken'))} ↺</button>
+        <button type="button" onclick="hoRszReset('note')">📋 ${TT('ข้อมูลทั่วไป','General')}: ${escapeHtml(hTxt('hNote'))} ↺</button>
+      </div>
+    </div>
+    <div class="row" style="gap:8px;justify-content:space-between;margin:0;flex-wrap:wrap">
+      <button type="button" class="btn btn-outline btn-sm" onclick="hoViewReset()">↺ ${TT('คืนค่าเริ่มต้นทั้งหมด','Reset everything')}</button>
+      <button type="button" class="btn" style="background:#1A56DB;color:#fff;border:none" onclick="closeHoView()">${TT('เสร็จแล้ว','Done')}</button>
+    </div>`;
+}
 /* แบ่ง "ล่าสุด" vs "ย้อนหลัง" (v2.7 req #5)
    ล่าสุด = ภายใน 24 ชม. หรือวันเดียวกับรายการใหม่สุด (กันโน้ตกะดึกเมื่อวานหาย + กันบอร์ดว่างถ้าไม่มีของใหม่) */
 function _hoRecentSplit(arr){
@@ -13870,14 +14080,17 @@ function _hoRecentSplit(arr){
   arr.forEach(e=>{ (new Date(e.ts).getTime()>=cut||_hoDayKey(e.ts)===newestDay)?recent.push(e):old.push(e); });
   return {recent,old};
 }
-// section เดียว: broken=เครื่องเสีย/ค้าง (โชว์ทั้งหมด — คือสถานะปัจจุบันจนกว่าจะซ่อมเสร็จ/ลบ)
-//              note=ข้อมูลทั่วไป (checklist) — ข้อที่ "ยังไม่ติ๊ก" ค้างบนบอร์ดเสมอจนกว่าจะทำ (กันงานตกหล่นระหว่างกะ)
-//              ข้อที่ติ๊กแล้วโชว์เฉพาะช่วงล่าสุด — ของเก่ากด 🕘 ดูย้อนหลัง
-function _hoSecHtml(type,cat,arr){
+// section เดียว: broken=เครื่องเสีย/ค้าง · note=ข้อมูลทั่วไป (checklist)
+//   ★ 2026-09-01 (req) บอร์ด IOT = "ของกะนี้" — ทุกหมวดถูกกรองด้วยช่วงย้อนหลังที่ผู้ใช้ตั้งไว้ (_hoFresh)
+//     ของเก่ากว่านั้นไม่หาย ยังกด 🕘 ดูย้อนหลังได้ · ตั้งเป็น "ทั้งหมด" ได้ถ้าอยากได้พฤติกรรมเดิม
+//   ในช่วงที่แสดง: ข้อ checklist ที่ "ยังไม่ติ๊ก" ยังถูกปักบนสุดเสมอ (กันงานตกหล่นระหว่างกะ)
+function _hoSecHtml(type,cat,arrAll){
   const c=HO_CATS[cat];
+  const CAP=Math.max(1,_hoView.cap|0)||40;
+  const arr=arrAll.filter(_hoFresh);              // ★ 2026-09-01 ตัดของเก่าออกจากบอร์ด
   let shown, pendingN=0, reorderIds=null;
   if(cat==='note'){
-    // ข้อ checklist (task=1) ที่ยังไม่ติ๊ก → ปักบนสุด ค้างบนบอร์ดเสมอจนกว่าจะทำ (กันงานตกหล่นระหว่างกะ)
+    // ข้อ checklist (task=1) ที่ยังไม่ติ๊ก → ปักบนสุดของช่วงที่แสดง
     // ข้อที่ติ๊กแล้ว → โชว์ต่ออีก 24 ชม. "นับจากเวลาติ๊ก" · โน้ตธรรมดา (ไม่มี task) → ช่วงล่าสุดตามเดิม
     const pending=arr.filter(e=>e.task&&!e.done).sort((a,b)=>_hoSeqOf(b)-_hoSeqOf(a));   // เรียงตามลำดับที่ผู้ใช้สลับ (seq)
     pendingN=pending.length;
@@ -13886,11 +14099,12 @@ function _hoSecHtml(type,cat,arr){
     const doneRecent=arr.filter(e=>e.task&&e.done&&new Date(e.doneAt||e.ts).getTime()>=cut);
     const plainRecent=_hoRecentSplit(arr.filter(e=>!e.task)).recent;
     const rest=[...doneRecent,...plainRecent].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
-    shown=[...pending,...rest].slice(0,HO_SEC_CAP);
+    shown=[...pending,...rest].slice(0,CAP);
   }else{
-    shown=arr.slice(0,HO_SEC_CAP);
+    shown=arr.slice(0,CAP);
   }
-  const hidden=arr.length-shown.length;
+  const hidden=arrAll.length-shown.length;
+  const h=_hoView[_hoSecKey(cat)]|0;              // ความสูงที่ผู้ใช้ลากไว้ (0 = อัตโนมัติ)
   const body = shown.length
     ? shown.map((e,i)=>_hoCardHtml(e,type,i===0,false,{reorder:!!(reorderIds&&reorderIds.has(e.id))})).join('')    // ใหม่สุดขึ้นก่อน + ไฮไลต์การ์ดล่าสุด
     : `<div class="ho-empty" role="button" tabindex="0" style="cursor:pointer" onclick="openHandoverAdd('${type}',null,'${cat}')"
@@ -13900,12 +14114,14 @@ function _hoSecHtml(type,cat,arr){
     <div class="ho-sec-hd">
       <span class="ho-sec-ic">${c.icon}</span>
       <span class="ho-sec-ttl">${escapeHtml(_hoCatLabel(c))}</span>
-      <span class="ho-sec-cnt">${hidden>0?shown.length+'/'+arr.length:arr.length}</span>
+      <span class="ho-sec-cnt">${hidden>0?shown.length+'/'+arrAll.length:arrAll.length}</span>
       ${pendingN>0?`<span class="ho-sec-pend">${TT('เหลือ '+pendingN+' ข้อ',pendingN+' to do')}</span>`:''}
       ${hidden>0?`<button type="button" class="ho-sec-hist" onclick="hoHistoryPop('${type}')" title="${TT('ดูข้อมูลย้อนหลัง','View history')}" aria-label="${TT('ดูข้อมูลย้อนหลัง','View history')} ${escapeHtml(_hoTypeMeta(type).label)}">🕘</button>`:''}
       <button type="button" class="ho-sec-add" onclick="openHandoverAdd('${type}',null,'${cat}')" aria-label="${TT('เพิ่ม','Add')} ${escapeHtml(_hoCatLabel(c))} ${escapeHtml(_hoTypeMeta(type).label)}">＋</button>
     </div>
-    <div class="ho-sec-body">${body}${histBtn}</div>
+    <div class="ho-sec-body${h?' capped':''}"${h?` style="max-height:${h}px"`:''}>${body}${histBtn}</div>
+    <div class="ho-rsz" title="${TT('ลากเพื่อปรับความสูงกล่องนี้ · ดับเบิลคลิก = อัตโนมัติ','Drag to resize this section · double-click for automatic')}"
+      onpointerdown="hoRszStart(event,'${cat}')" ondblclick="hoRszReset('${cat}')"><i></i></div>
   </div>`;
 }
 /* ── ป๊อปอัปดูข้อมูลย้อนหลัง: ทุกบันทึกของประเภทนั้น (ทั้ง 2 หมวด) จัดกลุ่มตามวัน ใหม่→เก่า
@@ -13962,6 +14178,12 @@ function _hoPanelHtml(type){
       <span class="ho-ic">${cfg.icon}</span>
       <span class="ho-ttl">${TT('ข้อมูลต่อกะ '+escapeHtml(cfg.label), escapeHtml(cfg.label)+' Handover')}</span>
       ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
+      ${/* ★ 2026-09-01 (req) บอกให้ชัดว่าบอร์ดกำลังโชว์ช่วงไหน — ไม่งั้นคนหาโน้ตเก่าไม่เจอแล้วคิดว่าหาย */''}
+      <span class="ho-sp"></span>
+      ${(_hoView.days|0)>0?`<span class="ho-win" title="${TT('บอร์ดโชว์เฉพาะช่วงนี้ — ของเก่ากว่านี้กด 🕘 ดูย้อนหลังได้','The board only shows this window — older notes are under 🕘')}">🕒 ${TT((_hoView.days|0)+' วันล่าสุด','last '+(_hoView.days|0)+'d')}</span>`:''}
+      <button type="button" class="ho-hd-b" onclick="openHoView()"
+        title="${TT('ปรับหน้าต่างต่อกะ — ช่วงย้อนหลัง / ขนาดตัวอักษร / ความสูงกล่อง','Adjust this panel — time window, text size, section height')}"
+        aria-label="${TT('ปรับหน้าต่างต่อกะ','Adjust handover panel')}">⚙️</button>
     </div>
     <div class="ho-bd">
       <div class="ho-cols">
@@ -13976,6 +14198,13 @@ function renderHandoverPanels(){
   // VSM3 = สายออโต้ → ต่อกะมีแค่ Machine (ไม่มี Induction)
   // VSM1/2 = รวมเป็นบอร์ดเดียว "Forge" (P1-20)
   const order = (_fpVsm()==='vsm3' || _hoMergedVsm(_fpVsm())) ? ['machine'] : HO_ORDER;
+  /* ★ 2026-09-01 (req) ขนาดตัวอักษร/จำนวนบรรทัดที่ผู้ใช้ตั้งไว้ — วางที่ :root เพื่อให้ป๊อปอัป
+     (อ่านเต็ม / ย้อนหลัง) ที่ไป append นอก #iotFsSide ได้ค่าเดียวกัน */
+  try{
+    const rs=document.documentElement.style;
+    rs.setProperty('--ho-font',(_hoView.font|0||15)+'px');
+    rs.setProperty('--ho-lines',String(_hoView.lines|0||3));
+  }catch(e){}
   host.innerHTML = order.map(_hoPanelHtml).join('');
   _hoSig=_hoSigNow();     // จำ signature ที่เพิ่งวาด → กัน poll วาดซ้ำโดยไม่จำเป็น
   _hoHistRefresh();       // ป๊อปอัปย้อนหลังเปิดค้างอยู่ → วาดเนื้อหาใหม่ให้ตรงข้อมูลล่าสุด
@@ -15292,13 +15521,12 @@ function showCustInMonth(grp){
     `<div class="muted" style="font-size:12px;padding:6px 0">${TT('เดือนนี้ยังไม่มีรายการรับเข้าของกลุ่มนี้','No intake this month for this group')}</div>`;
   const missTbl = miss.length ? `
     <div class="tbl-wrap"><table><thead><tr>
-      <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve No</th><th>Lot</th>
+      <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve No</th>
       <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('ยังขาด','Missing')}</th>
     </tr></thead><tbody>
       ${miss.map(r=>`<tr>
         <td>${escapeHtml(r.date||'-')}</td>
         <td><b style="color:var(--blue)">${escapeHtml(r.valve)}</b></td>
-        <td style="font-size:11px">${escapeHtml(r.lot||'-')}</td>
         <td class="center">${nn(r.planned)}</td>
         <td class="center" style="color:var(--blue)">${nn(r.received)}</td>
         <td class="center"><b style="color:#DC2626">${nn(r.missing)}</b></td>
@@ -15875,7 +16103,8 @@ function _wipPlanRows(ym, months){
   /* ★ 2026-08-16 (req) — months = Set เดือนที่มี Order · ส่งมาแล้วยอด "รับเข้า" จะนับ
      เฉพาะใบที่รับเข้าในเดือนพวกนั้น ให้ตรงกับกราฟและตารางเทียบ Order ในป๊อปอัปเดียวกัน */
   const wip=_wipinList().filter(e=>!months || months.has(String(e.ts||'').slice(0,7)));
-  const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve) && (lot?lotKey(e.lot)===lotKey(lot):true))
+  /* ★ 2026-09-01 (req) — เลิกผูก Lot: นับยอดรับเข้าทุก Lot ของเบอร์วาล์วนั้น */
+  const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve))
                                .reduce((s,e)=>s+(Number(e.qty)||0),0);
   return filterVsm(state.plans||[])
     // ★ req #5: สถานะเป็นของระบบแล้ว — "แผนที่ยังนับ" = ทุกแผนที่ไม่ได้ถูกยกเลิก
@@ -15921,7 +16150,6 @@ function _wipInPlanHtml(ym, months){
       <td>${escapeHtml(r.date||'-')}</td>
       <td><b>${escapeHtml(r.valve)}</b></td>
       <td><span class="tag tag-blue" style="font-size:11px">${escapeHtml(r.customer)}</span></td>
-      <td>${escapeHtml(r.lot||'-')}</td>
       <td class="center">${nn(r.planned)}</td>
       <td class="center" style="color:var(--blue)">${nn(r.received)}</td>
       <td class="center">${r.enough?`<span class="tag tag-green">✓ ${TT('ครบ','OK')}</span>`:`<span class="tag tag-red">${TT('ขาด','short')} ${nn(r.missing)}</span>`}</td>
@@ -15956,7 +16184,7 @@ function _wipInPlanHtml(ym, months){
          </select>
        </div>
        <div class="tbl-wrap"><table><thead><tr>
-         <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>
+         <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th>
          <th class="center">${TT('แผน','Plan')}</th><th class="center">${TT('รับเข้า','Recv')}</th><th class="center">${TT('สถานะ','Status')}</th><th class="center">${TT('จัดการ','Manage')}</th>
        </tr></thead><tbody>${body}</tbody></table></div>
        ${pager}
@@ -16306,12 +16534,12 @@ function _orderSupplyMap(kind, months){
         q=0; const bd=i.fgByDate||{};
         for(const d in bd) if(months.has(d.slice(0,7))) q+=Number(bd[d])||0;
       }
-      if(q) m[jobKey(i.valve,i.lot)]=(m[jobKey(i.valve,i.lot)]||0)+q;
+      if (q) m[vKey(i.valve)]=(m[vKey(i.valve)]||0)+q;      // ★ 2026-09-01 รวมระดับเบอร์วาล์ว (เลิกผูก Lot)
     }
   }else{
     for(const e of _wipinList()){
       if(months && !months.has(String(e.ts||'').slice(0,7))) continue;
-      m[jobKey(e.valve,e.lot)]=(m[jobKey(e.valve,e.lot)]||0)+(Number(e.qty)||0);
+      m[vKey(e.valve)]=(m[vKey(e.valve)]||0)+(Number(e.qty)||0);
     }
   }
   return m;
@@ -16319,11 +16547,9 @@ function _orderSupplyMap(kind, months){
 /* แถวสรุป: แผนขายทุกใบของสายนี้ + ของจริงที่จัดสรรให้ + เดือนของ Order (= เดือนวันที่ขาย) */
 function _orderReconRows(kind, months){
   const supply=_orderSupplyMap(kind, months);
-  /* แผนที่ไม่ระบุ Lot → ยึดยอดรวมทุกล็อตของเบอร์นั้น (กติกาจับคู่เดียวกับ _wipPlanRows)
-     ตอนตรวจข้อมูลจริงไม่มีแผนแบบนี้เลย แต่กันไว้ ถ้าวันหนึ่งมีจะได้ไม่หายเงียบ */
-  const byValve={};
-  for(const k in supply){ const v=k.slice(0,k.indexOf('::')); byValve[v]=(byValve[v]||0)+supply[k]; }
-  const supplyOf=(valve,lot)=> lotKey(lot) ? (supply[jobKey(valve,lot)]||0) : (byValve[vKey(valve)]||0);
+  /* ★ 2026-09-01 (req) — แผนจับคู่ด้วย Valve No อย่างเดียว: ของทุกล็อตของเบอร์นั้นเป็นของแผนเบอร์นั้น
+     (กติกาจับคู่เดียวกับ _wipPlanRows / บอร์ดติดตามงานขาย) */
+  const supplyOf=(valve,lot)=> supply[vKey(valve)]||0;
   const alloc=_orderAlloc(supplyOf);
   const rows=[];
   for(const p of filterVsm(state.plans||[])){
@@ -16429,20 +16655,19 @@ function orderReconHtml(kind, opts){
       <span class="muted" style="font-size:11.5px">${nn(open.length)} ${TT('รายการยังไม่ครบ','still short')}</span>
     </div>
     <div class="tbl-wrap" style="max-height:260px"><table><thead><tr>
-      <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>
+      <th>${TT('วันที่ขาย','Sell date')}</th><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th>
       <th class="center">Order</th><th class="center">${escapeHtml(lbGot)}</th><th class="center">${TT('ยังขาด','Short')}</th><th class="center">${TT('จัดการ','Manage')}</th>
     </tr></thead><tbody>
       ${open.length?open.slice(0,300).map(r=>`<tr style="${r.late?'background:#FEF2F2':''}">
         <td>${escapeHtml(r.due||'-')}${r.late?' <span class="tag tag-red" style="font-size:9px">⏰</span>':''}</td>
         <td><b>${escapeHtml(r.valve)}</b></td>
         <td><span class="tag" style="font-size:10.5px;background:${custColor(r.cust)}18;color:${custColor(r.cust)}">${escapeHtml(r.cust)}</span></td>
-        <td>${escapeHtml(r.lot||'-')}</td>
         <td class="center">${nn(r.order)}</td>
         <td class="center" style="color:var(--blue)">${r.got?nn(r.got):'<span class="muted">0</span>'}</td>
         <td class="center"><b style="color:#DC2626">${nn(r.missing)}</b></td>
         <td class="center" style="white-space:nowrap">${r.id?`<button type="button" class="btn btn-outline btn-sm" title="${TT('แก้ไขแผน','Edit plan')}" onclick="editPlanFromWip('${escapeHtml(r.id)}')">✏️</button>
           <button type="button" class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" title="${TT('ลบแผน','Delete plan')}" onclick="deletePlanFromWip('${escapeHtml(r.id)}')">🗑</button>`:'<span class="muted">-</span>'}</td></tr>`).join('')
-       :`<tr><td colspan="8" class="center muted">${TT('เข้าครบทุกรายการ ✓','all complete ✓')}</td></tr>`}
+       :`<tr><td colspan="7" class="center muted">${TT('เข้าครบทุกรายการ ✓','all complete ✓')}</td></tr>`}
     </tbody></table>${open.length>300?`<div class="muted" style="font-size:11px;padding:4px">… +${nn(open.length-300)}</div>`:''}</div>`;
   const gTot=Object.values(mTot).reduce((a,t)=>({order:a.order+t.order,got:a.got+t.got,missing:a.missing+t.missing}),{order:0,got:0,missing:0});
   /* ★ 2026-08-16 (req) — opts.months = โหมด "นับเฉพาะเดือนที่มี Order"
@@ -16454,7 +16679,7 @@ function orderReconHtml(kind, opts){
     </summary>
     ${/* margin แยกบน/ล่าง — ห้ามใช้ margin ย่อ เพราะจะทับค่าซ้าย/ขวาที่ .wi-fold ตั้งให้ (inline ชนะ CSS) */''}
     <div class="muted" style="font-size:11px;line-height:1.65;margin-top:2px;margin-bottom:8px">
-      ${TT('“เดือนของ Order” = เดือนของวันที่ขายในแผน · ของล็อตเดียวที่ขายหลายงวด ถูกแบ่งตามลำดับวันส่ง (งวดที่ถึงก่อนได้ก่อน)','“Order month” = month of the plan’s sell date · a lot sold across several dues is split earliest-due-first')}
+      ${TT('“เดือนของ Order” = เดือนของวันที่ขายในแผน · ของเบอร์เดียวที่ขายหลายงวด ถูกแบ่งตามลำดับวันส่ง (งวดที่ถึงก่อนได้ก่อน)','“Order month” = month of the plan’s sell date · a valve sold across several dues is split earliest-due-first')}
       ${_mOnly
         ? `<br><b style="color:var(--blue-dark)">${TT('นับเฉพาะของที่รับเข้าใน “เดือนที่มี Order”','Counts only intake from months that have an Order')}</b> ${TT('— เดือนที่ไม่มีแผนขายเลย ไม่ถูกนับในตารางนี้','— months with no sales plan at all are excluded')}`
         : `<br><b>${TT('ตารางนี้นับของทุกช่วงเวลา','This table counts all periods')}</b> ${TT('(ไม่ใช่เฉพาะเดือนที่เลือกในกราฟด้านบน) — ถามว่า “ของที่สั่งไว้ เข้ามาครบหรือยัง”','(not just the month in the chart above) — it answers “has everything ordered arrived yet?”')}`}
@@ -16848,12 +17073,14 @@ function editWipinEntry(id){
   setTimeout(()=>$('editWiValve')?.focus(),60);
 }
 // ประวัติการผลิตของ (valve, lot) — ผ่าน process อะไรมาบ้าง + ยอด
-function showWipHistory(valveEnc, lotEnc){
+/* anyLot=1 → ดูรวมทุก Lot ของเบอร์นั้น (★ 2026-09-01 ใช้จากบอร์ดติดตามงานขายที่เลิกผูก Lot แล้ว) */
+function showWipHistory(valveEnc, lotEnc, anyLot){
   const valve=decodeURIComponent(valveEnc), lot=decodeURIComponent(lotEnc);
-  const recs=filterVsm(state.prodRecords||[]).filter(r=>vKey(r.valve_no||r.valveNo)===vKey(valve) && lotKey(r.lot)===lotKey(lot));
+  const okLot=l=>!!anyLot || lotKey(l)===lotKey(lot);
+  const recs=filterVsm(state.prodRecords||[]).filter(r=>vKey(r.valve_no||r.valveNo)===vKey(valve) && okLot(r.lot));
   const pop=_wipPerProc(recs, valve);
-  const received=_wipinList().filter(e=>vKey(e.valve)===vKey(valve)&&lotKey(e.lot)===lotKey(lot)).reduce((s,e)=>s+e.qty,0);
-  const fgItems=computePostFgAll(filterVsm(_wipKpiSrc())).filter(it=>vKey(it.valve)===vKey(valve)&&lotKey(it.lot)===lotKey(lot));
+  const received=_wipinList().filter(e=>vKey(e.valve)===vKey(valve)&&okLot(e.lot)).reduce((s,e)=>s+e.qty,0);
+  const fgItems=computePostFgAll(filterVsm(_wipKpiSrc())).filter(it=>vKey(it.valve)===vKey(valve)&&okLot(it.lot));
   const body=`
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
       ${received?`📥 ${TT('รับเข้า WIP IN 1.5','Received (WIP IN 1.5)')}: <b>${nn(received)}</b> ${TT('ชิ้น','pcs')}<br>`:''}
@@ -16862,7 +17089,7 @@ function showWipHistory(valveEnc, lotEnc){
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>${TT('ขั้นตอน (Process)','Process')}</th><th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th>${TT('ล่าสุด','Last')}</th></tr></thead>
       <tbody>${pop.length?pop.map((p,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(p.proc)}</b></td><td class="center">${nn(p.qty)}</td><td class="center">${(p.machines&&p.machines.length)?p.machines.map(m=>`<span class="tag tag-blue" style="font-size:11px">🏭 ${escapeHtml(m)}</span>`).join(' '):'<span class="muted">-</span>'}</td><td>${escapeHtml(p.date||'-')}</td></tr>`).join('')
         :`<tr><td colspan="5" class="center muted">${TT('ยังไม่มีการผลิต','No production yet')}</td></tr>`}</tbody></table></div>`;
-  const title=`🕘 ${escapeHtml(valve)}${lot?(' / '+escapeHtml(lot)):''}`;
+  const title=`🕘 ${escapeHtml(valve)}${(!anyLot&&lot)?(' / '+escapeHtml(lot)):''}`;
   if(document.getElementById('iotCard')?.classList.contains('iot-fs')) _openIotPop(title, body, true);
   else openModal(title, body);
 }
