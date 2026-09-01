@@ -52,10 +52,20 @@ const CORS = {
   'Access-Control-Max-Age':       '86400',
 };
 
+/* ⚡ 2026-09-02 — ทุกคำตอบ JSON ตั้งต้นที่ no-store เสมอ
+   เพราะ wrangler.toml เปิด Workers Caching ไว้ ([cache] enabled = true) ซึ่งทำงานตาม RFC 9111:
+   คำตอบ 200 ที่ "ไม่มี Cache-Control" ถือว่า cache แบบเดา ๆ (heuristic) ได้
+   ⇒ ถ้าไม่ประกาศให้ชัด คำขอที่ต้องสด ๆ (หน้าประวัติ/Dashboard หลังกดบันทึก) มีสิทธิ์ได้ของค้าง
+   ตัวที่ "ตั้งใจ" ให้ cache จะถูก servedCached เขียนทับเป็น public, max-age=N อีกที
+   ⇒ กติกาชัดเจน: cache เฉพาะที่เขียนไว้ตรง ๆ เท่านั้น นอกนั้นสดเสมอ (รวมทุก error) */
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...CORS },
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      ...CORS,
+    },
   });
 
 const err = (message, status = 400) =>
@@ -76,11 +86,20 @@ async function readJson(request) {
 }
 
 // เสิร์ฟผลลัพธ์ผ่าน edge cache (caches.default) TTL วินาที — ลดภาระ D1 เมื่อหลายเครื่อง poll พร้อมกัน
-// key ยึดจาก origin + tag (ไม่พึ่ง query) · cache พลาด/ใช้ไม่ได้ → fallback สร้างผลสดเสมอ (ไม่พัง endpoint)
+// key ยึดจาก origin + tag + query string · cache พลาด/ใช้ไม่ได้ → fallback สร้างผลสดเสมอ (ไม่พัง endpoint)
+/* ⚡ 2026-09-02 — เดิม key ไม่พึ่ง query จึงใช้ได้กับ endpoint ที่ไม่มีพารามิเตอร์เท่านั้น
+   ตอนนี้ผูก query เข้าไปด้วย → เอาไปครอบ endpoint ที่มีพารามิเตอร์ได้
+
+   ⚠️ ฟังก์ชันนี้ทำหน้าที่ "สองชั้น" อย่าตัด Cache-Control ทิ้ง:
+     ชั้นนอก  Workers Caching (เปิดใน wrangler.toml) — อ่าน public, max-age=N ที่บรรทัดล่างตั้งให้
+              hit แล้วคืนเลยโดยไม่รัน Worker = ไม่แตะ D1 · และรวบคำขอที่ยิงพร้อมกันเหลือรอบเดียว
+     ชั้นใน   Cache API (caches.default) — ตาข่ายสำรองระดับ colo ถ้าชั้นนอกไม่ทำงาน
+   ⇒ ของค้างได้สูงสุด ~2 เท่าของ TTL (ซ้อนกันสองชั้น) — เลือก TTL โดยเผื่อข้อนี้ไว้แล้ว
+   cache พลาด/ใช้ไม่ได้ → fallback สร้างผลสดเสมอ (ไม่พัง endpoint) · error ไม่เคยถูก cache */
 async function servedCached(ctx, url, tag, ttlSec, build) {
   try {
     const cache = caches.default;
-    const key = new Request(`${url.origin}/__cache/${tag}`);
+    const key = new Request(`${url.origin}/__cache/${tag}${url.search}`);
     const hit = await cache.match(key);
     if (hit) return hit;
     const resp = await build();
@@ -92,6 +111,24 @@ async function servedCached(ctx, url, tag, ttlSec, build) {
   } catch (e) {
     return await build();
   }
+}
+
+/* ── คำขอ "ก้อนประวัติทั้งหมด" หรือไม่ ─────────────────────────────────────────
+   ก้อนนี้คือ query ที่แพงที่สุดของทั้งระบบ: ช่วงกว้างเกิน 400 วัน = SCAN ทั้งตาราง
+   (ดูเหตุผลที่ต้องบังคับ full scan ใน getKpiRecords) → 1 คำขอ = rows_read เท่าจำนวนแถวทั้งตาราง
+   และเป็น URL ที่ "ทุกเครื่องขอเหมือนกันเป๊ะ" → เหมาะกับ edge cache ที่สุด
+
+   ❗มี since= = คำขอส่วนต่างเฉพาะตัว (แถวไม่กี่สิบ ใช้ index) → ห้าม cache
+     เพราะ key ต่างกันทุกเครื่องอยู่แล้ว cache ไม่มีวันโดน แถมกิน storage เปล่า ๆ
+   ❗ช่วงแคบ (หน้าประวัติ/Dashboard/บอร์ด IOT) ก็ไม่ cache — ถูกอยู่แล้วเพราะใช้ index
+     และเป็นหน้าที่ผู้ใช้เพิ่งกดบันทึกแล้วต้องเห็นผลทันที ห้ามมีของค้าง */
+function isWideHistoryQuery(params) {
+  if (params.get('since')) return false;
+  const f = params.get('from'), t = params.get('to');
+  if (!f || !t) return false;
+  const days = (Date.parse(String(t).slice(0, 10) + 'T00:00:00Z')
+              - Date.parse(String(f).slice(0, 10) + 'T00:00:00Z')) / 86400000;
+  return days > 400;
 }
 
 // ============================================================
@@ -123,8 +160,14 @@ export default {
       if (path === '/api/ping' || path === '/api')
         return ok({ message: 'VSM4 Unified API', time: new Date().toISOString() });
 
-      // init: bundle all master data
-      if (path === '/api/init')           return ok(await getInit(env));
+      /* init: bundle all master data
+         ⚡ 2026-09-02 — cache 60 วิ · เป็น bundle ที่หนักที่สุดในกลุ่ม master data
+         (valves + machines + employees + targets + valve_ids สูงสุด 5,000 แถว)
+         ทุกเครื่องขอ URL เดียวกันเป๊ะตอนเปิดแอป → 20 เครื่องตอนเปลี่ยนกะ = อ่าน D1 รอบเดียว
+         ของค้างได้ไม่เกิน 60 วิ ซึ่งรับได้: master data เปลี่ยนน้อยมาก + ฝั่ง client
+         memoize ไว้ 15 วิอยู่แล้ว + คนที่แก้เองเห็นผลทันทีจาก state ในเครื่อง */
+      if (path === '/api/init')
+        return await servedCached(ctx, url, 'init-v1', 60, async () => ok(await getInit(env)));
 
       // valves
       if (path === '/api/valves'        && m === 'GET')  return ok({ valves: await getValves(env) });
@@ -133,7 +176,9 @@ export default {
       if (path === '/api/valves/delete' && m === 'POST') return ok(await deleteValve(env, await readJson(request)));
 
       // production records
-      if (path === '/api/records'         && m === 'GET')  return ok(await withSync(env, url.searchParams, 'prod', getRecords));
+      if (path === '/api/records'         && m === 'GET')  return isWideHistoryQuery(url.searchParams)
+        ? await servedCached(ctx, url, 'prodall-v1', 60, async () => ok(await withSync(env, url.searchParams, 'prod', getRecords)))
+        : ok(await withSync(env, url.searchParams, 'prod', getRecords));
       if (path === '/api/records'         && m === 'POST') return ok(await addRecord(env, await readJson(request)));
       if (path === '/api/records/bulk'    && m === 'POST') return ok(await bulkAddRecords(env, await readJson(request)));
       if (path === '/api/records/update'  && m === 'POST') return ok(await updateRecord(env, await readJson(request)));
@@ -151,9 +196,17 @@ export default {
       if (path === '/api/employees/delete' && m === 'POST') return ok(await deleteEmployee(env, await readJson(request)));
 
       // kpi
-      if (path === '/api/kpi'          && m === 'GET')  return ok(await withSync(env, url.searchParams, 'kpi', getKpiRecords));
-      // produced set = full-table DISTINCT scan · หลายเครื่อง poll ทุก 60 วิ → cache ที่ edge 60 วิ กันสแกน D1 ซ้ำ
-      if (path === '/api/kpi/produced' && m === 'GET')  return await servedCached(ctx, url, 'produced-v1', 60,
+      /* ⚡ 2026-09-02 — เฉพาะ "ก้อนประวัติทั้งหมด" (ช่วง > 400 วัน ไม่มี since) เท่านั้นที่ cache
+         ตัวนี้คือ SCAN เต็มตาราง ~20,000 แถว/คำขอ และทุกเครื่องขอ URL เดียวกัน
+         ช่วงแคบไม่แตะ — หน้าประวัติ/Dashboard/บอร์ด IOT ต้องเห็นของสดทันทีหลังกดบันทึก
+         ❗sync_time ที่ถูก cache ไว้จะเก่ากว่าเวลาจริงได้ไม่เกิน TTL → รอบ delta ถัดไป
+           ขอย้อนไปไกลกว่าเดิมนิดหน่อย = ได้แถวซ้ำมาบ้าง ซึ่ง merge ด้วย record_id อยู่แล้ว (ไม่มีผล) */
+      if (path === '/api/kpi'          && m === 'GET')  return isWideHistoryQuery(url.searchParams)
+        ? await servedCached(ctx, url, 'kpiall-v1', 60, async () => ok(await withSync(env, url.searchParams, 'kpi', getKpiRecords)))
+        : ok(await withSync(env, url.searchParams, 'kpi', getKpiRecords));
+      // produced set = full-table DISTINCT scan · หลายเครื่อง poll พร้อมกัน → cache ที่ edge กันสแกน D1 ซ้ำ
+      // ⚡ 2026-09-02: 60 → 300 วิ · ฝั่ง client คิดเซ็ตนี้จาก _allKpi เองแล้ว เหลือเป็นทางสำรองเท่านั้น
+      if (path === '/api/kpi/produced' && m === 'GET')  return await servedCached(ctx, url, 'produced-v1', 300,
                                                                 async () => ok({ pairs: await getProducedJobs(env) }));
       // ★ 2026-08-04 — ตรวจ/ซ่อมความสอดคล้อง kpi_records ↔ production_records
       if (path === '/api/reconcile'  && m === 'GET')  return ok(await reconcileReport(env, url.searchParams));
@@ -177,7 +230,11 @@ export default {
       if (path === '/api/plans/delete' && m === 'POST') return ok(await deletePlan(env, await readJson(request)));
 
       // valve IDs (1 valve มีหลาย ID)
-      if (path === '/api/ids'          && m === 'GET')  return ok({ ids: await getIds(env, url.searchParams) });
+      // ⚡ 2026-09-02 — cache 300 วิ · ตาราง valve_ids โตขึ้นเรื่อย ๆ และทุกเครื่องดึงชุดเต็ม
+      //   ตอนเปิดแอป (URL เดียวกัน) · ID ที่เพิ่มใหม่รอได้ 5 นาที (สแกนบาร์โค้ดใช้ /api/ids/lookup
+      //   ซึ่งยิงตรงเข้า index ไม่ผ่าน cache → ของใหม่สแกนได้ทันทีเสมอ)
+      if (path === '/api/ids'          && m === 'GET')  return await servedCached(ctx, url, 'ids-v1', 300,
+                                                                async () => ok({ ids: await getIds(env, url.searchParams) }));
       if (path === '/api/ids'          && m === 'POST') return ok(await upsertId(env, await readJson(request)));
       if (path === '/api/ids/bulk'     && m === 'POST') return ok(await bulkUpsertIds(env, await readJson(request)));
       if (path === '/api/ids/delete'   && m === 'POST') return ok(await deleteId(env, await readJson(request)));
@@ -201,7 +258,7 @@ export default {
    แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
    เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
    เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
-const SCHEMA_VER = '2026-08-07-incremental';
+const SCHEMA_VER = '2026-09-02-idsort';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
@@ -280,6 +337,13 @@ async function ensureSchema(env) {
        PRIMARY KEY (record_id, kind))`,
     'CREATE INDEX IF NOT EXISTS idx_del_at ON deleted_records(deleted_at)',
     'CREATE TABLE IF NOT EXISTS schema_meta (k TEXT PRIMARY KEY, v TEXT)',
+
+    /* ★ 2026-09-02 — index ตรงกับ ORDER BY ของ getIds (valve_no, lot, id_code)
+       เดิม: ไม่มี index ที่ตรง → SQLite ต้องอ่าน valve_ids ทั้งตารางแล้ว sort ใน temp b-tree
+       ก่อนถึงจะตัด LIMIT ได้ ⇒ /api/init (limit 5,000) อ่านทั้งตารางทุกครั้งที่มีคนเปิดแอป
+       และยิ่งเพิ่ม ID ยิ่งแพงขึ้นเป็นเส้นตรง — เป็นหนึ่งในตัวที่ทำให้ rows_read ต่อวันทะลุโควตา
+       มี index แล้ว: อ่านตามลำดับ index แล้วหยุดที่ LIMIT = อ่านเท่าจำนวนที่ขอจริง */
+    'CREATE INDEX IF NOT EXISTS idx_valve_ids_sort ON valve_ids(valve_no, lot, id_code)',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }

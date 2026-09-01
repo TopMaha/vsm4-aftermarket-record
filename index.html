@@ -56,17 +56,27 @@
        ตัวก้อนใหญ่อยู่ใน IndexedDB (อ่านแบบ async ไม่ทันตรงนี้) จึงมิเรอร์ "จุดอ้างอิงเวลา"
        ไว้ใน localStorage ด้วย (ไม่กี่สิบไบต์ อ่านได้ทันที)
        ระบุ mode กลับไปให้แอปเทียบ — ถ้าแอปตัดสินใจคนละโหมด จะไม่หยิบของ prefetch ไปใช้ */
+    /* ⚡ 2026-09-02 — ขอบบน "to" เป็นค่าคงที่ ไม่ใช่วันนี้ (ต้องตรงกับ ALL_TO ในสคริปต์หลัก)
+       เดิม to=<วันนี้> ทำให้เกิดปัญหา 2 อย่างพร้อมกัน:
+         ① URL เปลี่ยนทุกวัน → cache ใน IndexedDB ใช้ข้ามวันไม่ได้ ทุกเครื่องต้องลาก
+            ประวัติทั้งชีวิตลงมาใหม่อย่างน้อยวันละครั้ง (สแกนเต็มตาราง 2 ก้อน ≈ 40,000 แถว/เครื่อง)
+         ② URL ของแต่ละเครื่องเหมือนกันก็จริง แต่เปลี่ยนทุกเที่ยงคืน → edge cache ฝั่ง Worker
+            แทบไม่มีโอกาสโดน
+       ⇒ ตรึงเป็น 2999-12-31: URL เดียวตลอดกาล ทุกเครื่องใช้ร่วมกันได้ + cache ข้ามวันได้
+       (ช่วงยังกว้างเกิน 400 วัน → Worker ยังเลือกแผน full scan แบบเดิมเป๊ะ ผลลัพธ์ไม่เปลี่ยน
+        และตอนนี้แถวที่ลงวันที่ล่วงหน้าเลยวันนี้ก็ถูกนับด้วย ซึ่งถูกกว่าเดิมสำหรับยอด WIP) */
+    var ALL_TO = '2999-12-31';
     var sync = '', mode = 'full';
     try {
       var mm = JSON.parse(localStorage.getItem('vsm4_allsync') || 'null');
-      if (mm && mm.ver === 1 && mm.day === today && mm.sync) { sync = mm.sync; mode = 'delta'; }
+      if (mm && mm.ver === 2 && mm.sync) { sync = mm.sync; mode = 'delta'; }
     } catch (e) {}
     var q = sync ? '&since=' + encodeURIComponent(sync) : '';
     window.__PF = {
       today: today, mode: mode,
       init:    get('/api/init'),
-      kpiAll:  get('/api/kpi?from=2020-01-01&to=' + today + '&limit=100000&slim=1' + q),
-      prodAll: get('/api/records?from=2020-01-01T00:00:00&to=' + today + '&limit=100000' + q),
+      kpiAll:  get('/api/kpi?from=2020-01-01&to=' + ALL_TO + '&limit=100000&slim=1' + q),
+      prodAll: get('/api/records?from=2020-01-01T00:00:00&to=' + ALL_TO + '&limit=100000' + q),
     };
   } catch (e) { /* prefetch พลาด = แอปทำงานปกติทุกอย่าง แค่ไม่ได้ head start */ }
 })();
@@ -2189,7 +2199,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.65</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.66</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7771,7 +7781,9 @@ async function _pfTake(key) {
     if (!pf || !pf[key]) return null;
     const p = pf[key];
     pf[key] = null;                       // consume: รอบถัดไปต้องไปเอาของสดเสมอ
-    if (pf.today !== todayISO()) return null;   // เปิดแอปคาบเกี่ยงเที่ยงคืน → URL คนละวัน ทิ้งไปเลย
+    /* ⚡ 2026-09-02 — เดิมมีด่าน "เปิดแอปคาบเกี่ยวเที่ยงคืน → ทิ้ง" เพราะ URL ผูกกับวันที่
+       ตอนนี้ทั้ง 3 URL ไม่มีวันที่อยู่ในนั้นแล้ว (init ไม่เคยมี · kpiAll/prodAll ใช้ to คงที่)
+       ด่านนั้นจึงเหลือแต่โทษ: ทิ้งของที่ดึงมาแล้ว แล้วยิงซ้ำอีกรอบ = จ่าย rows_read สองเท่าฟรี ๆ */
     return await p;
   } catch (e) { return null; }
 }
@@ -7842,9 +7854,16 @@ async function reload() {
     migratePdacTarget();                 // เป้า PDAC 0.9 → 0.883 ครั้งเดียว (หลังได้ค่าจริงจาก cloud)
     // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — Quick Win #5: เลื่อนไป idle
     // /api/init seed ids ชุดพื้นฐานให้แล้ว (autocomplete ใช้ได้ทันที) → ชุดเต็ม 50k ดึงตอนว่าง ไม่แย่ง network ตอนเปิดแอป
-    (window.requestIdleCallback || ((cb)=>setTimeout(cb,2000)))(() => {
-      pullIds().then(() => { renderIdList(true); }).catch(()=>{});
-    });
+    /* ⚡ 2026-09-02 — ยิงต่อเมื่อ init "ถูกตัด" เท่านั้น
+       getIds ฝั่ง Worker ใช้ limit ปริยาย 5,000 → ได้กลับมาน้อยกว่านั้น = ครบทั้งตารางแล้ว
+       การยิง /api/ids ซ้ำในกรณีนั้นคือสแกน valve_ids ทิ้งเปล่า ๆ อีกหนึ่งรอบต่อการเปิดแอปหนึ่งครั้ง
+       × ทุกเครื่อง ทุกวัน = โควตา rows_read ของ D1 หายไปโดยไม่ได้ข้อมูลเพิ่มแม้แต่แถวเดียว */
+    const IDS_INIT_LIMIT = 5000;   // ต้องตรงกับ default limit ของ getIds ใน worker.js
+    if ((state.ids || []).length >= IDS_INIT_LIMIT) {
+      (window.requestIdleCallback || ((cb)=>setTimeout(cb,2000)))(() => {
+        pullIds().then(() => { renderIdList(true); }).catch(()=>{});
+      });
+    }
 
     // 2) ดึง records 30 วันล่าสุด เพื่อ multi-user view
     loadStep('reload', null, TT('ยอดผลิต + KPI + แผน (30 วันล่าสุด)','records + KPI + plans (30 days)'));
@@ -9101,7 +9120,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.65":"Production Record + KPI · v3.65",
+"ระบบบันทึกผลิต + KPI · v3.66":"Production Record + KPI · v3.66",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -14643,11 +14662,15 @@ async function syncWipin(){
 }
 let _wipinPoll=null;
 function startWipinSync(){
-  syncWipin(); refreshProducedSet();
+  syncWipin();
   // ยอด "ผ่าน FG เดือนนี้" ต้องคิดจากข้อมูลครบทั้งเดือนและเป็นของล่าสุดเสมอ
   ensureFgMonthLoaded(true).then(ch=>{ if(ch){ renderWipBuckets(); if(typeof refreshProcOutput==='function') refreshProcOutput(); } }).catch(()=>{});
   // WIP/WIP IN = สถานะปัจจุบัน → ต้องมองงานทุกล็อตที่ยังไม่จบ (ไม่ใช่แค่ที่อยู่ใน cache)
-  ensureAllJobsLoaded(true).then(ch=>{ if(ch){ renderWipBuckets(); renderWipInSummary(); } }).catch(()=>{});
+  // ⚡ 2026-09-02: เรียก refreshProducedSet "หลัง" ก้อนใหญ่พร้อม → คิดจาก _allKpi ได้ ไม่ต้องยิง API
+  //   (เดิมยิงคู่ขนานตั้งแต่ต้น = _allKpi ยังว่างเสมอ → ตกไปใช้ DISTINCT สแกนทั้งตารางทุกครั้ง)
+  ensureAllJobsLoaded(true)
+    .then(ch=>{ refreshProducedSet(); if(ch){ renderWipBuckets(); renderWipInSummary(); } })
+    .catch(()=>{ refreshProducedSet(); });
   if(_wipinPoll) clearInterval(_wipinPoll);
   // ★ 2026-08-02: เดิม poll ทุก 15 วิ (+ produced-set ทุก 4 รอบ) — ยิง API ถี่มากทั้งวัน
   //   ตอนนี้ใช้รอบเดียวกับทั้งแอป (AUTO_REFRESH_MS) และทำครบทุกอย่างในรอบเดียว
@@ -14655,9 +14678,10 @@ function startWipinSync(){
   _wipinPoll=setInterval(()=>{
     if(document.hidden) return;                       // ไม่ได้เปิดดูอยู่ → ไม่ต้องยิง
     syncWipin();
-    refreshProducedSet();
     ensureFgMonthLoaded().then(ch=>{ if(ch) renderWipBuckets(); }).catch(()=>{});
-    ensureAllJobsLoaded().then(ch=>{ if(ch){ renderWipBuckets(); renderWipInSummary(); } }).catch(()=>{});
+    ensureAllJobsLoaded()
+      .then(ch=>{ refreshProducedSet(); if(ch){ renderWipBuckets(); renderWipInSummary(); } })
+      .catch(()=>{ refreshProducedSet(); });
   },AUTO_REFRESH_MS);
 }
 function stopWipinSync(){ if(_wipinPoll){ clearInterval(_wipinPoll); _wipinPoll=null; } }
@@ -14669,10 +14693,22 @@ let _producedJobs=new Set(), _producedValveSet=new Set(), _producedSig='';
 async function refreshProducedSet(){
   if(!API) return;
   try{
-    const r=await api('/api/kpi/produced').catch(()=>null);
-    if(!r || !Array.isArray(r.pairs)) return;
+    /* ⚡ 2026-09-02 — คิดเซ็ตนี้จาก _allKpi ในเครื่องก่อนเสมอ
+       _allKpi = ทุกแถวของ kpi_records (โหมด slim มี valve_no/lot ครบอยู่แล้ว) → ได้คำตอบเดียวกันเป๊ะ
+       ที่ต้องเลิกยิง API: /api/kpi/produced คือ SELECT DISTINCT ทั้งตาราง = อ่าน ~20,000 แถวต่อครั้ง
+       × ทุกเครื่อง × ทุกรอบ 2 ชม. → เป็นหนึ่งในสามตัวหลักที่ทำ rows_read ต่อวันทะลุโควตา D1
+       (เคสจริง 2026-09-02: sync ล้มทั้งระบบเพราะชนเพดาน 5 ล้านแถว/วัน ของ free tier)
+       ยังไม่มีก้อนใหญ่ (เพิ่งเปิดแอป / โหลดไม่สำเร็จ) → ใช้ API เป็นทางสำรองเหมือนเดิม */
+    let pairs=null;
+    if(Array.isArray(_allKpi) && _allKpi.length){
+      pairs=_allKpi.map(r=>[r.valve_no, r.lot||'']);
+    }else{
+      const r=await api('/api/kpi/produced').catch(()=>null);
+      if(!r || !Array.isArray(r.pairs)) return;
+      pairs=r.pairs;
+    }
     const jobs=new Set(), valves=new Set();
-    for(const pair of r.pairs){ const v=pair&&pair[0]; if(!v) continue; jobs.add(jobKey(v, pair[1]||'')); valves.add(vKey(v)); }
+    for(const pair of pairs){ const v=pair&&pair[0]; if(!v) continue; jobs.add(jobKey(v, pair[1]||'')); valves.add(vKey(v)); }
     _producedJobs=jobs; _producedValveSet=valves;
     const sig=jobs.size+'/'+valves.size;
     if(sig!==_producedSig){   // ชุดเปลี่ยน → repaint WIP ให้ยอดตรงทันที (ไม่ต้องรอ interaction)
@@ -14729,7 +14765,12 @@ const ALLJOBS_TTL = 600000;   // 10 นาที — WIP ไม่ต้อง�
      ③ cache เก่าเกิน 24 ชม. → โหลดเต็มกันเหนียว (เผื่อมีการลบก่อนมีระบบ tombstone
         หรือ tombstone เขียนไม่สำเร็จสักครั้ง) — วันละครั้งไม่กระทบความเร็วที่ผู้ใช้รู้สึก
      ④ IndexedDB ใช้ไม่ได้ (โหมดส่วนตัว/โควตาเต็ม) → โหลดเต็ม เหมือนเดิมทุกประการ  */
-const ALLCACHE_KEY = 'alljobs', ALLCACHE_VER = 1, ALLCACHE_MAXAGE = 24*60*60*1000;
+/* ⚡ 2026-09-02 — ALL_TO: ขอบบนคงที่ของ 2 URL ก้อนใหญ่ (ต้องตรงกับสคริปต์ prefetch หัวไฟล์)
+   เหตุผลเต็มอยู่ที่นั่น — สรุป: URL ที่ไม่มีวันที่ = cache ใช้ข้ามวันได้ + ทุกเครื่องใช้ร่วมกันได้
+   ⇒ ALLCACHE_VER ต้องขยับเป็น 2 ด้วย: cache รุ่นเก่าสร้างจาก URL ที่มี to=<วันนั้น>
+     ซึ่งไม่มีแถวที่ลงวันที่ล่วงหน้า → ถ้าเอามาต่อ delta จะขาดแถวกลุ่มนั้นไปตลอด */
+const ALL_TO = '2999-12-31';
+const ALLCACHE_KEY = 'alljobs', ALLCACHE_VER = 2, ALLCACHE_MAXAGE = 24*60*60*1000;
 let _allSync = '';            // sync_time ล่าสุดจาก Worker (ใช้เป็นจุดตั้งต้นรอบหน้า)
 let _allFromCache = false;    // รอบนี้เริ่มจาก cache หรือโหลดเต็ม (ไว้บอกใน log/ตรวจสอบ)
 
@@ -14817,8 +14858,8 @@ async function ensureAllJobsLoaded(force){
     { at: force ? 'prodLoading' : '', sub: TT('ยอด WIP ที่เห็นตอนนี้ยังไม่ครบ','WIP figures not complete yet') });
   try {
     const t = todayISO();
-    const KPI_URL  = '/api/kpi?from=2020-01-01&to=' + t + '&limit=100000&slim=1';
-    const PROD_URL = '/api/records?from=2020-01-01T00:00:00&to=' + t + '&limit=100000';
+    const KPI_URL  = '/api/kpi?from=2020-01-01&to=' + ALL_TO + '&limit=100000&slim=1';
+    const PROD_URL = '/api/records?from=2020-01-01T00:00:00&to=' + ALL_TO + '&limit=100000';
     const _normProd = r => ({ ...r, record_id:r.record_id||r.recordId, valve_no:r.valveNo||r.valve_no, current_process:r.currentProcess||r.current_process });
 
     /* ค่าที่คืนออกไป = "ต้องวาดจอใหม่ไหม" — ผู้เรียกใช้ตัดสินใจว่าจะ renderWipBuckets() หรือไม่
@@ -14830,10 +14871,13 @@ async function ensureAllJobsLoaded(force){
     // ① ยังไม่มีอะไรใน memory → ลองหยิบก้อนล่าสุดจาก IndexedDB
     if (!_allKpi) {
       const c = await _idbGet(ALLCACHE_KEY);
-      /* cache ใช้ได้เฉพาะ "วันเดียวกับที่สร้าง" เท่านั้น — เพราะทั้งสอง URL ล็อก to=<วันนี้>
-         ถ้าข้ามวันแล้วยังต่อ delta ของเมื่อวาน แถวที่ลงวันที่ล่วงหน้า (เลยขอบ to ของเมื่อวาน)
-         จะไม่อยู่ทั้งใน cache และใน since → หายเงียบ ๆ · ข้ามวัน = โหลดเต็มรอบเดียวจบ */
-      if (c && c.ver === ALLCACHE_VER && c.sync && c.day === t
+      /* ⚡ 2026-09-02 — เลิกบังคับ "cache ต้องเป็นของวันนี้เท่านั้น"
+         เดิมจำเป็น เพราะทั้งสอง URL ล็อก to=<วันนี้> → ข้ามวันแล้วต่อ delta ของเมื่อวาน
+         แถวที่ลงวันที่ล่วงหน้า (เลยขอบ to ของเมื่อวาน) จะไม่อยู่ทั้งใน cache และใน since = หายเงียบ ๆ
+         ตอนนี้ to = ALL_TO คงที่ ไม่มีขอบให้หลุดอีกแล้ว → ต่อ delta ข้ามวันได้ปลอดภัย
+         ⇒ ตัด "โหลดเต็มวันละครั้งต่อเครื่อง" (สแกนเต็ม 2 ตาราง ≈ 40,000 แถว) ทิ้งไปทั้งก้อน
+         ยังเหลือด่านอายุ 24 ชม. ไว้เป็นตาข่ายกันเหนียวเรื่อง tombstone เหมือนเดิม */
+      if (c && c.ver === ALLCACHE_VER && c.sync
           && Array.isArray(c.kpi) && Array.isArray(c.prod)
           && (Date.now() - (c.at || 0)) < ALLCACHE_MAXAGE) {
         /* ❗กรองด้วยทะเบียนลบฝั่งเครื่องทุกครั้งที่หยิบ cache ออกมาใช้

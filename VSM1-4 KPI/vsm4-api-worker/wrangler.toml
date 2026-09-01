@@ -6,6 +6,18 @@ name = "vsm4-api"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# ⚡ 2026-09-02 — Workers Caching: Cloudflare คืนคำตอบที่ cache ไว้ "โดยไม่รัน Worker เลย"
+#   ทำไมถึงจำเป็น: D1 free tier จำกัด 5,000,000 rows read/วัน และ 2026-09-02 ชนเพดานจนซิงก์ล้มทั้งระบบ
+#   ตัวที่กินคือคำขอก้อนประวัติทั้งหมด (SCAN เต็มตาราง ~20,000 แถว/คำขอ) ซึ่งทุกเครื่องขอ URL เดียวกันเป๊ะ
+#   ได้ 2 อย่างที่ Cache API (caches.default) ให้ไม่ได้:
+#     ① cache hit = ไม่รัน Worker = ไม่แตะ D1 เลยสักแถว
+#     ② request collapsing — 20 เครื่องเปิดแอปพร้อมกันตอนเปลี่ยนกะ = สแกน D1 รอบเดียว ไม่ใช่ 20 รอบ
+#   คุมด้วย Cache-Control ในโค้ดล้วน ๆ: json() ตั้งต้น no-store · เฉพาะที่ servedCached ครอบเท่านั้น
+#   ที่เป็น public, max-age=N (ดู worker.js) ⇒ ไม่มีทางเผลอ cache คำขอที่ต้องเห็นของสด
+#   ต้องใช้ wrangler ≥ 4.69.0 (เครื่องนี้ 4.128.0)
+[cache]
+enabled = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "kpi-vsm4-db"
