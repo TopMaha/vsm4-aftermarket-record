@@ -1,6 +1,16 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.65 — 2026-09-01 — แผนขายเลิกผูก Lot + ปรับหน้าต่างต่อกะเองได้ + ปุ่ม KPI รวมทุกสาย
+## v3.65 — 2026-09-01 — แผนขายเลิกผูก Lot + ปรับหน้าต่างต่อกะเองได้ + ปุ่ม KPI รวมทุกสาย  ✅ deployed
+
+**✅ deployed 2026-09-01** — ขึ้นครบทั้ง 2 ที่ที่เสิร์ฟแอป
+
+| ปลายทาง | สถานะ |
+|---|---|
+| GitHub Pages | commit `64d9c39` · run [33532519089](https://github.com/TopMaha/vsm4-aftermarket-record/actions/runs/33532519089) → `success` (run 161 `83053ae` = แก้เอกสารอย่างเดียว) |
+| Worker `vsm4-api` | Version ID `6d965a53-9aec-4816-a465-f3d5f7cd089c` (bundle `index.html` ใหม่) |
+
+ยืนยันด้วย curl ทั้งสอง URL → ได้ `v3.65` · **ขนาดเท่ากันเป๊ะ 1,937,138 bytes · cmp กับไฟล์ในเครื่องแล้วเหมือนกันทุก byte**
+และ grep ในไฟล์ที่เสิร์ฟจริงเจอ `_pasteHasLotCol` + หัวคอลัมน์ `3. Qty` (ไม่มี Lot) ทั้ง 2 ฝั่ง
 
 **สิ่งที่ผู้ใช้สั่ง**
 
