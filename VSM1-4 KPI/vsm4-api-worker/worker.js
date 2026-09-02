@@ -540,7 +540,11 @@ async function getRecords(env, params) {
   const _pWide = _pFrom && _pTo &&
     (Date.parse(_pTo + 'T00:00:00Z') - Date.parse(_pFrom + 'T00:00:00Z')) / 86400000 > 400;
   const _pSince = params.get('since');   // ⚡ เอาเฉพาะที่เปลี่ยนหลังเวลานี้ (ดู getKpiRecords)
-  const _pcol = (_pWide && !_pSince) ? `+${PROD_DATE_COL}` : PROD_DATE_COL;
+  /* ⚡ 2026-09-02 — เหตุผลเดียวกับ getKpiRecords: ช่วงกว้าง = ขอทั้งหมด ต้องไม่ตกแถวที่ shift_date ว่าง
+     ที่นี่ใช้ PROD_DATE_SQL ที่มีอยู่แล้วได้เลย (ถอยไปคำนวณวันไทยจาก timestamp)
+     วัดจริง: แผนเดียวกับเดิมเป๊ะ (SCAN production_records USING INDEX idx_prod_ts) · 34,493 แถวเท่ากัน
+     (ตอนนี้ prod ไม่มีแถวที่ shift_date ว่างเลย — ใส่ไว้กันแถวแบบนั้นเกิดใหม่ในอนาคต) */
+  const _pcol = (_pWide && !_pSince) ? PROD_DATE_SQL : PROD_DATE_COL;
   if (_pSince)              { conds.push('updated_at > ?'); args.push(_pSince); }
   if (params.get('from'))   { conds.push(`${_pcol} >= ?`); args.push(_pFrom); }
   if (params.get('to'))     { conds.push(`${_pcol} <= ?`); args.push(_pTo); }
@@ -1006,7 +1010,19 @@ async function getKpiRecords(env, params) {
      ใช้ index idx_kpi_updated_at → ปกติได้ไม่กี่สิบแถว แทนที่จะลากทั้งตารางมาใหม่
      เมื่อมี since แล้วไม่ต้องบังคับ full scan อีก (ช่วงกว้างแต่แถวน้อย = index คุ้มแน่นอน) */
   const _since = params.get('since');
-  const _dcol = (_wide && !_since) ? '+shift_date' : 'shift_date';
+  /* ⚡ 2026-09-02 — ช่วงกว้าง = "ขอประวัติทั้งหมด" → ต้องคืนทุกแถวจริง ๆ รวมแถวที่ shift_date ว่าง
+     บั๊กที่เจอตอนวัดของจริง: มี 1 แถว (K-mqjhkc4g-0-q6tp · V27164A1/TL1) ที่ทั้ง shift_date
+     และ record_date ว่างเปล่า → `+shift_date >= '2020-01-01'` เป็นเท็จ ('' น้อยกว่าทุกวันที่)
+     ⇒ แถวนี้ไม่เคยอยู่ในก้อนประวัติเลย · เพิ่งมามีผลจริงตอนที่ refreshProducedSet()
+       ย้ายมาคิดจาก _allKpi: เซ็ต "เคยผลิตแล้ว" จะขาด V27164A1::TL1 (3,681 → 3,680 คู่)
+       = งานนั้นค้างเป็น "รอผลิต" บนแผง WIP IN ตลอดไป ทั้งที่มี KPI อยู่
+     แก้ด้วยการถอยไปใช้ record_date แล้ว saved_at เมื่อ shift_date ว่าง
+     ❗ไม่มีต้นทุนเพิ่มแม้แต่นิดเดียว: ช่วงกว้างบังคับ full scan อยู่แล้ว และ COALESCE ก็ตัดสิทธิ์
+       การใช้ index เหมือน unary + เป๊ะ — วัดจริงแล้วได้แผนเดียวกัน
+       (SCAN kpi_records USING INDEX idx_kpi_saved_at) · 34,819 → 34,820 แถว = ครบทั้งตาราง
+     ช่วงแคบยังใช้คอลัมน์เปล่าเหมือนเดิม เพราะต้องพึ่ง index idx_kpi_date */
+  const KPI_DATE_ANY = "COALESCE(NULLIF(shift_date,''), NULLIF(record_date,''), substr(saved_at,1,10))";
+  const _dcol = (_wide && !_since) ? KPI_DATE_ANY : 'shift_date';
   if (_since)                { conds.push('updated_at > ?'); args.push(_since); }
   if (params.get('from'))    { conds.push(`${_dcol} >= ?`); args.push(params.get('from')); }
   if (params.get('to'))      { conds.push(`${_dcol} <= ?`); args.push(params.get('to')); }
