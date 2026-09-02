@@ -2199,7 +2199,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.66</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.67</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2793,7 +2793,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
       </select>
       <span id="empVsmTally" class="muted" style="font-size:11px;margin-left:6px"></span>
     </div>
-    <div class="muted mb-8" style="font-size:11px;line-height:1.6;color:var(--muted2)">ℹ️ การตั้ง VSM ที่นี่ <b>บันทึกลงฐานข้อมูล (D1)</b> แล้ว — ทุกเครื่องเห็นเหมือนกัน · รหัสที่อยู่ใน <code>VSM_EMP_MAP</code> (โค้ด) ถือเป็นกฎกลาง แก้ที่นี่ไม่มีผล</div>
+    <div class="muted mb-8" style="font-size:11px;line-height:1.6;color:var(--muted2)">ℹ️ Admin <b>เพิ่ม / ลบ / ย้ายสายได้ทุกคน</b> จากหน้านี้ — บันทึกลง <b>ฐานข้อมูล (D1)</b> ทุกเครื่องเห็นตรงกัน ไม่ต้องแก้โค้ด · รหัสที่ฝังไว้ใน <code>VSM_EMP_MAP</code> ถือเป็น <b>ค่าตั้งต้น</b> เท่านั้น เลือกสายใหม่ทับได้เลย (ป้ายจะเปลี่ยนเป็น <b>✏️ Admin ตั้ง</b>) · อยากกลับไปใช้ค่าตั้งต้น ให้เลือกสายเดิมของโค้ดอีกครั้ง</div>
     <div class="tbl-wrap"><table id="empTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>VSM</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
     <div id="empPagination"></div>
   </div>
@@ -3208,10 +3208,14 @@ const TGT_LBL    = {oae:'OAE', dle:'DLE', pplh:'PPLH', pdac:'PDAC', scrap:'SCRAP
 
 /* ============================================================
    VSM SEPARATION — แยกข้อมูลตามสาย (VSM1-2 / VSM3 / VSM4)
-   • พนักงานแต่ละคนผูกกับ VSM เดียว — กำหนดผ่าน VSM_EMP_MAP (แหล่งข้อมูลหลัก)
-   • ⚠️ D1 ไม่มีคอลัมน์ vsm → VSM_EMP_MAP "ทับ" ค่าจาก D1 ทุกครั้งหลังโหลด
-     จึงไม่รีเซ็ตเวลา sync. คนที่ไม่อยู่ใน map = 'vsm4' (ข้อมูลเดิมทั้งหมด)
-   • record สืบ VSM จากรหัสผู้บันทึก → VSM_EMP_MAP → ไม่ต้องพึ่งคอลัมน์ใน D1
+   • พนักงานแต่ละคนผูกกับ VSM เดียว — ลำดับความสำคัญ (สูง→ต่ำ):
+       ① สายที่ Admin ตั้งในหน้าตั้งค่า (targets: empvsm.<รหัส> = ส่วนกลาง ทุกเครื่องเห็นตรงกัน)  ★ 2026-09-02
+       ② VSM_EMP_MAP ในโค้ด = "ค่าตั้งต้น" (เดิมเป็นกฎกลางที่แก้ในแอปไม่ได้)
+       ③ override เฉพาะเครื่อง (localStorage) → ④ employees.vsm จาก D1 → ⑤ 'vsm4'
+   • ⚠️ VSM_EMP_MAP ยัง "ทับ" ค่าจากคอลัมน์ employees.vsm ใน D1 (③④) เหมือนเดิม เพราะค่าคอลัมน์นั้น
+     ถูกเครื่องไหนก็ได้เขียนทับตอน sync — แยกไม่ออกว่า Admin ตั้งใจตั้ง หรือเครื่องนั้นเดาเอง
+     ส่วน ① เขียนเฉพาะตอน Admin กดเลือกเท่านั้น จึงให้ชนะโค้ดได้อย่างปลอดภัย
+   • record สืบ VSM จากรหัสผู้บันทึก → ลำดับเดียวกันข้างบน → ไม่ต้องพึ่งคอลัมน์ vsm ใน D1
    • ผู้ใช้แต่ละคนเห็นเฉพาะ VSM ของตัวเอง · Admin เห็นทุก VSM
    ============================================================ */
 const VSM_LIST = [
@@ -3229,9 +3233,12 @@ const VSM_KEYS   = VSM_LIST.map(v => v.key);            // ['vsm1','vsm2','vsm3'
 const isVsmKey   = k => VSM_KEYS.includes(k);           // ตรวจว่าเป็นคีย์ VSM ที่ถูกต้อง
 const DEFAULT_VSM = 'vsm4';
 
-/* ▼▼▼ แหล่งข้อมูลหลัก: รหัสพนักงาน → VSM (รหัสตัวพิมพ์ใหญ่)
+/* ▼▼▼ ค่าตั้งต้น: รหัสพนักงาน → VSM (รหัสตัวพิมพ์ใหญ่)
    แก้ตรงนี้แล้ว git push → ทุกเครื่องได้เหมือนกัน (deploy ผ่าน GitHub Pages)
    คนที่ไม่ได้ใส่ = 'vsm4' โดยอัตโนมัติ (ข้อมูล/พนักงานเดิมทั้งหมด = VSM4)
+   ★ 2026-09-02 — ไม่ใช่ "กฎกลางที่แก้ไม่ได้" อีกแล้ว: Admin ย้ายสายจากหน้าตั้งค่าทับค่าที่นี่ได้ทุกรหัส
+     (ค่าที่ Admin ตั้งเก็บใน targets: empvsm.<รหัส> — ดู setEmpVsmAdmin) · ที่นี่เหลือหน้าที่เป็น
+     ค่าเริ่มต้นของรหัสที่ยังไม่เคยมีใครตั้งสายให้ เพื่อไม่ให้ตกไป VSM4 ทั้งหมด
    ตัวอย่าง:  'X-001':'vsm1',  'Y-205':'vsm3', */
 const VSM_EMP_MAP = {
   // === พนักงานทดสอบ (ลบออกได้เมื่อใส่ของจริง) ===
@@ -3543,8 +3550,9 @@ const VSM_EMP_MAP = {
 };
 
 /* override ราย "เครื่อง" — เก็บใน localStorage, รอด sync กับ D1
-   ใช้ตอน admin เพิ่ม/ย้าย VSM ผ่านหน้า Settings ก่อนนำไปฝังในโค้ด
-   (มีผลเฉพาะเครื่องนั้น จนกว่าจะ push เข้า VSM_EMP_MAP) */
+   ★ 2026-09-02 — ลดบทบาทเป็น "สำรองตอนออฟไลน์": Admin กดเลือกสายทีไร เขียนทั้ง empvsm.* (ส่วนกลาง)
+   และที่นี่พร้อมกัน ชั้นนี้จึงเหลือไว้ให้เครื่องที่ยังไม่ได้ซิงก์ targets เห็นค่าที่เพิ่งตั้งไปทันที
+   (ค่าที่ค้างจากรุ่นก่อนถูกยกขึ้นส่วนกลางให้ครั้งเดียวโดย migrateEmpVsmOvToCloud) */
 const LS_EMP_VSM = 'vsm4_emp_vsm';
 /* ★ 2026-07-30: ทำความสะอาดคีย์ VSM ที่ไม่มีจริง
    ตัวเลือกในหน้าตั้งค่าเคยเป็น value="vsm12" ("VSM 1-2") ซึ่งไม่ใช่คีย์ที่ระบบรู้จัก (VSM_KEYS = vsm1..vsm4)
@@ -3610,10 +3618,50 @@ function captureEmpVsmFromApi(list) {
 function loadEmpVsmCloud() {
   _empVsmCloud = { ..._empVsmApi };
 }
-// ลำดับความสำคัญ: โค้ด (VSM_EMP_MAP) = กฎกลาง > override ในเครื่อง > ค่าจากฐานข้อมูล > vsm4
+/* ★ 2026-09-02 (req) — Admin เพิ่ม/ลบ/แก้ "สายของพนักงาน" ได้เองทุกรหัส ไม่ต้องแก้โค้ด
+   ปัญหาเดิม: รหัสที่อยู่ใน VSM_EMP_MAP ถูกล็อกเป็น "กฎกลาง" — ย้ายคนสักคนต้องแก้ index.html
+   แล้ว git push + deploy ใหม่ (คนหน้างานทำเองไม่ได้) · ส่วนที่แก้ได้ก็ลงแค่ localStorage
+   ของเครื่องนั้น (ป้าย "💾 เครื่องนี้") เครื่องอื่นเห็นไม่ตรงกัน
+
+   ที่ทำ: การแก้ของ Admin เก็บเป็น "override ส่วนกลาง" ในตาราง targets คีย์ empvsm.<รหัส>
+   ซึ่ง /api/init คืนให้ทุกเครื่องอยู่แล้ว → แก้เครื่องเดียว ทุกเครื่องเห็นตรงกัน และอยู่ "เหนือ" โค้ด
+   VSM_EMP_MAP จึงลดบทบาทเป็น "ค่าตั้งต้น" (ยังกันคนที่ไม่มีใครระบุสายให้ตกไป VSM4 เหมือนเดิม)
+
+   ทำไมไม่ใช้คอลัมน์ employees.vsm ที่มีอยู่แล้วให้ชนะโค้ดไปเลย: ค่าในคอลัมน์นั้นถูกเขียนทับ
+   ด้วย resolveEmpVsm() ของทุกเครื่องที่ sync (ดู pushAllToCloud) — แยกไม่ออกว่า "Admin ตั้งใจตั้ง"
+   หรือ "ค่าที่เครื่องไหนสักเครื่องเดาไว้" ถ้าให้ชนะโค้ดจะย้ายคนแบบเงียบ ๆ ได้ (บั๊กเดียวกับที่ปักหมุดไว้ปี 2026-08-16)
+   คีย์ empvsm.* เขียนเฉพาะตอน Admin กดเลือกเท่านั้น → เจตนาชัด ย้อนกลับได้
+
+   ค่าเก็บเป็น "เลข" เพราะ targets store เก็บได้เฉพาะตัวเลข (string ถูกทิ้ง) — หลักการเดียวกับ mcproc.*
+   0 = ล้าง override (กลับไปใช้ลำดับเดิม: โค้ด → เครื่องนี้ → ฐานข้อมูล → vsm4) */
+const EMPVSM_PREFIX = 'empvsm.';
+const EMPVSM_CODE   = { vsm1:1, vsm2:2, vsm3:3, vsm4:4, qc:5 };
+const EMPVSM_FROM   = Object.fromEntries(Object.entries(EMPVSM_CODE).map(([k, v]) => [v, k]));
+const empVsmKeyOf   = id => EMPVSM_PREFIX + String(id || '').toUpperCase();
+/* สายที่ Admin ตั้งไว้ (ส่วนกลาง) — null = ไม่มี override */
+function empVsmAdmin(id) {
+  const c = Number((state.targets || {})[empVsmKeyOf(id)]);
+  return c ? (normVsmKey(EMPVSM_FROM[c]) || null) : null;
+}
+function hasEmpVsmAdminKey(id) {
+  return Object.prototype.hasOwnProperty.call(state.targets || {}, empVsmKeyOf(id));
+}
+/* เขียน override ส่วนกลาง · vsm = null/'' → ล้าง (เขียน 0) · คืนผลแบบเดียวกับ apiSave */
+async function setEmpVsmAdmin(id, vsm) {
+  const up = String(id || '').toUpperCase();
+  if (!up) return { ok: false };
+  const code = vsm ? (EMPVSM_CODE[normVsmKey(vsm)] || 0) : 0;
+  if (!code && !hasEmpVsmAdminKey(up)) return { ok: true };   // ไม่เคยมี override → ไม่ต้องสร้างแถวเปล่าใน D1
+  const body = {}; body[EMPVSM_PREFIX + up] = code;
+  state.targets = { ...state.targets, ...body };              // เห็นผลทันทีในเครื่องนี้ (ออฟไลน์ก็ยังถูก)
+  lsSave(LS.TARGETS, state.targets);
+  return API ? await apiSave('/api/targets', body, { label: TT('สายของพนักงาน','employee VSM'), key: 'empvsm:' + up })
+             : { ok: true };
+}
+// ลำดับความสำคัญ: Admin ตั้งเอง (ส่วนกลาง) > โค้ด (VSM_EMP_MAP) > override ในเครื่อง > ค่าจากฐานข้อมูล > vsm4
 function resolveEmpVsm(id) {
   const up = String(id||'').toUpperCase();
-  return normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || _empVsmCloud[up] || DEFAULT_VSM;
+  return empVsmAdmin(up) || normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || _empVsmCloud[up] || DEFAULT_VSM;
 }
 /* ★ 2026-08-16 (req) — "ค่านี้มาจากไหน" — คู่กับ resolveEmpVsm ต้องเรียงลำดับเดียวกันเป๊ะ
    ที่ต้องมี: 'default' = ไม่มีใครระบุสายให้คนนี้เลย ระบบเดาให้เป็น VSM4 เอง
@@ -3622,6 +3670,7 @@ function resolveEmpVsm(id) {
    คืน: 'code' | 'local' | 'cloud' | 'default' | 'unsynced' */
 function empVsmSrc(id) {
   const up = String(id||'').toUpperCase();
+  if (empVsmAdmin(up))             return 'admin';   // ★ 2026-09-02 — Admin ตั้งเอง (ชนะโค้ด)
   if (normVsmKey(VSM_EMP_MAP[up])) return 'code';
   if (normVsmKey(_empVsmOv[up]))   return 'local';
   if (_empVsmCloud[up])            return 'cloud';
@@ -3629,7 +3678,8 @@ function empVsmSrc(id) {
   return _empVsmApiSeen ? 'default' : 'unsynced';
 }
 const EMP_SRC_LB = {
-  code:     ['🔒 โค้ด',        'ระบุไว้ใน VSM_EMP_MAP (กฎกลางทุกเครื่อง) — แก้ในแอปไม่ได้ ต้องแก้ที่ index.html'],
+  admin:    ['✏️ Admin ตั้ง',  'Admin ตั้งไว้ในหน้านี้ — เก็บส่วนกลาง (ทุกเครื่องเห็นตรงกัน) และอยู่เหนือค่าตั้งต้นในโค้ด · เลือกให้ตรงกับค่าตั้งต้นอีกครั้ง = ยกเลิกการตั้งค่านี้'],
+  code:     ['🔒 โค้ด',        'ค่าตั้งต้นจาก VSM_EMP_MAP ในโค้ด — Admin เลือกสายใหม่ทับได้เลย (จะกลายเป็น "✏️ Admin ตั้ง")'],
   local:    ['💾 เครื่องนี้',   'ตั้งไว้ในเครื่องนี้ (localStorage) — เครื่องอื่นอาจเห็นไม่ตรงกัน'],
   cloud:    ['☁️ ฐานข้อมูล',   'มาจากคอลัมน์ employees.vsm ใน D1 — ทุกเครื่องเห็นตรงกัน'],
   default:  ['⚠️ ยังไม่ระบุ',  'ไม่มีใครระบุสายให้รหัสนี้ ระบบเดาให้เป็น VSM4 — ถ้าคนนี้ไม่ใช่ VSM4 ยอดจะไปโผล่ผิดสาย ให้เลือกสายให้ถูกต้อง'],
@@ -3664,7 +3714,7 @@ function zoneVsmKey(z) {
 }
 // VSM ของ record — ลำดับความเชื่อถือ:
 //   1) zone → VSM  (deterministic + รอด D1 · เครื่อง/สายสังกัด VSM เดียวเสมอ) = แม่นสุด
-//   2) รหัสผู้บันทึก → VSM_EMP_MAP / override ในเครื่อง
+//   2) รหัสผู้บันทึก → สายที่ Admin ตั้ง (ส่วนกลาง) / VSM_EMP_MAP / override ในเครื่อง
 //   3) ค่า vsm ที่ stamp ไว้ (ออฟไลน์ ก่อน sync) → 4) vsm4
 // เดิมใช้ (2) ก่อน แต่ D1 ตัดคอลัมน์ vsm ทิ้ง และ record บางชนิด (เช่น prod หรือกรอกโดย admin)
 // ไม่มีรหัส VSM3 ในแมป → ถูกจัดเป็น vsm4 (ข้อมูล VSM3 หลุดไปโผล่ VSM4). zone รอด round-trip จึงย้ายมาก่อน
@@ -3675,7 +3725,7 @@ function vsmOf(rec) {
   const id = recEmpId(rec);
   if (id) {
     const up = id.toUpperCase();
-    const m = normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || _empVsmCloud[up];
+    const m = empVsmAdmin(up) || normVsmKey(VSM_EMP_MAP[up]) || normVsmKey(_empVsmOv[up]) || _empVsmCloud[up];
     if (m) return m;
   }
   const rv = normVsmKey(rec.vsm);
@@ -7817,6 +7867,30 @@ function migratePdacTarget() {
   localStorage.setItem(PDAC_TGT_MIGRATED, '1');
 }
 
+/* ★ 2026-09-02 (req) — ยกค่าที่เคยตั้งไว้ "เฉพาะเครื่องนี้" (ป้าย 💾 เครื่องนี้) ขึ้นเป็นค่าส่วนกลางครั้งเดียว
+   เดิม override พวกนี้อยู่แค่ localStorage → เครื่องอื่นมองคนนั้นเป็น VSM4 (ต้นเหตุที่ยอดข้ามสายแบบเงียบ ๆ)
+   ย้ายเฉพาะรหัสที่ ① ไม่มีค่าตั้งต้นในโค้ด และ ② ยังไม่มี override ส่วนกลาง
+   → ผลลัพธ์ที่ "เครื่องนี้" เห็นไม่เปลี่ยนเลย เปลี่ยนแค่ "เครื่องอื่นเห็นตรงกันแล้ว"
+   (รหัสที่อยู่ใน VSM_EMP_MAP ไม่ย้าย เพราะเดิมโค้ดชนะอยู่แล้ว ถ้าย้ายจะเท่ากับย้ายสายคนโดยไม่มีใครสั่ง) */
+const EMPVSM_OV_MIGRATED = 'fv_empvsm_ov_migrated';
+function migrateEmpVsmOvToCloud() {
+  if (localStorage.getItem(EMPVSM_OV_MIGRATED)) return;
+  const body = {};
+  for (const [id, v] of Object.entries(_empVsmOv || {})) {
+    const up = String(id).toUpperCase();
+    if (normVsmKey(VSM_EMP_MAP[up])) continue;   // มีค่าตั้งต้นในโค้ด → เดิมโค้ดชนะ ไม่แตะ
+    if (hasEmpVsmAdminKey(up))       continue;   // ส่วนกลางมีค่าแล้ว → เคารพค่าส่วนกลาง
+    const code = EMPVSM_CODE[normVsmKey(v)];
+    if (code) body[EMPVSM_PREFIX + up] = code;
+  }
+  if (Object.keys(body).length) {
+    state.targets = { ...state.targets, ...body };
+    lsSave(LS.TARGETS, state.targets);
+    if (API) apiSave('/api/targets', body, { label: TT('สายของพนักงาน','employee VSM'), key: 'empvsm:migrate', silent: true });
+  }
+  localStorage.setItem(EMPVSM_OV_MIGRATED, '1');
+}
+
 async function reload() {
   if (!API) {
     // re-render จาก LocalStorage
@@ -7852,6 +7926,7 @@ async function reload() {
     lsSave(LS.IDS,       state.ids);
     syncMcProcFromCloud(res.targets);   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store)
     migratePdacTarget();                 // เป้า PDAC 0.9 → 0.883 ครั้งเดียว (หลังได้ค่าจริงจาก cloud)
+    migrateEmpVsmOvToCloud();            // ★ สาย VSM ที่ตั้งไว้เฉพาะเครื่องนี้ → ขึ้นส่วนกลางครั้งเดียว (หลังได้ targets จริงจาก cloud)
     // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — Quick Win #5: เลื่อนไป idle
     // /api/init seed ids ชุดพื้นฐานให้แล้ว (autocomplete ใช้ได้ทันที) → ชุดเต็ม 50k ดึงตอนว่าง ไม่แย่ง network ตอนเปิดแอป
     /* ⚡ 2026-09-02 — ยิงต่อเมื่อ init "ถูกตัด" เท่านั้น
@@ -9120,7 +9195,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.66":"Production Record + KPI · v3.66",
+"ระบบบันทึกผลิต + KPI · v3.67":"Production Record + KPI · v3.67",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9337,7 +9412,8 @@ const I18N_X = {
 "ยังไม่มีข้อมูล — กด":"No data yet — tap","เพื่อนำเข้า":"to import","กรอกรหัสผ่าน":"Enter password",
 "🔓 ปลดล็อก":"🔓 Unlock","🔐 หน้าตั้งค่าเฉพาะ Admin":"🔐 Admin-only settings",
 "🔓 ปลดล็อก Admin Mode — เห็นข้อมูลทุก VSM":"🔓 Unlock Admin Mode — see all VSM data",
-"ในโค้ดแล้ว — แก้ที่ VSM_EMP_MAP ใน index.html":"in code — change VSM_EMP_MAP in index.html","(เครื่องนี้)":"(this device)",
+"ในโค้ดแล้ว — แก้ที่ VSM_EMP_MAP ใน index.html":"in code — change VSM_EMP_MAP in index.html","(เครื่องนี้)":"(this device)","(ทุกเครื่อง)":"(all devices)",
+"สายของพนักงาน":"employee VSM",
 // ── งานค้างหลัง FG ──
 "(Master valve) จนจบงาน — บางเบอร์":"(Master valve) until the job ends — some numbers go",
 "เลย, บางเบอร์ผ่าน P/T/POL ก่อน · ปุ่ม \"→\" ไปขั้นถัดไปของเบอร์นั้นเอง":"directly, some pass P/T/POL first · the \"→\" button advances to that number's own next step",
@@ -22229,7 +22305,8 @@ function renderEmployeeList() {
   // ★ 2026-08-16 — ป้ายบอก "ค่าสายมาจากไหน" ต่อท้าย dropdown (ดู empVsmSrc)
   const SRC_COL = { default:['#FEF3C7','#92400E','#FDE68A'], code:['#EEF2FF','#3730A3','#C7D2FE'],
                     cloud:['#ECFDF5','#065F46','#A7F3D0'],   local:['#F1F5F9','#334155','#CBD5E1'],
-                    unsynced:['#F8FAFC','#64748B','#E2E8F0'] };
+                    unsynced:['#F8FAFC','#64748B','#E2E8F0'],
+                    admin:['#EDE9FE','#5B21B6','#DDD6FE'] };   // ★ 2026-09-02 — Admin ตั้งเอง (ชนะค่าตั้งต้นในโค้ด)
   const srcTag = (e) => { const s = empVsmSrc(e.id), lb = EMP_SRC_LB[s], col = SRC_COL[s] || SRC_COL.local;
     return `<span class="tag" title="${escapeHtml(lb[1])}" style="font-size:10px;white-space:nowrap;background:${col[0]};color:${col[1]};border:1px solid ${col[2]}">${escapeHtml(lb[0])}</span>`; };
   const _epage = _clampPage('emp', list.length);
@@ -22243,13 +22320,12 @@ async function setEmployeeVsm(id, vsmRaw) {
   if (!vsm) { renderEmployeeList(); toast('สาย VSM ไม่ถูกต้อง', 'orange'); return; }
   const e = state.employees.find(x => x.id === id);
   if (!e) return;
-  // ถ้ารหัสนี้ถูกกำหนดไว้ในโค้ด (VSM_EMP_MAP) แล้ว → โค้ดเป็นกฎกลาง แก้ในเครื่องไม่มีผล
-  if (VSM_EMP_MAP[String(id).toUpperCase()]) {
-    renderEmployeeList();
-    toast(`⚠️ ${id} ถูกกำหนดเป็น ${VSM_LABEL[VSM_EMP_MAP[String(id).toUpperCase()]]} ในโค้ดแล้ว — แก้ที่ VSM_EMP_MAP ใน index.html`, 'orange');
-    return;
-  }
-  saveEmpVsmOv(id, vsm);   // เก็บใน localStorage — รอด sync กับ D1
+  /* ★ 2026-09-02 (req) — เดิมตรงนี้ "ปฏิเสธ" ถ้ารหัสอยู่ใน VSM_EMP_MAP (ต้องไปแก้ index.html + deploy)
+     ตอนนี้ Admin แก้ได้ทุกรหัส → เก็บเป็น override ส่วนกลาง (targets: empvsm.<รหัส>) ทุกเครื่องเห็นตรงกัน
+     ถ้าเลือกกลับไปตรงกับค่าตั้งต้นในโค้ด = ล้าง override ทิ้ง (กลับไปใช้กฎเดิม ไม่ทิ้งขยะไว้ใน D1) */
+  const codeV = normVsmKey(VSM_EMP_MAP[String(id).toUpperCase()]);
+  const rOv   = await setEmpVsmAdmin(id, vsm === codeV ? null : vsm);
+  saveEmpVsmOv(id, vsm);   // เก็บใน localStorage ด้วย — ใช้ตอนออฟไลน์/ยังไม่ได้ซิงก์ targets
   _empVsmCloud[String(id).toUpperCase()] = vsm;   // ★ ให้เครื่องนี้เห็นทันที (D1 จะเก็บให้เครื่องอื่นด้านล่าง)
   e.vsm = vsm;
   lsSave(LS.EMPLOYEES, state.employees);
@@ -22259,7 +22335,10 @@ async function setEmployeeVsm(id, vsmRaw) {
     localStorage.setItem(LS_USER, JSON.stringify(CURRENT_USER));
     hideLock();
   }
-  toast(`ตั้ง ${id} เป็น ${VSM_LABEL[vsm]||vsm} (เครื่องนี้)`, 'green');
+  renderEmployeeList();   // ★ ป้าย "ค่ามาจากไหน" ต้องเปลี่ยนเป็น "✏️ Admin ตั้ง" ทันที
+  toast(rOv.ok ? `ตั้ง ${id} เป็น ${VSM_LABEL[vsm]||vsm} แล้ว (ทุกเครื่อง)`
+               : `ตั้ง ${id} เป็น ${VSM_LABEL[vsm]||vsm} — ` + TT('ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','not on Cloud yet (queued)'),
+        rOv.ok ? 'green' : 'orange');
   if (typeof refreshVsmViews === 'function') refreshVsmViews();
   if (API) { const r = await apiSave('/api/employees', { id, name: e.name||'', vsm }, { label: TT('พนักงาน','employee'), key: id });   // ★ req #6
              if (!r.ok) toast('⚠️ ' + TT('ยังไม่ขึ้น Cloud — เข้าคิวส่งใหม่แล้ว','Not on Cloud yet — queued'), 'orange'); }
@@ -22270,25 +22349,29 @@ async function addEmployee() {
   // ค่าจาก dropdown ต้องเป็นคีย์จริง — ถ้าอ่านไม่ได้ ใช้ "สายที่กำลังดู" ไม่ใช่ DEFAULT_VSM (VSM4)
   const vsm = normVsmKey($('newEmpVsm')?.value) || viewVsm();
   if (!id) { toast('กรอกรหัสพนักงาน', 'orange'); return; }
+  /* ★ 2026-09-02 (req) — สายที่ Admin เลือกต้องมีผลจริงเสมอ
+     เดิม: ถ้ารหัสอยู่ใน VSM_EMP_MAP โค้ดชนะ → เลือกอะไรก็ไม่มีผล (ได้แค่ toast เตือน)
+     ตอนนี้: เก็บเป็น override ส่วนกลาง · ตรงกับค่าตั้งต้นในโค้ดอยู่แล้ว = ไม่ต้องเขียน override */
+  const inCode = normVsmKey(VSM_EMP_MAP[String(id).toUpperCase()]);
+  const rOv = await setEmpVsmAdmin(id, vsm === inCode ? null : vsm);
   saveEmpVsmOv(id, vsm);   // ผูก VSM แบบรอด sync (localStorage)
   _empVsmCloud[id.toUpperCase()] = vsm;   // ★ + เก็บลง D1 ด้านล่าง → เครื่องอื่นเห็น VSM เดียวกัน (เดิมตกไป VSM4)
   const existing = state.employees.findIndex(e => e.id === id);
   if (existing >= 0) state.employees[existing] = { id, name, vsm }; else state.employees.push({ id, name, vsm });
   lsSave(LS.EMPLOYEES, state.employees);
-  const inCode = normVsmKey(VSM_EMP_MAP[String(id).toUpperCase()]);
-  // ถ้ารหัสอยู่ใน VSM_EMP_MAP แล้ว โค้ดคือกฎกลาง → เตือนให้ชัดว่าค่าที่เลือกไม่ถูกใช้
-  toast(inCode && inCode !== vsm
-    ? `⚠️ ${id} ถูกกำหนดเป็น ${VSM_LABEL[inCode]} ใน VSM_EMP_MAP (โค้ด) — ค่าที่เลือกไม่มีผล`
-    : `บันทึกพนักงาน (${VSM_LABEL[inCode || vsm] || vsm})`, inCode && inCode !== vsm ? 'orange' : 'green');
+  toast(rOv.ok ? `บันทึกพนักงาน (${VSM_LABEL[vsm] || vsm})`
+               : `บันทึกพนักงาน (${VSM_LABEL[vsm] || vsm}) — ` + TT('ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','not on Cloud yet (queued)'),
+        rOv.ok ? 'green' : 'orange');
   $('newEmpId').value=''; $('newEmpName').value='';
   renderEmployeeList();
   if (typeof refreshVsmViews === 'function') refreshVsmViews();
-  if (API) { const r = await apiSave('/api/employees', { id, name, vsm: inCode || vsm }, { label: TT('พนักงาน','employee'), key: id });   // ★ req #6
+  if (API) { const r = await apiSave('/api/employees', { id, name, vsm }, { label: TT('พนักงาน','employee'), key: id });   // ★ req #6
              if (!r.ok) toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่)','Saved locally — not on Cloud yet (queued)'), 'orange'); }
 }
 async function delEmployee(id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
   delEmpVsmOv(id);   // ล้าง override VSM ของคนนี้ด้วย
+  await setEmpVsmAdmin(id, null);   // ★ 2026-09-02 — ล้าง override ส่วนกลางด้วย (ไม่ทิ้งค่าค้างให้รหัสที่ถูกเพิ่มใหม่ภายหลัง)
   delete _empVsmCloud[String(id).toUpperCase()];
   state.employees = state.employees.filter(e => e.id !== id);
   lsSave(LS.EMPLOYEES, state.employees);
