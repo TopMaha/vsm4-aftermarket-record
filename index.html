@@ -2199,7 +2199,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.67</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.68</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2511,6 +2511,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
       <div class="card-title" style="margin:0"><span class="ci">📅</span>วางแผนการผลิต</div>
       <div class="pl-actions">
         <button class="btn btn-blue btn-sm" onclick="addPlanRow()">➕ เพิ่มแผน</button>
+        <button class="btn btn-outline btn-sm" id="planFoldBtn" onclick="planFoldAll()" title="พับทุกส่วนของหน้าวางแผน">🗂️ ย่อทั้งหมด</button>
         <button class="btn btn-sm" id="planRepairBtn" style="display:none;background:#FEF3C7;color:#B45309;border:1px solid #FDE68A" onclick="repairPlanDates()" title="ซ่อมวันที่ที่ import มาผิดรูป (สลับวัน↔เดือน) แล้วบันทึกขึ้น Cloud">🔧 ซ่อมวันที่</button>
         <details class="pl-tools">
           <summary class="btn btn-outline btn-sm" title="เครื่องมืออื่น ๆ">⋯ เครื่องมือ</summary>
@@ -2542,7 +2543,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
     <div id="planCmp"></div>
 
     <!-- มุมมองรายเดือน (req #6): เลือกปี + ยอดขายรายเดือน กดเดือนเพื่อกรอง -->
-    <details class="pl-sec" id="planMonthSec" ontoggle="_plSecSave('month',this.open)">
+    <details class="pl-sec" id="planMonthSec" ontoggle="_plSecSave('month',this.open);_plFoldBtnSync()">
       <summary><span>📆 ยอดขายรายเดือน</span><span id="planYearTotal" class="pl-secsum"></span></summary>
       <div class="pl-secbd">
         <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:9px">
@@ -2575,6 +2576,11 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
     <!-- ★ 2026-08-05 (req) แถบเครื่องมือ "เลือกหลายรายการ" — โผล่เมื่อมีการติ๊กเลือก -->
     <div id="planBulk"></div>
 
+    <!-- ★ 2026-09-06 (req) ตารางแผน = ส่วนที่พับได้ (เดิมยาวเต็มหน้าเสมอ)
+         จำสถานะไว้ใน localStorage เหมือนส่วนอื่น · ตอนพับยังเห็นจำนวนแถวที่หัวข้อ -->
+    <details class="pl-sec" id="planTblSec" ontoggle="_plSecSave('table',this.open);_plFoldBtnSync()">
+      <summary><span>📋 ตารางแผนผลิต</span><span class="pl-secsum" id="planTblSum"></span></summary>
+      <div class="pl-secbd">
     <div class="tbl-wrap" style="max-height:70vh">
       <!-- ★ 2026-08-02 UX: Lot / Q'ty เดิมแคบจนตัวเลขโดนตัด · "หมายเหตุ" เดิม min-width กินพื้นที่ที่เหลือทั้งหมด
            → กำหนดความกว้างให้พอดีเนื้อหาจริง (Lot = 11 ตัวอักษร) แล้วให้ทุกคอลัมน์แชร์ที่ว่างเท่า ๆ กัน
@@ -2599,6 +2605,8 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
       <span id="planCountLbl" class="muted" style="font-weight:700"></span>
       <span class="muted">💡 ติ๊กช่องหน้าแถวเพื่อเลือกหลายรายการ · กด Shift ค้างเพื่อเลือกเป็นช่วง</span>
     </div>
+      </div>
+    </details>
     <div class="muted center mt-8" style="font-size:11px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);padding:8px;border-radius:9px">
       ☁️ แผนทุกรายการ sync ลง D1 — ทุกคนที่ login จะเห็นและแก้ไขร่วมกันได้
     </div>
@@ -6739,9 +6747,18 @@ function renderPlans() {
   // คืนสถานะพับ/กางของปฏิทินรายเดือน (ครั้งเดียวตอนแรก — หลังจากนั้นผู้ใช้คุมเอง)
   const _ms=$('planMonthSec');
   if(_ms && _ms.dataset.init!=='1'){ _ms.dataset.init='1'; _ms.open=_plSecGet('month',false); }
+  const _ts=$('planTblSec');
+  if(_ts && _ts.dataset.init!=='1'){ _ts.dataset.init='1'; _ts.open=_plSecGet('table',true); }
+  // ตอนพับ ตัวเลขต้องยังอยู่ที่หัวข้อ ไม่งั้นพับแล้วไม่รู้ว่ากรองเหลือกี่แถว
+  const _tsum=$('planTblSum');
+  if(_tsum) _tsum.textContent = rows.length
+    ? TT(`${nn(rows.length)} รายการ · ${nn(rows.reduce((s,p)=>s+(Number(p.quantity)||0),0))} ชิ้น`,
+         `${nn(rows.length)} plans · ${nn(rows.reduce((s,p)=>s+(Number(p.quantity)||0),0))} pcs`)
+    : TT('ไม่มีรายการ','no rows');
   renderPlanCompare(rows);  // ★ 2026-08-15 (req) กราฟ Order / WIP IN / WIP OUT + คำเตือน
   renderPlanRollover();  // ★ แผงตรวจ "งานถูกย้ายไปขายเดือนถัดไป" (req #7)
   renderPlanNoPlan();    // ★ 2026-08-03 (req) แผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"
+  _plFoldBtnSync();      // หลัง renderPlanCompare เสมอ — กราฟเทียบเพิ่งถูกสร้าง/ลบไปในบรรทัดบน
   // ชิปสถานะ: ไฮไลต์ตัวที่กำลังใช้กรองอยู่ (กดซ้ำ = ปลด)
   const _sf=_planColF.status;
   for(const btn of document.querySelectorAll('.pl-st')){
@@ -6758,6 +6775,32 @@ function _plSecGet(k, dflt){
 function _plSecSave(k, open){
   try{ const v=JSON.parse(localStorage.getItem(LS_PLSEC)||'{}'); v[k]=!!open; localStorage.setItem(LS_PLSEC,JSON.stringify(v)); }catch(e){}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ★ 2026-09-06 (req) — พับ/กาง "ทั้งหน้า" วางแผนด้วยปุ่มเดียว
+   หน้านี้มี 3 ส่วนที่พับได้ (ยอดขายรายเดือน / กราฟเทียบ / ตารางแผน)
+   คนที่ใช้จอเล็กอยากเห็นเฉพาะตารางบ้าง เฉพาะกราฟบ้าง — กดทีละอันวันละหลายรอบ
+   ⇒ ปุ่มเดียวสลับหมด แล้วบันทึกผ่านกลไก _plSecSave เดิมทุกส่วน
+   หมายเหตุ: planCmpSec ถูกวาดใหม่ทุกครั้งใน renderPlanCompare จึงอ่านสถานะจาก
+   _plSecGet('cmp') เอง — ที่นี่แค่บันทึกค่าให้ตรงกัน รอบวาดถัดไปก็ตามมาเอง */
+function _plSecList(){ return [...document.querySelectorAll('#pane-plan details.pl-sec')]; }
+function _plFoldBtnSync(){
+  const b=$('planFoldBtn'); if(!b) return;
+  const anyOpen=_plSecList().some(d=>d.open);
+  b.textContent = anyOpen ? TT('🗂️ ย่อทั้งหมด','🗂️ Collapse all') : TT('🗂️ กางทั้งหมด','🗂️ Expand all');
+  b.title = anyOpen ? TT('พับทุกส่วนของหน้าวางแผน','Collapse every section of the planning page')
+                    : TT('กางทุกส่วนของหน้าวางแผน','Expand every section of the planning page');
+}
+function planFoldAll(force){
+  const secs=_plSecList();
+  const open = (force===undefined) ? !secs.some(d=>d.open) : !!force;
+  /* เขียนคีย์ให้ครบทุกส่วนก่อน — กราฟเทียบ (cmp) ถูกวาดใหม่ทุกครั้ง และ "หายไปทั้งก้อน" เมื่อไม่มีข้อมูล
+     ถ้าบันทึกเฉพาะที่มีอยู่ใน DOM ตอนนี้ พอข้อมูลกลับมามันจะกางสวนทางกับที่ผู้ใช้เพิ่งสั่ง */
+  for(const k of ['month','cmp','table']) _plSecSave(k, open);
+  for(const d of secs) d.open=open;   // ontoggle เขียนคีย์ซ้ำค่าเดิม — ไม่มีผลข้างเคียง
+  _plFoldBtnSync();
+}
+
 /* กดชิปสถานะ = กรองเฉพาะสถานะนั้น (กดซ้ำ = ปลด) — ใช้กลไก _planColF ตัวเดียวกับตัวกรองหัวตาราง
    จึงขึ้นชิป "กำลังกรองด้วยอะไร" และปุ่ม ▾ ติดสี เหมือนกรองจากหัวตารางเป๊ะ */
 function planFilterStatus(s){
@@ -6836,7 +6879,7 @@ function renderPlanCompare(visibleRows){
     </div>`:'';
   const anyWarn=W.late.length||W.soon.length||W.noIn.length;
   box.innerHTML=`
-   <details class="pl-sec pc-sec" id="planCmpSec" ${_plSecGet('cmp',true)?'open':''} ontoggle="_plSecSave('cmp',this.open)">
+   <details class="pl-sec pc-sec" id="planCmpSec" ${_plSecGet('cmp',true)?'open':''} ontoggle="_plSecSave('cmp',this.open);_plFoldBtnSync()">
     <summary><span>📊 ${TT('Order / WIP IN / WIP OUT แยกลูกค้า','Order / WIP IN / WIP OUT by customer')}</span>
       <span class="pl-secsum">Order <b>${nn(tot.order)}</b> · IN <b style="color:#1A56DB">${nn(tot.inQ)}</b> · OUT <b style="color:#059669">${nn(tot.outQ)}</b>${anyWarn?` · <b style="color:#DC2626">⚠️ ${nn(W.late.length+W.soon.length)}</b>`:''}</span></summary>
     <div class="pl-secbd">
@@ -9195,7 +9238,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.67":"Production Record + KPI · v3.67",
+"ระบบบันทึกผลิต + KPI · v3.68":"Production Record + KPI · v3.68",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9351,6 +9394,10 @@ const I18N_X = {
 "รายการผลิตเสร็จ":"Finished items","เลือกเดือน":"Pick month","วันที่ผลิตจบ ตั้งแต่":"Finish date from",
 "กรอกค้น":"Search","รายการ · รวม":"items · total","วันที่ผลิตจบ":"Finish date",
 // ── วางแผน ──
+// ★ 2026-09-06 — ปุ่มพับทั้งหน้า + ตารางแผนที่พับได้
+"🗂️ ย่อทั้งหมด":"🗂️ Collapse all","🗂️ กางทั้งหมด":"🗂️ Expand all",
+"พับทุกส่วนของหน้าวางแผน":"Collapse every section of the planning page",
+"📋 ตารางแผนผลิต":"📋 Production plan table",
 "วางแผนการผลิต":"Production Planning","➕ เพิ่มแผน":"➕ Add plan","📋 วางแผน (Excel)":"📋 Paste plan (Excel)",
 "🆔 วาง IDs (Excel)":"🆔 Paste IDs (Excel)","วันที่ขาย ตั้งแต่":"Sale date from","วางแผน":"Planned",
 "⚙️ กำลังผลิต":"⚙️ In production","กำลังผลิต":"In production","✅ เสร็จแล้ว":"✅ Done","เสร็จแล้ว":"Done",
@@ -19637,10 +19684,27 @@ function histGoPage(p) {
   loadHistory(true);
   const t = $('pane-history'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
-/* วาดแถบเลขหน้า + ช่วงที่แสดง/ยอดรวม (เรียกหลัง clamp _histPage แล้วใน render) */
+/* หน้า "ที่แสดงจริง" ของชุดข้อมูลขนาด total — บีบให้อยู่ในช่วงที่มีจริง โดย **ไม่เขียนทับ _histPage**
+
+   ★ 2026-09-14 (bug) กด "ถัดไป ›" หรือกดเลขหน้า แล้วข้อมูลเด้งกลับหน้าแรกเสมอ เปิดหน้าอื่นไม่ได้เลย
+     loadHistory() วาดตาราง 2 รอบ: ① จาก local ก่อน (เร็ว ไม่ต้องรอเน็ต) ② จาก Cloud ทีหลัง (ของจริง)
+     เดิมทั้งสองรอบ clamp หน้าด้วยการ "เขียนทับ _histPage" (if (_histPage > pages-1) _histPage = pages-1)
+     ⇒ ถ้า local มีน้อยกว่า Cloud — ซึ่งเกิดประจำเพราะ vsm4_kpi_records / vsm4_prod_records
+       เป็นคีย์ที่ถูกทิ้งก่อนเพื่อนเมื่อ localStorage เต็ม (ดู EVICTABLE) — local จะเหลือหน้าเดียว
+       รอบ ① จึงตบ _histPage เป็น 0 ทิ้งหน้าที่ผู้ใช้เพิ่งกด พอรอบ ② มาถึงก็ไม่เหลืออะไรให้เปิดแล้ว
+       ซ้ำร้าย signature guard เห็นว่า "หน้า 1 เหมือนเดิม" เลยไม่เขียน DOM ใหม่ด้วย = นิ่งสนิทที่หน้าแรก
+   ⇒ clamp เป็นเรื่องของ "การวาดชุดนั้น ๆ" เท่านั้น ไม่ยุ่งกับหน้าที่ผู้ใช้สั่งไว้
+     รอบ Cloud ที่มีข้อมูลครบจึงเปิดหน้านั้นได้ตามปกติ · ส่วนหน้าที่เกินจริง (กรองแล้วแถวลดลง)
+     ก็ยังตกมาหน้าสุดท้ายเองเหมือนเดิม เพราะบีบตอนวาดทุกครั้งอยู่แล้ว */
+function _histPageOf(total) {
+  const pages = Math.max(1, Math.ceil(total / HIST_PER));
+  return Math.min(Math.max(0, _histPage), pages - 1);
+}
+/* วาดแถบเลขหน้า + ช่วงที่แสดง/ยอดรวม */
 function _setHistPager(total) {
   const pages = Math.max(1, Math.ceil(total / HIST_PER));
-  const start = total ? _histPage * HIST_PER : 0;
+  const cur = _histPageOf(total);
+  const start = total ? cur * HIST_PER : 0;
   const end = Math.min(total, start + HIST_PER);
   if ($('histCount')) $('histCount').textContent = nn(total);
   const rng = $('histRange');
@@ -19650,7 +19714,7 @@ function _setHistPager(total) {
   nav.style.display = '';
   const btn = (label, p, o = {}) =>
     `<button class="btn ${o.on ? 'btn-blue' : 'btn-outline'} btn-sm" ${o.dis ? 'disabled style="opacity:.4"' : ''} onclick="histGoPage(${p})">${label}</button>`;
-  const cur = _histPage, nums = [], dots = '<span style="padding:0 4px;color:var(--muted)">…</span>';
+  const nums = [], dots = '<span style="padding:0 4px;color:var(--muted)">…</span>';
   const push = p => nums.push(btn(p + 1, p, { on: p === cur }));
   const lo = Math.max(0, cur - 2), hi = Math.min(pages - 1, cur + 2);
   if (lo > 0) { push(0); if (lo > 1) nums.push(dots); }
@@ -19826,8 +19890,8 @@ function _isModalOpen() {
 /* ลายเซ็นของชุดข้อมูลที่กำลังแสดง — ใช้เทียบว่า "เปลี่ยนจริงไหม"
    ถ้าไม่เปลี่ยน จะข้ามการเขียน DOM ทิ้ง เพื่อไม่ให้ตารางกระตุก/กระพริบทุกครั้งที่ auto-refresh */
 let _histSig = '';
-function _histViewSig(view) {
-  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + _histPage + '|' +
+function _histViewSig(view, page) {
+  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + page + '|' +
     view.map(r =>
       (r.record_id || r.recordId || '') + ':' +
       (r.updated_at || r.saved_at || r.timestamp || '') + ':' +
@@ -19972,14 +20036,13 @@ function _renderKpiVerify(rows) {
   const groupsAll = _hvSortGroups(_hvBuildGroups(rows));
   const total = groupsAll.length;
   const doneCount = groupsAll.filter(g => _hvIsDone(g.key)).length;
-  const _pg = Math.max(1, Math.ceil(total / HIST_PER));
-  if (_histPage > _pg - 1) _histPage = _pg - 1;
-  const st = _histPage * HIST_PER;
+  const _pg = _histPageOf(total);                   // clamp เฉพาะตอนวาด — ไม่แตะ _histPage (ดู _histPageOf)
+  const st = _pg * HIST_PER;
   const view = groupsAll.slice(st, st + HIST_PER);
   _setHistPager(total);
   _hvUpdateProgress(doneCount, total);
 
-  const sig = 'V|' + _histVerifySort + '|' + _histPage + '|' + view.map(g => g.key + ':' + g.opr + ':' + g.scrap + ':' + g.recs.length + ':' + (_hvIsDone(g.key) ? 1 : 0) + ':' + (_hvIsOpen(g.key) ? 1 : 0)).join('|');
+  const sig = 'V|' + _histVerifySort + '|' + _pg + '|' + view.map(g => g.key + ':' + g.opr + ':' + g.scrap + ':' + g.recs.length + ':' + (_hvIsDone(g.key) ? 1 : 0) + ':' + (_hvIsOpen(g.key) ? 1 : 0)).join('|');
   const t = $('histTable'); const tb = t.querySelector('tbody');
   if (sig === _histSig && tb && tb.children.length) return;
   _histSig = sig;
@@ -20056,15 +20119,14 @@ function renderKpiHist(rows) {
   rows = _histSortKpi(filterVsm(rows));   // เห็นเฉพาะ VSM ของผู้ใช้ (Admin เห็นหมด) + เรียงคงที่
   _histKpiRows = rows;      // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
   if (_histVerify) return _renderKpiVerify(rows);   // โหมดตรวจสอบ — ยุบเป็นกลุ่ม Valve+Lot
-  const _pgK = Math.max(1, Math.ceil(rows.length / HIST_PER));
-  if (_histPage > _pgK - 1) _histPage = _pgK - 1;   // clamp เมื่อจำนวนหน้าลดลง
-  const _stK = _histPage * HIST_PER;
+  const _pgK = _histPageOf(rows.length);            // clamp เฉพาะตอนวาด — ไม่แตะ _histPage (ดู _histPageOf)
+  const _stK = _pgK * HIST_PER;
   const view = rows.slice(_stK, _stK + HIST_PER);   // render เฉพาะหน้าปัจจุบัน (30 แถว)
   _setHistPager(rows.length);
   const t = $('histTable');
   const tb = t.querySelector('tbody');
   // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
-  const sig = _histViewSig(view);
+  const sig = _histViewSig(view, _pgK);
   if (sig === _histSig && tb && tb.children.length) return;
   _histSig = sig;
   t.querySelector('thead').innerHTML = '<tr><th>วันที่</th><th>กะ</th><th>Zone</th><th>เครื่อง</th><th>OPR</th><th>OAE</th><th>DLE</th><th>Valve</th><th>Lot</th><th>Process</th><th class="center" style="width:90px">จัดการ</th></tr>';
@@ -20087,15 +20149,14 @@ function renderProdHist(rows) {
   // ทำให้กดแก้ไขแล้วขึ้น "ไม่พบข้อมูล" — เติม record_id ให้ครบก่อน render
   rows = _histSortProd(filterVsm(rows).map(r => r.record_id ? r : { ...r, record_id: r.recordId }));
   _histProdRows = rows;     // อัพเดตเสมอ เพื่อให้ปุ่มแก้ไข/ลบหา record เจอ แม้จะข้ามการ re-render
-  const _pgP = Math.max(1, Math.ceil(rows.length / HIST_PER));
-  if (_histPage > _pgP - 1) _histPage = _pgP - 1;   // clamp เมื่อจำนวนหน้าลดลง
-  const _stP = _histPage * HIST_PER;
+  const _pgP = _histPageOf(rows.length);            // clamp เฉพาะตอนวาด — ไม่แตะ _histPage (ดู _histPageOf)
+  const _stP = _pgP * HIST_PER;
   const view = rows.slice(_stP, _stP + HIST_PER);   // render เฉพาะหน้าปัจจุบัน (30 แถว)
   _setHistPager(rows.length);
   const t = $('histTable');
   const tb = t.querySelector('tbody');
   // กันกระตุก: ถ้าข้อมูลที่แสดงไม่เปลี่ยน (และ DOM ยังมีแถวอยู่) → ไม่ต้องเขียน DOM ซ้ำ
-  const sig = _histViewSig(view);
+  const sig = _histViewSig(view, _pgP);
   if (sig === _histSig && tb && tb.children.length) return;
   _histSig = sig;
   // ★ 2026-08-04: คอลัมน์วันที่ = "วันผลิตจริง" (เท่ากับ shift_date ของ KPI) ไม่ใช่เวลาที่กดบันทึก
