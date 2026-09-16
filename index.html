@@ -2199,7 +2199,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.68</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.69</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9238,7 +9238,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.68":"Production Record + KPI · v3.68",
+"ระบบบันทึกผลิต + KPI · v3.69":"Production Record + KPI · v3.69",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -17827,17 +17827,35 @@ function toggleMc(pid) {
   $(pid + '_off').style.display = on ? 'none' : 'block';
   if (on) { _formDirty = true; _updateFabState(); }
 }
+/* จำนวน "ช่วงเวลา" สูงสุดต่อหน่วย
+   QC ตรวจงานหลาย Lot/Valve ต่อกะ (ยอดเพิ่มเติมเยอะกว่าสายผลิต) → เปิดได้ถึง 10 ช่วง · สายอื่นคงไว้ 4 ช่วง */
+const MAX_SHIFT_DEFAULT = 4, MAX_SHIFT_QC = 10;
+function maxShiftOf(pid) { return zoneVsm(_unitInfo(pid).zone) === 'qc' ? MAX_SHIFT_QC : MAX_SHIFT_DEFAULT; }
+
+/* ไล่เลขหัวข้อช่วงใหม่ตามบล็อกที่เหลืออยู่จริง (ลบช่วงกลางทิ้งแล้วเลขต้องไม่ข้าม) — id ไม่แตะ */
+function renumShiftsP(pid) {
+  const body = $(`${pid}_body`); if (!body) return;
+  body.querySelectorAll('.shift').forEach((sb, i) => {
+    const lb = sb.querySelector('.shift-lbl');
+    if (lb) lb.textContent = `🕐 ${i === 0 ? 'ช่วง 1 (หลัก)' : 'ช่วง ' + (i + 1)}`;
+  });
+}
 function addShiftP(pid) {
+  const body = $(`${pid}_body`); if (!body) return;
+  const max = maxShiftOf(pid);
+  // นับจากบล็อกที่มีอยู่จริงใน DOM — ลบช่วงทิ้งแล้วต้องเพิ่มใหม่ได้
+  // (_unitShiftCount เป็นตัวนับขาขึ้นอย่างเดียว ใช้ตั้ง id ไม่ให้ชนของที่ลบไป)
+  if (body.querySelectorAll('.shift').length >= max) { toast(`สูงสุด ${max} ช่วงต่อหน่วย`, 'orange'); return; }
   const cnt = (_unitShiftCount[pid] || 0) + 1;
-  if (cnt >= 4) { toast('สูงสุด 4 ช่วงต่อหน่วย', 'orange'); return; }
   _unitShiftCount[pid] = cnt;
   const info = _unitInfo(pid);
   const html = shiftHtml(pid, cnt, info.m, info.opts);
-  const body = $(`${pid}_body`); if (!body) return;
   body.insertBefore(document.createRange().createContextualFragment(html), body.querySelector('.shift-add'));
+  renumShiftsP(pid);
 }
 function delShiftP(pid, si) {
   $(`${pid}_s${si}_block`)?.remove();
+  renumShiftsP(pid);
 }
 function updWTP(pid, si) {
   const sid = `${pid}_s${si}`;
