@@ -2199,7 +2199,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.69</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.70</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3913,7 +3913,8 @@ for (const z of Object.keys(VSM12_MACHINES)) {
 }
 /* ▼ เครื่องจักรจริง VSM3 — สาย (Line) แบบ Auto Line ตามเอกสารผู้ใช้ (v3.1)
    • แต่ละ Line เดินทุกเครื่องพร้อมกัน (transfer line) — กรอกครั้งเดียว → record ทุกเครื่อง
-   • G-274 อยู่ 2 ไลน์ตามต้นฉบับ (คนละโซน) — SEED dedupe ต่อ zone
+   • ★ 2026-09-17 (req #2): G-274 ของสาย M3 (โซน ZI) → G-2074 ตามที่ผู้ใช้แจ้ง · G-274 ของสาย I1 (โซน ZJ) คงเดิม
+     ⇒ VSM3 ไม่มีรหัสเครื่องซ้ำ 2 โซนอีกแล้ว (เดิม G-274 อยู่ทั้ง M3 + I1 — SEED dedupe ต่อ zone)
    • ★ 2026-08-02: เดิม G-2018 / G-2070 ก็อยู่ 2 ไลน์ → เปลี่ยนชื่อตัวที่ซ้ำแล้ว (M4=G-2010, R2=G-270)
    • Buff / Truck / Polish แตกเป็นสายย่อยตามเอกสารใหม่ · แก้ typo: T3 G-208→G-2082, I1 ตัด G-256 ซ้ำ */
 const VSM3_LINES = {
@@ -3925,12 +3926,12 @@ const VSM3_LINES = {
   R1: ['G-2067','L-246','G-271','G-272','G-258','G-266','G-264'],
   R2: ['L-251','G-2093','G-270','G-263','G-269','G-265'],           // ★ 2026-08-02: G-2070 (สายนี้) → G-270
   T3: ['G-2082','G-2061','G-2060','G-2059','L-257','G-257'],                     // TOYOTA 3 (G-208→G-2082)
-  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-274','G-2063'],  // Mitsubishi 3 (+G-2063 ย้ายจากเครื่องเดี่ยว ZH)
+  M3: ['G-2068','G-2040','G-2079','G-2031','G-2001','G-2081','G-2074','G-2063'], // Mitsubishi 3 (★ 2026-09-17: G-274 สายนี้ → G-2074 · +G-2063 ย้ายจากเครื่องเดี่ยว ZH)
   N4: ['G-2042','G-1112','G-2036','G-261','G-2090','G-279','G-2021'],            // NISSAN 4
   BUF1:['G-231','G-233'],                                                        // Buff G-233
   BUF2:['G-225','G-280'],                                                        // Buff G-280
   BUF3:['G-2064','G-2041'],                                                      // Buff G-2041
-  I1: ['G-2070','L-250','G-256','G-2055','G-249','G-259','G-274'],               // ISUZU 1 (ตัด G-256 ซ้ำ · +G-259 ที่ตกหล่นจากผัง)
+  I1: ['G-2070','L-250','G-256','G-2055','G-249','G-259','G-274'],               // ISUZU 1 (G-274 ตัวจริงอยู่สายนี้ · ตัด G-256 ซ้ำ · +G-259 ที่ตกหล่นจากผัง)
   I2: ['G-281','L-249','G-260','G-230','G-282','G-275'],                         // ISUZU 2
   N1: ['G-2015','L-252','G-236','G-2086','G-2017','G-2018','G-2006'],            // NISSAN 1
   N3: ['G-2026','L-258','G-239','G-2011','G-2024','G-291','G-2071'],             // NISSAN 3
@@ -4027,6 +4028,8 @@ for (const z of Object.keys(QC_MACHINES)) SEED_VSM_MACHINES[z] = QC_MACHINES[z].
    ★ 2026-08-02 — เปลี่ยนชื่อเครื่อง VSM3 (ตามที่ผู้ใช้แจ้ง)
      • G-2018 ของสาย M4 (โซน ZK) → G-2010    · G-2018 ของสาย N1 (โซน ZJ) คงเดิม
      • G-2070 ของสาย R2 (โซน ZI) → G-270     · G-2070 ของสาย I1 (โซน ZJ) คงเดิม
+   ★ 2026-09-17 — เปลี่ยนชื่อเครื่อง VSM3 เพิ่มอีก 1 คู่ (ตามที่ผู้ใช้แจ้ง)
+     • G-274 ของสาย M3 (โซน ZI) → G-2074    · G-274 ของสาย I1 (โซน ZJ) คงเดิม
    ⚠️ รหัสเดิมซ้ำอยู่ 2 ไลน์คนละโซน → ต้อง "ระบุโซนคู่กันเสมอ" ไม่งั้นจะเปลี่ยนผิดตัว
    ข้อมูลเดิม: normalize ตอนอ่าน (ทุกเครื่องเห็นชื่อใหม่ทันทีแม้ยังไม่ได้ซ่อม D1)
               + ปุ่ม 🔧 ในหน้าตั้งค่า → เรียก /api/machines/rename ซ่อมถึงฐานข้อมูลจริง
@@ -4034,6 +4037,7 @@ for (const z of Object.keys(QC_MACHINES)) SEED_VSM_MACHINES[z] = QC_MACHINES[z].
 const MC_RENAME = [
   { zone:'ZK', from:'G-2018', to:'G-2010', line:'M4' },
   { zone:'ZI', from:'G-2070', to:'G-270',  line:'R2' },
+  { zone:'ZI', from:'G-274',  to:'G-2074', line:'M3' },   // ★ 2026-09-17 — เฉพาะ Mitsubishi 3 · ISUZU 1 (ZJ) คงเดิม
 ];
 const _MC_RENAME_IDX = {};
 for (const r of MC_RENAME) _MC_RENAME_IDX[r.zone + '::' + r.from.toUpperCase()] = r.to;
@@ -4153,7 +4157,8 @@ function ensureVsmZones() {
       (seedZonesOfVsm[v][k] = seedZonesOfVsm[v][k] || []).push(z);
     }
   }
-  // เครื่องที่ seed ตั้งใจให้อยู่ 2 โซน (VSM3 · G-274 = ISUZU 1 + Mitsubishi 3) → ห้ามย้าย ไม่งั้นจะสลับไปมาทุกครั้งที่โหลด
+  // เครื่องที่ seed ตั้งใจให้อยู่ 2 โซน → ห้ามย้าย ไม่งั้นจะสลับไปมาทุกครั้งที่โหลด
+  // (★ 2026-09-17: VSM3 ไม่เหลือเครื่องแบบนี้แล้ว หลัง G-274@M3 → G-2074 — ด่านนี้คงไว้กันเคสใหม่)
   const seedZoneOfVsm = {};
   for (const v of Object.keys(seedZonesOfVsm)) {
     seedZoneOfVsm[v] = {};
@@ -7828,7 +7833,7 @@ async function init() {
   ensureSeedEmployees();
   ensureVsmZones();
   normalizeEmployeeVsm();
-  applyMcRenameAll();      // ★ ชื่อเครื่องใหม่ (G-2018→G-2010 @M4 · G-2070→G-270 @R2) กับข้อมูลใน localStorage
+  applyMcRenameAll();      // ★ ชื่อเครื่องใหม่ (G-2018→G-2010 @M4 · G-2070→G-270 @R2 · G-274→G-2074 @M3) กับข้อมูลใน localStorage
 
   // Lock In check
   if (CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id)) {
@@ -9128,7 +9133,7 @@ function mergeRecords(local, remote, idKey) {
       const rid = r.record_id || r[idKey];
       return !_deletedKpiIds.has(rid) && !_deletedProdIds.has(rid);
     });
-  mcRenameRecs(out);   // ★ ชื่อเครื่องใหม่ (G-2018→G-2010 @M4 · G-2070→G-270 @R2) กับทุกชุดที่ merge เข้ามา
+  mcRenameRecs(out);   // ★ ชื่อเครื่องใหม่ (G-2018→G-2010 @M4 · G-2070→G-270 @R2 · G-274→G-2074 @M3) กับทุกชุดที่ merge เข้ามา
   return out;
 }
 document.addEventListener('visibilitychange', () => {
@@ -9238,7 +9243,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.69":"Production Record + KPI · v3.69",
+"ระบบบันทึกผลิต + KPI · v3.70":"Production Record + KPI · v3.70",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -10006,7 +10011,7 @@ const FP3_MC=[
   {id:'G-2082',x:243,y:482,w:45,h:50},{id:'G-264',x:367,y:535,w:45,h:50},{id:'G-266',x:415,y:535,w:45,h:50},{id:'G-258',x:463,y:535,w:45,h:50},
   {id:'G-272',x:512,y:535,w:45,h:50},{id:'G-271',x:561,y:536,w:45,h:50},{id:'L-246',x:610,y:536,w:45,h:50},{id:'G-2067',x:659,y:536,w:45,h:50},
   {id:'G-2068',x:0,y:539,w:45,h:50},{id:'G-2040',x:48,y:539,w:45,h:50},{id:'G-2079',x:96,y:539,w:45,h:50},{id:'G-2031',x:145,y:539,w:45,h:50},
-  {id:'G-2001',x:194,y:539,w:45,h:50},{id:'G-2081',x:243,y:539,w:45,h:50},{id:'G-274',x:292,y:539,w:45,h:50},{id:'G-1112',x:47,y:603,w:62,h:29},
+  {id:'G-2001',x:194,y:539,w:45,h:50},{id:'G-2081',x:243,y:539,w:45,h:50},{id:'G-2074',x:292,y:539,w:45,h:50},{id:'G-1112',x:47,y:603,w:62,h:29},
   {id:'G-2042',x:0,y:608,w:45,h:50},{id:'G-261',x:111,y:608,w:45,h:50},{id:'G-2090',x:160,y:609,w:45,h:50},{id:'G-279',x:209,y:609,w:45,h:50},
   {id:'G-2021',x:257,y:609,w:45,h:50},{id:'G-2014',x:359,y:611,w:45,h:50},{id:'G-2013',x:407,y:611,w:45,h:50},{id:'G-2012',x:455,y:611,w:45,h:50},
   {id:'G-2069',x:504,y:611,w:45,h:50},{id:'G-2085',x:553,y:611,w:45,h:50},{id:'G-2009',x:602,y:611,w:45,h:50},{id:'G-2063',x:651,y:611,w:45,h:50},
@@ -10032,7 +10037,7 @@ const FP3_LB=[
    หมายเหตุ: ผังคือ "พื้นที่จริงทั้งหมด" (superset ของ Machine Master) — กล่องที่ยังไม่มี record จะขึ้นสีเทา = ปิด
    ★ 2026-08-19 — เดิม C-206 มี 2 กล่อง (ผังต้นฉบับพิมพ์ซ้ำ) · ผู้ใช้ยืนยันว่ากล่องแถวบน (x:888,y:506) คือ C-208
      → เปลี่ยนเป็น C-208 แล้วทั้ง FP2_MC และ FPA_MC (x:1705,y:1025) · VSM2 ไม่มี id ซ้ำอีกต่อไป
-     (ที่ยังซ้ำอยู่คือ G-274 ของ FP3 — เรนเดอร์/ไฮไลต์พร้อมกันได้ตามเดิม)
+     ★ 2026-09-17 — FP3 ก็ไม่มี id ซ้ำแล้ว (กล่องของสาย M3 เปลี่ยนเป็น G-2074 · กล่องของสาย I1 ยังเป็น G-274)
    ============================================================ */
 const FP1_MC=[{id:'H-1109',x:44,y:245,w:67,h:34},{id:'H-1114',x:0,y:553,w:110,h:52},{id:'H-1115',x:0,y:495,w:110,h:52},{id:'D-1105',x:0,y:436,w:110,h:52},{id:'H-1113',x:43,y:397,w:67,h:34},{id:'H-1112',x:43,y:359,w:67,h:34},{id:'H-1111',x:43,y:321,w:67,h:34},{id:'H-1110',x:43,y:282,w:67,h:34},{id:'G-1107',x:147,y:495,w:67,h:34},{id:'G-1104',x:147,y:457,w:67,h:34},{id:'G-1123',x:798,y:56,w:67,h:34},{id:'H-1124',x:145,y:282,w:67,h:34},{id:'F-1127',x:337,y:457,w:67,h:34},{id:'F-1126',x:259,y:417,w:67,h:34},{id:'F-1128',x:412,y:457,w:67,h:34},{id:'F-1129',x:485,y:457,w:67,h:34},{id:'F-1130',x:559,y:457,w:67,h:34},{id:'F-1131',x:633,y:457,w:67,h:34},{id:'F-1118',x:337,y:570,w:67,h:34},{id:'F-1115',x:259,y:530,w:67,h:34},{id:'F-1120',x:412,y:570,w:67,h:34},{id:'F-1121',x:485,y:570,w:67,h:34},{id:'F-1122',x:559,y:570,w:67,h:34},{id:'F-1123',x:633,y:570,w:67,h:34},{id:'F-1158',x:587,y:286,w:110,h:52},{id:'F-1140',x:794,y:555,w:110,h:52},{id:'F-1134',x:794,y:453,w:110,h:52},{id:'F-1138',x:916,y:555,w:110,h:52},{id:'F-1139',x:916,y:453,w:110,h:52},{id:'F-1132',x:794,y:284,w:67,h:52},{id:'F-1156',x:870,y:284,w:78,h:127},{id:'C-1107',x:956,y:284,w:67,h:60},{id:'C-1108',x:956,y:350,w:67,h:60},{id:'H-1117',x:144,y:173,w:261,h:45},{id:'H-1118',x:144,y:115,w:261,h:45},{id:'H-1120',x:244,y:58,w:407,h:45},{id:'H-1119',x:436,y:115,w:261,h:45},{id:'G-401',x:876,y:56,w:67,h:34},{id:'L-202',x:952,y:56,w:67,h:34},{id:'L-402',x:1028,y:56,w:67,h:34},{id:'L-401',x:1103,y:56,w:67,h:34},{id:'L-403',x:1103,y:104,w:67,h:33},{id:'L-404',x:1028,y:102,w:67,h:33},{id:'L-405',x:1103,y:148,w:67,h:33},{id:'C-1603',x:1103,y:193,w:67,h:33},{id:'C-1602',x:1103,y:237,w:67,h:33},{id:'G-1118',x:626,y:0,w:67,h:34},{id:'G-1122',x:549,y:0,w:67,h:34},{id:'D-1109',x:387,y:0,w:67,h:34},{id:'D-1112',x:246,y:0,w:67,h:34},{id:'D-1121',x:168,y:0,w:67,h:34},{id:'D-1122',x:93,y:0,w:67,h:34},{id:'D-1123',x:19,y:0,w:67,h:34}];
 const FP2_MC=[{id:'G-1110',x:250,y:742,w:69,h:34},{id:'D-1118',x:250,y:703,w:69,h:34},{id:'D-1119',x:250,y:664,w:69,h:34},{id:'D-1120',x:250,y:626,w:69,h:34},{id:'W-1136',x:250,y:584,w:69,h:34},{id:'C-204',x:250,y:542,w:69,h:34},{id:'G-2025',x:250,y:504,w:69,h:34},{id:'G-1106',x:0,y:398,w:67,h:34},{id:'F-1149',x:0,y:323,w:67,h:34},{id:'F-1148',x:0,y:248,w:67,h:34},{id:'F-1150',x:0,y:178,w:67,h:34},{id:'G-1105',x:78,y:398,w:67,h:34},{id:'Q-1108',x:78,y:323,w:67,h:34},{id:'G-1102',x:154,y:398,w:67,h:34},{id:'G-1115',x:154,y:323,w:67,h:34},{id:'F-1147',x:118,y:178,w:67,h:106},{id:'F-1142',x:194,y:178,w:67,h:106},{id:'F-1109',x:270,y:178,w:67,h:106},{id:'L-240',x:228,y:310,w:110,h:52},{id:'L-260',x:228,y:378,w:110,h:52},{id:'W-1109',x:356,y:281,w:67,h:40},{id:'W-1108',x:356,y:339,w:67,h:40},{id:'W-1139',x:430,y:281,w:67,h:40},{id:'W-1118',x:430,y:339,w:67,h:40},{id:'W-1135',x:506,y:282,w:67,h:40},{id:'W-1126',x:506,y:339,w:67,h:40},{id:'H-1123',x:431,y:390,w:67,h:40},{id:'L-1114',x:356,y:178,w:67,h:40},{id:'L-1112',x:430,y:178,w:67,h:40},{id:'L-1111',x:506,y:178,w:67,h:40},{id:'F-201',x:506,y:229,w:67,h:40},{id:'F-1157',x:658,y:222,w:67,h:106},{id:'F-1144',x:659,y:339,w:67,h:40},{id:'F-1143',x:739,y:339,w:67,h:40},{id:'W-1114',x:660,y:390,w:67,h:40},{id:'G-229',x:817,y:390,w:67,h:40},{id:'G-228',x:817,y:341,w:67,h:40},{id:'G-242',x:818,y:289,w:67,h:40},{id:'W-1121',x:891,y:390,w:67,h:40},{id:'W-1119',x:891,y:341,w:67,h:40},{id:'W-1115',x:893,y:289,w:67,h:40},{id:'W-1120',x:966,y:390,w:67,h:40},{id:'W-1117',x:966,y:341,w:67,h:40},{id:'W-1116',x:968,y:289,w:67,h:40},{id:'C-212',x:1042,y:390,w:67,h:40},{id:'C-211',x:1042,y:341,w:67,h:40},{id:'C-210',x:1044,y:289,w:67,h:40},{id:'F-1146',x:194,y:0,w:67,h:106},{id:'F-1154',x:270,y:0,w:67,h:106},{id:'W-1131',x:579,y:506,w:67,h:40},{id:'W-1127',x:579,y:552,w:67,h:40},{id:'G-2049',x:579,y:598,w:67,h:40},{id:'G-278',x:579,y:643,w:67,h:40},{id:'W-1134',x:654,y:506,w:67,h:40},{id:'W-1129',x:654,y:552,w:67,h:40},{id:'W-1130',x:654,y:598,w:67,h:40},{id:'G-2043',x:710,y:643,w:67,h:40},{id:'C-217',x:840,y:643,w:67,h:40},{id:'C-220',x:962,y:643,w:67,h:40},{id:'C-213',x:731,y:598,w:67,h:40},{id:'C-214',x:808,y:598,w:67,h:40},{id:'L-224',x:887,y:598,w:67,h:40},{id:'L-230',x:962,y:598,w:67,h:40},{id:'C-203',x:1038,y:643,w:67,h:40},{id:'L-222',x:1038,y:598,w:67,h:40},{id:'W-1124',x:731,y:552,w:67,h:40},{id:'C-209',x:888,y:552,w:67,h:40},{id:'C-206',x:962,y:552,w:67,h:40},{id:'C-215',x:1038,y:552,w:67,h:40},{id:'W-1128',x:733,y:506,w:67,h:40},{id:'C-208',x:888,y:506,w:67,h:40},{id:'C-207',x:962,y:506,w:67,h:40},{id:'C-205',x:1038,y:506,w:67,h:40}];
@@ -10362,7 +10367,7 @@ const FPA_MC=[
   {id:'G-2031',x:145,y:659,w:45,h:50,v:3},
   {id:'G-2001',x:194,y:660,w:45,h:50,v:3},
   {id:'G-2081',x:243,y:660,w:45,h:50,v:3},
-  {id:'G-274',x:292,y:660,w:45,h:50,v:3},
+  {id:'G-2074',x:292,y:660,w:45,h:50,v:3},
   {id:'G-1112',x:47,y:723,w:62,h:29,v:3},
   {id:'G-2042',x:0,y:728,w:45,h:50,v:3},
   {id:'G-261',x:111,y:728,w:45,h:50,v:3},
@@ -11792,7 +11797,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   const jobMap={};
   const _byMc=(_iotData&&_iotData.byMc)||{};
   for(const mc of boxes){
-    if(jobMap[mc.id]) continue;                       // ผังบางสายมีกล่อง id ซ้ำ (G-274 ของ VSM3) — คำนวณครั้งเดียวพอ
+    if(jobMap[mc.id]) continue;                       // กันเผื่อผังมีกล่อง id ซ้ำ — คำนวณครั้งเดียวพอ (VSM3 หมดเคสนี้แล้วตั้งแต่ G-274@M3 → G-2074)
     const list=_mcJobList(_byMc[mc.id]);
     if(list.length) jobMap[mc.id]={cur:list[0],n:list.length,list};
     else if(activeMachines.has(mc.id)) jobMap[mc.id]={cur:{valve:'',lot:'',opr:0},n:1,list:[],noValve:true};
@@ -16027,6 +16032,38 @@ function wipinMissingEdit(valveEnc, lotEnc){
       <button class="btn btn-green" onclick="applyWipinMissingEdit()">💾 บันทึกการแก้ไข</button>
     </div>`);
 }
+/* ★ 2026-09-17 — ย้ายไส้ในของ applyWipinMissingEdit ออกมาเป็นฟังก์ชันกลาง
+   เพราะตอนนี้มี 2 ทางที่ต้อง "ย้าย Valve/Lot ของยอดผลิต+KPI ทั้งก้อน":
+     ① แผง "ลืมลงบันทึก" (applyWipinMissingEdit)
+     ② ช่อง ☑ ในป๊อปอัป ✏️ แก้ใบรับเข้า WIP IN 1.5 (editWipinEntry) — ใบรับเข้ากับยอดผลิต
+        ต้องเป็น Lot เดียวกันเสมอ ไม่งั้นแก้ข้างเดียวจะกลายเป็นงานคนละล็อตทันที
+   คืน {n,kpi,prod,ok} · ok=false = แก้ในเครื่องแล้วแต่ยังไม่ขึ้น Cloud (หมาย _unsynced ให้ส่งซ้ำเอง) */
+async function _fixValveLotRecs(oldV, oldL, newV, newL){
+  const {kpi,prod}=_recsWithValveLot(oldV, oldL);
+  const n=kpi.length+prod.length;
+  if(!n) return {n:0,kpi:0,prod:0,ok:true};
+  const now=new Date().toISOString();
+  for(const r of kpi){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.valve_unknown=!isKnownValve(newV); r.updated_at=now; }
+  for(const r of prod){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.updated_at=now; }
+  lsSave(LS.KPI, state.kpiRecords);
+  lsSave(LS.PROD_REC, state.prodRecords);
+  if(!API) return {n,kpi:kpi.length,prod:prod.length,ok:true,local:true};
+  showBusy(`กำลังแก้ ${n} record…`);
+  try{
+    // record_id ไม่เปลี่ยน → upsert (ON CONFLICT) ทับแถวเดิมด้วย valve/lot ใหม่ได้เลย ไม่ต้องลบก่อน
+    if(kpi.length)  await api('/api/kpi', { body: { records: kpi } });
+    if(prod.length) await api('/api/records/bulk', { body: { records: prod } });
+    hideBusy();
+    return {n,kpi:kpi.length,prod:prod.length,ok:true};
+  }catch(e){
+    // ★ req #6: หมาย _unsynced → ระบบส่งซ้ำเองเมื่อเน็ตกลับมา + ขึ้นแถบ "ยังไม่ขึ้น Cloud"
+    hideBusy();
+    kpi.forEach(r=>r._unsynced=true); prod.forEach(r=>r._unsynced=true);
+    lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
+    renderSyncBar();
+    return {n,kpi:kpi.length,prod:prod.length,ok:false};
+  }
+}
 async function applyWipinMissingEdit(){
   const oldV=$('wmeOldValve').value, oldL=$('wmeOldLot').value;
   const newV=vKey($('wmeValve').value), newL=String($('wmeLot').value||'').trim();
@@ -16036,31 +16073,11 @@ async function applyWipinMissingEdit(){
      !(await confirmModal(`"${newV}" ยังไม่มีในระบบ — ยืนยันแก้เป็นเลขนี้?`,{danger:false,yes:'ยืนยัน'}))) return;
   const {kpi,prod}=_recsWithValveLot(oldV, oldL);
   if(!kpi.length && !prod.length){ toast('ไม่พบ record','orange'); closeModal(); return; }
-  const now=new Date().toISOString();
-  for(const r of kpi){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.valve_unknown=!isKnownValve(newV); r.updated_at=now; }
-  for(const r of prod){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.updated_at=now; }
-  lsSave(LS.KPI, state.kpiRecords);
-  lsSave(LS.PROD_REC, state.prodRecords);
   closeModal();
-  if(API){
-    showBusy(`กำลังแก้ ${kpi.length+prod.length} record…`);
-    try{
-      // record_id ไม่เปลี่ยน → upsert (ON CONFLICT) ทับแถวเดิมด้วย valve/lot ใหม่ได้เลย ไม่ต้องลบก่อน
-      if(kpi.length)  await api('/api/kpi', { body: { records: kpi } });
-      if(prod.length) await api('/api/records/bulk', { body: { records: prod } });
-      hideBusy();
-      toast(`✅ แก้ ${kpi.length+prod.length} record เป็น ${newV}${newL?(' / '+newL):''} สำเร็จ`,'green');
-    }catch(e){
-      // ★ req #6: หมาย _unsynced → ระบบส่งซ้ำเองเมื่อเน็ตกลับมา + ขึ้นแถบ "ยังไม่ขึ้น Cloud"
-      hideBusy();
-      kpi.forEach(r=>r._unsynced=true); prod.forEach(r=>r._unsynced=true);
-      lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
-      renderSyncBar();
-      toast('⚠️ แก้ในเครื่องแล้ว — ยังไม่ขึ้น Cloud (จะส่งให้เองเมื่อเน็ตกลับมา)','orange');
-    }
-  } else {
-    toast(`แก้ ${kpi.length+prod.length} record แล้ว (local)`,'green');
-  }
+  const r=await _fixValveLotRecs(oldV, oldL, newV, newL);
+  if(!API)      toast(`แก้ ${r.n} record แล้ว (local)`,'green');
+  else if(r.ok) toast(`✅ แก้ ${r.n} record เป็น ${newV}${newL?(' / '+newL):''} สำเร็จ`,'green');
+  else          toast('⚠️ แก้ในเครื่องแล้ว — ยังไม่ขึ้น Cloud (จะส่งให้เองเมื่อเน็ตกลับมา)','orange');
   renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
   if(typeof renderHome==='function') renderHome();
 }
@@ -16905,7 +16922,7 @@ function wipDetailBody(bucket){
       return String(c.ts).localeCompare(String(a.ts));
     });
     const rowFn=i=>`
-      <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started&&!i.unknown?'opacity:.5':''}${i.unknown?';background:#FEF2F2':''}">
+      <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}" style="${i.started&&!i.unknown?'opacity:.72':''}${i.unknown?';background:#FEF2F2':''}">
         <td>${escapeHtml(String(i.ts||'').slice(0,10))}
           ${/* ★ 2026-08-16: ใบที่ระบบลงย้อนหลังให้ — วันที่คือวันเริ่มผลิต ไม่ใช่วันรับเข้าจริง */''}
           ${i.back?`<div><span class="tag" style="font-size:9px;background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;white-space:nowrap"
@@ -16924,7 +16941,10 @@ function wipDetailBody(bucket){
           ${i.startedNoProd?`<div style="margin-top:3px"><span class="tag tag-red" style="font-size:9.5px;white-space:normal;line-height:1.4"
              title="${escapeHtml(TT('มี KPI ของงานนี้ แต่ไม่มีแถว "ยอดผลิต" (production record) คู่กัน — หน้าค้นหา Process อ่านจากยอดผลิต จึงยังว่าง มักเกิดตอนบันทึกแล้วเน็ตหลุดครึ่งทาง (KPI ขึ้นแล้ว ยอดผลิตยังไม่ขึ้น) หรือแถวยอดผลิตถูกลบ',
                                      'KPI exists for this job but there is no matching production record — the Process search reads production records, so it looks empty. Usually a half-finished save (KPI uploaded, production rows not) or the production rows were deleted'))}">⚠️ ${TT('มี KPI · ไม่มียอดผลิต','KPI only · no production row')}</span></div>`:''}</td>
-        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${(i.started&&!i.unknown)?'':`<button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}')">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="onDeleteWipin('${i.id}')">🗑</button>`}</td>
+        ${/* ★ 2026-09-17 (req #1) — ✏️/🗑 ต้องมี "ทุกแถว" รวมแถวที่ขึ้น "เริ่มผลิตแล้ว"
+             เดิมซ่อนปุ่มทิ้งเมื่อ i.started → ใบที่พิมพ์ Lot ผิดแล้วมียอดผลิตตามมา (เคสจริง VV6301A0 / 2606a070078)
+             แก้ไม่ได้เลยสักทาง ต้องไปไล่ลบ/ลงใหม่ · ตอนนี้กด ✏️ แก้ได้เลย (ในกล่องมีคำเตือน + ช่องแก้ยอดผลิตให้ด้วย) */''}
+        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button><button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}',${i.started?1:0})">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" title="${TT('ลบใบรับเข้า','Delete intake slip')}" onclick="onDeleteWipin('${i.id}',${i.started?1:0})">🗑</button></td>
       </tr>`;
     _wipDet={items:sorted,rowFn,colspan:8};
     const s=_wipPgSlice();
@@ -17189,53 +17209,114 @@ function _refreshWipDetail(){
   // ตารางแผนขาย ฯลฯ ต้องถูกกรองตามคำค้นเดิมด้วย (แถวหลักถูกกรองตอนสร้างแล้ว)
   const wb=bd&&bd.querySelector('[data-wipbody]'); if(wb) _wipRedraw(wb);
 }
-async function onDeleteWipin(id){
-  if(!(await confirmModal(TT('ลบรายการรับเข้านี้?','Delete this incoming record?')))) return;
+/* confirm ของฝั่ง WIP IN 1.5 — วาดกล่องเอง แล้วแนบกับ fullscreenElement
+   (confirmModal ปกติอยู่นอก fullscreenElement → กดตอน IOT เต็มจอแล้วเหมือนปุ่มเสีย) */
+function _wipinConfirm(message){
+  return new Promise(resolve=>{
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(13,17,23,.65);z-index:2300;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:14px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="font-size:15px;font-weight:800;color:var(--red);margin-bottom:8px">⚠️ ${TT('ยืนยัน','Confirm')}</div>
+      <div style="font-size:12.5px;line-height:1.75;color:var(--text);white-space:pre-wrap">${escapeHtml(message)}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-outline" data-no>${TT('ยกเลิก','Cancel')}</button>
+        <button class="btn" data-yes style="background:var(--red);color:#fff;border:none">${TT('ยืนยัน','Confirm')}</button>
+      </div></div>`;
+    (document.fullscreenElement||document.body).appendChild(ov);
+    const done=v=>{ ov.remove(); resolve(v); };
+    ov.addEventListener('click',ev=>{ if(ev.target===ov) done(false); });
+    ov.querySelector('[data-no]').onclick=()=>done(false);
+    ov.querySelector('[data-yes]').onclick=()=>done(true);
+  });
+}
+async function onDeleteWipin(id, started){
+  /* ★ 2026-09-17 — ใบที่เริ่มผลิตแล้วก็ลบได้ (ปุ่มโผล่ทุกแถวแล้ว) แต่ต้องเตือนให้ชัด
+     ว่าลบแล้วยอด "รับเข้า" หายไปเฉย ๆ ยอดผลิต/KPI ไม่ได้หายตาม — ถ้าแค่ลงผิดให้กด ✏️ */
+  const msg = started
+    ? TT('ลบใบรับเข้านี้?\n\n⚠️ งานนี้ "เริ่มผลิตแล้ว" — ลบแล้วยอดรับเข้าของล็อตนี้จะหายไป (ยอดผลิต/KPI ไม่ถูกลบ)\nถ้าแค่ลง Valve / Lot / จำนวน ผิด ให้กด ✏️ แก้แทนการลบ',
+          'Delete this intake slip?\n\n⚠️ Production has already started — the received qty disappears (production/KPI rows are kept).\nIf the valve / lot / qty is simply wrong, use ✏️ instead.')
+    : TT('ลบรายการรับเข้านี้?','Delete this incoming record?');
+  if(!(await _wipinConfirm(msg))) return;
   deleteWipin(id);
   _refreshWipDetail(); renderWipBuckets(); renderWipInSummary();
 }
 /* ✏️ แก้ไขรายการ WIP IN 1.5 (แก้ Valve/Lot ที่พนักงานลงผิด หรือปรับจำนวน)
-   ใช้ overlay z-index สูงกว่า iot-fs/iotpop → ใช้ได้ทั้งหน้าปกติและ IOT เต็มจอ
-   บันทึกทับ entry เดิม (id เดิม + updatedAt ใหม่) แล้ว push ขึ้น Cloud (LWW) */
-function editWipinEntry(id){
+   ใช้ overlay z-index สูงกว่า iot-fs/iotpop + แนบกับ fullscreenElement → ใช้ได้ทั้งหน้าปกติและ IOT เต็มจอ
+   บันทึกทับ entry เดิม (id เดิม + updatedAt ใหม่) แล้ว push ขึ้น Cloud (LWW)
+
+   ★ 2026-09-17 (req #1) — เปิดให้แก้ใบที่ "เริ่มผลิตแล้ว" ได้ด้วย
+   เดิมตารางซ่อนปุ่ม ✏️/🗑 ทิ้งเมื่อใบนั้นมียอดผลิตแล้ว ⇒ พิมพ์ Lot ผิดตอนรับเข้าแล้วจบเลย แก้ไม่ได้สักทาง
+   (เคสจริง: VV6301A0 · 2606a070078 ต้องเป็น 2606S070078 — พอมียอดผลิตตามมาก็หมดทางแก้)
+   ของใหม่: กด ✏️ ได้ทุกแถว · ถ้าใบนั้นเริ่มผลิตแล้วจะขึ้นแถบเตือนสีเหลือง และมีช่อง ☑
+   "แก้ยอดผลิต + KPI ของ Lot เดิมให้ตรงกันด้วย" (ติ๊กไว้ให้ตั้งแต่แรก) เพราะเคสพิมพ์ Lot ผิด
+   มักผิดทั้งใบรับเข้าและยอดผลิต — แก้ข้างเดียวจะกลายเป็นงานคนละล็อตทันที (WIP ค้าง + หาไม่เจอ)
+   ยืนยันทุกอย่างในกล่องเดียว ไม่เปิด confirmModal ซ้อน (modal ปกติมองไม่เห็นตอน IOT เต็มจอ) */
+function editWipinEntry(id, started){
   const e=_wipin[id];
   if(!e || e.deleted){ toast(TT('ไม่พบรายการ','Entry not found'),'orange'); return; }
+  const oldValve=e.valve||'', oldLot=e.lot||'';
+  const _rl=_recsWithValveLot(oldValve, oldLot);          // ยอดผลิต/KPI ที่ผูกกับ Valve+Lot เดิมอยู่
+  const nRec=_rl.kpi.length+_rl.prod.length;
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(13,17,23,.65);z-index:2100;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
   ov.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto">
       <div style="font-size:16px;font-weight:800;color:var(--blue-dark);margin-bottom:4px">✏️ ${TT('แก้ไขรายการ WIP IN 1.5','Edit WIP IN 1.5 entry')}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:12px">${TT('แก้ Valve No / Lot ที่ลงผิด หรือปรับจำนวน — ระบบจะอัปเดตขึ้น Cloud ให้','Fix wrong Valve/Lot or adjust qty — syncs to Cloud')}</div>
+      ${started?`<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:11.5px;line-height:1.65;color:#92400E">
+        ⚠️ ${TT('ใบนี้ <b>เริ่มผลิตแล้ว</b> — แก้ได้ แต่ <b>ใบรับเข้ากับยอดผลิตต้องเป็น Valve/Lot เดียวกันเสมอ</b> ไม่งั้นจะกลายเป็นงานคนละล็อต','This slip has <b>already started production</b> — you may still edit it, but the <b>intake and the production rows must stay on the same valve/lot</b>')}
+      </div>`:''}
       <div class="fr ac" style="margin:0;position:relative"><label>Valve No</label>
-        <input type="text" id="editWiValve" value="${escapeHtml(e.valve||'')}" style="text-transform:uppercase;font-weight:700" oninput="acValveSearch(event,'editWiValve')" autocomplete="off">
+        <input type="text" id="editWiValve" value="${escapeHtml(oldValve)}" style="text-transform:uppercase;font-weight:700" oninput="acValveSearch(event,'editWiValve')" autocomplete="off">
         <div class="ac-dd" id="editWiValve_dd"></div></div>
       <div class="fr" style="margin:8px 0 0"><label>Lot</label>
-        <input type="text" id="editWiLot" value="${escapeHtml(e.lot||'')}" placeholder="${TT('(ไม่บังคับ)','(optional)')}" autocomplete="off"></div>
+        <input type="text" id="editWiLot" value="${escapeHtml(oldLot)}" placeholder="${TT('(ไม่บังคับ)','(optional)')}" autocomplete="off"></div>
       <div class="fr" style="margin:8px 0 0"><label>Q'ty (${TT('จำนวน','qty')})</label>
         <input type="text" id="editWiQty" value="${escapeHtml(String(e.qty||0))}" inputmode="text" onblur="evalFormula(this)"></div>
+      ${nRec?`<label for="editWiAlso" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;padding:9px 11px;background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:10px;font-size:11.5px;line-height:1.65;color:var(--blue-dark);cursor:pointer">
+        <input type="checkbox" id="editWiAlso" checked style="margin-top:2px;flex:0 0 auto;width:16px;height:16px">
+        <span>${TT('แก้ <b>ยอดผลิต + KPI</b> ของ Lot เดิมให้ตรงกันด้วย','Also fix the <b>production + KPI</b> rows on the old lot')}
+          <span class="tag tag-blue" style="font-size:10px">${nn(nRec)} record</span>
+          <div style="color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(oldValve)}${oldLot?(' / '+escapeHtml(oldLot)):''} → ${TT('เลขใหม่ที่กรอกด้านบน','the new values above')}</div></span></label>`:''}
+      <div id="editWiWarn" style="display:none;margin-top:10px;padding:8px 11px;border-radius:10px;background:#FEF2F2;border:1.5px solid #FCA5A5;color:#B91C1C;font-size:11.5px;line-height:1.65"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
         <button class="btn btn-outline" id="editWiCancel">${TT('ยกเลิก','Cancel')}</button>
         <button class="btn btn-green" id="editWiSave">💾 ${TT('บันทึกการแก้ไข','Save')}</button>
       </div>
     </div>`;
-  document.body.appendChild(ov);
+  (document.fullscreenElement||document.body).appendChild(ov);   // เต็มจอจริง: element นอก fullscreenElement จะไม่ถูกวาดเลย
   const close=()=>ov.remove();
   ov.addEventListener('click',ev=>{ if(ev.target===ov) close(); });
   ov.querySelector('#editWiCancel').onclick=close;
+  let _okUnknown='';          // Valve ที่ผู้ใช้ยืนยันแล้วว่า "ไม่มีใน Master ก็เอา" — ยืนยันในกล่องเดิม ไม่เปิด modal ซ้อน
   ov.querySelector('#editWiSave').onclick=async ()=>{
     const valve=vKey($('editWiValve').value);
     const lot=String($('editWiLot').value||'').trim();
     const qty=Math.max(0,Math.round(fnum($('editWiQty').value||'')));
+    const warn=ov.querySelector('#editWiWarn');
     if(!valve){ toast(TT('กรอก Valve No','Enter Valve No'),'orange'); $('editWiValve')?.focus(); return; }
     if(!(qty>0)){ toast(TT('กรอกจำนวน (Q\'ty)','Enter quantity'),'orange'); $('editWiQty')?.focus(); return; }
-    const needConfirm=!isKnownValve(valve);
-    close();   // ปิด overlay ก่อน แล้วค่อยถามยืนยัน (กัน modal ซ้อน)
-    if(needConfirm && !(await confirmModal(TT('ไม่พบ Valve No นี้ในระบบ — บันทึกต่อหรือไม่?','Valve No not found — save anyway?'),{danger:false}))) return;
+    if(!isKnownValve(valve) && _okUnknown!==valve){          // กดบันทึกอีกครั้ง = ยืนยัน (กล่องเดิม เห็นแน่ทุกหน้าจอ)
+      _okUnknown=valve;
+      warn.style.display='block';
+      warn.innerHTML=`⚠️ ${TT('ไม่พบ','Not found')} <b>${escapeHtml(valve)}</b> ${TT('ใน Master Valve — กด “บันทึกการแก้ไข” อีกครั้งเพื่อยืนยันว่าจะใช้เลขนี้','in Master Valve — press “Save” again to confirm this number')}`;
+      return;
+    }
     const cur=_wipin[id];
-    if(!cur || cur.deleted){ toast(TT('ไม่พบรายการ','Entry not found'),'orange'); return; }
+    if(!cur || cur.deleted){ toast(TT('ไม่พบรายการ','Entry not found'),'orange'); close(); return; }
+    const alsoFix=!!(ov.querySelector('#editWiAlso')?.checked);
+    const moved=(vKey(oldValve)!==valve)||(lotKey(oldLot)!==lotKey(lot));   // ย้าย Valve/Lot จริงไหม (แก้แค่จำนวนไม่ต้องยุ่งกับยอดผลิต)
+    close();
     cur.valve=valve; cur.lot=lot; cur.qty=qty; cur.updatedAt=new Date().toISOString();
     _saveWipin(); _wipinPush(cur);
+    let extra='';
+    if(alsoFix && moved){
+      const r=await _fixValveLotRecs(oldValve, oldLot, valve, lot);
+      extra = r.ok ? ` · ${TT('ยอดผลิต/KPI','production/KPI')} ${nn(r.n)} record`
+                   : ` · ⚠️ ${TT('ยอดผลิต/KPI แก้ในเครื่องแล้ว ยังไม่ขึ้น Cloud','production/KPI fixed locally, not on Cloud yet')}`;
+    }
     _refreshWipDetail(); renderWipBuckets(); renderWipInSummary();
-    toast(TT('แก้ไขรายการแล้ว','Entry updated')+` · ${escapeHtml(valve)} ${lot?('/ '+escapeHtml(lot)):''} · ${nn(qty)}`,'green');
+    if(alsoFix && moved && typeof renderHome==='function') renderHome();   // ยอดผลิตขยับ → ตารางติดตามงาน/Process ต้องวาดใหม่
+    toast(TT('แก้ไขรายการแล้ว','Entry updated')+` · ${escapeHtml(valve)} ${lot?('/ '+escapeHtml(lot)):''} · ${nn(qty)}${extra}`,'green');
   };
   setTimeout(()=>$('editWiValve')?.focus(),60);
 }
@@ -23086,7 +23167,7 @@ function renderMcRenameBox() {
   if (viewVsm() !== 'vsm3') { box.innerHTML = ''; return; }
   box.innerHTML = `
     <div style="border:1.5px solid #FDE68A;background:#FFFBEB;border-radius:10px;padding:9px 11px;margin-bottom:9px">
-      <div style="font-size:12.5px;font-weight:900;color:#B45309;margin-bottom:3px">🔧 เปลี่ยนชื่อเครื่อง VSM3 (2026-08-02)</div>
+      <div style="font-size:12.5px;font-weight:900;color:#B45309;margin-bottom:3px">🔧 เปลี่ยนชื่อเครื่อง VSM3 (2026-08-02 · 2026-09-17)</div>
       <div style="font-size:11px;color:#92400E;line-height:1.6">
         ${MC_RENAME.map(r => `<div>• <b>${r.from}</b> ที่สาย <b>${r.line}</b> (โซน ${r.zone}) → <b style="color:#15803D">${r.to}</b></div>`).join('')}
         <div style="margin-top:3px;color:var(--muted)">หน้าจอ/ผัง/IOT แปลงให้อัตโนมัติแล้ว — กดปุ่มนี้เพื่อแก้ข้อมูลดิบในฐานข้อมูล (D1) ให้ตรงกัน</div>
