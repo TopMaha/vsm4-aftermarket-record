@@ -269,6 +269,51 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 .shift-del{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;cursor:pointer}
 .shift-total{margin-top:5px;background:#fff;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--blue-dark)}
 .shift-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px;border:2px dashed var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;margin-top:4px}
+/* v3.71 — ปุ่มเพิ่มช่วง (ก๊อปพนักงาน/CT · เวลาต่อจากช่วงก่อน) */
+.shift-add{flex-direction:column;gap:2px;line-height:1.3;text-align:center;font-family:inherit;padding:8px 6px}
+.shift-add small{font-size:9.5px;font-weight:600;color:var(--muted)}
+/* v3.71 — แถบ "เติมจากกะล่าสุดของเครื่องนี้" + ปุ่มเวลาทั้งกะ + พนักงาน/CT แถวเดียว */
+.pf-note{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#92400E;background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:8px;padding:6px 8px;margin-bottom:7px;line-height:1.4}
+.pf-note:empty{display:none}
+.pf-note button{margin-left:auto;flex-shrink:0;border:1px solid #FCD34D;background:#fff;color:#92400E;border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.sh-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.sh-quick button{padding:8px 6px;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.sh-quick button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.emp-ct{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:8px;align-items:end}
+/* v3.71 — ตาราง Lot (มีเสมอ · 1 แถว = 1 Lot) */
+.ml-box{margin-top:6px;background:#fff;border:1.5px solid var(--blue-soft);border-radius:9px;padding:4px 6px 6px}
+.ml-ttl{font-size:10.5px;font-weight:800;color:var(--blue);padding:4px 2px 0}
+.fr .ml-row input.ml-auto{background:#FEFCE8;border-color:#FACC15}
+/* v3.71 — กล่องเลือก Lot จากงานรับเข้า */
+.lp-list{max-height:52vh;overflow-y:auto;margin:8px -2px 0;padding:0 2px}
+.lp-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border:1.5px solid var(--border);border-radius:9px;margin-bottom:6px;cursor:pointer;background:#fff}
+.lp-item input{width:20px;height:20px;flex-shrink:0;accent-color:var(--blue)}
+.lp-item.sel{border-color:var(--blue);background:var(--blue-light)}
+.lp-item.done{opacity:.55}
+.lp-item.dis{opacity:.5;cursor:default}
+.lp-lot{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.2px}
+.lp-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.lp-qty{margin-left:auto;text-align:right;font-size:13px;font-weight:800;color:var(--blue-dark);white-space:nowrap}
+/* v3.71 — ค้นเครื่อง + เครื่องที่ใช้ล่าสุด (ลดการเลื่อนจอหาเครื่อง) */
+.mc-find{display:flex;flex-direction:column;gap:6px;margin:10px 0 8px}
+.mc-find input{width:100%;padding:10px 12px;border:1.5px solid var(--blue-soft);border-radius:10px;font-size:16px;font-weight:600;font-family:inherit;outline:none}
+.mc-recent{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:10.5px;font-weight:700;color:var(--muted)}
+.mc-recent button{padding:6px 11px;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:999px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}
+/* 1 แถว = 1 การ์ด Lot · ทุกช่องมีป้ายชื่อของตัวเองอยู่เหนือช่อง (หัวตารางแยกบรรทัดทำให้งงว่าช่องไหนคืออะไรบนมือถือ) */
+.ml-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 34px;grid-template-areas:"lot opr tgt sc del";gap:6px;align-items:end;margin-top:6px;padding:6px 7px 7px;border:1px solid #DBE4F0;border-radius:8px;background:#F8FAFC}
+.ml-f{min-width:0}
+.ml-lb{display:block;font-size:10.5px;font-weight:800;color:var(--muted);margin:0 0 3px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ml-lb b{color:var(--red)}
+.ml-no{color:var(--blue)}
+.ml-lot{grid-area:lot}.ml-opr{grid-area:opr}.ml-tgt{grid-area:tgt}.ml-sc{grid-area:sc}.ml-del{grid-area:del}
+.fr .ml-row input{padding:8px 7px!important;font-size:14px;min-width:0}
+.ml-del{border:1px solid var(--red-bd);background:var(--red-bg);color:var(--red);border-radius:7px;height:38px;font-weight:800;cursor:pointer;padding:0;font-family:inherit}
+.ml-add{display:block;width:100%;margin-top:6px;padding:11px 8px;border:1.5px dashed var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+.lot-hint{font-size:10.5px;font-weight:700;color:var(--red);margin-top:3px;line-height:1.4}
+.lot-hint:empty{display:none}
+@media(max-width:520px){
+  .ml-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 38px;grid-template-areas:"lot lot lot del" "opr tgt sc sc";row-gap:6px}
+}
 .time-row{display:flex;align-items:center;gap:5px}
 .time-row select{flex:1;padding:7px;border:1.5px solid var(--blue-soft);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--text);outline:none}
 .time-sep{font-size:13px;font-weight:800;color:var(--muted)}
@@ -2199,7 +2244,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.70</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.71</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5056,6 +5101,40 @@ function _lotFmtBtnsHtml(lotId, valveId) {
   </div>`;
 }
 
+/* ── v3.71 — ตรวจรูปแบบเลข Lot: ปปดด + S + ตัวเลข 6 หลัก (เช่น 2609S090341) ──
+   เคสจริง H-219 · 25/9: พิมพ์ซ้ำทีละ Lot แล้วเลขเกิน "26809S090313" · ตัวเล็ก "2609s090348"
+   · เทียบหลัง lotKey() เสมอ (ตัวใหญ่ · ตัดช่องว่าง · $→S)
+   · Lot ที่ลงทะเบียนใน Valve IDs (หน้าตั้งค่า) ผ่านเสมอ — admin ยืนยันแล้ว กันงานเก่ารูปแบบอื่นติดบันทึกไม่ได้ */
+const LOT_FMT_RE = /^\d{2}(0[1-9]|1[0-2])S\d{6}$/;
+const LOT_FMT_MSG = 'ต้องเป็น ปปดด + S + ตัวเลข 6 หลัก เช่น 2609S090341';
+function lotFmtBad(lot, valveNo) {
+  const L = lotKey(lot);
+  return !!L && !LOT_FMT_RE.test(L) && !isRegisteredLot(valveNo, L);
+}
+/* เลขหน้าของ Lot ไว้เติมให้ Lot ถัดไป — "2609S090341" → "2609S090" (เหลือพิมพ์ 3 ตัวท้าย)
+   Lot ที่ผิดรูปแบบ → ไม่เติม (กันลามความผิดไปแถวถัดไป) */
+function _lotPrefix(lot) {
+  const L = lotKey(lot);
+  if (LOT_FMT_RE.test(L)) return L.slice(0, 8);
+  return /^\d{4}S/.test(L) ? L.slice(0, 5) : '';
+}
+/* ช่อง Lot ที่มี data-vid (ฟอร์ม KPI): ออกจากช่อง → แปลงตัวใหญ่/ตัดช่องว่าง แล้วเตือนทันทีถ้ารูปแบบผิด */
+function _lotChk(el, norm) {
+  if (!el) return;
+  if (norm) { const v = lotKey(el.value); if (v !== el.value) el.value = v; }
+  const vId = el.getAttribute('data-vid');
+  const bad = lotFmtBad(el.value, vId ? (document.getElementById(vId)?.value || '') : '');
+  el.classList.toggle('err', bad);
+  el.title = bad ? 'รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG : '';
+  const h = document.getElementById(el.id + '_hint');
+  if (h) h.textContent = bad ? '⚠️ รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG : '';
+}
+function _lotChkClear(el) {
+  if (!el || !el.classList.contains('err')) return;
+  el.classList.remove('err'); el.title = '';
+  const h = document.getElementById(el.id + '_hint'); if (h) h.textContent = '';
+}
+
 /* ── ⚡ 2026-08-07 — ยุบคำขอ GET ที่ "ซ้ำกันเป๊ะและกำลังวิ่งอยู่พร้อมกัน" ให้เหลือรอบเดียว ──
    วัดจากของจริง (ดักทุก fetch ตอนเปิดแอป): ยิง 19 คำขอ แต่ URL ไม่ซ้ำแค่ 11
      /api/kpi?from=วันนี้&to=วันนี้&limit=50000  ยิง 8 ครั้ง จาก 3 จุดที่บังเอิญขอ URL เดียวกัน
@@ -5177,7 +5256,7 @@ function hasUnsavedKpiData() {
     if (!on?.checked) continue;
     for (const sb of card.querySelectorAll('.shift')) {
       const sid = sb.id.replace('_block', '');
-      if (fnum($(sid+'_opr')?.value) || +($(sid+'_sc')?.value || 0)) return true;
+      if (_mlRows(sid).some(r => r.opr || r.scrap)) return true;   // v3.71: ยอดอยู่ในตาราง Lot
     }
   }
   return false;
@@ -5590,11 +5669,22 @@ function applyScanResult(decoded) {
   }
 
   // ✅ เจอใน DB
-  const lotInput   = document.getElementById(scanTargetSid + '_lot');
-  const valveInput = document.getElementById(scanTargetSid + '_v');
-  if (lotInput)   lotInput.value   = parsed.lot;
-  if (valveInput) valveInput.value = parsed.valveNo;
-  if (typeof renderProcChips === 'function') renderProcChips(scanTargetSid);   // สแกนแล้ว → โชว์ process ให้กดเลือกทันที
+  if (document.getElementById(scanTargetSid + '_mlrows')) {
+    // v3.71 ฟอร์ม KPI (ตาราง Lot): สแกน 1 ครั้ง = เติม Lot ลงแถวว่างถัดไป (วาล์วต้องตรงกับของช่วงนี้)
+    const err = _mlFromScan(scanTargetSid, parsed);
+    if (err) {
+      $('scanResult').className = 'scan-result show err';
+      $('scanResult').innerHTML = `<b>❌ ${escapeHtml(err)}</b>`;
+      toast(err, 'red');
+      return;   // เหมือน error อื่น — ไม่ปิด modal ให้ผู้ใช้อ่านเอง
+    }
+  } else {
+    const lotInput   = document.getElementById(scanTargetSid + '_lot');
+    const valveInput = document.getElementById(scanTargetSid + '_v');
+    if (valveInput) valveInput.value = parsed.valveNo;
+    if (lotInput)   { lotInput.value = parsed.lot; if (lotInput.getAttribute('data-vid')) _lotChk(lotInput, true); }
+    if (typeof renderProcChips === 'function') renderProcChips(scanTargetSid);   // สแกนแล้ว → โชว์ process ให้กดเลือกทันที
+  }
 
   $('scanResult').className = 'scan-result show';
   $('scanResult').innerHTML = `✓ ID: <b>${escapeHtml(parsed.idCode)}</b>
@@ -9243,7 +9333,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.70":"Production Record + KPI · v3.70",
+"ระบบบันทึกผลิต + KPI · v3.71":"Production Record + KPI · v3.71",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -17724,14 +17814,53 @@ function renderZone() {
     return;
   }
   const machines = state.machines[zone] || [];
-  cont.innerHTML = machines.length ? machines.map((m, mi) => mcHtml(zone, mi, m)).join('')
+  cont.innerHTML = machines.length ? _mcFindHtml(zone, machines) + machines.map((m, mi) => mcHtml(zone, mi, m)).join('')
     : '<div class="card center muted">ยังไม่มีเครื่องจักรในโซนนี้ — ไปที่ ⚙️ ตั้งค่า → เครื่องจักร เพื่อเพิ่ม</div>';
+}
+
+/* ── v3.71 — ค้นเครื่อง + ชิปเครื่องที่ใช้ล่าสุด (โซนหนึ่งมี 10–20 เครื่อง เลื่อนหาเครื่องตัวเองนาน) ──
+   พิมพ์ "219" → เหลือการ์ด H-219 · การ์ดที่เปิดสวิตช์อยู่ไม่ถูกซ่อนเสมอ (กันกรอกค้างแล้วมองไม่เห็น)
+   ชิปเครื่องล่าสุด = เครื่องที่บันทึกจากมือถือเครื่องนี้ (localStorage) → แตะ = เปิดสวิตช์ + เลื่อนไปที่การ์ด */
+const LS_RECENT_MC = 'vsm4_recent_mc';
+function _recentMcs(zone) {
+  try { const o = JSON.parse(localStorage.getItem(LS_RECENT_MC) || '{}'); return Array.isArray(o[zone]) ? o[zone] : []; } catch (e) { return []; }
+}
+function _rememberMcs(zone, ids) {
+  if (!ids.length) return;
+  try {
+    const o = JSON.parse(localStorage.getItem(LS_RECENT_MC) || '{}');
+    o[zone] = [...new Set([...ids, ...(Array.isArray(o[zone]) ? o[zone] : [])])].slice(0, 4);
+    localStorage.setItem(LS_RECENT_MC, JSON.stringify(o));
+  } catch (e) {}
+}
+function _mcFindHtml(zone, machines) {
+  const have = new Set(machines.map(m => m.id));
+  const rec = _recentMcs(zone).filter(id => have.has(id));
+  return `<div class="mc-find">
+    <input type="search" id="mcFind" placeholder="🔎 ${TT('ค้นเครื่อง เช่น 219','Find machine, e.g. 219')}" oninput="mcFilter(this.value)" autocomplete="off">
+    ${rec.length ? `<div class="mc-recent">${TT('ล่าสุด:','Recent:')} ${rec.map(id => `<button type="button" onclick="mcJump('${escapeHtml(id)}')">${escapeHtml(id)}</button>`).join('')}</div>` : ''}
+  </div>`;
+}
+function mcFilter(q) {
+  q = String(q || '').trim().toUpperCase();
+  document.querySelectorAll('#zone-machines .mc').forEach(card => {
+    const on = document.getElementById(card.id + '_on')?.checked;
+    const id = (card.getAttribute('data-mcid') || '').toUpperCase();
+    card.style.display = (!q || on || id.includes(q)) ? '' : 'none';
+  });
+}
+function mcJump(id) {
+  const card = document.querySelector(`#zone-machines .mc[data-mcid="${CSS.escape(id)}"]`); if (!card) return;
+  const on = document.getElementById(card.id + '_on');
+  if (on && !on.checked) { on.checked = true; toggleMc(card.id); }
+  card.style.display = '';
+  try { card.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { card.scrollIntoView(); }
 }
 
 function mcHtml(zone, mi, m) {
   const pid = `${zone}_${mi}`;
   const opts = { isLine:false, hideProcess:false, multiEmp: zoneVsm(zone) === 'vsm3' };
-  return `<div class="mc" id="${pid}">
+  return `<div class="mc" id="${pid}" data-mcid="${escapeHtml(m.id)}">
     <div class="mc-hd">
       <div>
         <span class="mc-id">${escapeHtml(m.id)}</span>
@@ -17739,9 +17868,16 @@ function mcHtml(zone, mi, m) {
       </div>
       <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
     </div>
-    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}<button class="shift-add" onclick="addShiftP('${pid}')">➕ เพิ่มช่วงเวลา</button></div>
+    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}${_shiftAddBtns(pid)}</div>
     <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
   </div>`;
+}
+
+/* v3.71 — ปุ่มเพิ่มช่วง (เดิม "➕ เพิ่มช่วงเวลา" ได้ช่วงว่าง ต้องกรอกใหม่หมดทุกช่อง)
+   หลาย Lot ของวาล์วเดียว = เพิ่มแถวในตาราง Lot ของช่วงเดิม (ไม่ต้องเพิ่มช่วง)
+   ช่วงใหม่มีไว้สำหรับ "เปลี่ยนวาล์ว" หรือ "เวลาคนละช่วง" → ก๊อปพนักงาน/CT · เวลาเริ่ม = เวลาจบของช่วงก่อน */
+function _shiftAddBtns(pid) {
+  return `<button type="button" class="shift-add" onclick="addShiftP('${pid}','next')">➕ ${TT('เพิ่มช่วง — เปลี่ยนวาล์ว / เวลาถัดไป','Add range — next valve / time')}<small>${TT('ก๊อปพนักงาน · CT · เวลาเริ่มต่อจากช่วงก่อน','Copies operator · CT · starts where the last range ended')}</small></button>`;
 }
 
 /* การ์ดราย Line (Auto Line) — 1 การ์ด = 1 สาย เดินทุกเครื่องพร้อมกัน */
@@ -17751,7 +17887,7 @@ function lineHtml(zone, lineKey) {
   const m = { id:lineKey, target:2000, man_std:0.5 };
   const opts = { isLine:true, hideProcess:true, multiEmp:true };
   const label = VSM3_LINE_LABEL[lineKey] || lineKey;
-  return `<div class="mc" id="${pid}" style="border-color:var(--blue-soft)">
+  return `<div class="mc" id="${pid}" data-mcid="${escapeHtml(label)}" style="border-color:var(--blue-soft)">
     <div class="mc-hd">
       <div>
         <span class="mc-id">⚡ ${escapeHtml(label)}</span>
@@ -17760,7 +17896,7 @@ function lineHtml(zone, lineKey) {
       </div>
       <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
     </div>
-    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}<button class="shift-add" onclick="addShiftP('${pid}')">➕ เพิ่มช่วงเวลา</button></div>
+    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}${_shiftAddBtns(pid)}</div>
     <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
   </div>`;
 }
@@ -17777,36 +17913,41 @@ function shiftHtml(pid, si, m, opts) {
   const procBlock = opts.hideProcess ?
     `<div class="muted" style="font-size:10px;margin-top:4px">⚙️ Process ใช้ตามที่ตั้งไว้ของแต่ละเครื่องอัตโนมัติ (Auto Line)</div>` :
     procChipsHtml(sid);
+  /* v3.71 — จัดฟอร์มใหม่ให้สั้นลง (พนักงานกรอกบนมือถือ):
+     เวลา (มีปุ่มทั้งกะ) → พนักงาน+CT แถวเดียว → วาล์ว+Process → ตาราง Lot (OPR/Target/Scrap อยู่ในแถว Lot)
+     ช่อง OPR/Target/Scrap/Lot เดี่ยวเดิมถูกยุบเข้าตาราง Lot แถวแรก — 1 แถว = บันทึกเหมือนเดิมทุกอย่าง */
+  // 1 Lot + Target ว่าง = ใช้ Target เครื่อง (เหมือนฟอร์มเดิม) → บอกในช่องว่า "ว่าง = 3000" ไม่ใช่โชว์เลขเฉย ๆ (ดูเหมือนกรอกแล้ว)
+  const tgtPh = m.target ? `${TT('ว่าง','blank')} = ${m.target}` : '';
   return `<div class="shift" id="${sid}_block">
     <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShiftP('${pid}',${si})">✕ ลบ</button>`:''}</div>
-    <div class="fg">
-      <div class="fr" style="margin:0"><label>OPR (ชิ้น) *</label><input type="text" inputmode="text" id="${sid}_opr" placeholder="เช่น 1000 หรือ 250*5" oninput="_formDirty=true;_updateFabState();updShiftTotal('${pid}')" onblur="evalFormula(this);updShiftTotal('${pid}')"></div>
-      <div class="fr" style="margin:0"><label>Scrap (ชิ้น)</label><input type="number" id="${sid}_sc" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
-      <div class="fr" style="margin:0"><label>Target</label><input type="text" inputmode="text" id="${sid}_tgt" placeholder="${m.target||'เช่น 1000+152'}" oninput="_formDirty=true;_updateFabState()" onblur="evalFormula(this)"></div>
-      <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
-    </div>
-    <div class="fr" style="margin-top:6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
-      <div class="time-row"><select id="${sid}_ts" onchange="updWTP('${pid}',${si});updShiftDetect()">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onchange="updWTP('${pid}',${si})">${timeOpts()}</select></div>
+    <div class="pf-note" id="${sid}_pf"></div>
+    <div class="fr" style="margin:0 0 6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
+      ${si === 0 ? `<div class="sh-quick">
+        <button type="button" id="${sid}_qday" onclick="setSlotShift('${sid}','day')">☀️ ${TT('ทั้งกะเช้า 08–20','Full day 08–20')}</button>
+        <button type="button" id="${sid}_qnight" onclick="setSlotShift('${sid}','night')">🌙 ${TT('ทั้งกะดึก 20–08','Full night 20–08')}</button>
+      </div>` : ''}
+      <div class="time-row"><select id="${sid}_ts" onchange="updWTP('${pid}',${si});updShiftDetect();_shQuickMark('${sid}')">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onfocus="this.dataset.last=this.value" onchange="updWTP('${pid}',${si});_chainTime('${pid}','${sid}');_shQuickMark('${sid}')">${timeOpts()}</select></div>
       <div id="${sid}_wt" class="muted" style="font-size:11px;margin-top:3px"></div>
     </div>
-    ${empBlock}
-    <div class="fr" style="margin-top:6px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
+    <div class="emp-ct">
+      ${empBlock}
+      <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
+    </div>
+    <div class="fr" style="margin-top:8px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
-        <div style="font-size:10px;font-weight:800;color:var(--blue)">🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) <span style="color:var(--red)">*จำเป็น</span></div>
+        <div style="font-size:10.5px;font-weight:800;color:var(--blue)">🧩 ${TT('งานที่ผลิต','Job produced')} <span style="color:var(--red)">*</span></div>
         <button type="button" class="scan-btn" onclick="openScanner('${sid}')"><span class="ico">📷</span>สแกนบาร์โค้ด</button>
       </div>
-      <div class="fg">
-        <div class="fr ac" style="margin:0"><label>Valve No <span style="color:var(--red)">*</span></label>
-          <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" onchange="renderProcChips('${sid}')" autocomplete="off">
-          <div class="ac-dd" id="${sid}_v_dd"></div>
-        </div>
-        <div class="fr ac" style="margin:0"><label>Lot <span style="color:var(--red)">*</span></label>
-          <input type="text" id="${sid}_lot" placeholder="พิมพ์/เลือก Lot" oninput="acLotSearch(event,'${sid}_lot','${sid}_v')" onfocus="acLotSearch(event,'${sid}_lot','${sid}_v')" autocomplete="off">
-          <div class="ac-dd" id="${sid}_lot_dd"></div>
-          ${_lotFmtBtnsHtml(sid + '_lot', sid + '_v')}
-        </div>
+      <div class="fr ac" style="margin:0"><label>Valve No <span style="color:var(--red)">*</span></label>
+        <input type="text" id="${sid}_v" placeholder="VF..." oninput="acValveSearch(event,'${sid}_v')" onchange="renderProcChips('${sid}')" autocomplete="off">
+        <div class="ac-dd" id="${sid}_v_dd"></div>
       </div>
-      ${procBlock}
+      <div style="margin-top:6px">${procBlock}</div>
+      <div class="ml-box" id="${sid}_ml" data-seq="1" data-mtgt="${escapeHtml(tgtPh)}">
+        <div class="ml-ttl">📦 ${TT('Lot ที่ผลิตในช่วงนี้ (หลาย Lot = หลายกล่อง)','Lots produced in this range (one box per lot)')}</div>
+        <div id="${sid}_mlrows">${_mlRowHtml(sid, 1, 1, tgtPh)}</div>
+        <button type="button" class="ml-add" onclick="mlAddLot('${sid}')">➕ ${TT('เพิ่ม Lot','Add lot')}</button>
+      </div>
     </div>
     <div class="shift-total" id="${sid}_total">OPR: 0 · WT: 0 ชม.</div>
   </div>`;
@@ -17906,12 +18047,113 @@ function toggleMc(pid) {
   const on   = $(pid + '_on').checked;
   $(pid + '_body').classList.toggle('show', on);
   $(pid + '_off').style.display = on ? 'none' : 'block';
-  if (on) { _formDirty = true; _updateFabState(); }
+  if (on) { _formDirty = true; _updateFabState(); _prefillSlot0(pid); }
+}
+
+/* ── v3.71 (A) — เปิดสวิตช์เครื่อง → เติมค่าจากกะล่าสุดของเครื่องนี้ (ลดการกรอกซ้ำทุกกะ) ──
+   จาก KPI record ล่าสุดของเครื่อง/สาย (cache 30 วันในเครื่อง): พนักงาน · CT · วาล์ว · Process
+   เวลา = ทั้งกะ ตามเวลาปัจจุบัน (_guessShift) — กดสลับกะเช้า/ดึกได้ที่ปุ่ม
+   ❌ ไม่เติม Lot / OPR / Target (เปลี่ยนทุกกะ · Target พนักงานกรอกเอง)
+   เติมเฉพาะช่วงแรกที่ยังว่าง ครั้งเดียวต่อการ์ด — เปิด/ปิดสวิตช์ซ้ำไม่ทับของที่กรอกไว้ */
+function _lastRecOf(pid) {
+  const info = _unitInfo(pid);
+  const keyOf = r => `${(r.shift_date || r.record_date || '').slice(0, 10)}|${r.shift_type === 'night' ? 1 : 0}|${r.saved_at || ''}|${String((_shiftsArr(r)[0] || {}).si || 0).padStart(2, '0')}`;
+  let best = null, bestK = '';
+  for (const r of (state.kpiRecords || [])) {
+    if (r.zone !== info.zone) continue;
+    if (info.isLine ? r.line_key !== info.lineKey : r.machine_id !== info.m.id) continue;
+    const k = keyOf(r);
+    if (k > bestK) { best = r; bestK = k; }
+  }
+  return best;
+}
+/* Process ของ record: KPI เก็บแค่ตัวท้าย · ยอดผลิตที่ผูก kpi_record_id เก็บครบทุกตัวที่กดเลือก */
+function _procsOfRec(r) {
+  const linked = (state.prodRecords || []).filter(p => p.kpi_record_id && p.kpi_record_id === r.record_id)
+    .map(p => p.current_process || p.currentProcess).filter(Boolean);
+  const list = linked.length ? linked : (r.last_process ? [r.last_process] : []);
+  const flow = allowedProcs(r.valve_no || '').map(_procCanon);
+  return [...new Set(list)].sort((a, b) => flow.indexOf(_procCanon(a)) - flow.indexOf(_procCanon(b)));
+}
+/* กะที่น่าจะกำลังลง — ชั่วโมงแรกหลังเปลี่ยนกะ (08:xx / 20:xx) = ลงของกะที่เพิ่งจบ */
+function _guessShift() {
+  const h = new Date().getHours();
+  return (h >= 9 && h < 21) ? 'day' : 'night';
+}
+function _prefillSlot0(pid) {
+  const sid = `${pid}_s0`, blk = $(sid + '_block');
+  if (!blk || blk.dataset.pf) return;
+  const g = s => ($(sid + s)?.value || '').trim();
+  if (g('_ts') || g('_te') || g('_v') || g('_emp') || g('_ct')
+      || $(sid + '_emps')?.querySelector('[data-empid]') || _mlRows(sid).some(r => !r.untouched)) return;
+  blk.dataset.pf = '1';
+  setSlotShift(sid, _guessShift(), true);
+  const r = _lastRecOf(pid);
+  if (r) {
+    const ct = +r.ct || +(_shiftsArr(r)[0] || {}).ct || 0;
+    if (ct && $(sid + '_ct')) $(sid + '_ct').value = String(ct);
+    if ($(sid + '_emps')) {            // VSM3 หลายคน → chips
+      const ids = String(r.shift_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+      const names = String(r.emp_name || '').split(',').map(s => s.trim());
+      if (ids.length) ids.forEach((id, i) => _addEmpChip(sid, id, names[i] || ''));
+      else if (r.emp_id) { const [id, ...nm] = String(r.emp_id).split('—'); _addEmpChip(sid, id.trim(), nm.join('—').trim()); }
+    } else if (r.emp_id && $(sid + '_emp')) $(sid + '_emp').value = r.emp_id;
+    if (r.valve_no && $(sid + '_v')) {
+      $(sid + '_v').value = r.valve_no;
+      _writeProcSel(sid, _procsOfRec(r));
+      renderProcChips(sid);
+    }
+    const d = String(r.shift_date || r.record_date || '').slice(5, 10).split('-').reverse().join('/');
+    $(sid + '_pf').innerHTML = `<span>↺ ${TT('เติมจากกะล่าสุดของเครื่องนี้','Filled from the last shift of this machine')} (${escapeHtml(d)} ${r.shift_type === 'night' ? '🌙' : '☀️'}${r.valve_no ? ' · ' + escapeHtml(r.valve_no) : ''}) — ${TT('ตรวจก่อนบันทึก','check before saving')}</span><button type="button" onclick="_pfClear('${sid}')">${TT('ล้าง','Clear')}</button>`;
+  }
+  updWTP(pid, 0);
+}
+/* ปุ่ม "ล้าง" ในแถบเติมอัตโนมัติ — ล้างพนักงาน/CT/วาล์ว/Process ที่เติมมา (เวลาไม่แตะ) */
+function _pfClear(sid) {
+  ['_emp', '_ct', '_v'].forEach(s => { const el = $(sid + s); if (el) { el.value = ''; el.disabled = false; } });
+  $(sid + '_emps')?.querySelectorAll('.emp-chip').forEach(c => c.remove());
+  _writeProcSel(sid, []); renderProcChips(sid);
+  if ($(sid + '_pf')) $(sid + '_pf').innerHTML = '';
+}
+/* ปุ่ม ☀️ ทั้งกะเช้า 08–20 / 🌙 ทั้งกะดึก 20–08 (เวลาเดียวกับกติกากะของระบบ _resolveShift) */
+function setSlotShift(sid, which, silent) {
+  const [ts, te] = which === 'night' ? ['20:00', '08:00'] : ['08:00', '20:00'];
+  const teEl = $(sid + '_te'), oldTe = teEl ? teEl.value : '';
+  if ($(sid + '_ts')) $(sid + '_ts').value = ts;
+  if (teEl) teEl.value = te;
+  const m = sid.match(/^(.*)_s(\d+)$/);
+  if (m) { updWTP(m[1], +m[2]); if (teEl) { teEl.dataset.last = oldTe; _chainTime(m[1], sid); } }
+  updShiftDetect(); _shQuickMark(sid);
+  if (!silent) { _formDirty = true; _updateFabState(); }
+}
+function _shQuickMark(sid) {
+  const ts = $(sid + '_ts')?.value, te = $(sid + '_te')?.value;
+  $(sid + '_qday')?.classList.toggle('on', ts === '08:00' && te === '20:00');
+  $(sid + '_qnight')?.classList.toggle('on', ts === '20:00' && te === '08:00');
+}
+/* แก้เวลาจบของช่วงนี้ → ช่วงถัดไปที่ "เริ่มต่อจากเวลาจบเดิม" เลื่อนตามให้ (ไม่ต้องแก้สองที่) */
+function _chainTime(pid, sid) {
+  const te = $(sid + '_te'); if (!te) return;
+  const old = te.dataset.last || ''; te.dataset.last = te.value;
+  if (!old || old === te.value) return;
+  const blocks = [...($(pid + '_body')?.querySelectorAll('.shift') || [])];
+  const nx = blocks[blocks.findIndex(b => b.id === sid + '_block') + 1]; if (!nx) return;
+  const nsid = nx.id.replace(/_block$/, ''), nts = $(nsid + '_ts');
+  if (nts && nts.value === old) { nts.value = te.value; const m = nsid.match(/_s(\d+)$/); if (m) updWTP(pid, +m[1]); }
+}
+/* เวลาจบกะของหน่วยนี้ (ดูจากเวลาเริ่มช่วงแรก) */
+function _shiftEndOf(pid) {
+  const b0 = $(pid + '_body')?.querySelector('.shift'); if (!b0) return '';
+  const ts = $(b0.id.replace(/_block$/, '') + '_ts')?.value || ''; if (!ts) return '';
+  const [h, m] = ts.split(':').map(Number), mins = h * 60 + (m || 0);
+  return (mins >= 480 && mins <= 1199) ? '20:00' : '08:00';
 }
 /* จำนวน "ช่วงเวลา" สูงสุดต่อหน่วย
-   QC ตรวจงานหลาย Lot/Valve ต่อกะ (ยอดเพิ่มเติมเยอะกว่าสายผลิต) → เปิดได้ถึง 10 ช่วง · สายอื่นคงไว้ 4 ช่วง */
-const MAX_SHIFT_DEFAULT = 4, MAX_SHIFT_QC = 10;
-function maxShiftOf(pid) { return zoneVsm(_unitInfo(pid).zone) === 'qc' ? MAX_SHIFT_QC : MAX_SHIFT_DEFAULT; }
+   v3.69: QC 10 ช่วง · สายอื่น 4 ช่วง
+   v3.71: ทุกสาย 10 ช่วง — เครื่องผลิตเองก็ทำหลาย Lot/หลายวาล์วต่อกะ
+          (เคส H-219 · 25/9 กะ Day วาล์วเดียว 5 Lot → 4 ช่วงไม่พอ ต้องกดบันทึก 2 รอบ) */
+const MAX_SHIFT = 10;
+function maxShiftOf(pid) { return MAX_SHIFT; }
 
 /* ไล่เลขหัวข้อช่วงใหม่ตามบล็อกที่เหลืออยู่จริง (ลบช่วงกลางทิ้งแล้วเลขต้องไม่ข้าม) — id ไม่แตะ */
 function renumShiftsP(pid) {
@@ -17921,18 +18163,303 @@ function renumShiftsP(pid) {
     if (lb) lb.textContent = `🕐 ${i === 0 ? 'ช่วง 1 (หลัก)' : 'ช่วง ' + (i + 1)}`;
   });
 }
-function addShiftP(pid) {
+/* mode: 'next' = ก๊อปพนักงาน/CT + เวลาต่อจากช่วงก่อน · ไม่ส่ง = ช่วงว่าง (แบบเดิม) */
+function addShiftP(pid, mode) {
   const body = $(`${pid}_body`); if (!body) return;
   const max = maxShiftOf(pid);
   // นับจากบล็อกที่มีอยู่จริงใน DOM — ลบช่วงทิ้งแล้วต้องเพิ่มใหม่ได้
   // (_unitShiftCount เป็นตัวนับขาขึ้นอย่างเดียว ใช้ตั้ง id ไม่ให้ชนของที่ลบไป)
-  if (body.querySelectorAll('.shift').length >= max) { toast(`สูงสุด ${max} ช่วงต่อหน่วย`, 'orange'); return; }
+  const blocks = body.querySelectorAll('.shift');
+  if (blocks.length >= max) { toast(`สูงสุด ${max} ช่วงต่อหน่วย`, 'orange'); return; }
   const cnt = (_unitShiftCount[pid] || 0) + 1;
   _unitShiftCount[pid] = cnt;
   const info = _unitInfo(pid);
   const html = shiftHtml(pid, cnt, info.m, info.opts);
   body.insertBefore(document.createRange().createContextualFragment(html), body.querySelector('.shift-add'));
   renumShiftsP(pid);
+  const prev = blocks[blocks.length - 1];   // ช่วงล่าสุดบนจอ = ต้นแบบที่ก๊อป
+  if (prev && mode) _copySlot(prev.id.replace(/_block$/, ''), `${pid}_s${cnt}`);
+}
+
+/* ── v3.71 — ช่วงใหม่ก๊อปจากช่วงก่อน (ใช้ตอน "เปลี่ยนวาล์ว" หรือ "เวลาคนละช่วง") ──
+   ก๊อป: CT · พนักงาน · เวลาเริ่ม = เวลาจบของช่วงก่อน · เวลาจบ = ท้ายกะ
+     (ช่วงก่อนยังเป็นทั้งกะ → พอแก้เวลาจบของช่วงก่อน เวลาเริ่มของช่วงนี้เลื่อนตามเอง ดู _chainTime)
+   ❌ ไม่ก๊อป วาล์ว/Lot/OPR/Target — ช่วงใหม่มีไว้เปลี่ยนวาล์ว (หลาย Lot วาล์วเดียว = เพิ่มแถวในตาราง Lot)
+   จำ "ลายเซ็น" ของค่าที่ก๊อปมาไว้ → ช่วงที่กดเพิ่มแล้วไม่ได้แตะเลย = ช่วงว่าง ข้ามได้ตอนบันทึก (ไม่เด้งเตือน) */
+function _copySlot(src, dst) {
+  const val = s => (document.getElementById(src + s)?.value || '');
+  const put = (s, v) => { const el = document.getElementById(dst + s); if (el) el.value = v; };
+  const pid = dst.replace(/_s\d+$/, '');
+  put('_ct', val('_ct'));
+  const te = val('_te');
+  if (te) { put('_ts', te); const end = _shiftEndOf(pid); if (end) put('_te', end); }
+  const chips = document.getElementById(src + '_emps');
+  if (chips) chips.querySelectorAll('[data-empid]').forEach(c => _addEmpChip(dst, c.getAttribute('data-empid'), c.getAttribute('data-empname') || ''));
+  put('_emp', val('_emp'));
+  const m = dst.match(/_s(\d+)$/);
+  if (m) updWTP(pid, +m[1]);
+  const blk = document.getElementById(dst + '_block');
+  if (blk) blk.dataset.autosig = _slotSig(dst);
+  _formDirty = true; _updateFabState();
+  const f = document.getElementById(dst + '_v');     // ต่อไปคือใส่/สแกนวาล์วใหม่
+  if (f) { try { f.focus(); } catch (e) {} }
+}
+/* ลายเซ็นค่าที่กรอกในช่วง — เทียบว่าช่วงที่ก๊อปมา "ยังไม่ถูกแตะ" หรือไม่ */
+function _slotSig(sid) {
+  const val = s => (document.getElementById(sid + s)?.value || '');
+  const chips = [...(document.getElementById(sid + '_emps')?.querySelectorAll('[data-empid]') || [])].map(c => c.getAttribute('data-empid')).join(',');
+  const lots = _mlRows(sid).filter(r => !r.untouched).map(r => r.lot).join(',');
+  return [val('_ts'), val('_te'), val('_v'), val('_p'), val('_ct'), val('_emp'), chips, lots].join('|');
+}
+
+/* ── v3.71 — ตาราง Lot ในทุกช่วง (1 แถว = 1 Lot · วาล์ว/เวลา/พนักงาน/CT/Process ชุดเดียวของช่วง) ──
+   ตอนบันทึกแตกเป็น 1 record ต่อ 1 Lot (โครงข้อมูลเดิม) ⇒ Production Tracker ยังผูกราย Lot ได้ตามเดิม
+   · 1 แถว  = บันทึกเหมือนฟอร์มเดิมทุกอย่าง (Target ว่าง → ใช้ Target เครื่อง · WT เต็มช่วง)
+   · หลายแถว = WT ของช่วงแบ่งให้แต่ละ Lot ตามสัดส่วน OPR (ΣWT = WT ของช่วงพอดี → PPLH/DLE รวมไม่เพี้ยน)
+              Target: พนักงานกรอกเองทุก Lot · ไม่ใช้ Target เครื่องแทนช่องว่าง
+              (ถ้าใช้ Target เครื่องเต็ม ๆ ทุก Lot ΣTarget จะบวม N เท่า) → ว่าง = popup เด้ง "Target ยังไม่ลง" */
+const ML_MAX_ROWS = 20;
+function _mlRowHtml(sid, k, no, tgtPh) {
+  const rid = `${sid}_ml${k}`;
+  const key = f => `onkeydown="_mlKey(event,'${sid}','${rid}','${f}')"`;
+  // ทุกช่องมีป้ายของตัวเอง (ไม่พึ่งหัวตาราง) — บนมือถือแถวถูกพับเป็น 2 บรรทัด หัวตารางจะไม่ตรงช่อง
+  return `<div class="ml-row" id="${rid}">
+    <div class="ml-f ml-lot ac"><label class="ml-lb" for="${rid}_lot">Lot ${TT('ที่','#')} <span class="ml-no">${no || ''}</span> <b>*</b></label>
+      <input type="text" id="${rid}_lot" data-vid="${sid}_v" placeholder="${TT('เลข Lot','Lot no.')}" autocomplete="off" autocapitalize="characters" enterkeyhint="next"
+        oninput="_lotChkClear(this);acLotSearch(event,'${rid}_lot','${sid}_v');_mlTouch('${sid}')" onfocus="acLotSearch(event,'${rid}_lot','${sid}_v')" onblur="_lotChk(this,true)" ${key('lot')}>
+      <div class="ac-dd" id="${rid}_lot_dd"></div></div>
+    <div class="ml-f ml-opr"><label class="ml-lb" for="${rid}_opr">OPR ${TT('ชิ้นดี','good pcs')} <b>*</b></label>
+      <input type="text" inputmode="text" id="${rid}_opr" enterkeyhint="next" oninput="this.classList.remove('ml-auto');_mlTouch('${sid}')" onblur="evalFormula(this);_mlTouch('${sid}')" ${key('opr')}></div>
+    <div class="ml-f ml-tgt"><label class="ml-lb" for="${rid}_tgt">Target <b>*</b></label>
+      <input type="text" inputmode="text" id="${rid}_tgt" placeholder="${escapeHtml(tgtPh || '')}" enterkeyhint="next" oninput="_mlTouch('${sid}')" onblur="evalFormula(this);_mlTouch('${sid}')" ${key('tgt')}></div>
+    <div class="ml-f ml-sc"><label class="ml-lb" for="${rid}_sc">Scrap ${TT('ชิ้นเสีย','reject pcs')}</label>
+      <input type="number" min="0" id="${rid}_sc" placeholder="0" enterkeyhint="next" oninput="_mlTouch('${sid}')" ${key('sc')}></div>
+    <button type="button" class="ml-del" onclick="mlDelRow('${sid}','${rid}')" title="${TT('ลบ Lot นี้','Delete this lot')}" aria-label="${TT('ลบ Lot นี้','Delete this lot')}">✕</button>
+  </div>`;
+}
+/* อ่านแถวในตาราง · untouched = แถวว่าง/แถวที่มีแค่เลขหน้า Lot ที่ระบบเติมให้ (ยังไม่ได้ลงยอด) → ไม่นับ */
+function _mlRows(sid) {
+  const host = document.getElementById(sid + '_mlrows'); if (!host) return [];
+  return [...host.querySelectorAll('.ml-row')].map((row, i) => {
+    const lotEl = document.getElementById(row.id + '_lot');
+    const lot = lotKey(lotEl?.value || '');
+    const pre = lotEl?.dataset.pre || '';
+    const opr = fnum(document.getElementById(row.id + '_opr')?.value);
+    const target = fnum(document.getElementById(row.id + '_tgt')?.value);
+    const scrap = +(document.getElementById(row.id + '_sc')?.value || 0);
+    const untouched = !opr && !scrap && !target && (!lot || lot === pre);
+    return { no: i + 1, rid: row.id, lot, opr, target, scrap, untouched };
+  });
+}
+function mlAddRow(sid, focus) {
+  const host = $(sid + '_mlrows'), box = $(sid + '_ml'); if (!host || !box) return;
+  const rows = host.querySelectorAll('.ml-row');
+  if (rows.length >= ML_MAX_ROWS) { toast(`สูงสุด ${ML_MAX_ROWS} Lot ต่อช่วง`, 'orange'); return; }
+  const k = (+box.dataset.seq || 0) + 1; box.dataset.seq = k;
+  host.insertAdjacentHTML('beforeend', _mlRowHtml(sid, k));
+  const rid = `${sid}_ml${k}`, prev = rows[rows.length - 1];
+  if (prev) {   // เติมแค่เลขหน้า Lot — Target ไม่ก๊อป (พนักงานกรอกเองทุก Lot)
+    const pre = _lotPrefix($(prev.id + '_lot')?.value || '');
+    if (pre) { const el = $(rid + '_lot'); el.value = pre; el.dataset.pre = pre; }
+  }
+  _mlRenum(sid);
+  if (focus) _mlFocusLot(rid);
+}
+function mlDelRow(sid, rid) {
+  $(rid)?.remove();
+  if (!$(sid + '_mlrows')?.querySelector('.ml-row')) mlAddRow(sid, false);   // เหลือแถวว่างไว้อย่างน้อย 1 แถว
+  _mlRenum(sid); _mlTouch(sid);
+}
+function _mlRenum(sid) {
+  const rows = $(sid + '_mlrows')?.querySelectorAll('.ml-row') || [];
+  // 1 แถว = ช่อง Target ว่างใช้ Target เครื่อง (บอกใน placeholder "ว่าง = 3000") · หลายแถว = ต้องกรอกเองทุก Lot
+  const ph = rows.length === 1 ? ($(sid + '_ml')?.dataset.mtgt || '') : '';
+  rows.forEach((row, i) => {
+    const n = row.querySelector('.ml-no'); if (n) n.textContent = i + 1;
+    const t = $(row.id + '_tgt'); if (t) t.placeholder = ph;
+  });
+}
+/* แถวว่าง = ยังไม่ได้ใส่อะไร (หรือมีแค่เลขหน้า Lot ที่ระบบเติมให้) — ใช้เติม Lot จากสแกน/กล่องเลือก */
+function _mlRowEmpty(row) {
+  const el = $(row.id + '_lot'), l = lotKey(el?.value || '');
+  return (!l || l === (el?.dataset.pre || '')) && !$(row.id + '_opr')?.value && !$(row.id + '_tgt')?.value && !$(row.id + '_sc')?.value;
+}
+function _mlFocusLot(rid) {
+  const el = $(rid + '_lot'); if (!el) return;
+  try { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } catch (e) {}
+}
+function _mlTouch(sid) {
+  _formDirty = true; _updateFabState();
+  updShiftTotal(sid.replace(/_s\d+$/, ''));
+}
+/* Enter = ไปช่องถัดไป: Lot → OPR → Target → Lot แถวถัดไป (ไม่มี = สร้างแถวใหม่ให้) */
+function _mlKey(ev, sid, rid, f) {
+  if (ev.key !== 'Enter') return;
+  ev.preventDefault();
+  // ไปช่องถัดไปด้วยคีย์บอร์ด = ไม่มีคลิกนอกช่อง → ตัวปิด dropdown กลาง (document click) ไม่ทำงาน ต้องปิดเอง
+  $(rid + '_lot_dd')?.classList.remove('open');
+  if (f === 'lot') { $(rid + '_opr')?.focus(); return; }
+  if (f === 'opr') { $(rid + '_tgt')?.focus(); return; }
+  const rows = [...($(sid + '_mlrows')?.querySelectorAll('.ml-row') || [])];
+  const next = rows[rows.findIndex(r => r.id === rid) + 1];
+  // แถวถัดไปมี Lot+OPR แล้ว (มาจากกล่องเลือก Lot) → ข้ามไปช่อง Target เลย เหลือกรอกแค่ Target
+  if (next && $(next.id + '_opr')?.value && !_mlRowEmpty(next)) { $(next.id + '_tgt')?.focus(); return; }
+  if (next) _mlFocusLot(next.id); else mlAddRow(sid, true);
+}
+/* สแกนบาร์โค้ด → เติม Lot ลงแถวว่างถัดไป (ไม่มี = เพิ่มแถว) · คืนข้อความ error หรือ ''
+   วาล์วที่สแกนไม่ตรงกับช่วงนี้: ยังไม่มี Lot ในตาราง = เปลี่ยนวาล์วให้ (เช่นวาล์วที่เติมจากกะก่อน) · มีแล้ว = เตือน */
+function _mlFromScan(sid, p) {
+  const vEl = $(sid + '_v'), host = $(sid + '_mlrows');
+  if (!host) return 'ไม่พบตาราง Lot';
+  const cur = (vEl?.value || '').trim();
+  if (cur && vKey(cur) !== vKey(p.valveNo)) {
+    if (_mlRows(sid).some(r => !r.untouched))
+      return `วาล์วที่สแกน (${p.valveNo}) ไม่ตรงกับวาล์วของช่วงนี้ (${cur}) — 1 ช่วงใช้วาล์วเดียว · วาล์วอื่นให้กด "➕ เพิ่มช่วง"`;
+    if (vEl) vEl.value = '';
+    _writeProcSel(sid, []);
+  }
+  const lot = lotKey(p.lot);
+  if (_mlRows(sid).some(r => r.lot === lot)) return `Lot ${lot} มีในตารางแล้ว`;
+  if (vEl && !(vEl.value || '').trim()) { vEl.value = p.valveNo; renderProcChips(sid); }
+  let row = [...host.querySelectorAll('.ml-row')].find(_mlRowEmpty);
+  if (!row) {
+    const n = host.querySelectorAll('.ml-row').length;
+    mlAddRow(sid, false);
+    if (host.querySelectorAll('.ml-row').length === n) return `ตารางเต็มแล้ว (สูงสุด ${ML_MAX_ROWS} Lot)`;
+    row = [...host.querySelectorAll('.ml-row')].pop();
+  }
+  const el = $(row.id + '_lot');
+  el.value = lot; _lotChk(el);
+  _mlTouch(sid);
+  return '';
+}
+/* ── v3.71 (B) — เลือก Lot จากงานรับเข้า (WIP IN 1.5) แทนการพิมพ์เลข Lot ──
+   รายการ = ใบรับเข้าของวาล์วนี้ (สายตัวเอง + สายพี่น้อง) ที่ยังไม่ปิดงาน (DONE)
+   ยอดใน Lot = Σ ใบรับเข้า · "ลงแล้ว" = Σ ยอดผลิตของ Lot นี้ที่ Process ตัวท้ายที่เลือกในช่วงนี้
+     (ยอดผลิตทั้งหมดถ้าโหลดครบแล้ว · ไม่งั้นใช้ 30 วันล่าสุดในเครื่อง)
+   OPR ที่เติมให้ = คงเหลือ (ยอดใน Lot − ลงแล้ว) · ช่องสีเหลือง = ระบบเติม ตรวจ/แก้ได้
+   Lot ที่ลงครบแล้วที่ Process นี้ → ซ่อนไว้ท้ายรายการ (กดแสดงได้) · Target ไม่เติม (พนักงานกรอกเอง) */
+let _lp = null;   // กล่องที่เปิดอยู่ { sid, items, sel:Set, q, showDone }
+function _lpCandidates(sid) {
+  const valve = ($(sid + '_v')?.value || '').trim(); if (!valve) return [];
+  const vk = vKey(valve);
+  const procs = _procSel(sid), proc = procs.length ? _procCanon(procs[procs.length - 1]) : '';
+  const by = new Map();
+  for (const e of (typeof _wipinListPeer === 'function' ? _wipinListPeer() : [])) {
+    if (vKey(e.valve) !== vk) continue;
+    const L = lotKey(e.lot); if (!L) continue;
+    const it = by.get(L) || { lot: L, qty: 0, ts: '' };
+    it.qty += Number(e.qty) || 0;
+    const ts = String(e.ts || ''); if (ts && (!it.ts || ts < it.ts)) it.ts = ts;   // วันรับเข้าครั้งแรก
+    by.set(L, it);
+  }
+  const done = new Map();
+  if (proc && by.size) {
+    const prods = (Array.isArray(_allProd) && _allProd.length) ? _allProd : (state.prodRecords || []);
+    for (const p of prods) {
+      if (vKey(p.valve_no || p.valveNo || '') !== vk) continue;
+      if (_procCanon(p.current_process || p.currentProcess || '') !== proc) continue;
+      const L = lotKey(p.lot); if (!by.has(L)) continue;
+      done.set(L, (done.get(L) || 0) + (Number(p.quantity) || 0));
+    }
+  }
+  const inTable = new Set(_mlRows(sid).filter(r => !r.untouched && r.lot).map(r => r.lot));
+  const out = [];
+  for (const it of by.values()) {
+    if (getJobProc(valve, it.lot) === 'DONE') continue;
+    const d = done.get(it.lot) || 0;
+    out.push({ ...it, done: d, left: Math.max(0, it.qty - d), complete: !!proc && it.qty > 0 && d >= it.qty, inTable: inTable.has(it.lot) });
+  }
+  out.sort((a, b) => (a.complete - b.complete) || String(b.ts).localeCompare(String(a.ts)) || b.lot.localeCompare(a.lot));
+  return out;
+}
+/* ปุ่มเดียว "➕ เพิ่ม Lot" (ผู้ใช้ขอ — 2 ปุ่ม "เลือกจากงานรับเข้า / พิมพ์เอง" ยาวและต้องคิดก่อนกด)
+   มี Lot ค้างในใบรับเข้าของวาล์วนี้ → เปิดกล่องติ๊กเลือก (ในกล่องมีปุ่ม "พิมพ์ Lot เอง" สำรอง)
+   ไม่มีวาล์ว / ไม่มี Lot ค้าง → เพิ่มช่องให้พิมพ์เลย (มีกล่องว่างอยู่แล้ว = โฟกัสกล่องนั้น ไม่เพิ่มซ้ำ) */
+function mlAddLot(sid) {
+  const hasV = !!($(sid + '_v')?.value || '').trim();
+  if (hasV && _lpCandidates(sid).some(x => !x.complete && !x.inTable)) { openLotPicker(sid); return; }
+  _mlTypeLot(sid);
+}
+function _mlTypeLot(sid) {
+  const empty = [...($(sid + '_mlrows')?.querySelectorAll('.ml-row') || [])].find(_mlRowEmpty);
+  if (empty) _mlFocusLot(empty.id); else mlAddRow(sid, true);
+}
+function openLotPicker(sid) {
+  const valve = ($(sid + '_v')?.value || '').trim();
+  if (!valve) { toast(TT('ใส่ Valve No ก่อน','Enter the valve first'), 'orange'); $(sid + '_v')?.focus(); return; }
+  _lp = { sid, items: _lpCandidates(sid), sel: new Set(), q: '', showDone: false };
+  const noProc = !_procSel(sid).length && $(sid + '_pchips');
+  openModal(`📋 ${TT('เลือก Lot','Pick lots')} · ${valve}`, `
+    <div class="muted" style="font-size:11px;line-height:1.6">${TT('ติ๊ก Lot ที่ผลิตในช่วงนี้ → OPR เติมให้ตามยอดคงเหลือ (แก้ได้) · Target กรอกเองในตาราง','Tick the lots produced in this range → OPR is filled with the remaining qty (editable) · type Target in the table')}
+      ${noProc ? `<br><b style="color:var(--orange)">⚠️ ${TT('ยังไม่ได้เลือก Process — ยอด "ลงแล้ว" คิดไม่ได้ (OPR = ยอดเต็ม Lot)','No process selected — qty already recorded unknown (OPR = full lot)')}</b>` : ''}</div>
+    <input type="search" id="lpQ" placeholder="🔎 ${TT('ค้นเลข Lot เช่น 341','Search lot, e.g. 341')}" oninput="_lp.q=this.value;_lpRender()" autocomplete="off"
+      style="width:100%;margin-top:8px;padding:10px 12px;border:1.5px solid var(--blue-soft);border-radius:10px;font-size:16px;font-family:inherit">
+    <div class="lp-list" id="lpList"></div>
+    <button type="button" class="ml-add" style="margin-top:8px" onclick="const s=_lp&&_lp.sid;_lp=null;closeModal();if(s)_mlTypeLot(s)">⌨️ ${TT('ไม่มีในรายการ — พิมพ์ Lot เอง','Not listed — type the lot')}</button>
+    <div class="row" style="gap:8px;margin-top:10px">
+      <button class="btn btn-outline" style="flex:1" onclick="_lp=null;closeModal()">${TT('ยกเลิก','Cancel')}</button>
+      <button class="btn btn-green" style="flex:2" id="lpOk" onclick="_lpApply()" disabled>✓ ${TT('ใส่ Lot','Add lots')}</button>
+    </div>`);
+  _lpRender();
+}
+function _lpRender() {
+  const host = $('lpList'); if (!host || !_lp) return;
+  const q = lotKey(_lp.q || '');
+  const list = _lp.items.filter(x => !q || x.lot.includes(q));
+  const open = list.filter(x => !x.complete), done = list.filter(x => x.complete);
+  const row = x => {
+    const sel = _lp.sel.has(x.lot), dis = x.inTable;
+    const d = x.ts ? String(x.ts).slice(5, 10).split('-').reverse().join('/') : '';
+    return `<label class="lp-item${sel ? ' sel' : ''}${x.complete ? ' done' : ''}${dis ? ' dis' : ''}">
+      <input type="checkbox" data-lot="${escapeHtml(x.lot)}" ${sel || dis ? 'checked' : ''} ${dis ? 'disabled' : ''} onchange="_lpToggle(this)">
+      <div style="min-width:0"><div class="lp-lot">${escapeHtml(x.lot)}</div>
+        <div class="lp-sub">${d ? TT('รับเข้า ', 'In ') + escapeHtml(d) : ''}${x.done ? ` · ${TT('ลงแล้ว', 'done')} ${nn(x.done)}/${nn(x.qty)}` : ''}${dis ? ' · ' + TT('อยู่ในตารางแล้ว', 'already in table') : ''}</div></div>
+      <div class="lp-qty">${x.complete ? '✓ ' + TT('ครบแล้ว', 'done') : nn(x.left) + ' ' + TT('ชิ้น', 'pcs')}</div>
+    </label>`;
+  };
+  host.innerHTML = (open.length ? open.slice(0, 60).map(row).join('')
+      : `<div class="muted center" style="padding:14px;font-size:12px;line-height:1.6">${TT('ไม่มี Lot ค้างของวาล์วนี้ในใบรับเข้า WIP IN 1.5', 'No open lots for this valve in WIP IN 1.5 slips')}<br>${TT('ปิดกล่องนี้แล้วกด "⌨️ พิมพ์ Lot เอง"', 'Close and use "Type a lot"')}</div>`)
+    + (done.length ? (_lp.showDone ? done.slice(0, 60).map(row).join('')
+      : `<button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px" onclick="_lp.showDone=true;_lpRender()">${TT('แสดง Lot ที่ลงครบแล้วที่ Process นี้', 'Show lots already complete at this process')} (${done.length})</button>`) : '');
+  _lpOkLbl();
+}
+function _lpToggle(cb) {
+  if (!_lp) return;
+  const lot = cb.getAttribute('data-lot');
+  if (cb.checked) _lp.sel.add(lot); else _lp.sel.delete(lot);
+  cb.closest('.lp-item')?.classList.toggle('sel', cb.checked);
+  _lpOkLbl();
+}
+function _lpOkLbl() {
+  const ok = $('lpOk'); if (!ok || !_lp) return;
+  ok.disabled = !_lp.sel.size;
+  ok.textContent = _lp.sel.size ? `✓ ${TT('ใส่', 'Add')} ${_lp.sel.size} Lot` : `✓ ${TT('ใส่ Lot', 'Add lots')}`;
+}
+function _lpApply() {
+  if (!_lp || !_lp.sel.size) return;
+  const sid = _lp.sid, host = $(sid + '_mlrows');
+  const pick = _lp.items.filter(x => _lp.sel.has(x.lot));
+  let firstRid = '', added = 0;
+  for (const x of pick) {
+    let row = [...host.querySelectorAll('.ml-row')].find(_mlRowEmpty);
+    if (!row) {
+      const n = host.querySelectorAll('.ml-row').length;
+      mlAddRow(sid, false);
+      if (host.querySelectorAll('.ml-row').length === n) break;   // ตารางเต็ม (toast แจ้งแล้ว)
+      row = [...host.querySelectorAll('.ml-row')].pop();
+    }
+    const lotEl = $(row.id + '_lot');
+    lotEl.value = x.lot; delete lotEl.dataset.pre; _lotChk(lotEl);
+    const opr = $(row.id + '_opr');
+    if (opr && x.left > 0) { opr.value = String(x.left); opr.classList.add('ml-auto'); opr.title = 'เติมจากใบรับเข้า (ยอดคงเหลือ) — ตรวจ/แก้ได้'; }
+    if (!firstRid) firstRid = row.id;
+    added++;
+  }
+  _lp = null; closeModal();
+  _mlRenum(sid); _mlTouch(sid);
+  if (firstRid) { const t = $(firstRid + '_tgt'); if (t) { try { t.focus(); } catch (e) {} } }
+  if (added) toast(`✓ ${TT('ใส่', 'Added')} ${added} Lot — ${TT('กรอก Target ต่อได้เลย (Enter = Lot ถัดไป)', 'now type the Targets (Enter = next lot)')}`, 'green');
 }
 function delShiftP(pid, si) {
   $(`${pid}_s${si}_block`)?.remove();
@@ -17950,7 +18477,12 @@ function updShiftTotal(pid) {
   body.querySelectorAll('.shift').forEach(sb => {
     const sid = sb.id.replace('_block', '');
     const wt = calcWT($(sid+'_ts')?.value, $(sid+'_te')?.value).wt;
-    if ($(sid + '_total')) $(sid + '_total').textContent = `OPR: ${nn(fnum($(sid+'_opr')?.value))} · WT: ${wt.toFixed(2)} ชม.`;
+    const tot = $(sid + '_total'); if (!tot) return;
+    const rows = _mlRows(sid).filter(r => !r.untouched);
+    const sum = k => rows.reduce((a, r) => a + r[k], 0);
+    tot.textContent = rows.length > 1
+      ? `📦 ${rows.length} Lot · OPR รวม: ${nn(sum('opr'))} · Target รวม: ${nn(sum('target'))} · WT: ${wt.toFixed(2)} ชม. (แบ่งให้แต่ละ Lot ตามจำนวนชิ้น)`
+      : `OPR: ${nn(sum('opr'))} · WT: ${wt.toFixed(2)} ชม.`;
   });
 }
 
@@ -18351,14 +18883,17 @@ async function _saveKpiImpl() {
     let mainShiftType = '', shiftDate = prodDate;
     body.querySelectorAll('.shift').forEach((sb, si) => {
       const sid = sb.id.replace('_block', '');
-      const opr = fnum($(sid+'_opr')?.value);
-      const scrap = +($(sid+'_sc')?.value || 0);
-      const target = fnum($(sid+'_tgt')?.value) || 0;
+      // v3.71: ยอด/Lot/Target มาจากตาราง Lot ของช่วง (แถวว่าง/แถวที่มีแค่เลขหน้า Lot ที่ระบบเติม = ไม่นับ)
+      //        Lot เก็บแบบ lotKey (ตัวใหญ่ · ไม่มีช่องว่าง) — "2609s090348" → "2609S090348"
+      const mlRows = _mlRows(sid).filter(r => !r.untouched);
+      const opr = mlRows.reduce((a, r) => a + r.opr, 0);
+      const scrap = mlRows.reduce((a, r) => a + r.scrap, 0);
+      const target = mlRows.length === 1 ? mlRows[0].target : 0;
       const ct = +($(sid+'_ct')?.value || 0);
       const ts = $(sid+'_ts')?.value || '';
       const te = $(sid+'_te')?.value || '';
       const valve = $(sid+'_v')?.value || '';
-      const lot = $(sid+'_lot')?.value || '';
+      const lot = mlRows[0]?.lot || '';
       // chips เลือกได้หลาย process (เรียงตาม flow แล้ว) → ตัวท้ายสุด = process ล่าสุดของงาน
       const procs = unit.isLine ? [] : _procSel(sid);                // Auto Line → Process อัตโนมัติต่อเครื่อง
       const proc  = procs.length ? procs[procs.length - 1] : '';
@@ -18366,6 +18901,8 @@ async function _saveKpiImpl() {
       const { wt } = calcWT(ts, te);
       const _slotLabel = `${unit.isLine ? '⚡ ' + unit.label : '🏭 ' + unit.label} — ช่วงที่ ${si + 1}`;
       if (!opr && !scrap) {
+        // v3.71: ช่วงที่ก๊อปมาจากปุ่ม "ช่วงถัดไป" แล้วไม่ได้แตะเลย = กดเพิ่มเกิน → ข้ามได้เหมือนช่วงว่างสนิท
+        if (sb.dataset.autosig && sb.dataset.autosig === _slotSig(sid)) return;
         // มีอะไรกรอกไว้บ้าง (เวลา/วาล์ว/Lot) แต่ไม่มี OPR → ห้ามข้ามเงียบ ให้เด้งเตือนใน popup
         if (ts || te || valve.trim() || lot.trim() || (procs && procs.length)) {
           slotErrs.push({ label: _slotLabel, field: 'OPR (ชิ้น)', msg: 'ช่วงเวลานี้ยังไม่ได้ลงยอด — กรอก OPR หรือลบช่วงนี้ออก', sid, canDel: si > 0 });
@@ -18395,7 +18932,23 @@ async function _saveKpiImpl() {
         const { st, sd } = _resolveShift(prodDate, (h0 || 0) * 60 + (m0 || 0));
         mainShiftType = st; shiftDate = sd;
       }
-      slots.push({ si, sid, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
+      if (mlRows.length > 1) {
+        // Lot ซ้ำในตารางเดียวกัน = กดเลือกซ้ำ/พิมพ์ซ้ำแน่นอน (Lot เดียวกันควรรวมยอดเป็นแถวเดียว)
+        const dup = mlRows.map(r => r.lot).filter((l, i, a) => l && a.indexOf(l) !== i);
+        if (dup.length) {
+          slotErrs.push({ label: _slotLabel, field: '📦 Lot ซ้ำในตาราง', msg: `Lot ${[...new Set(dup)].join(', ')} มีมากกว่า 1 แถว — รวมยอดเป็นแถวเดียว หรือแก้เลข Lot`, sid, canDel: false });
+          return;
+        }
+        // 1 Lot = 1 slot (→ 1 record ต่อเครื่อง) · WT แบ่งตามสัดส่วน OPR · Target ของแถวเอง (ไม่ใช้ Target เครื่องแทนช่องว่าง)
+        mlRows.forEach(r => {
+          const share = opr > 0 ? r.opr / opr : 1 / mlRows.length;
+          slots.push({ si, sid, opr: r.opr, scrap: r.scrap, target: r.target, ct, ts, te, wt: wt * share, valve, lot: r.lot, proc, procs, crew,
+                       noTgtFallback: true, ml: { row: r.no, n: mlRows.length, share } });
+        });
+      } else {
+        // 1 Lot = บันทึกเหมือนฟอร์มเดิมทุกอย่าง (Target ว่าง → Target เครื่อง · WT เต็มช่วง)
+        slots.push({ si, sid, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
+      }
     });
     if (!slots.length) continue;
 
@@ -18416,7 +18969,8 @@ async function _saveKpiImpl() {
 
       // 1 record ต่อ 1 เครื่องในหน่วย (สาย = ทุกเครื่อง · เครื่องเดี่ยว = เครื่องเดียว)
       for (const mObj of unit.machines) {
-        const sTarget  = slot.target || mObj.target || 0;
+        // โหมดหลาย Lot: Target ต้องมาจากแถวของ Lot นั้นเท่านั้น (ว่าง = 0 → popup ตรวจสอบเด้ง "Target ยังไม่ลง")
+        const sTarget  = slot.noTgtFallback ? (slot.target || 0) : (slot.target || mObj.target || 0);
         const lastProc = unit.isLine ? mcProcess(mObj) : (slot.proc || '');
         // กำลังคนจริง (เฉพาะ VSM3 ที่มี crew): สาย = แบ่งทีมต่อเครื่อง (Σ=จำนวนคนจริง) · เครื่องเดี่ยว = จำนวนคน
         let manUsed = mObj.man_std;
@@ -18431,6 +18985,8 @@ async function _saveKpiImpl() {
         const pdacPass  = pdac >= PDAC_PASS ? 'PASS' : 'FAIL';
         const shiftEntry = { si: slot.si, opr:sOpr, scrap:sScrap, target:sTarget, ct:sCT, ts:sTs, te:sTe, wt:sWT,
           emp: empIdPrimary, valve: slot.valve, lot: slot.lot, proc: lastProc };
+        // โหมดหลาย Lot: จำว่า WT ของ record นี้คือกี่ส่วนของช่วงเวลา — หน้าแก้ไข KPI ใช้คำนวณ WT กลับให้ถูก
+        if (slot.ml) Object.assign(shiftEntry, { lot_row: slot.ml.row, lot_n: slot.ml.n, wt_share: Math.round(slot.ml.share * 1e6) / 1e6 });
         records.push({
           record_date: slotShiftDate, shift_date: slotShiftDate, shift_type: slotShiftType,
           zone: unit.z, zone_label: ZONE_LABEL[unit.z], machine_id: mObj.id,
@@ -18447,6 +19003,7 @@ async function _saveKpiImpl() {
           vsm: zoneVsm(unit.z),
           _linkProcs: unit.isLine ? null : slot.procs,   // ชั่วคราว: ใช้สร้าง prod record ต่อ process แล้วลบทิ้ง (ไม่ persist)
           _sid: slot.sid, _si: slot.si,                  // ชั่วคราว: ให้ popup ตรวจสอบมีปุ่ม "ลบช่วงนี้" ได้ (ลบทิ้งก่อน persist)
+          _lotRow: slot.ml ? slot.ml.row : 0,            // ชั่วคราว: แถว Lot ในโหมดหลาย Lot (แยกกลุ่ม error ใน popup)
         });
       }
     }
@@ -18464,10 +19021,13 @@ async function _saveKpiImpl() {
     const slotNum   = (slotEntry.si != null ? slotEntry.si : 0) + 1;
     const isLine    = !!rec.line_key;
     // Auto Line: ทุกเครื่องในสาย/ช่วงเดียวกันใช้ข้อมูลชุดเดียว → รวมเป็นกลุ่มเดียว (dedupe ผ่าน key ซ้ำ)
-    const key       = isLine ? `L:${rec.line_key}__s${slotNum}` : `${rec.machine_id}__s${slotNum}`;
-    const grpLabel  = isLine
+    // v3.71: โหมดหลาย Lot → หลาย record ในช่วงเดียวกัน แยกกลุ่มตามแถว Lot (ไม่งั้น error ของ Lot ท้ายทับ Lot แรก)
+    const lotRow    = rec._lotRow || 0;
+    const key       = (isLine ? `L:${rec.line_key}__s${slotNum}` : `${rec.machine_id}__s${slotNum}`) + (lotRow ? `__l${lotRow}` : '');
+    const grpLabel  = (isLine
       ? `⚡ ${rec.line_label}${slotNum > 1 ? ` — ช่วงที่ ${slotNum}` : ''}`
-      : (`🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : ''));
+      : (`🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : '')))
+      + (lotRow ? ` · 📦 Lot แถว ${lotRow}${rec.lot ? ` (${rec.lot})` : ''}` : '');
     const errs = [];
 
     if (!rec.opr || rec.opr <= 0)
@@ -18487,6 +19047,8 @@ async function _saveKpiImpl() {
       errs.push({ field: '🧩 Valve No (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
     if (!rec.lot || !String(rec.lot).trim())
       errs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
+    else if (lotFmtBad(rec.lot, rec.valve_no))   // v3.71 — กันพิมพ์ Lot เกิน/ขาดหลัก เช่น "26809S090313"
+      errs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: `รูปแบบไม่ถูกต้อง "${rec.lot}" — ${LOT_FMT_MSG}` });
 
     // sid/canDel = ให้ popup มีปุ่ม "🗑 ลบช่วงนี้" ได้ (เฉพาะช่วงที่เพิ่มเข้ามา si>0 — ช่วงหลักลบไม่ได้)
     if (errs.length) _valGroups[key] = { label: grpLabel, errors: errs, sid: rec._sid || '', canDel: (rec._si || 0) > 0 };
@@ -18559,7 +19121,7 @@ async function _saveKpiImpl() {
   for (const r of records) {
     const linkProcs = (r._linkProcs && r._linkProcs.length) ? r._linkProcs : [r.last_process];
     delete r._linkProcs;                                   // ฟิลด์ชั่วคราว — ห้ามหลุดไป state/Cloud
-    delete r._sid; delete r._si;                           // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
+    delete r._sid; delete r._si; delete r._lotRow;         // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
     if (!r.valve_no || !r.lot) continue;
     for (const p of linkProcs) prodRecs.push({
       // id ต้องไม่ซ้ำแม้สร้างหลายตัวใน ms เดียวกัน (Worker ใช้เป็น idempotency key — ซ้ำ = ทับกันหาย)
@@ -18599,6 +19161,9 @@ async function _saveKpiImpl() {
 
   // reset dirty flag + FAB after successful save
   _formDirty = false; _updateFabState();
+  // v3.71: จำเครื่องที่เพิ่งบันทึกจากมือถือเครื่องนี้ → ชิป "ล่าสุด" บนหัวรายการเครื่อง (ไม่ต้องเลื่อนหา)
+  { const _byZ = {}; for (const r of records) if (!r.line_key) (_byZ[r.zone] = _byZ[r.zone] || []).push(r.machine_id);
+    for (const z in _byZ) _rememberMcs(z, [...new Set(_byZ[z])]); }
   // 2) reset form — clear ALL inputs by re-rendering
   _unitShiftCount = {};
   renderZone();
@@ -18759,9 +19324,14 @@ function acLotSearch(ev, id, valveInputId) {
     }
     return;
   }
+  // ❗pickLot ถูกแปลงเป็นข้อความใส่ onclick="…" (ดู acDropdown) — ห้ามมีเครื่องหมาย " หรือคอมเมนต์ในตัวฟังก์ชัน
+  //   ช่อง Lot ฟอร์ม KPI (มี data-vid) → ตรวจรูปแบบ Lot ใหม่ · แถวโหมดหลาย Lot → อัปเดตยอดรวม
   acDropdown(id, lots.map(l => ({ id: l, label: '' })), function pickLot(it, inputId) {
-    document.getElementById(inputId).value = it.id;
+    var el = document.getElementById(inputId);
+    el.value = it.id;
     document.getElementById(inputId + '_dd').classList.remove('open');
+    if (el.getAttribute('data-vid') && typeof _lotChk === 'function') _lotChk(el);
+    if (/_ml\d+_lot$/.test(inputId) && typeof _mlTouch === 'function') _mlTouch(inputId.replace(/_ml\d+_lot$/, ''));
   });
 }
 
@@ -20492,6 +21062,7 @@ function editKpiRecord(rid) {
       </div>
     </div>
     <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
+    ${(+_sh0.wt_share > 0 && +_sh0.wt_share < 1) ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วงเดียว (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — WT ของ record นี้ = <b>${(+_sh0.wt_share * 100).toFixed(1)}%</b> ของเวลาเริ่ม–สิ้นสุด (แบ่งตามจำนวนชิ้น)</div>` : ''}
     <div class="fr"><label>👤 พนักงาน</label>
       <input type="text" id="editKpiOp" value="${escapeHtml(r.operator||r.emp_id||'')}">
     </div>
@@ -20500,7 +21071,9 @@ function editKpiRecord(rid) {
     </div>
     <div class="fg">
       <div class="fr"><label>Lot</label>
-        <input type="text" id="editKpiLot" value="${escapeHtml(r.lot||'')}">
+        <input type="text" id="editKpiLot" value="${escapeHtml(r.lot||'')}" data-orig="${escapeHtml(r.lot||'')}" data-vid="editKpiValve"
+               autocapitalize="characters" oninput="_lotChkClear(this)" onblur="if(lotKey(this.value)!==lotKey(this.dataset.orig))_lotChk(this,true)">
+        <div class="lot-hint" id="editKpiLot_hint"></div>
       </div>
       <div class="fr"><label>Process ล่าสุด</label>
         <input type="text" id="editKpiProc" value="${escapeHtml(r.last_process||'')}">
@@ -20514,6 +21087,16 @@ function editKpiRecord(rid) {
 }
 
 async function saveKpiEdit() {
+  // v3.71: แก้เลข Lot → ต้องถูกรูปแบบ (ไม่แก้ Lot = ไม่ตรวจ · record เก่ารูปแบบอื่นยังแก้ยอดได้)
+  const _lotEl = $('editKpiLot');
+  if (_lotEl && lotKey(_lotEl.value) !== lotKey(_lotEl.getAttribute('data-orig') || '')) {
+    _lotEl.value = lotKey(_lotEl.value);
+    if (lotFmtBad(_lotEl.value, $('editKpiValve')?.value || '')) {
+      _lotChk(_lotEl);
+      toast('⚠️ รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG, 'red');
+      return;
+    }
+  }
   // FIX 5: confirmation before saving edit
   if (!await _confirmEditDialog()) return;
   const rid = $('editKpiRid').value;
@@ -20533,7 +21116,10 @@ async function saveKpiEdit() {
   const newCT     = +($('editKpiCT')?.value    ?? r.ct     ?? 0);
   const newTS     = $('editKpiTS')?.value  || r.time_start || (r.shifts?.[0]?.ts) || '';
   const newTE     = $('editKpiTE')?.value  || r.time_end   || (r.shifts?.[0]?.te) || '';
-  const { wt: newWT } = calcWT(newTS, newTE);
+  // v3.71: record จากโหมดหลาย Lot ได้ WT แค่ "ส่วนของ Lot นี้" (wt_share) — คิดจากเวลาเริ่ม–จบเต็มช่วงแล้วต้องคูณกลับ
+  //   ไม่งั้นแก้ record เดียวแล้ว WT กลายเป็นทั้งช่วง → PPLH/DLE รวมของกะเพี้ยน
+  const _wtShare  = (() => { const s = +(_shiftsArr(r)[0] || {}).wt_share; return (s > 0 && s < 1) ? s : 1; })();
+  const newWT     = calcWT(newTS, newTE).wt * _wtShare;
   const tWT       = newWT || r.wt || 0;
   const manStd    = r.man_std || 1;
   // FIX 10: guard division by zero in OAE, DLE
