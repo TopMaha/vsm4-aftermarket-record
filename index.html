@@ -272,10 +272,7 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 /* v3.71 — ปุ่มเพิ่มช่วง (ก๊อปพนักงาน/CT · เวลาต่อจากช่วงก่อน) */
 .shift-add{flex-direction:column;gap:2px;line-height:1.3;text-align:center;font-family:inherit;padding:8px 6px}
 .shift-add small{font-size:9.5px;font-weight:600;color:var(--muted)}
-/* v3.71 — แถบ "เติมจากกะล่าสุดของเครื่องนี้" + ปุ่มเวลาทั้งกะ + พนักงาน/CT แถวเดียว */
-.pf-note{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#92400E;background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:8px;padding:6px 8px;margin-bottom:7px;line-height:1.4}
-.pf-note:empty{display:none}
-.pf-note button{margin-left:auto;flex-shrink:0;border:1px solid #FCD34D;background:#fff;color:#92400E;border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}
+/* v3.71 — ปุ่มเวลาทั้งกะ + พนักงาน/CT แถวเดียว (แถบเหลือง "เติมจากกะล่าสุด" ถอดออกใน v3.72) */
 .sh-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
 .sh-quick button{padding:8px 6px;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
 .sh-quick button.on{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -2244,7 +2241,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.71</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.72</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9333,7 +9330,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.71":"Production Record + KPI · v3.71",
+"ระบบบันทึกผลิต + KPI · v3.72":"Production Record + KPI · v3.72",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -17920,7 +17917,6 @@ function shiftHtml(pid, si, m, opts) {
   const tgtPh = m.target ? `${TT('ว่าง','blank')} = ${m.target}` : '';
   return `<div class="shift" id="${sid}_block">
     <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShiftP('${pid}',${si})">✕ ลบ</button>`:''}</div>
-    <div class="pf-note" id="${sid}_pf"></div>
     <div class="fr" style="margin:0 0 6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
       ${si === 0 ? `<div class="sh-quick">
         <button type="button" id="${sid}_qday" onclick="setSlotShift('${sid}','day')">☀️ ${TT('ทั้งกะเช้า 08–20','Full day 08–20')}</button>
@@ -18050,31 +18046,13 @@ function toggleMc(pid) {
   if (on) { _formDirty = true; _updateFabState(); _prefillSlot0(pid); }
 }
 
-/* ── v3.71 (A) — เปิดสวิตช์เครื่อง → เติมค่าจากกะล่าสุดของเครื่องนี้ (ลดการกรอกซ้ำทุกกะ) ──
-   จาก KPI record ล่าสุดของเครื่อง/สาย (cache 30 วันในเครื่อง): พนักงาน · CT · วาล์ว · Process
+/* ── v3.71 (A) → v3.72 — เปิดสวิตช์เครื่อง → เติมให้เฉพาะ "เวลาทั้งกะ" + "ชื่อคนที่ Lock In" ──
+   v3.71 เติม พนักงาน/CT/วาล์ว/Process จากกะล่าสุดของเครื่อง → v3.72 เลิก (ผู้ใช้ขอ 30/9):
+     • CT / วาล์ว / Process ไม่เติม — ค่าของกะก่อนไม่ใช่งานที่กำลังทำ พนักงานงง
+     • พนักงาน = คนที่ Lock In เข้าระบบ (ไม่ใช่คนเดินเครื่องกะก่อน — คนละกะคนละคน) · แก้/ลบได้ตามปกติ
    เวลา = ทั้งกะ ตามเวลาปัจจุบัน (_guessShift) — กดสลับกะเช้า/ดึกได้ที่ปุ่ม
-   ❌ ไม่เติม Lot / OPR / Target (เปลี่ยนทุกกะ · Target พนักงานกรอกเอง)
+   ❌ ไม่เติม Lot / OPR / Target
    เติมเฉพาะช่วงแรกที่ยังว่าง ครั้งเดียวต่อการ์ด — เปิด/ปิดสวิตช์ซ้ำไม่ทับของที่กรอกไว้ */
-function _lastRecOf(pid) {
-  const info = _unitInfo(pid);
-  const keyOf = r => `${(r.shift_date || r.record_date || '').slice(0, 10)}|${r.shift_type === 'night' ? 1 : 0}|${r.saved_at || ''}|${String((_shiftsArr(r)[0] || {}).si || 0).padStart(2, '0')}`;
-  let best = null, bestK = '';
-  for (const r of (state.kpiRecords || [])) {
-    if (r.zone !== info.zone) continue;
-    if (info.isLine ? r.line_key !== info.lineKey : r.machine_id !== info.m.id) continue;
-    const k = keyOf(r);
-    if (k > bestK) { best = r; bestK = k; }
-  }
-  return best;
-}
-/* Process ของ record: KPI เก็บแค่ตัวท้าย · ยอดผลิตที่ผูก kpi_record_id เก็บครบทุกตัวที่กดเลือก */
-function _procsOfRec(r) {
-  const linked = (state.prodRecords || []).filter(p => p.kpi_record_id && p.kpi_record_id === r.record_id)
-    .map(p => p.current_process || p.currentProcess).filter(Boolean);
-  const list = linked.length ? linked : (r.last_process ? [r.last_process] : []);
-  const flow = allowedProcs(r.valve_no || '').map(_procCanon);
-  return [...new Set(list)].sort((a, b) => flow.indexOf(_procCanon(a)) - flow.indexOf(_procCanon(b)));
-}
 /* กะที่น่าจะกำลังลง — ชั่วโมงแรกหลังเปลี่ยนกะ (08:xx / 20:xx) = ลงของกะที่เพิ่งจบ */
 function _guessShift() {
   const h = new Date().getHours();
@@ -18088,32 +18066,12 @@ function _prefillSlot0(pid) {
       || $(sid + '_emps')?.querySelector('[data-empid]') || _mlRows(sid).some(r => !r.untouched)) return;
   blk.dataset.pf = '1';
   setSlotShift(sid, _guessShift(), true);
-  const r = _lastRecOf(pid);
-  if (r) {
-    const ct = +r.ct || +(_shiftsArr(r)[0] || {}).ct || 0;
-    if (ct && $(sid + '_ct')) $(sid + '_ct').value = String(ct);
-    if ($(sid + '_emps')) {            // VSM3 หลายคน → chips
-      const ids = String(r.shift_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-      const names = String(r.emp_name || '').split(',').map(s => s.trim());
-      if (ids.length) ids.forEach((id, i) => _addEmpChip(sid, id, names[i] || ''));
-      else if (r.emp_id) { const [id, ...nm] = String(r.emp_id).split('—'); _addEmpChip(sid, id.trim(), nm.join('—').trim()); }
-    } else if (r.emp_id && $(sid + '_emp')) $(sid + '_emp').value = r.emp_id;
-    if (r.valve_no && $(sid + '_v')) {
-      $(sid + '_v').value = r.valve_no;
-      _writeProcSel(sid, _procsOfRec(r));
-      renderProcChips(sid);
-    }
-    const d = String(r.shift_date || r.record_date || '').slice(5, 10).split('-').reverse().join('/');
-    $(sid + '_pf').innerHTML = `<span>↺ ${TT('เติมจากกะล่าสุดของเครื่องนี้','Filled from the last shift of this machine')} (${escapeHtml(d)} ${r.shift_type === 'night' ? '🌙' : '☀️'}${r.valve_no ? ' · ' + escapeHtml(r.valve_no) : ''}) — ${TT('ตรวจก่อนบันทึก','check before saving')}</span><button type="button" onclick="_pfClear('${sid}')">${TT('ล้าง','Clear')}</button>`;
+  const u = CURRENT_USER;
+  if (u && u.id) {
+    if ($(sid + '_emps')) _addEmpChip(sid, u.id, u.name || '');          // VSM3 / Auto Line หลายคน → chip
+    else if ($(sid + '_emp')) $(sid + '_emp').value = u.name ? `${u.id} — ${u.name}` : u.id;
   }
   updWTP(pid, 0);
-}
-/* ปุ่ม "ล้าง" ในแถบเติมอัตโนมัติ — ล้างพนักงาน/CT/วาล์ว/Process ที่เติมมา (เวลาไม่แตะ) */
-function _pfClear(sid) {
-  ['_emp', '_ct', '_v'].forEach(s => { const el = $(sid + s); if (el) { el.value = ''; el.disabled = false; } });
-  $(sid + '_emps')?.querySelectorAll('.emp-chip').forEach(c => c.remove());
-  _writeProcSel(sid, []); renderProcChips(sid);
-  if ($(sid + '_pf')) $(sid + '_pf').innerHTML = '';
 }
 /* ปุ่ม ☀️ ทั้งกะเช้า 08–20 / 🌙 ทั้งกะดึก 20–08 (เวลาเดียวกับกติกากะของระบบ _resolveShift) */
 function setSlotShift(sid, which, silent) {
