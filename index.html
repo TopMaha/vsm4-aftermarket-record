@@ -272,10 +272,17 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 /* v3.71 — ปุ่มเพิ่มช่วง (ก๊อปพนักงาน/CT · เวลาต่อจากช่วงก่อน) */
 .shift-add{flex-direction:column;gap:2px;line-height:1.3;text-align:center;font-family:inherit;padding:8px 6px}
 .shift-add small{font-size:9.5px;font-weight:600;color:var(--muted)}
-/* v3.71 — ปุ่มเวลาทั้งกะ + พนักงาน/CT แถวเดียว (แถบเหลือง "เติมจากกะล่าสุด" ถอดออกใน v3.72) */
-.sh-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
-.sh-quick button{padding:8px 6px;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
-.sh-quick button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+/* v3.71 — พนักงาน/CT แถวเดียว (ปุ่มเวลาทั้งกะถอดออกใน v3.73 — พนักงานต้องเลือกเวลาเอง) */
+/* v3.73 — ช่องเวลาที่ผิด (เกิน 12 ชม. / เริ่ม = จบ) บอกทันทีใต้ช่อง */
+.t-bad{color:var(--red)!important;font-weight:800}
+/* v3.73 — ช่องที่ผิด/ควรตรวจ (กด "กลับไปแก้ไข" ใน popup): ขอบแดงส้ม + กระพริบ · ค้างสีไว้จนกว่าจะแก้ช่องนั้น */
+.fx-err{border-color:#EA580C!important;background:#FFF7ED!important;box-shadow:0 0 0 3px rgba(234,88,12,.3)!important}
+.pchips.fx-err{border:2px solid #EA580C;border-radius:8px;padding:4px}
+/* กระพริบด้วย outline — สีพื้น/เงาด้านบนเป็น !important ซึ่งชนะ keyframes เสมอ (animate ตรงนั้นแล้วจะนิ่ง) */
+.fx-err.fx-blink{animation:fxBlink .5s ease-in-out 6}
+@keyframes fxBlink{0%,100%{outline:0 solid rgba(234,88,12,0);outline-offset:0}50%{outline:4px solid #EA580C;outline-offset:2px}}
+.fx-pick{cursor:pointer}
+.fx-pick:active{background:#FFF7ED}
 .emp-ct{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:8px;align-items:end}
 /* v3.71 — ตาราง Lot (มีเสมอ · 1 แถว = 1 Lot) */
 .ml-box{margin-top:6px;background:#fff;border:1.5px solid var(--blue-soft);border-radius:9px;padding:4px 6px 6px}
@@ -2241,7 +2248,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.72</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.73</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9330,7 +9337,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.72":"Production Record + KPI · v3.72",
+"ระบบบันทึกผลิต + KPI · v3.73":"Production Record + KPI · v3.73",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -9404,6 +9411,11 @@ const I18N_X = {
 "ยังไม่ลง":"missing","ยังไม่ใส่":"not set","⚠️ ข้อมูลไม่ครบถ้วน":"⚠️ Incomplete data",
 "กรุณากรอกให้ครบก่อนกดบันทึก — ข้อมูลในฟอร์มยังคงอยู่":"Please complete them before saving — your form data is kept",
 "✏️ กลับไปแก้ไข":"✏️ Go back and fix","กำลังบันทึกขึ้น Cloud…":"Saving to Cloud…",
+"⚠️ ยังบันทึกไม่ได้ — ข้อมูลไม่ครบ / ไม่ถูกต้อง":"⚠️ Cannot save yet — missing / invalid data",
+"✏️ กลับไปแก้ไข — ไปที่ช่องที่ผิด":"✏️ Go back — jump to the wrong field",
+"⚠️ ตรวจสอบก่อนบันทึก — ค่าดูผิดปกติ":"⚠️ Check before saving — values look unusual",
+"✓ ถูกต้องแล้ว — ยืนยันตามนั้น":"✓ It's correct — save as is",
+"⏱️ Target เทียบ CT":"⏱️ Target vs CT","⏱️ OPR เทียบ CT":"⏱️ OPR vs CT","🕐 เวลาทับกับช่วงอื่น":"🕐 Overlaps another range",
 "✅ บันทึกขึ้น Cloud สำเร็จ":"✅ Saved to Cloud",
 "บันทึกใน Local แล้ว — จะส่งขึ้น Cloud อัตโนมัติเมื่อเน็ตกลับมา":"Saved locally — will sync to Cloud automatically when back online",
 "กำลังบันทึก…":"Saving…","กรุณารอสักครู่ • อย่าเพิ่งปิดหน้านี้":"Please wait • don't close this page yet",
@@ -17917,17 +17929,13 @@ function shiftHtml(pid, si, m, opts) {
   const tgtPh = m.target ? `${TT('ว่าง','blank')} = ${m.target}` : '';
   return `<div class="shift" id="${sid}_block">
     <div class="shift-hd"><span class="shift-lbl">🕐 ${label}</span>${si>0?`<button class="shift-del" onclick="delShiftP('${pid}',${si})">✕ ลบ</button>`:''}</div>
-    <div class="fr" style="margin:0 0 6px"><label>เวลา (เริ่ม → สิ้นสุด)</label>
-      ${si === 0 ? `<div class="sh-quick">
-        <button type="button" id="${sid}_qday" onclick="setSlotShift('${sid}','day')">☀️ ${TT('ทั้งกะเช้า 08–20','Full day 08–20')}</button>
-        <button type="button" id="${sid}_qnight" onclick="setSlotShift('${sid}','night')">🌙 ${TT('ทั้งกะดึก 20–08','Full night 20–08')}</button>
-      </div>` : ''}
-      <div class="time-row"><select id="${sid}_ts" onchange="updWTP('${pid}',${si});updShiftDetect();_shQuickMark('${sid}')">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onfocus="this.dataset.last=this.value" onchange="updWTP('${pid}',${si});_chainTime('${pid}','${sid}');_shQuickMark('${sid}')">${timeOpts()}</select></div>
+    <div class="fr" style="margin:0 0 6px"><label>เวลา (เริ่ม → สิ้นสุด) <span style="color:var(--red)">*</span></label>
+      <div class="time-row"><select id="${sid}_ts" onchange="updWTP('${pid}',${si});updShiftDetect()">${timeOpts()}</select><span class="time-sep">→</span><select id="${sid}_te" onfocus="this.dataset.last=this.value" onchange="updWTP('${pid}',${si});_chainTime('${pid}','${sid}')">${timeOpts()}</select></div>
       <div id="${sid}_wt" class="muted" style="font-size:11px;margin-top:3px"></div>
     </div>
     <div class="emp-ct">
       ${empBlock}
-      <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState()"></div>
+      <div class="fr" style="margin:0"><label>CT (sec)</label><input type="number" id="${sid}_ct" step="0.1" min="0" placeholder="0" oninput="_formDirty=true;_updateFabState();updShiftTotal('${pid}')"></div>
     </div>
     <div class="fr" style="margin-top:8px;background:var(--blue-light);border:1.5px dashed var(--blue-soft);border-radius:9px;padding:8px">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
@@ -18046,18 +18054,14 @@ function toggleMc(pid) {
   if (on) { _formDirty = true; _updateFabState(); _prefillSlot0(pid); }
 }
 
-/* ── v3.71 (A) → v3.72 — เปิดสวิตช์เครื่อง → เติมให้เฉพาะ "เวลาทั้งกะ" + "ชื่อคนที่ Lock In" ──
+/* ── v3.71 (A) → v3.72 → v3.73 — เปิดสวิตช์เครื่อง → เติมให้เฉพาะ "ชื่อคนที่ Lock In" ──
    v3.71 เติม พนักงาน/CT/วาล์ว/Process จากกะล่าสุดของเครื่อง → v3.72 เลิก (ผู้ใช้ขอ 30/9):
      • CT / วาล์ว / Process ไม่เติม — ค่าของกะก่อนไม่ใช่งานที่กำลังทำ พนักงานงง
      • พนักงาน = คนที่ Lock In เข้าระบบ (ไม่ใช่คนเดินเครื่องกะก่อน — คนละกะคนละคน) · แก้/ลบได้ตามปกติ
-   เวลา = ทั้งกะ ตามเวลาปัจจุบัน (_guessShift) — กดสลับกะเช้า/ดึกได้ที่ปุ่ม
-   ❌ ไม่เติม Lot / OPR / Target
+   v3.73 (ผู้ใช้ขอ 1/10): เลิกเติม "เวลาทั้งกะ" + ถอดปุ่ม ☀️ ทั้งกะเช้า / 🌙 ทั้งกะดึก
+     — ระบบเติม 20:00→08:00 ให้แล้วพนักงานกดข้ามไม่ได้ดู → ลงเวลาผิดกะ · ตอนนี้ต้องเลือกเวลาเริ่ม/สิ้นสุดเอง
+   ❌ ไม่เติม เวลา / Lot / OPR / Target
    เติมเฉพาะช่วงแรกที่ยังว่าง ครั้งเดียวต่อการ์ด — เปิด/ปิดสวิตช์ซ้ำไม่ทับของที่กรอกไว้ */
-/* กะที่น่าจะกำลังลง — ชั่วโมงแรกหลังเปลี่ยนกะ (08:xx / 20:xx) = ลงของกะที่เพิ่งจบ */
-function _guessShift() {
-  const h = new Date().getHours();
-  return (h >= 9 && h < 21) ? 'day' : 'night';
-}
 function _prefillSlot0(pid) {
   const sid = `${pid}_s0`, blk = $(sid + '_block');
   if (!blk || blk.dataset.pf) return;
@@ -18065,29 +18069,11 @@ function _prefillSlot0(pid) {
   if (g('_ts') || g('_te') || g('_v') || g('_emp') || g('_ct')
       || $(sid + '_emps')?.querySelector('[data-empid]') || _mlRows(sid).some(r => !r.untouched)) return;
   blk.dataset.pf = '1';
-  setSlotShift(sid, _guessShift(), true);
   const u = CURRENT_USER;
   if (u && u.id) {
     if ($(sid + '_emps')) _addEmpChip(sid, u.id, u.name || '');          // VSM3 / Auto Line หลายคน → chip
     else if ($(sid + '_emp')) $(sid + '_emp').value = u.name ? `${u.id} — ${u.name}` : u.id;
   }
-  updWTP(pid, 0);
-}
-/* ปุ่ม ☀️ ทั้งกะเช้า 08–20 / 🌙 ทั้งกะดึก 20–08 (เวลาเดียวกับกติกากะของระบบ _resolveShift) */
-function setSlotShift(sid, which, silent) {
-  const [ts, te] = which === 'night' ? ['20:00', '08:00'] : ['08:00', '20:00'];
-  const teEl = $(sid + '_te'), oldTe = teEl ? teEl.value : '';
-  if ($(sid + '_ts')) $(sid + '_ts').value = ts;
-  if (teEl) teEl.value = te;
-  const m = sid.match(/^(.*)_s(\d+)$/);
-  if (m) { updWTP(m[1], +m[2]); if (teEl) { teEl.dataset.last = oldTe; _chainTime(m[1], sid); } }
-  updShiftDetect(); _shQuickMark(sid);
-  if (!silent) { _formDirty = true; _updateFabState(); }
-}
-function _shQuickMark(sid) {
-  const ts = $(sid + '_ts')?.value, te = $(sid + '_te')?.value;
-  $(sid + '_qday')?.classList.toggle('on', ts === '08:00' && te === '20:00');
-  $(sid + '_qnight')?.classList.toggle('on', ts === '20:00' && te === '08:00');
 }
 /* แก้เวลาจบของช่วงนี้ → ช่วงถัดไปที่ "เริ่มต่อจากเวลาจบเดิม" เลื่อนตามให้ (ไม่ต้องแก้สองที่) */
 function _chainTime(pid, sid) {
@@ -18098,13 +18084,6 @@ function _chainTime(pid, sid) {
   const nx = blocks[blocks.findIndex(b => b.id === sid + '_block') + 1]; if (!nx) return;
   const nsid = nx.id.replace(/_block$/, ''), nts = $(nsid + '_ts');
   if (nts && nts.value === old) { nts.value = te.value; const m = nsid.match(/_s(\d+)$/); if (m) updWTP(pid, +m[1]); }
-}
-/* เวลาจบกะของหน่วยนี้ (ดูจากเวลาเริ่มช่วงแรก) */
-function _shiftEndOf(pid) {
-  const b0 = $(pid + '_body')?.querySelector('.shift'); if (!b0) return '';
-  const ts = $(b0.id.replace(/_block$/, '') + '_ts')?.value || ''; if (!ts) return '';
-  const [h, m] = ts.split(':').map(Number), mins = h * 60 + (m || 0);
-  return (mins >= 480 && mins <= 1199) ? '20:00' : '08:00';
 }
 /* จำนวน "ช่วงเวลา" สูงสุดต่อหน่วย
    v3.69: QC 10 ช่วง · สายอื่น 4 ช่วง
@@ -18140,8 +18119,8 @@ function addShiftP(pid, mode) {
 }
 
 /* ── v3.71 — ช่วงใหม่ก๊อปจากช่วงก่อน (ใช้ตอน "เปลี่ยนวาล์ว" หรือ "เวลาคนละช่วง") ──
-   ก๊อป: CT · พนักงาน · เวลาเริ่ม = เวลาจบของช่วงก่อน · เวลาจบ = ท้ายกะ
-     (ช่วงก่อนยังเป็นทั้งกะ → พอแก้เวลาจบของช่วงก่อน เวลาเริ่มของช่วงนี้เลื่อนตามเอง ดู _chainTime)
+   ก๊อป: CT · พนักงาน · เวลาเริ่ม = เวลาจบของช่วงก่อน (แก้เวลาจบของช่วงก่อน → เวลาเริ่มช่วงนี้เลื่อนตาม ดู _chainTime)
+   v3.73: เวลาจบ "ว่าง" ให้พนักงานเลือกเอง (เดิมเติมท้ายกะให้ → กดข้ามไม่ได้ดู ลงเวลาผิด)
    ❌ ไม่ก๊อป วาล์ว/Lot/OPR/Target — ช่วงใหม่มีไว้เปลี่ยนวาล์ว (หลาย Lot วาล์วเดียว = เพิ่มแถวในตาราง Lot)
    จำ "ลายเซ็น" ของค่าที่ก๊อปมาไว้ → ช่วงที่กดเพิ่มแล้วไม่ได้แตะเลย = ช่วงว่าง ข้ามได้ตอนบันทึก (ไม่เด้งเตือน) */
 function _copySlot(src, dst) {
@@ -18150,7 +18129,7 @@ function _copySlot(src, dst) {
   const pid = dst.replace(/_s\d+$/, '');
   put('_ct', val('_ct'));
   const te = val('_te');
-  if (te) { put('_ts', te); const end = _shiftEndOf(pid); if (end) put('_te', end); }
+  if (te) put('_ts', te);
   const chips = document.getElementById(src + '_emps');
   if (chips) chips.querySelectorAll('[data-empid]').forEach(c => _addEmpChip(dst, c.getAttribute('data-empid'), c.getAttribute('data-empname') || ''));
   put('_emp', val('_emp'));
@@ -18423,24 +18402,103 @@ function delShiftP(pid, si) {
   $(`${pid}_s${si}_block`)?.remove();
   renumShiftsP(pid);
 }
+/* ── v3.73 — ตรวจเวลาของช่วง (ผู้ใช้ขอ 1/10: "ช่วงที่ลงมากกว่า 12 ชั่วโมง แบบนี้ผิด") ──
+   1 กะ = 12 ชม. (08–20 / 20–08) → ช่วงเดียวยาวเกิน 12 ชม. = เลือกเวลาผิดแน่นอน (เช่น 08:00 → 07:30 = 23.5 ชม.)
+   เริ่ม = จบ → 0 ชม. (WT 0 → PPLH/DLE เป็น 0 เงียบ ๆ)  · ว่าง = '' (ช่องว่างแจ้งแยกเป็น "ยังไม่ลง") */
+const MAX_SLOT_HR = 12;
+function _slotTimeErr(ts, te) {
+  if (!ts || !te) return '';
+  const { hr } = calcWT(ts, te);
+  if (!hr) return `เวลาเริ่มกับเวลาสิ้นสุดเป็นเวลาเดียวกัน (${ts}) — ช่วงนี้ 0 ชม.`;
+  if (hr > MAX_SLOT_HR) return `${ts} → ${te} = ${+hr.toFixed(2)} ชม. เกิน ${MAX_SLOT_HR} ชม. (1 กะ = 12 ชม.) — เวลาเริ่มหรือเวลาสิ้นสุดผิด`;
+  return '';
+}
+/* ── v3.73 — ยอดที่ทำได้ตาม CT (ผู้ใช้ขอ 1/10) ──
+   ทำได้สูงสุด = 3600 ÷ CT × ชั่วโมงทำงาน  เช่น CT 12 วิ × 10 ชม. → 3600/12 × 10 = 3,000 ชิ้น
+   ใช้ "ชั่วโมงทำงาน" (เริ่ม→จบ ไม่หักพัก) ไม่ใช่ WT — วัดจากของจริง 7,392 ช่วง (14–30/9):
+     Target ที่หน้างานลง = 3600/CT × ชม.เต็ม (08–20 = 12 ชม.) เป๊ะ ๆ 3,607 ช่วง · ถ้าใช้ WT (11 ชม.) ช่วงพวกนี้จะโดนเตือนหมด
+     และเครื่องอัตโนมัติเดินช่วงพักด้วย (OPR เกิน WT×CT แต่ไม่เกิน ชม.เต็ม×CT)
+   ปัดขึ้นเป็นชิ้นเต็ม — CT 6.78 × 12 ชม. = 6,371.7 → Target 6,372 ต้องไม่โดนเตือน
+   ใช้ตรวจ Target/OPR ตอนบันทึก (_ctCapWarn) + โชว์ใต้ช่วงให้เห็นก่อนกรอก Target */
+const CT_CAP_MIN = 0.6;   // Target ต่ำกว่า 60% ของที่ทำได้ตาม CT = Target หรือ CT น่าจะผิด
+function _ctCap(ct, hr) { return (ct > 0 && hr > 0) ? Math.ceil(3600 / ct * hr - 1e-9) : 0; }
+/* ยอดของ 1 ช่วงเทียบที่ทำได้ตาม CT → warning หรือ null (ยืนยันบันทึกต่อได้)
+   · OPR+Scrap > ทำได้ = เป็นไปไม่ได้ → CT / เวลา / OPR ผิด
+   · Target > ทำได้ หรือ < 60% ของที่ทำได้ → Target หรือ CT ผิด
+   หลาย Lot = เทียบ "รวมทั้งช่วง" (ทุก Lot ใช้เวลา + CT ชุดเดียวกัน) · 1 Lot + Target ว่าง = Target เครื่อง (ค่าที่จะถูกบันทึกจริง) */
+function _ctCapWarn(rg, tgtFallback) {
+  if (_slotTimeErr(rg.ts, rg.te)) return null;              // เวลาผิด → แจ้งเรื่องเวลาก่อน
+  const hr = calcWT(rg.ts, rg.te).hr, cap = _ctCap(rg.ct, hr);
+  if (!cap) return null;                                      // CT/เวลา ยังไม่ลง → มี error แจ้งอยู่แล้ว
+  const rows = rg.rows, many = rows.length > 1, made = rg.opr + (rg.scrap || 0);
+  const how = `3600 ÷ CT ${+rg.ct} วิ × ${+hr.toFixed(2)} ชม. = ${nn(cap)} ชิ้น`;
+  const ctEl = rg.sid + '_ct';
+  if (made > cap) return { label: rg.label, field: '⏱️ OPR เทียบ CT',
+    msg: `OPR ${nn(rg.opr)}${rg.scrap ? ` + Scrap ${nn(rg.scrap)}` : ''} ชิ้น มากกว่าที่เครื่องทำได้ตาม CT (${how}) — CT / เวลา / OPR ลงผิด?`,
+    els: [ctEl, ...rows.map(r => r.rid + '_opr')] };
+  if (rows.some(r => r.target > 0 && r.target < r.opr)) return null;   // Target < OPR = error อยู่แล้ว ไม่เตือนซ้ำ
+  const tgt = many ? (rows.every(r => r.target > 0) ? rows.reduce((a, r) => a + r.target, 0) : 0)
+                   : ((rows[0] && rows[0].target) || tgtFallback);
+  if (!tgt) return null;                                      // Target ยังไม่ครบ → error "ยังไม่ลง" แจ้งอยู่แล้ว
+  const tLbl = many ? `Target รวม ${rows.length} Lot = ${nn(tgt)}`
+                    : `Target ${nn(tgt)}${(rows[0] && rows[0].target) ? '' : ' (ช่องว่าง = Target เครื่อง)'}`;
+  const els = [ctEl, ...rows.map(r => r.rid + '_tgt')];
+  if (tgt > cap) return { label: rg.label, field: '⏱️ Target เทียบ CT',
+    msg: `${tLbl} มากกว่าที่เครื่องทำได้ตาม CT (${how}) — Target หรือ CT ผิด?`, els };
+  if (tgt < cap * CT_CAP_MIN) return { label: rg.label, field: '⏱️ Target เทียบ CT',
+    msg: `${tLbl} = ${Math.round(tgt / cap * 100)}% ของที่ทำได้ตาม CT (${how}) — ต่ำกว่า ${Math.round(CT_CAP_MIN * 100)}% · Target หรือ CT ผิด?`, els };
+  return null;
+}
+/* ── v3.73 — ช่วงเวลาทับกันในเครื่อง/สายเดียวกัน → ชั่วโมงทำงานนับซ้ำ (PPLH/DLE เพี้ยน) ──
+   เคสจริง 14–30/9: L-236 "20:00→08:00 + 02:00→08:00" · G-248 "09:00→20:00 + 18:00→20:00" (ช่วงแรกค้างทั้งกะ ลืมแก้เวลาจบ)
+   QC ไม่ตรวจ — จุดแพ็ค/ตรวจลงวาล์วละช่วงด้วยเวลาเดียวกันเป็นปกติ (QCZ1/QCZ2 ทับกัน 56 ครั้งใน 2 สัปดาห์) */
+function _overlapWarns(ranges, zone) {
+  if (zoneVsm(zone) === 'qc') return [];
+  const tm = t => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
+  // วางทุกช่วงบนแกนเวลาที่เริ่ม 08:00 (กะดึกต่อเนื่องข้ามเที่ยงคืนได้) · เทียบเผื่อ ±1 วันด้วย
+  const rs = ranges.filter(r => r.ts && r.te && !_slotTimeErr(r.ts, r.te))
+    .map(r => { const s = (tm(r.ts) - 480 + 1440) % 1440; return { r, s, e: s + calcWT(r.ts, r.te).hr * 60 }; });
+  const out = [];
+  for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) {
+    const a = rs[i], b = rs[j];
+    if (![-1440, 0, 1440].some(o => Math.max(a.s, b.s + o) < Math.min(a.e, b.e + o))) continue;
+    out.push({ label: b.r.label, field: '🕐 เวลาทับกับช่วงอื่น',
+      msg: `ช่วงที่ ${b.r.si + 1} (${b.r.ts} → ${b.r.te}) ทับกับช่วงที่ ${a.r.si + 1} (${a.r.ts} → ${a.r.te}) — ชั่วโมงทำงานถูกนับซ้ำ · ลืมแก้เวลาจบของช่วงก่อน?`,
+      els: [a.r.sid + '_te', b.r.sid + '_ts'] });
+  }
+  return out;
+}
 function updWTP(pid, si) {
   const sid = `${pid}_s${si}`;
   const s = $(sid + '_ts')?.value, e = $(sid + '_te')?.value;
   const { hr, wt } = calcWT(s, e);
-  if ($(sid + '_wt')) $(sid + '_wt').textContent = (hr ? `ชั่วโมงทำงาน: ${hr.toFixed(2)} ชม. — WT (หักพักเที่ยง): ${wt.toFixed(2)} ชม.` : '');
+  const bad = _slotTimeErr(s, e);
+  const el = $(sid + '_wt');
+  if (el) {
+    el.textContent = bad ? '⚠️ ' + bad : (hr ? `ชั่วโมงทำงาน: ${hr.toFixed(2)} ชม. — WT (หักพักเที่ยง): ${wt.toFixed(2)} ชม.` : '');
+    el.classList.toggle('t-bad', !!bad);
+  }
+  for (const x of [$(sid + '_ts'), $(sid + '_te')]) {
+    if (!x) continue;
+    x.classList.toggle('err', !!bad);
+    if (s && e && !bad) x.classList.remove('fx-err', 'fx-blink');   // เวลาถูกแล้ว → เลิกทำเครื่องหมายทั้งคู่ (แม้แก้แค่ช่องเดียว)
+  }
   updShiftTotal(pid);
 }
 function updShiftTotal(pid) {
   const body = $(`${pid}_body`); if (!body) return;
   body.querySelectorAll('.shift').forEach(sb => {
     const sid = sb.id.replace('_block', '');
-    const wt = calcWT($(sid+'_ts')?.value, $(sid+'_te')?.value).wt;
+    const ts = $(sid+'_ts')?.value, te = $(sid+'_te')?.value;
+    const { hr, wt } = calcWT(ts, te);
     const tot = $(sid + '_total'); if (!tot) return;
     const rows = _mlRows(sid).filter(r => !r.untouched);
     const sum = k => rows.reduce((a, r) => a + r[k], 0);
-    tot.textContent = rows.length > 1
+    const cap = _slotTimeErr(ts, te) ? 0 : _ctCap(+($(sid + '_ct')?.value || 0), hr);
+    tot.textContent = (rows.length > 1
       ? `📦 ${rows.length} Lot · OPR รวม: ${nn(sum('opr'))} · Target รวม: ${nn(sum('target'))} · WT: ${wt.toFixed(2)} ชม. (แบ่งให้แต่ละ Lot ตามจำนวนชิ้น)`
-      : `OPR: ${nn(sum('opr'))} · WT: ${wt.toFixed(2)} ชม.`;
+      : `OPR: ${nn(sum('opr'))} · WT: ${wt.toFixed(2)} ชม.`)
+      + (cap ? ` · ตาม CT ทำได้ไม่เกิน ${nn(cap)} ชิ้น` : '');
   });
 }
 
@@ -18777,13 +18835,74 @@ function _saveKpiDropSlot(sid) {
   closeModal();
   toast(TT('ลบช่วงนี้แล้ว — กด "บันทึกข้อมูลทั้งหมด" อีกครั้ง', 'Range removed — press Save again'), 'orange');
 }
-/* ปิด popup แล้วเลื่อนจอไปที่เครื่อง/ช่วงแรกที่ยังกรอกไม่ครบ (หาแก้ง่ายขึ้น) */
-function _saveKpiBackToEdit(sid) {
-  closeModal();
-  if (sid) {
-    const el = $(sid + '_block') || $(sid);
-    if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
-  }
+/* ── v3.73 — "กลับไปแก้ไข" เด้งไปที่ช่องที่ผิด + ช่องสีแดงส้มกระพริบ (ผู้ใช้ขอ 1/10) ──
+   เดิมเลื่อนจอไปแค่ "ช่วงแรกที่ผิด" แล้วพนักงานต้องหาเองว่าช่องไหน
+   _fxList = id ช่องของแต่ละรายการใน popup ล่าสุด (ลำดับเดียวกับที่โชว์) · แตะรายการ = ไปช่องนั้น · ปุ่มใหญ่ = รายการแรก
+   ทุกช่องที่ผิดถูกทำเครื่องหมาย (.fx-err) + กระพริบ ~3 วิ · สีค้างไว้จนกว่าจะแก้ช่องนั้น */
+let _fxList = [];
+function _fxGroupsHtml(groups, warn) {
+  const fg = warn ? '#B45309' : 'var(--red)';
+  return groups.map(g => {
+    // ปุ่มลบเฉพาะ "ช่วงที่กดเพิ่ม" (si>0) — ช่วงหลักลบไม่ได้ (ต้องกรอกให้ครบ)
+    const delBtn = (!warn && g.sid && g.canDel)
+      ? `<button class="btn btn-sm" style="background:#fff;color:#DC2626;border:1.5px solid #FCA5A5;margin-left:auto;white-space:nowrap;flex-shrink:0" onclick="_saveKpiDropSlot('${g.sid}')">🗑 ลบช่วงนี้</button>`
+      : '';
+    return `
+      <div style="border:1.5px solid ${warn ? 'var(--orange-bd)' : 'var(--red-bd)'};border-radius:10px;overflow:hidden;margin-bottom:10px">
+        <div style="background:${warn ? 'var(--orange-bg)' : 'var(--red-bg)'};padding:8px 12px;font-weight:800;font-size:13px;color:${fg};display:flex;align-items:center;gap:8px">${escapeHtml(g.label)}${delBtn}</div>
+        <div style="padding:4px 12px">
+          ${g.errors.map(e => {
+            const i = _fxList.push(e.els || []) - 1, can = (e.els || []).length > 0;
+            return `
+            <div class="${can ? 'fx-pick' : ''}" ${can ? `onclick="_fxGo(${i})"` : ''} style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid ${warn ? '#FDE68A' : '#FEE2E2'}">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">${warn ? '⚠️' : '❌'}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(e.field)}</div>
+                <div style="font-size:11px;color:${fg};margin-top:2px;line-height:1.5">${escapeHtml(e.msg)}</div>
+              </div>
+              ${can ? `<span style="flex-shrink:0;align-self:center;font-size:11px;font-weight:800;color:var(--blue);white-space:nowrap">${TT('ไปที่ช่อง', 'Go')} ›</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+function _fxGo(i) {
+  closeModal();   // popup เตือน (_askWarn) → ถือว่า "กลับไปแก้ไข" (resolve false)
+  document.querySelectorAll('.fx-err').forEach(el => el.classList.remove('fx-err', 'fx-blink'));
+  const els = _fxList.flat().map(id => document.getElementById(id)).filter(Boolean);
+  for (const el of els) { el.classList.add('fx-err'); void el.offsetWidth; el.classList.add('fx-blink'); }
+  const ids = (_fxList[i] && _fxList[i].length) ? _fxList[i] : (_fxList.find(a => a.length) || []);
+  const el = ids.map(id => document.getElementById(id)).find(Boolean);
+  if (!el) return;
+  const card = el.closest('.mc'); if (card) card.style.display = '';   // การ์ดที่ถูกช่องค้นเครื่องซ่อนไว้
+  setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); } }, 50);
+}
+// แก้ช่องที่ถูกทำเครื่องหมายแล้ว → สีแดงส้มหายเอง (กรอบ Process = แตะเลือก Process ข้างในก็นับ)
+['input', 'change', 'click'].forEach(t => document.addEventListener(t, ev => {
+  const el = ev.target && ev.target.closest ? ev.target.closest('.fx-err') : null;
+  if (el && (t !== 'click' || el.classList.contains('pchips'))) el.classList.remove('fx-err', 'fx-blink');
+}, true));
+/* v3.73 — popup "ค่าดูผิดปกติ" (ยอดเทียบ CT / เวลาทับกัน): กลับไปแก้ไข = false · ยืนยันตามนั้น = true */
+function _askWarn(groups) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;            // ปิดด้วย ✕ / _fxGo → closeModal() resolve(false) ให้เอง
+    _fxList = [];
+    const n = groups.reduce((a, g) => a + g.errors.length, 0);
+    openModal('⚠️ ตรวจสอบก่อนบันทึก — ค่าดูผิดปกติ', `
+      <div style="background:var(--orange-bg);border:1.5px solid var(--orange-bd);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:26px;line-height:1">🤔</span>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:#B45309">พบ ${n} จุดที่ค่าดูผิดปกติ — Target / CT / เวลา อาจลงผิด</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6">แตะรายการ = ไปแก้ที่ช่องนั้น · ถ้า<b>ถูกต้องแล้วจริง</b> กด <b>ยืนยันตามนั้น</b> เพื่อบันทึกต่อ</div>
+        </div>
+      </div>
+      <div style="max-height:52vh;overflow-y:auto;padding-right:2px">${_fxGroupsHtml(groups, true)}</div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn btn-outline" style="flex:1;padding:12px;font-size:13px" onclick="_fxGo(0)">✏️ กลับไปแก้ไข</button>
+        <button class="btn btn-green" style="flex:1;padding:12px;font-size:13px" onclick="_resolveConfirm(true)">✓ ถูกต้องแล้ว — ยืนยันตามนั้น</button>
+      </div>`);
+  });
 }
 async function saveKpi() {
   if (_savingKpi) return;        // มีการบันทึกค้างอยู่แล้ว — ไม่เริ่มรอบใหม่
@@ -18828,7 +18947,8 @@ async function _saveKpiImpl() {
   //   พนักงานเพิ่ม 3 ช่วง แต่ลงจริง 2 ช่วง โดยไม่รู้ตัว (toast แว่บเดียว/ไม่มีเลย)
   //   ใหม่: ช่วงที่กรอกไม่ครบ = error ใน popup ตรวจสอบ → บล็อกการบันทึกทั้งหมดจนกว่าจะครบ
   //   (ช่วงที่ "ว่างสนิท" — ไม่กรอกอะไรเลย — ยังข้ามได้ตามเดิม เพราะแค่กดเพิ่มเกิน)
-  const slotErrs = [];             // {label, field, msg} ต่อช่วงที่กรอกไม่ครบ
+  const slotErrs = [];             // {label, field, msg, els} ต่อช่วงที่กรอกไม่ครบ (els = id ช่องที่ผิด → กลับไปแก้ไข)
+  const slotWarns = [];            // v3.73: {label, field, msg, els} ค่าดูผิดปกติ (CT/Target/เวลาทับกัน) — ยืนยันบันทึกต่อได้
   let slotsRead = 0;               // จำนวนช่วงเวลาที่มีข้อมูลจริง (ไว้รายงานผู้ใช้หลังบันทึก)
   for (const unit of units) {
     const on = document.getElementById(unit.pid + '_on');
@@ -18838,12 +18958,14 @@ async function _saveKpiImpl() {
     const N = unit.machines.length || 1;
     // อ่านช่วงเวลาทั้งหมดของหน่วยนี้
     const slots = [];
+    const ranges = [];             // v3.73: 1 ต่อช่วงที่จะบันทึก — ไว้ตรวจเวลาทับกัน + ยอดเทียบ CT (ระดับช่วง ไม่ใช่ราย Lot)
     let mainShiftType = '', shiftDate = prodDate;
     body.querySelectorAll('.shift').forEach((sb, si) => {
       const sid = sb.id.replace('_block', '');
       // v3.71: ยอด/Lot/Target มาจากตาราง Lot ของช่วง (แถวว่าง/แถวที่มีแค่เลขหน้า Lot ที่ระบบเติม = ไม่นับ)
       //        Lot เก็บแบบ lotKey (ตัวใหญ่ · ไม่มีช่องว่าง) — "2609s090348" → "2609S090348"
-      const mlRows = _mlRows(sid).filter(r => !r.untouched);
+      const allRows = _mlRows(sid);
+      const mlRows = allRows.filter(r => !r.untouched);
       const opr = mlRows.reduce((a, r) => a + r.opr, 0);
       const scrap = mlRows.reduce((a, r) => a + r.scrap, 0);
       const target = mlRows.length === 1 ? mlRows[0].target : 0;
@@ -18863,7 +18985,8 @@ async function _saveKpiImpl() {
         if (sb.dataset.autosig && sb.dataset.autosig === _slotSig(sid)) return;
         // มีอะไรกรอกไว้บ้าง (เวลา/วาล์ว/Lot) แต่ไม่มี OPR → ห้ามข้ามเงียบ ให้เด้งเตือนใน popup
         if (ts || te || valve.trim() || lot.trim() || (procs && procs.length)) {
-          slotErrs.push({ label: _slotLabel, field: 'OPR (ชิ้น)', msg: 'ช่วงเวลานี้ยังไม่ได้ลงยอด — กรอก OPR หรือลบช่วงนี้ออก', sid, canDel: si > 0 });
+          slotErrs.push({ label: _slotLabel, field: 'OPR (ชิ้น)', msg: 'ช่วงเวลานี้ยังไม่ได้ลงยอด — กรอก OPR หรือลบช่วงนี้ออก', sid, canDel: si > 0,
+                          els: [((mlRows[0] || allRows[0] || {}).rid || '') + '_opr'] });
         }
         return;   // ช่วงว่างสนิท (แค่กดเพิ่มเกิน) → ข้ามได้
       }
@@ -18876,11 +18999,11 @@ async function _saveKpiImpl() {
         // วาล์วที่ยังไม่ได้ตั้ง Process ในมาสเตอร์ → อนุญาตให้บันทึกได้โดยไม่ต้องใส่ Process
         if (allowedProcs(valve).length) {
           if (!procs.length) {
-            slotErrs.push({ label: _slotLabel, field: 'Process', msg: 'ยังไม่ได้เลือก Process (แตะปุ่ม Process ของวาล์วนี้ก่อนบันทึก)', sid, canDel: si > 0 });
+            slotErrs.push({ label: _slotLabel, field: 'Process', msg: 'ยังไม่ได้เลือก Process (แตะปุ่ม Process ของวาล์วนี้ก่อนบันทึก)', sid, canDel: si > 0, els: [sid + '_pchips'] });
             return;
           }
           if (procs.some(p => !isAllowedProc(valve, p))) {
-            slotErrs.push({ label: _slotLabel, field: 'Process', msg: 'Process ไม่ตรงเบอร์วาล์ว — เลือกจากลิสต์ของวาล์วนี้เท่านั้น', sid, canDel: si > 0 });
+            slotErrs.push({ label: _slotLabel, field: 'Process', msg: 'Process ไม่ตรงเบอร์วาล์ว — เลือกจากลิสต์ของวาล์วนี้เท่านั้น', sid, canDel: si > 0, els: [sid + '_pchips'] });
             return;
           }
         }
@@ -18894,20 +19017,26 @@ async function _saveKpiImpl() {
         // Lot ซ้ำในตารางเดียวกัน = กดเลือกซ้ำ/พิมพ์ซ้ำแน่นอน (Lot เดียวกันควรรวมยอดเป็นแถวเดียว)
         const dup = mlRows.map(r => r.lot).filter((l, i, a) => l && a.indexOf(l) !== i);
         if (dup.length) {
-          slotErrs.push({ label: _slotLabel, field: '📦 Lot ซ้ำในตาราง', msg: `Lot ${[...new Set(dup)].join(', ')} มีมากกว่า 1 แถว — รวมยอดเป็นแถวเดียว หรือแก้เลข Lot`, sid, canDel: false });
+          slotErrs.push({ label: _slotLabel, field: '📦 Lot ซ้ำในตาราง', msg: `Lot ${[...new Set(dup)].join(', ')} มีมากกว่า 1 แถว — รวมยอดเป็นแถวเดียว หรือแก้เลข Lot`, sid, canDel: false,
+                          els: mlRows.filter(r => dup.includes(r.lot)).map(r => r.rid + '_lot') });
           return;
         }
         // 1 Lot = 1 slot (→ 1 record ต่อเครื่อง) · WT แบ่งตามสัดส่วน OPR · Target ของแถวเอง (ไม่ใช้ Target เครื่องแทนช่องว่าง)
         mlRows.forEach(r => {
           const share = opr > 0 ? r.opr / opr : 1 / mlRows.length;
-          slots.push({ si, sid, opr: r.opr, scrap: r.scrap, target: r.target, ct, ts, te, wt: wt * share, valve, lot: r.lot, proc, procs, crew,
+          slots.push({ si, sid, rid: r.rid, opr: r.opr, scrap: r.scrap, target: r.target, ct, ts, te, wt: wt * share, valve, lot: r.lot, proc, procs, crew,
                        noTgtFallback: true, ml: { row: r.no, n: mlRows.length, share } });
         });
       } else {
         // 1 Lot = บันทึกเหมือนฟอร์มเดิมทุกอย่าง (Target ว่าง → Target เครื่อง · WT เต็มช่วง)
-        slots.push({ si, sid, opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
+        slots.push({ si, sid, rid: (mlRows[0] || allRows[0] || {}).rid || '', opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
       }
+      ranges.push({ si, sid, label: _slotLabel, ts, te, ct, opr, scrap, rows: mlRows });
     });
+    // v3.73 — ตรวจระดับช่วง (เตือน · ยืนยันบันทึกต่อได้): ยอดเทียบ CT + เวลาทับกันในเครื่อง/สายเดียวกัน
+    const _tgtFallback = unit.machines.length === 1 ? (+unit.machines[0].target || 0) : 0;   // สาย: Target เครื่องต่างกัน → ไม่เดา
+    for (const rg of ranges) { const w = _ctCapWarn(rg, _tgtFallback); if (w) slotWarns.push(w); }
+    slotWarns.push(..._overlapWarns(ranges, unit.z));
     if (!slots.length) continue;
 
     for (const slot of slots) {
@@ -18962,6 +19091,7 @@ async function _saveKpiImpl() {
           _linkProcs: unit.isLine ? null : slot.procs,   // ชั่วคราว: ใช้สร้าง prod record ต่อ process แล้วลบทิ้ง (ไม่ persist)
           _sid: slot.sid, _si: slot.si,                  // ชั่วคราว: ให้ popup ตรวจสอบมีปุ่ม "ลบช่วงนี้" ได้ (ลบทิ้งก่อน persist)
           _lotRow: slot.ml ? slot.ml.row : 0,            // ชั่วคราว: แถว Lot ในโหมดหลาย Lot (แยกกลุ่ม error ใน popup)
+          _rid: slot.rid || '',                          // ชั่วคราว: id แถว Lot → "กลับไปแก้ไข" เด้งไปที่ช่อง OPR/Target/Lot ของแถวนั้น
         });
       }
     }
@@ -18972,44 +19102,62 @@ async function _saveKpiImpl() {
   /* ── FIX 6 (IMPROVED): Validation ─────────────────────────────
      จัดกลุ่ม error ตามเครื่อง/ช่วง — ใช้ชื่อ field ตรงกับฟอร์ม
      แสดง popup แจ้งสิ่งที่ขาด ไม่ลบข้อมูลออก
+     v3.73: • ทุก error จำ id ช่องที่ผิด (els) → "กลับไปแก้ไข" / แตะรายการ = เลื่อนไปที่ช่อง + กระพริบแดงส้ม (_fxGo)
+            • ช่องของ "ช่วง" (เวลา/พนักงาน/CT/วาล์ว) แยกกลุ่มจากช่องของ "Lot" (Lot/OPR/Target)
+              → หลาย Lot ไม่เห็น "CT ยังไม่ลง" ซ้ำทุกแถว Lot อีก
+            • เวลาเกิน 12 ชม. / เริ่ม = จบ → error (บล็อก) · ยอดเทียบ CT / เวลาทับกัน → เตือน (ยืนยันบันทึกต่อได้)
   ─────────────────────────────────────────────────────────────── */
   const _valGroups = {};
+  const _addErrs = (key, label, rec, list) => {
+    if (!list.length) return;
+    // sid/canDel = ให้ popup มีปุ่ม "🗑 ลบช่วงนี้" ได้ (เฉพาะช่วงที่เพิ่มเข้ามา si>0 — ช่วงหลักลบไม่ได้)
+    const g = (_valGroups[key] = _valGroups[key] || { label, errors: [], sid: rec._sid || '', canDel: (rec._si || 0) > 0 });
+    // Auto Line: ทุกเครื่องในสาย/ช่วงเดียวกันใช้ข้อมูลชุดเดียว → error เดียวกันเก็บครั้งเดียว
+    for (const e of list) if (!g.errors.some(x => x.field === e.field)) g.errors.push(e);
+  };
   for (const rec of records) {
     const slotEntry = rec.shifts?.[0] || {};
     const slotNum   = (slotEntry.si != null ? slotEntry.si : 0) + 1;
     const isLine    = !!rec.line_key;
-    // Auto Line: ทุกเครื่องในสาย/ช่วงเดียวกันใช้ข้อมูลชุดเดียว → รวมเป็นกลุ่มเดียว (dedupe ผ่าน key ซ้ำ)
+    const sid = rec._sid || '', rid = rec._rid || '';
     // v3.71: โหมดหลาย Lot → หลาย record ในช่วงเดียวกัน แยกกลุ่มตามแถว Lot (ไม่งั้น error ของ Lot ท้ายทับ Lot แรก)
     const lotRow    = rec._lotRow || 0;
-    const key       = (isLine ? `L:${rec.line_key}__s${slotNum}` : `${rec.machine_id}__s${slotNum}`) + (lotRow ? `__l${lotRow}` : '');
-    const grpLabel  = (isLine
+    const key       = isLine ? `L:${rec.line_key}__s${slotNum}` : `${rec.machine_id}__s${slotNum}`;
+    const grpLabel  = isLine
       ? `⚡ ${rec.line_label}${slotNum > 1 ? ` — ช่วงที่ ${slotNum}` : ''}`
-      : (`🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : '')))
-      + (lotRow ? ` · 📦 Lot แถว ${lotRow}${rec.lot ? ` (${rec.lot})` : ''}` : '');
-    const errs = [];
+      : (`🏭 ${rec.machine_id}` + (records.filter(r => r.machine_id === rec.machine_id).length > 1 ? ` — ช่วงที่ ${slotNum}` : ''));
 
-    if (!rec.opr || rec.opr <= 0)
-      errs.push({ field: 'OPR (ชิ้น)', msg: 'ยังไม่ลง' });
-    if (!rec.target || rec.target <= 0)
-      errs.push({ field: 'Target', msg: 'ยังไม่ลง' });
-    else if (rec.target < rec.opr)
-      errs.push({ field: 'Target', msg: `ต้องมากกว่าหรือเท่ากับ OPR (${rec.opr} ชิ้น) — ปัจจุบัน ${rec.target}` });
-    if (!rec.ct || rec.ct <= 0)
-      errs.push({ field: 'CT (sec)', msg: 'ยังไม่ลง' });
+    // ── ช่องของช่วง (ใช้ร่วมทุก Lot) — เรียงตามฟอร์มบน → ล่าง
+    const sErrs = [];
     if (!slotEntry.ts || !slotEntry.te)
-      errs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง' });
+      sErrs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง — เลือกเวลาเริ่มและเวลาสิ้นสุด', els: [!slotEntry.ts && sid + '_ts', !slotEntry.te && sid + '_te'].filter(Boolean) });
+    else {
+      const tErr = _slotTimeErr(slotEntry.ts, slotEntry.te);   // v3.73 — เกิน 12 ชม. / เริ่ม = จบ
+      if (tErr) sErrs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: tErr, els: [sid + '_ts', sid + '_te'] });
+    }
     if (!rec.emp_id)
-      errs.push({ field: isLine ? 'พนักงาน (อย่างน้อย 1 คน)' : 'พนักงาน (พิมพ์ค้น)', msg: 'ยังไม่ลง' });
+      sErrs.push({ field: isLine ? 'พนักงาน (อย่างน้อย 1 คน)' : 'พนักงาน (พิมพ์ค้น)', msg: 'ยังไม่ลง', els: [sid + '_emp'] });
+    if (!rec.ct || rec.ct <= 0)
+      sErrs.push({ field: 'CT (sec)', msg: 'ยังไม่ลง', els: [sid + '_ct'] });
     // 🧩 ข้อมูลงานที่ผลิต (link → Production Tracker) — บังคับกรอก Valve No + Lot
     if (!rec.valve_no || !String(rec.valve_no).trim())
-      errs.push({ field: '🧩 Valve No (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
+      sErrs.push({ field: '🧩 Valve No (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่', els: [sid + '_v'] });
+    // ── ช่องของ Lot (ราย Lot)
+    const lErrs = [];
     if (!rec.lot || !String(rec.lot).trim())
-      errs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่' });
+      lErrs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: 'ยังไม่ใส่', els: [rid + '_lot'] });
     else if (lotFmtBad(rec.lot, rec.valve_no))   // v3.71 — กันพิมพ์ Lot เกิน/ขาดหลัก เช่น "26809S090313"
-      errs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: `รูปแบบไม่ถูกต้อง "${rec.lot}" — ${LOT_FMT_MSG}` });
+      lErrs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: `รูปแบบไม่ถูกต้อง "${rec.lot}" — ${LOT_FMT_MSG}`, els: [rid + '_lot'] });
+    if (!rec.opr || rec.opr <= 0)
+      lErrs.push({ field: 'OPR (ชิ้น)', msg: 'ยังไม่ลง', els: [rid + '_opr'] });
+    if (!rec.target || rec.target <= 0)
+      lErrs.push({ field: 'Target', msg: 'ยังไม่ลง', els: [rid + '_tgt'] });
+    else if (rec.target < rec.opr)
+      lErrs.push({ field: 'Target', msg: `ต้องมากกว่าหรือเท่ากับ OPR (${rec.opr} ชิ้น) — ปัจจุบัน ${rec.target}`, els: [rid + '_tgt'] });
 
-    // sid/canDel = ให้ popup มีปุ่ม "🗑 ลบช่วงนี้" ได้ (เฉพาะช่วงที่เพิ่มเข้ามา si>0 — ช่วงหลักลบไม่ได้)
-    if (errs.length) _valGroups[key] = { label: grpLabel, errors: errs, sid: rec._sid || '', canDel: (rec._si || 0) > 0 };
+    _addErrs(key, grpLabel, rec, sErrs);
+    _addErrs(lotRow ? `${key}__l${lotRow}` : key,
+             lotRow ? `${grpLabel} · 📦 Lot แถว ${lotRow}${rec.lot ? ` (${rec.lot})` : ''}` : grpLabel, rec, lErrs);
   }
 
   // FIX P0-4: ช่วงเวลาที่ถูกข้ามเพราะกรอกไม่ครบ (OPR/Process) → เข้า popup เดียวกัน บล็อกการบันทึกทั้งชุด
@@ -19018,49 +19166,36 @@ async function _saveKpiImpl() {
     const se = slotErrs[_ei];
     const k = 'slot_' + _ei + '_' + se.label;
     const g = (_valGroups[k] = _valGroups[k] || { label: se.label, errors: [], sid: se.sid || '', canDel: !!se.canDel });
-    g.errors.push({ field: se.field, msg: se.msg });
+    g.errors.push({ field: se.field, msg: se.msg, els: se.els || [] });
   }
+  // v3.73 — คำเตือน (ค่าดูผิดปกติ) จัดกลุ่มตามช่วง
+  const _warnGroups = {};
+  for (const w of slotWarns) (_warnGroups[w.label] = _warnGroups[w.label] || { label: w.label, errors: [] }).errors.push(w);
+  const _warnList = Object.values(_warnGroups);
 
   if (Object.keys(_valGroups).length) {
     const _grpList = Object.values(_valGroups);
     const _totalErrs = _grpList.reduce((n, g) => n + g.errors.length, 0);
     const _delCount = _grpList.filter(g => g.sid && g.canDel).length;   // จำนวน "ช่วงที่เพิ่มมา" ที่ลบได้
-    const _firstSid = (_grpList.find(g => g.sid) || {}).sid || '';
-    const _groupHtml = _grpList.map(g => {
-      // ปุ่มลบเฉพาะ "ช่วงที่กดเพิ่ม" (si>0) — ช่วงหลักลบไม่ได้ (ต้องกรอกให้ครบ)
-      const delBtn = (g.sid && g.canDel)
-        ? `<button class="btn btn-sm" style="background:#fff;color:#DC2626;border:1.5px solid #FCA5A5;margin-left:auto;white-space:nowrap;flex-shrink:0" onclick="_saveKpiDropSlot('${g.sid}')">🗑 ลบช่วงนี้</button>`
-        : '';
-      return `
-      <div style="border:1.5px solid var(--red-bd);border-radius:10px;overflow:hidden;margin-bottom:10px">
-        <div style="background:var(--red-bg);padding:8px 12px;font-weight:800;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">${escapeHtml(g.label)}${delBtn}</div>
-        <div style="padding:4px 12px">
-          ${g.errors.map(e => `
-            <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #FEE2E2">
-              <span style="font-size:16px;flex-shrink:0;line-height:1.4">❌</span>
-              <div style="flex:1">
-                <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(e.field)}</div>
-                <div style="font-size:11px;color:var(--red);margin-top:2px">${escapeHtml(e.msg)}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>`;
-    }).join('');
+    _fxList = [];
+    const _groupHtml = _fxGroupsHtml(_grpList, false)
+      + (_warnList.length ? `<div style="font-weight:800;font-size:12.5px;color:#B45309;margin:14px 0 8px">⚠️ ควรตรวจด้วย — ค่าดูผิดปกติ (แก้ให้ครบแล้ว กดบันทึกจะถามยืนยันอีกที)</div>` + _fxGroupsHtml(_warnList, true) : '');
 
-    openModal('⚠️ ยังบันทึกไม่ได้ — ข้อมูลไม่ครบ', `
+    openModal('⚠️ ยังบันทึกไม่ได้ — ข้อมูลไม่ครบ / ไม่ถูกต้อง', `
       <div style="background:var(--orange-bg);border:1.5px solid var(--orange-bd);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px">
         <span style="font-size:26px;line-height:1">⚠️</span>
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--orange)">พบข้อมูลที่ยังไม่ครบ ${_totalErrs} รายการ — ระบบยังไม่บันทึก (ข้อมูลในฟอร์มยังอยู่ครบ)</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6">ระบบบันทึก <b>ทุกช่วงพร้อมกัน</b> — ต้องครบทุกช่วงก่อน · <b>กรอกส่วนที่ขาด</b> หรือ ${_delCount ? '<b>กด 🗑 ลบช่วงที่ไม่ใช้</b>' : 'ลบช่วงที่เพิ่มเกิน'} แล้วกด <b>บันทึกข้อมูลทั้งหมด</b> อีกครั้ง</div>
+          <div style="font-weight:800;font-size:14px;color:var(--orange)">พบข้อมูลที่ยังไม่ครบหรือไม่ถูกต้อง ${_totalErrs} รายการ — ระบบยังไม่บันทึก (ข้อมูลในฟอร์มยังอยู่ครบ)</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6">ระบบบันทึก <b>ทุกช่วงพร้อมกัน</b> — ต้องครบทุกช่วงก่อน · <b>กรอกส่วนที่ขาด</b> หรือ ${_delCount ? '<b>กด 🗑 ลบช่วงที่ไม่ใช้</b>' : 'ลบช่วงที่เพิ่มเกิน'} แล้วกด <b>บันทึกข้อมูลทั้งหมด</b> อีกครั้ง · <b>แตะรายการ = ไปที่ช่องนั้น</b></div>
         </div>
       </div>
       <div style="max-height:55vh;overflow-y:auto;padding-right:2px">${_groupHtml}</div>
-      <button class="btn btn-outline btn-block" style="margin-top:12px;font-size:14px;padding:12px" onclick="_saveKpiBackToEdit('${_firstSid}')">✏️ กลับไปแก้ไข</button>
+      <button class="btn btn-outline btn-block" style="margin-top:12px;font-size:14px;padding:12px" onclick="_fxGo(0)">✏️ กลับไปแก้ไข — ไปที่ช่องที่ผิด</button>
     `);
     return;
   }
+  // v3.73 — ไม่มี error แต่มีค่าดูผิดปกติ (ยอดเทียบ CT / เวลาทับกัน) → ให้ตรวจใหม่ หรือยืนยันตามนั้น
+  if (_warnList.length && !(await _askWarn(_warnList))) return;
 
   // FIX 9: Show summary confirmation before saving (only after validation passes)
   const confirmed = await _showSubmitSummary(records, prodDate);
@@ -19079,7 +19214,7 @@ async function _saveKpiImpl() {
   for (const r of records) {
     const linkProcs = (r._linkProcs && r._linkProcs.length) ? r._linkProcs : [r.last_process];
     delete r._linkProcs;                                   // ฟิลด์ชั่วคราว — ห้ามหลุดไป state/Cloud
-    delete r._sid; delete r._si; delete r._lotRow;         // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
+    delete r._sid; delete r._si; delete r._lotRow; delete r._rid;   // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
     if (!r.valve_no || !r.lot) continue;
     for (const p of linkProcs) prodRecs.push({
       // id ต้องไม่ซ้ำแม้สร้างหลายตัวใน ms เดียวกัน (Worker ใช้เป็น idempotency key — ซ้ำ = ทับกันหาย)
@@ -21013,10 +21148,10 @@ function editKpiRecord(rid) {
     </div>
     <div class="fg">
       <div class="fr"><label>เวลาเริ่ม</label>
-        <input type="time" id="editKpiTS" value="${escapeHtml(shiftS)}">
+        <input type="time" id="editKpiTS" value="${escapeHtml(shiftS)}" oninput="this.classList.remove('err');$('editKpiTE')?.classList.remove('err')">
       </div>
       <div class="fr"><label>เวลาสิ้นสุด</label>
-        <input type="time" id="editKpiTE" value="${escapeHtml(shiftE)}">
+        <input type="time" id="editKpiTE" value="${escapeHtml(shiftE)}" oninput="this.classList.remove('err');$('editKpiTS')?.classList.remove('err')">
       </div>
     </div>
     <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
@@ -21054,6 +21189,13 @@ async function saveKpiEdit() {
       toast('⚠️ รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG, 'red');
       return;
     }
+  }
+  // v3.73: เวลาเกิน 12 ชม. / เริ่ม = จบ → ห้ามบันทึก (กติกาเดียวกับหน้าลงข้อมูล)
+  const _tErr = _slotTimeErr($('editKpiTS')?.value || '', $('editKpiTE')?.value || '');
+  if (_tErr) {
+    ['editKpiTS', 'editKpiTE'].forEach(id => $(id)?.classList.add('err'));
+    toast('⚠️ ' + _tErr, 'red');
+    return;
   }
   // FIX 5: confirmation before saving edit
   if (!await _confirmEditDialog()) return;
