@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.74 — 2026-10-01 — 🏭 วางแผนการผลิตเครื่องจักร VSM4 (ตามช่วง SD ของเครื่อง) → Export Excel · Master valve มี SD/TYPE · Master "ช่วง SD ของเครื่อง"  ⏳ ยังไม่ deploy (ต้อง deploy Worker ด้วย)
+## v3.74 — 2026-10-01 — 🏭 วางแผนการผลิตเครื่องจักร VSM4 (ตามช่วง SD ของเครื่อง) → Export Excel · Master valve มี SD/TYPE · Master "ช่วง SD ของเครื่อง"  ✅ deployed (Pages 752dcba · Worker 31bb2bb8)
 
 **ที่มา (ผู้ใช้ 1/10):** ได้ Order + วันขายแล้ว อยากกดปุ่มเดียวให้ระบบวางแผนว่างานที่เข้า VSM4 (WIP IN 1.5 + กำลังผลิต) แต่ละ Lot
 ผลิตเครื่องไหน วันไหน → Excel: ชีท 1 ตาม Valve/Lot · ชีท 2 ตามวันที่ (เครื่องที่ต้องเปิด) · ชีท 3 ตามเครื่อง (คิว 1 2 3) + ชีทประกอบ ·
