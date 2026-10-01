@@ -36,6 +36,11 @@
  *
  *   GET  /api/stats?from=&to=        → aggregate dashboard counts
  *
+ *   GET  /api/mccaps                 → ความสามารถเครื่อง (ช่วง SD / Process / ผลิตเฉพาะ / ยกเว้น / CT)
+ *   POST /api/mccaps                 → upsert        body:{caps:[...], replace?:true, by?}
+ *   POST /api/mccaps/delete          → ลบ            body:{machine_id}
+ *   (valves มี sd + vtype เพิ่ม — เขียนเฉพาะเมื่อ body มีคีย์นั้น)
+ *
  * Deploy:
  *   1) Cloudflare Dashboard → Workers & Pages → Create → Worker → Paste this file
  *   2) Settings → Variables → D1 Database Bindings → Add:
@@ -175,6 +180,11 @@ export default {
       if (path === '/api/valves/bulk'   && m === 'POST') return ok(await bulkUpsertValves(env, await readJson(request)));
       if (path === '/api/valves/delete' && m === 'POST') return ok(await deleteValve(env, await readJson(request)));
 
+      // ★ 2026-10-01 machine caps (วางแผนเครื่องจักร)
+      if (path === '/api/mccaps'        && m === 'GET')  return ok({ caps: await getMcCaps(env) });
+      if (path === '/api/mccaps'        && m === 'POST') return ok(await upsertMcCaps(env, await readJson(request)));
+      if (path === '/api/mccaps/delete' && m === 'POST') return ok(await deleteMcCap(env, await readJson(request)));
+
       // production records
       if (path === '/api/records'         && m === 'GET')  return isWideHistoryQuery(url.searchParams)
         ? await servedCached(ctx, url, 'prodall-v1', 60, async () => ok(await withSync(env, url.searchParams, 'prod', getRecords)))
@@ -258,7 +268,7 @@ export default {
    แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
    เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
    เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
-const SCHEMA_VER = '2026-09-02-idsort';
+const SCHEMA_VER = '2026-10-01-planner';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
@@ -344,6 +354,27 @@ async function ensureSchema(env) {
        และยิ่งเพิ่ม ID ยิ่งแพงขึ้นเป็นเส้นตรง — เป็นหนึ่งในตัวที่ทำให้ rows_read ต่อวันทะลุโควตา
        มี index แล้ว: อ่านตามลำดับ index แล้วหยุดที่ LIMIT = อ่านเท่าจำนวนที่ขอจริง */
     'CREATE INDEX IF NOT EXISTS idx_valve_ids_sort ON valve_ids(valve_no, lot, id_code)',
+
+    /* ★ 2026-10-01 — วางแผนเครื่องจักร (VSM4)
+       valves.sd / valves.vtype = ขนาด SD + TYPE ของวาล์ว (Admin แก้ได้ใน Master valve)
+       machine_caps = ความสามารถเครื่อง: ช่วง SD ที่รับได้ · Process ที่ทำได้ · ผลิตเฉพาะ/ยกเว้นเบอร์ · CT
+       ❗เพิ่มคอลัมน์อย่างเดียว ไม่แตะข้อมูลเดิม · client รุ่นเก่าที่ไม่ส่ง sd/vtype จะไม่ทับค่าที่มีอยู่
+         (ดู upsertValve/bulkUpsertValves — เขียน sd/vtype เฉพาะเมื่อมีคีย์นั้นใน body) */
+    'ALTER TABLE valves ADD COLUMN sd REAL',
+    'ALTER TABLE valves ADD COLUMN vtype TEXT',
+    `CREATE TABLE IF NOT EXISTS machine_caps (
+       machine_id    TEXT PRIMARY KEY,
+       zone          TEXT,
+       procs         TEXT,
+       sd_ranges     TEXT,
+       only_valves   TEXT,
+       except_valves TEXT,
+       ct            REAL,
+       remark        TEXT,
+       label         TEXT,
+       active        INTEGER NOT NULL DEFAULT 1,
+       updated_at    TEXT,
+       updated_by    TEXT)`,
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
@@ -457,18 +488,61 @@ async function getInit(env) {
 // ============================================================
 // VALVES
 // ============================================================
+/* ★ 2026-10-01 — คืน sd/vtype ด้วย (วางแผนเครื่องจักร)
+   ❗มีทางถอย: ถ้า SELECT คอลัมน์ใหม่ไม่ผ่าน (migration ยังไม่ลง) ให้กลับไปใช้ชุดเดิม
+     /api/init พึ่งฟังก์ชันนี้ — ถ้าพังตรงนี้ ทั้งแอปเปิดไม่ขึ้น ห้ามเสี่ยง */
 async function getValves(env) {
-  const { results } = await env.DB.prepare(
-    'SELECT valve_no, customer, description, processes, barcode_id FROM valves ORDER BY valve_no'
-  ).all();
-  return (results || []).map(r => ({
-    valveNo:     r.valve_no,
-    customer:    r.customer || 'Other',
-    description: r.description || '',
-    processes:   (r.processes || '').split(',').map(s => s.trim()).filter(Boolean),
-    barcode_id:  r.barcode_id || '',
-  }));
+  let results, hasSpec = true;
+  try {
+    ({ results } = await env.DB.prepare(
+      'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype FROM valves ORDER BY valve_no'
+    ).all());
+  } catch (e) {
+    hasSpec = false;
+    ({ results } = await env.DB.prepare(
+      'SELECT valve_no, customer, description, processes, barcode_id FROM valves ORDER BY valve_no'
+    ).all());
+  }
+  return (results || []).map(r => {
+    const o = {
+      valveNo:     r.valve_no,
+      customer:    r.customer || 'Other',
+      description: r.description || '',
+      processes:   (r.processes || '').split(',').map(s => s.trim()).filter(Boolean),
+      barcode_id:  r.barcode_id || '',
+    };
+    if (hasSpec) {
+      o.sd    = (r.sd === null || r.sd === undefined || r.sd === '') ? null : Number(r.sd);
+      o.vtype = r.vtype || '';
+    }
+    return o;
+  });
 }
+
+/* sd/vtype เขียนเฉพาะเมื่อ body "มีคีย์นั้นจริง" — client รุ่นเก่า (ไม่รู้จัก SD) ดัน valves ทั้งก้อน
+   ผ่าน /api/valves/bulk เป็นประจำ (normalizeAllValves / Import) ถ้าเขียนทับทุกครั้ง SD จะถูกล้างเงียบ ๆ
+   ส่ง sd:null มาตรง ๆ = ตั้งใจล้างค่า (Admin ลบ SD ออก) */
+function _valveSpecArgs(v) {
+  const hasSd = Object.prototype.hasOwnProperty.call(v, 'sd');
+  const hasTy = Object.prototype.hasOwnProperty.call(v, 'vtype');
+  let sd = null;
+  if (hasSd && v.sd !== null && v.sd !== '' && v.sd !== undefined) {
+    const n = Number(v.sd);
+    sd = Number.isFinite(n) ? n : null;
+  }
+  return [hasSd ? 1 : 0, sd, hasTy ? 1 : 0, hasTy ? String(v.vtype || '').trim().toUpperCase() : ''];
+}
+const VALVE_UPSERT_SQL = `
+    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at, sd, vtype)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, CASE WHEN ?7 = 1 THEN ?8 ELSE NULL END, CASE WHEN ?9 = 1 THEN ?10 ELSE NULL END)
+    ON CONFLICT(valve_no) DO UPDATE SET
+      customer    = excluded.customer,
+      description = excluded.description,
+      processes   = excluded.processes,
+      barcode_id  = excluded.barcode_id,
+      updated_at  = excluded.updated_at,
+      sd          = CASE WHEN ?7 = 1 THEN ?8  ELSE valves.sd    END,
+      vtype       = CASE WHEN ?9 = 1 THEN ?10 ELSE valves.vtype END`;
 
 async function upsertValve(env, body) {
   const valveNo  = String(body.valveNo || body.valve_no || '').trim();
@@ -478,42 +552,89 @@ async function upsertValve(env, body) {
   const procs    = Array.isArray(body.processes) ? body.processes.join(',') : String(body.processes || '');
   const bc       = String(body.barcode_id || body.barcodeId || '');
   const now      = new Date().toISOString();
+  const spec     = _valveSpecArgs(body);
 
-  await env.DB.prepare(`
-    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(valve_no) DO UPDATE SET
-      customer    = excluded.customer,
-      description = excluded.description,
-      processes   = excluded.processes,
-      barcode_id  = excluded.barcode_id,
-      updated_at  = excluded.updated_at
-  `).bind(valveNo, customer, desc, procs, bc, now).run();
+  await env.DB.prepare(VALVE_UPSERT_SQL)
+    .bind(valveNo, customer, desc, procs, bc, now, ...spec).run();
 
-  return { valve: { valveNo, customer, description: desc, processes: procs.split(',').filter(Boolean), barcode_id: bc } };
+  const out = { valveNo, customer, description: desc, processes: procs.split(',').filter(Boolean), barcode_id: bc };
+  if (spec[0]) out.sd = spec[1];
+  if (spec[2]) out.vtype = spec[3];
+  return { valve: out };
 }
 
 async function bulkUpsertValves(env, body) {
   const list = body.valves || [];
   const now  = new Date().toISOString();
-  const stmt = env.DB.prepare(`
-    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(valve_no) DO UPDATE SET
-      customer=excluded.customer, description=excluded.description,
-      processes=excluded.processes, barcode_id=excluded.barcode_id,
-      updated_at=excluded.updated_at
-  `);
-  const batch = list.map(v => stmt.bind(
-    String(v.valveNo || v.valve_no || '').trim(),
-    String(v.customer || 'Other'),
-    String(v.description || ''),
-    Array.isArray(v.processes) ? v.processes.join(',') : String(v.processes || ''),
-    String(v.barcode_id || v.barcodeId || ''),
-    now
-  )).filter(s => s);
-  if (batch.length) await env.DB.batch(batch);
+  const stmt = env.DB.prepare(VALVE_UPSERT_SQL);
+  const batch = list
+    .filter(v => v && String(v.valveNo || v.valve_no || '').trim())
+    .map(v => stmt.bind(
+      String(v.valveNo || v.valve_no || '').trim(),
+      String(v.customer || 'Other'),
+      String(v.description || ''),
+      Array.isArray(v.processes) ? v.processes.join(',') : String(v.processes || ''),
+      String(v.barcode_id || v.barcodeId || ''),
+      now,
+      ..._valveSpecArgs(v)
+    ));
+  // D1 batch ใหญ่เกินจะล้ม → แบ่งก้อนละ 200 (Import SD ทีเดียว 1,200 เบอร์)
+  for (let i = 0; i < batch.length; i += 200) await env.DB.batch(batch.slice(i, i + 200));
   return { count: batch.length };
+}
+
+// ============================================================
+// MACHINE CAPS — ความสามารถเครื่อง (ใช้วางแผนเครื่องจักร VSM4)
+//   ตารางเล็ก (~70 แถว) · โหลดเฉพาะตอนเปิดหน้าตั้งค่า/ตัววางแผน (ไม่อยู่ใน /api/init)
+//   list ทุกช่อง (procs/sd_ranges/only/except) เก็บเป็นข้อความคั่นด้วย , — client แปลงเอง
+// ============================================================
+const MCCAP_COLS = 'machine_id, zone, procs, sd_ranges, only_valves, except_valves, ct, remark, label, active, updated_at, updated_by';
+function _capRow(r) {
+  return {
+    machine_id: r.machine_id, zone: r.zone || '',
+    procs: r.procs || '', sd_ranges: r.sd_ranges || '',
+    only_valves: r.only_valves || '', except_valves: r.except_valves || '',
+    ct: (r.ct === null || r.ct === undefined) ? null : Number(r.ct),
+    remark: r.remark || '', label: r.label || '',
+    active: r.active === 0 ? 0 : 1,
+    updated_at: r.updated_at || '', updated_by: r.updated_by || '',
+  };
+}
+async function getMcCaps(env) {
+  const { results } = await env.DB.prepare(`SELECT ${MCCAP_COLS} FROM machine_caps ORDER BY machine_id`).all();
+  return (results || []).map(_capRow);
+}
+/* body: { caps:[...] } หรือ cap เดียว · replace:true = ล้างของเดิมทั้งตารางก่อน (ใช้ตอนนำเข้าทั้งชีท) */
+async function upsertMcCaps(env, body) {
+  const list = Array.isArray(body.caps) ? body.caps : [body];
+  const now  = new Date().toISOString();
+  const by   = String(body.by || '').slice(0, 60);
+  const txt  = (v, max) => (Array.isArray(v) ? v.join(',') : String(v == null ? '' : v)).slice(0, max || 4000);
+  const stmt = env.DB.prepare(`
+    INSERT INTO machine_caps (${MCCAP_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(machine_id) DO UPDATE SET
+      zone=excluded.zone, procs=excluded.procs, sd_ranges=excluded.sd_ranges,
+      only_valves=excluded.only_valves, except_valves=excluded.except_valves,
+      ct=excluded.ct, remark=excluded.remark, label=excluded.label, active=excluded.active,
+      updated_at=excluded.updated_at, updated_by=excluded.updated_by`);
+  const batch = [];
+  for (const c of list) {
+    const id = String((c && (c.machine_id || c.id)) || '').trim().toUpperCase();
+    if (!id) continue;
+    const ct = (c.ct === null || c.ct === undefined || c.ct === '' || !Number.isFinite(Number(c.ct))) ? null : Number(c.ct);
+    batch.push(stmt.bind(id, txt(c.zone, 20), txt(c.procs, 400), txt(c.sd_ranges, 200),
+      txt(c.only_valves), txt(c.except_valves), ct, txt(c.remark, 1000), txt(c.label, 60),
+      c.active === 0 || c.active === false ? 0 : 1, now, by || String(c.updated_by || '').slice(0, 60)));
+  }
+  if (body.replace === true) batch.unshift(env.DB.prepare('DELETE FROM machine_caps'));
+  for (let i = 0; i < batch.length; i += 100) await env.DB.batch(batch.slice(i, i + 100));
+  return { count: batch.length - (body.replace === true ? 1 : 0), caps: await getMcCaps(env) };
+}
+async function deleteMcCap(env, body) {
+  const id = String(body.machine_id || body.id || '').trim().toUpperCase();
+  if (!id) throw new Error('machine_id is required');
+  const r = await env.DB.prepare('DELETE FROM machine_caps WHERE machine_id = ?').bind(id).run();
+  return { deleted: r.meta?.changes || 0 };
 }
 
 async function deleteValve(env, body) {
