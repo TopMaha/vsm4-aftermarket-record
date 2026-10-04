@@ -294,7 +294,6 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 .lp-item input{width:20px;height:20px;flex-shrink:0;accent-color:var(--blue)}
 .lp-item.sel{border-color:var(--blue);background:var(--blue-light)}
 .lp-item.done{opacity:.55}
-.lp-item.dis{opacity:.5;cursor:default}
 .lp-lot{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.2px}
 .lp-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4}
 .lp-qty{margin-left:auto;text-align:right;font-size:13px;font-weight:800;color:var(--blue-dark);white-space:nowrap}
@@ -313,6 +312,11 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 .fr .ml-row input{padding:8px 7px!important;font-size:14px;min-width:0}
 .ml-del{border:1px solid var(--red-bd);background:var(--red-bg);color:var(--red);border-radius:7px;height:38px;font-weight:800;cursor:pointer;padding:0;font-family:inherit}
 .ml-add{display:block;width:100%;margin-top:6px;padding:11px 8px;border:1.5px dashed var(--blue-soft);background:var(--blue-light);color:var(--blue);border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+/* v3.75 — ปุ่ม Lot สมทบ (ยอดเกิน Lot) ข้างปุ่มเพิ่ม Lot · แถวที่เป็น Lot สมทบ = สีเหลือง */
+.ml-adds{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:6px}
+.ml-add small{display:block;font-size:10px;font-weight:700;opacity:.8;margin-top:1px}
+.ml-add-x{padding:6px;border-color:#F59E0B;background:#FFFBEB;color:#B45309}
+.ml-row.ml-x{background:#FFFBEB;border-color:#FCD34D}
 .lot-hint{font-size:10.5px;font-weight:700;color:var(--red);margin-top:3px;line-height:1.4}
 .lot-hint:empty{display:none}
 @media(max-width:520px){
@@ -2248,7 +2252,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.74</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.75</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -5132,10 +5136,16 @@ function _lotFmtBtnsHtml(lotId, valveId) {
    · เทียบหลัง lotKey() เสมอ (ตัวใหญ่ · ตัดช่องว่าง · $→S)
    · Lot ที่ลงทะเบียนใน Valve IDs (หน้าตั้งค่า) ผ่านเสมอ — admin ยืนยันแล้ว กันงานเก่ารูปแบบอื่นติดบันทึกไม่ได้ */
 const LOT_FMT_RE = /^\d{2}(0[1-9]|1[0-2])S\d{6}$/;
-const LOT_FMT_MSG = 'ต้องเป็น ปปดด + S + ตัวเลข 6 หลัก เช่น 2609S090341';
+const LOT_FMT_MSG = 'ต้องเป็น ปปดด + S + ตัวเลข 6 หลัก เช่น 2609S090341 (ยอดเกิน Lot ใช้ "สมทบ")';
+/* ── v3.75 — Lot สมทบ (ผู้ใช้ขอ 4/10): ยอดที่ผลิตเกิน Lot ปกติ — Lot 1,000 ผลิตได้ 1,100 → อีก 100 ลง Lot "สมทบ"
+   หน้างานใช้มานานแล้ว (623 record พ.ค.–ต.ค.) แต่ตั้งแต่ v3.71 ตรวจรูปแบบ Lot → บันทึกไม่ผ่าน
+   เว้นแต่ Admin ลงทะเบียน "สมทบ" เป็น Valve ID ของวาล์วนั้นทีละเบอร์ (มี 15 ตัว) → ตอนนี้ผ่านทุกวาล์ว
+   เก็บเป็น Lot "สมทบ" ของวาล์วนั้น — รวมยอดแบบ Lot ทั่วไป (วาล์ว + สมทบ = 1 งาน) */
+const LOT_EXTRA = 'สมทบ';
+function isExtraLot(lot) { return lotKey(lot) === LOT_EXTRA; }
 function lotFmtBad(lot, valveNo) {
   const L = lotKey(lot);
-  return !!L && !LOT_FMT_RE.test(L) && !isRegisteredLot(valveNo, L);
+  return !!L && L !== LOT_EXTRA && !LOT_FMT_RE.test(L) && !isRegisteredLot(valveNo, L);
 }
 /* เลขหน้าของ Lot ไว้เติมให้ Lot ถัดไป — "2609S090341" → "2609S090" (เหลือพิมพ์ 3 ตัวท้าย)
    Lot ที่ผิดรูปแบบ → ไม่เติม (กันลามความผิดไปแถวถัดไป) */
@@ -5152,6 +5162,7 @@ function _lotChk(el, norm) {
   const bad = lotFmtBad(el.value, vId ? (document.getElementById(vId)?.value || '') : '');
   el.classList.toggle('err', bad);
   el.title = bad ? 'รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG : '';
+  el.closest('.ml-row')?.classList.toggle('ml-x', isExtraLot(el.value));   // แถว Lot สมทบ = สีเหลือง
   const h = document.getElementById(el.id + '_hint');
   if (h) h.textContent = bad ? '⚠️ รูปแบบ Lot ไม่ถูกต้อง — ' + LOT_FMT_MSG : '';
 }
@@ -7124,6 +7135,7 @@ function _scanPendingLots() {
   const scan = arr => { for (const r of (arr || [])) {
     const vn = (r.valve_no || r.valveNo || '').trim(), lot = (r.lot || '').trim();
     if (!vn || !lot || !known.has(vn.toUpperCase())) continue;   // ไม่มี lot / วาล์วไม่รู้จัก (อยู่แผงวาล์วแล้ว)
+    if (isExtraLot(lot)) continue;                               // v3.75: Lot สมทบ ผ่านทุกวาล์วแล้ว ไม่ต้องลงทะเบียนเป็น Valve ID
     if (isRegisteredLot(vn, lot)) continue;                      // ลงทะเบียนใน Valve IDs แล้ว
     if (getJobProc(vn, lot) === 'DONE') continue;                // จบงานแล้ว ไม่ต้องจัดการ
     const key = vn.toUpperCase() + '::' + lot.toLowerCase();
@@ -9359,7 +9371,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.74":"Production Record + KPI · v3.74",
+"ระบบบันทึกผลิต + KPI · v3.75":"Production Record + KPI · v3.75",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -17972,7 +17984,10 @@ function shiftHtml(pid, si, m, opts) {
       <div class="ml-box" id="${sid}_ml" data-seq="1" data-mtgt="${escapeHtml(tgtPh)}">
         <div class="ml-ttl">📦 ${TT('Lot ที่ผลิตในช่วงนี้ (หลาย Lot = หลายกล่อง)','Lots produced in this range (one box per lot)')}</div>
         <div id="${sid}_mlrows">${_mlRowHtml(sid, 1, 1, tgtPh)}</div>
-        <button type="button" class="ml-add" onclick="mlAddLot('${sid}')">➕ ${TT('เพิ่ม Lot','Add lot')}</button>
+        <div class="ml-adds">
+          <button type="button" class="ml-add" onclick="mlAddLot('${sid}')">➕ ${TT('เพิ่ม Lot','Add lot')}</button>
+          <button type="button" class="ml-add ml-add-x" onclick="mlAddExtra('${sid}')" title="${TT('ยอดที่ผลิตเกิน Lot ปกติ เช่น Lot 1,000 ผลิตได้ 1,100 → อีก 100 ลง Lot สมทบ','Output beyond the normal lot, e.g. lot of 1,000 made 1,100 → the extra 100 go to the สมทบ lot')}">➕ Lot ${LOT_EXTRA}<small>${TT('ยอดเกิน Lot','over-lot qty')}</small></button>
+        </div>
       </div>
     </div>
     <div class="shift-total" id="${sid}_total">OPR: 0 · WT: 0 ชม.</div>
@@ -18216,7 +18231,8 @@ function mlAddRow(sid, focus) {
   if (rows.length >= ML_MAX_ROWS) { toast(`สูงสุด ${ML_MAX_ROWS} Lot ต่อช่วง`, 'orange'); return; }
   const k = (+box.dataset.seq || 0) + 1; box.dataset.seq = k;
   host.insertAdjacentHTML('beforeend', _mlRowHtml(sid, k));
-  const rid = `${sid}_ml${k}`, prev = rows[rows.length - 1];
+  // เลขหน้า Lot เอาจากแถว Lot ปกติล่าสุด (แถว สมทบ ไม่มีเลขหน้าให้ก๊อป)
+  const rid = `${sid}_ml${k}`, prev = [...rows].reverse().find(r => !isExtraLot($(r.id + '_lot')?.value));
   if (prev) {   // เติมแค่เลขหน้า Lot — Target ไม่ก๊อป (พนักงานกรอกเองทุก Lot)
     const pre = _lotPrefix($(prev.id + '_lot')?.value || '');
     if (pre) { const el = $(rid + '_lot'); el.value = pre; el.dataset.pre = pre; }
@@ -18278,7 +18294,9 @@ function _mlFromScan(sid, p) {
     _writeProcSel(sid, []);
   }
   const lot = lotKey(p.lot);
-  if (_mlRows(sid).some(r => r.lot === lot)) return `Lot ${lot} มีในตารางแล้ว`;
+  // v3.75: Lot เดิมลงซ้ำได้ (ขึ้น Lot สลับไปมา) — แต่ Lot นี้มีแถวที่ยังไม่ลง OPR อยู่ = สแกนซ้ำ → ใส่ยอดในแถวเดิม
+  const open = _mlRows(sid).find(r => r.lot === lot && !r.opr);
+  if (open) return `Lot ${lot} มีในตารางแล้ว (Lot ที่ ${open.no} ยังไม่ลง OPR) — ใส่ยอดในแถวเดิม`;
   if (vEl && !(vEl.value || '').trim()) { vEl.value = p.valveNo; renderProcChips(sid); }
   let row = [...host.querySelectorAll('.ml-row')].find(_mlRowEmpty);
   if (!row) {
@@ -18297,7 +18315,8 @@ function _mlFromScan(sid, p) {
    ยอดใน Lot = Σ ใบรับเข้า · "ลงแล้ว" = Σ ยอดผลิตของ Lot นี้ที่ Process ตัวท้ายที่เลือกในช่วงนี้
      (ยอดผลิตทั้งหมดถ้าโหลดครบแล้ว · ไม่งั้นใช้ 30 วันล่าสุดในเครื่อง)
    OPR ที่เติมให้ = คงเหลือ (ยอดใน Lot − ลงแล้ว) · ช่องสีเหลือง = ระบบเติม ตรวจ/แก้ได้
-   Lot ที่ลงครบแล้วที่ Process นี้ → ซ่อนไว้ท้ายรายการ (กดแสดงได้) · Target ไม่เติม (พนักงานกรอกเอง) */
+   Lot ที่ลงครบแล้วที่ Process นี้ → ซ่อนไว้ท้ายรายการ (กดแสดงได้) · Target ไม่เติม (พนักงานกรอกเอง)
+   v3.75: Lot ที่อยู่ในตารางแล้วเลือกซ้ำได้ (ขึ้น Lot สลับไปมา) — คงเหลือหักยอดที่กรอกในตารางแล้วด้วย · เรียงไว้หลัง Lot ที่ยังไม่ได้ใส่ */
 let _lp = null;   // กล่องที่เปิดอยู่ { sid, items, sel:Set, q, showDone }
 function _lpCandidates(sid) {
   const valve = ($(sid + '_v')?.value || '').trim(); if (!valve) return [];
@@ -18322,14 +18341,16 @@ function _lpCandidates(sid) {
       done.set(L, (done.get(L) || 0) + (Number(p.quantity) || 0));
     }
   }
-  const inTable = new Set(_mlRows(sid).filter(r => !r.untouched && r.lot).map(r => r.lot));
+  const inTable = new Map();   // Lot → ยอด OPR ที่กรอกในตารางของช่วงนี้แล้ว (ยังไม่บันทึก)
+  for (const r of _mlRows(sid)) if (!r.untouched && r.lot) inTable.set(r.lot, (inTable.get(r.lot) || 0) + r.opr);
   const out = [];
   for (const it of by.values()) {
     if (getJobProc(valve, it.lot) === 'DONE') continue;
-    const d = done.get(it.lot) || 0;
-    out.push({ ...it, done: d, left: Math.max(0, it.qty - d), complete: !!proc && it.qty > 0 && d >= it.qty, inTable: inTable.has(it.lot) });
+    const d = done.get(it.lot) || 0, t = inTable.get(it.lot) || 0;
+    out.push({ ...it, done: d, left: Math.max(0, it.qty - d - t), complete: !!proc && it.qty > 0 && d >= it.qty,
+               inTable: inTable.has(it.lot), tableQty: t });
   }
-  out.sort((a, b) => (a.complete - b.complete) || String(b.ts).localeCompare(String(a.ts)) || b.lot.localeCompare(a.lot));
+  out.sort((a, b) => (a.complete - b.complete) || (a.inTable - b.inTable) || String(b.ts).localeCompare(String(a.ts)) || b.lot.localeCompare(a.lot));
   return out;
 }
 /* ปุ่มเดียว "➕ เพิ่ม Lot" (ผู้ใช้ขอ — 2 ปุ่ม "เลือกจากงานรับเข้า / พิมพ์เอง" ยาวและต้องคิดก่อนกด)
@@ -18343,6 +18364,22 @@ function mlAddLot(sid) {
 function _mlTypeLot(sid) {
   const empty = [...($(sid + '_mlrows')?.querySelectorAll('.ml-row') || [])].find(_mlRowEmpty);
   if (empty) _mlFocusLot(empty.id); else mlAddRow(sid, true);
+}
+/* v3.75 — ปุ่ม "➕ Lot สมทบ": ใส่ Lot สมทบ ลงแถวว่าง (ไม่มี = เพิ่มแถว) แล้วไปช่อง OPR เลย
+   ไม่ต้องพิมพ์ไทยบนแท็บเล็ต (ของเดิมสะกดเพี้ยนเป็น "สมทม" อยู่ 3 record) */
+function mlAddExtra(sid) {
+  const host = $(sid + '_mlrows'); if (!host) return;
+  let row = [...host.querySelectorAll('.ml-row')].find(_mlRowEmpty);
+  if (!row) {
+    const n = host.querySelectorAll('.ml-row').length;
+    mlAddRow(sid, false);
+    if (host.querySelectorAll('.ml-row').length === n) return;   // ตารางเต็ม (toast แจ้งแล้ว)
+    row = [...host.querySelectorAll('.ml-row')].pop();
+  }
+  const el = $(row.id + '_lot');
+  el.value = LOT_EXTRA; delete el.dataset.pre; _lotChk(el);
+  _mlRenum(sid); _mlTouch(sid);
+  const opr = $(row.id + '_opr'); if (opr) { try { opr.focus(); } catch (e) {} }
 }
 function openLotPicker(sid) {
   const valve = ($(sid + '_v')?.value || '').trim();
@@ -18368,12 +18405,12 @@ function _lpRender() {
   const list = _lp.items.filter(x => !q || x.lot.includes(q));
   const open = list.filter(x => !x.complete), done = list.filter(x => x.complete);
   const row = x => {
-    const sel = _lp.sel.has(x.lot), dis = x.inTable;
+    const sel = _lp.sel.has(x.lot);
     const d = x.ts ? String(x.ts).slice(5, 10).split('-').reverse().join('/') : '';
-    return `<label class="lp-item${sel ? ' sel' : ''}${x.complete ? ' done' : ''}${dis ? ' dis' : ''}">
-      <input type="checkbox" data-lot="${escapeHtml(x.lot)}" ${sel || dis ? 'checked' : ''} ${dis ? 'disabled' : ''} onchange="_lpToggle(this)">
+    return `<label class="lp-item${sel ? ' sel' : ''}${x.complete ? ' done' : ''}">
+      <input type="checkbox" data-lot="${escapeHtml(x.lot)}" ${sel ? 'checked' : ''} onchange="_lpToggle(this)">
       <div style="min-width:0"><div class="lp-lot">${escapeHtml(x.lot)}</div>
-        <div class="lp-sub">${d ? TT('รับเข้า ', 'In ') + escapeHtml(d) : ''}${x.done ? ` · ${TT('ลงแล้ว', 'done')} ${nn(x.done)}/${nn(x.qty)}` : ''}${dis ? ' · ' + TT('อยู่ในตารางแล้ว', 'already in table') : ''}</div></div>
+        <div class="lp-sub">${d ? TT('รับเข้า ', 'In ') + escapeHtml(d) : ''}${x.done ? ` · ${TT('ลงแล้ว', 'done')} ${nn(x.done)}/${nn(x.qty)}` : ''}${x.inTable ? ` · <b style="color:#B45309">${TT('อยู่ในตารางแล้ว', 'already in table')} ${nn(x.tableQty)}</b>` : ''}</div></div>
       <div class="lp-qty">${x.complete ? '✓ ' + TT('ครบแล้ว', 'done') : nn(x.left) + ' ' + TT('ชิ้น', 'pcs')}</div>
     </label>`;
   };
@@ -19036,14 +19073,9 @@ async function _saveKpiImpl() {
         mainShiftType = st; shiftDate = sd;
       }
       if (mlRows.length > 1) {
-        // Lot ซ้ำในตารางเดียวกัน = กดเลือกซ้ำ/พิมพ์ซ้ำแน่นอน (Lot เดียวกันควรรวมยอดเป็นแถวเดียว)
-        const dup = mlRows.map(r => r.lot).filter((l, i, a) => l && a.indexOf(l) !== i);
-        if (dup.length) {
-          slotErrs.push({ label: _slotLabel, field: '📦 Lot ซ้ำในตาราง', msg: `Lot ${[...new Set(dup)].join(', ')} มีมากกว่า 1 แถว — รวมยอดเป็นแถวเดียว หรือแก้เลข Lot`, sid, canDel: false,
-                          els: mlRows.filter(r => dup.includes(r.lot)).map(r => r.rid + '_lot') });
-          return;
-        }
-        // 1 Lot = 1 slot (→ 1 record ต่อเครื่อง) · WT แบ่งตามสัดส่วน OPR · Target ของแถวเอง (ไม่ใช้ Target เครื่องแทนช่องว่าง)
+        // v3.75 (ผู้ใช้ขอ 4/10): Lot เดิมลงซ้ำหลายแถวได้ — พนักงานขึ้น Lot สลับกันไปมา (เดิม = error "Lot ซ้ำในตาราง")
+        //   แต่ละแถวยังเป็น record ของตัวเอง → ยอดรวมราย Lot (Production Tracker / WIP) รวมกันเองเหมือนลงหลายครั้ง
+        // 1 แถว = 1 slot (→ 1 record ต่อเครื่อง) · WT แบ่งตามสัดส่วน OPR · Target ของแถวเอง (ไม่ใช้ Target เครื่องแทนช่องว่าง)
         mlRows.forEach(r => {
           const share = opr > 0 ? r.opr / opr : 1 / mlRows.length;
           slots.push({ si, sid, rid: r.rid, opr: r.opr, scrap: r.scrap, target: r.target, ct, ts, te, wt: wt * share, valve, lot: r.lot, proc, procs, crew,
