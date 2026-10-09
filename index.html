@@ -515,6 +515,16 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .pf-lg-cross::before{background:#8B5CF6}
 .pf-vsm{display:block;margin-top:2px;font-size:9px;font-weight:900;letter-spacing:.2px;color:#5B21B6;
   background:#EDE9FE;border:1px solid #DDD6FE;border-radius:999px;padding:0 5px;line-height:14px}
+/* ★ v3.76 — ยอดที่ Admin เติมให้ Process ที่พนักงานไม่ได้ลง (ขอบประ = ไม่ใช่ยอดพนักงาน) */
+.pf-cell.pf-adm{background:#E0F2FE;color:#075985;font-weight:800;outline:2px dashed #38BDF8;outline-offset:-4px}
+.pf-cell.pf-adm.pf-click:hover{outline:2px solid var(--blue);outline-offset:-2px}
+.pf-adm-tag{display:block;margin:2px auto 0;font-size:9px;font-weight:900;color:#075985;width:max-content;
+  background:#BAE6FD;border:1px solid #7DD3FC;border-radius:999px;padding:0 5px;line-height:14px}
+.pf-lg-adm{background:#E0F2FE;color:#075985;border:1px dashed #38BDF8}
+.pf-lg-adm::before{background:#38BDF8}
+/* Admin ปลดล็อกอยู่ → ช่องว่างแตะเติมยอดได้ (มี ＋ จาง ๆ) */
+.pf-cell.pf-add::after{content:"＋";color:#94A3B8;font-weight:900}
+.pf-cell.pf-next.pf-add::after{color:#854D0E}
 /* ===== หน้าวางแผน — ช่องกรอกในตาราง (★ 2026-08-02 UX) =====
    เดิม Lot/Q'ty แคบจนตัวเลขโดนตัด · หมายเหตุยืดกินที่ทั้งแถว → คุมความกว้างให้พอดีเนื้อหาจริง */
 .pl-in{border:1px solid var(--blue-soft);border-radius:7px;padding:5px 7px;font-size:12.5px;width:100%;
@@ -641,6 +651,9 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .spm-chip.spm-y{background:#FDE047;border-color:#FACC15;color:#854D0E}
 .spm-chip.spm-r{background:#FEF3C7;border-color:#FCD34D;color:#92400E;cursor:pointer}
 .spm-chip.spm-r:hover{outline:2px solid var(--blue);outline-offset:-1px}
+.spm-chip.spm-a{background:#E0F2FE;border:1.5px dashed #38BDF8;color:#075985;cursor:pointer}
+.spm-chip.spm-a:hover,.spm-chip.spm-add:hover{outline:2px solid var(--blue);outline-offset:-1px}
+.spm-chip.spm-add{cursor:pointer}
 
 /* ===== UTIL ===== */
 .row{display:flex;align-items:center;gap:8px}
@@ -2252,7 +2265,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.75</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.76</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9371,7 +9384,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.75":"Production Record + KPI · v3.75",
+"ระบบบันทึกผลิต + KPI · v3.76":"Production Record + KPI · v3.76",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -19902,7 +19915,8 @@ async function searchProcess() {
       if (Object.keys(offByProc).length) hasRemark = true;
       const recv = _recvLots[lk];                                   // ★ req #1: ยอดที่รับเข้า WIP IN 1.5
       lotData.push({ lk, lot: lotLabel, qtyByProc, offByProc, valveNo: lm.valveNo, vsmByProc, crossVsm: lotVsms.size > 1, vsms: [...lotVsms],
-                     recvQty: recv ? recv.qty : 0, recvTs: recv ? recv.ts : '', recvOnly: !groups.length && !!recv });
+                     recvQty: recv ? recv.qty : 0, recvTs: recv ? recv.ts : '', recvOnly: !groups.length && !!recv,
+                     admByProc: _pfAdmCells(valve.valveNo, lk, procSeq, qtyByProc) });   // ★ v3.76 ยอดที่ Admin เติม
     }
     const cols = procSeq.slice();
     const myV = viewVsm();                                   // สายที่กำลังดู — ช่องของสายอื่นจะติดป้ายกำกับ
@@ -19911,10 +19925,14 @@ async function searchProcess() {
     const head = `<tr><th class="pf-th-lot">Lot</th>${cols.map(c => `<th class="pf-th">${escapeHtml(c)}</th>`).join('')}${hasRemark ? '<th class="pf-th">หมายเหตุ</th>' : ''}</tr>`;
     const postFgNotes = [];
     let hasAutoQc = false;   // มีช่อง QC ที่เติมเขียวอัตโนมัติเพราะจบงานหรือไม่ (ใช้โชว์คำอธิบาย)
+    const admOn = !!state.adminUnlocked;                     // ★ v3.76 Admin → แตะช่องว่างเติมยอดได้
+    const hasAdm = lotData.some(l => Object.keys(l.admByProc).length);
     const rowsHtml = lotData.map((ld, ri) => {
+      // ยอดต่อช่องที่ใช้ตัดสินสี = ยอดพนักงาน หรือยอดที่ Admin เติม (ช่องที่พนักงานไม่ได้ลง)
+      const effQ = c => (ld.qtyByProc[c] > 0 ? ld.qtyByProc[c] : (ld.admByProc[c] ? ld.admByProc[c].qty : 0));
       // ช่องแรก (ซ้ายสุด) ที่ยังไม่มียอด = เหลือง (ขั้นถัดไป/ค้าง) · ถ้ามียอดครบทุกช่อง = ไม่มีเหลือง
       let nextIdx = -1;
-      for (let i = 0; i < cols.length; i++) { if (!(ld.qtyByProc[cols[i]] > 0)) { nextIdx = i; break; } }
+      for (let i = 0; i < cols.length; i++) { if (!(effQ(cols[i]) > 0)) { nextIdx = i; break; } }
       // จบงานแล้ว (ระบบหลัง FG = DONE) → ช่อง QC เขียวอัตโนมัติ ยอด = Process สุดท้ายในตาราง
       //   (ช่องขวาสุดที่มียอด ไม่นับ QC เอง) เพื่อให้ช่อง QC ไม่ค้างเหลืองทั้งที่งานจบแล้ว
       const isDone = getJobProc(ld.valveNo, ld.lot) === 'DONE';
@@ -19922,9 +19940,10 @@ async function searchProcess() {
       if (isDone) {
         for (let i = cols.length - 1; i >= 0; i--) {
           if (cols[i] === 'QC') continue;
-          if (ld.qtyByProc[cols[i]] > 0) { lastProcQty = ld.qtyByProc[cols[i]]; break; }
+          if (effQ(cols[i]) > 0) { lastProcQty = effQ(cols[i]); break; }
         }
       }
+      const canFill = admOn && ld.lk !== '(no lot)';         // แถวไม่มีเลข Lot → เติมไม่ได้ (ไม่มีงานให้ผูก)
       // ป้ายสายบนช่องที่ "ไม่ใช่สายที่กำลังดู" — เห็นทันทีว่า process ไหนไปทำที่อีกสาย
       const vsmTag = (c) => {
         if (!ld.crossVsm) return '';
@@ -19937,12 +19956,16 @@ async function searchProcess() {
       const tds = cols.map((c, i) => {
         const q = ld.qtyByProc[c] || 0;
         if (q > 0)         return `<td class="pf-cell pf-done pf-click" onclick="showSpDetail(${ri},${i})">${nn(q)}${vsmTag(c)}</td>`;
+        const adm = ld.admByProc[c];
+        if (adm) return `<td class="pf-cell pf-adm pf-click" onclick="spAdmFill(${ri},${i})" title="${TT('เพิ่มโดย Admin — พนักงานลงยอดเมื่อไหร่ จะใช้ยอดพนักงานแทน','Added by Admin — replaced once an operator records it')}">${nn(adm.qty)}<span class="pf-adm-tag">🔑 Admin</span></td>`;
         if (c === 'QC' && isDone && lastProcQty > 0) {
           hasAutoQc = true;
           return `<td class="pf-cell pf-auto" title="จบงานแล้ว — ยอดตาม Process สุดท้าย">✓ ${nn(lastProcQty)}</td>`;
         }
-        if (i === nextIdx) return `<td class="pf-cell pf-next"></td>`;
-        return `<td class="pf-cell"></td>`;
+        const fillCls  = canFill ? ' pf-add pf-click' : '';
+        const fillAttr = canFill ? ` onclick="spAdmFill(${ri},${i})" title="${TT('Admin: แตะเพื่อเติมยอดที่พนักงานไม่ได้ลง','Admin: tap to fill a missing quantity')}"` : '';
+        if (i === nextIdx) return `<td class="pf-cell pf-next${fillCls}"${fillAttr}></td>`;
+        return `<td class="pf-cell${fillCls}"${fillAttr}></td>`;
       }).join('');
       // ช่องหมายเหตุ: รวม process ที่พนักงานพิมพ์เอง — แตะเพื่อดู/แก้
       let remarkTd = '';
@@ -19980,8 +20003,8 @@ async function searchProcess() {
         📥 ${TT('รับเข้า WIP IN 1.5 แล้ว','Received into WIP IN 1.5')} <b>${nn(_recvOnlyN)}</b> Lot ${TT('ที่ยังไม่มีใครลงยอดผลิต','with no production recorded yet')} —
         ${TT('แถวสีอ่อนด้านล่าง · Process แรกเป็นสีเหลือง = รอผลิต','the pale rows below · first process in yellow = waiting')}
       </div>` : '';
-    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${_recvOnlyN ? `<span class="pf-lg pf-lg-recv">📥 ${TT('รับเข้าแล้ว · ยังไม่ลงยอดผลิต','received · no production yet')}</span>` : ''}${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}</div>` : '';
-    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}</div>` : '';
+    const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${_recvOnlyN ? `<span class="pf-lg pf-lg-recv">📥 ${TT('รับเข้าแล้ว · ยังไม่ลงยอดผลิต','received · no production yet')}</span>` : ''}${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasAdm ? `<span class="pf-lg pf-lg-adm">🔑 ${TT('เพิ่มโดย Admin','added by Admin')}</span>` : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}</div>` : '';
+    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}${admOn ? ` · 🔑 ${TT('แตะ <b>ช่องว่าง (＋)</b> เพื่อเติมยอด Process ที่พนักงานไม่ได้ลง','tap an <b>empty cell (＋)</b> to fill a missing process')}` : ''}</div>` : '';
     // ★ บอกให้ชัดว่าตารางนี้รวม VSM3+VSM4 (ต่างจากหน้าอื่นที่แยกสาย) เพื่อไม่ให้เข้าใจผิดว่ายอดปน
     const crossNote = hasVsmPeers()
       ? `<div style="font-size:11px;font-weight:700;color:#6D28D9;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:5px 9px;margin:0 0 6px;display:inline-block">🔗 ${TT('ค้นหานี้รวม','This search spans')} <b>VSM 3 + VSM 4</b> ${TT('(งานล็อตเดียวกันวิ่งข้ามสายได้) — หน้าอื่นยังแยกสายตามเดิม','(a lot can run across both) — other pages stay per-VSM')}</div>`
@@ -20083,24 +20106,32 @@ function _spmBuildValve(vno, recs) {
         else if (g.qty > 0)           offByProc[g.proc] = (offByProc[g.proc] || 0) + g.qty;
       }
       const rc = recvLots[lk];
-      return { lk, lot: lotMeta[lk].lot || '-', qtyByProc, offByProc, recvQty: rc ? rc.qty : 0, recvOnly: !hasProd && !!rc };
+      return { lk, lot: lotMeta[lk].lot || '-', qtyByProc, offByProc, recvQty: rc ? rc.qty : 0, recvOnly: !hasProd && !!rc,
+               admByProc: _pfAdmCells(valve.valveNo, lk, procSeq, qtyByProc) };   // ★ v3.76
     });
   return { vno, valve, procSeq, lots, recs };
 }
 function _spmRender(out) {
   const found = out.filter(V => V.valve).length;
+  const admOn = !!state.adminUnlocked;   // ★ v3.76 Admin → แตะชิปที่ยังไม่มียอดเพื่อเติมได้
+  let hasAdm = false;
   const blocks = out.map((V, vi) => {
     if (!V.valve) return `<div class="spm-v"><div class="spm-vh"><b>${escapeHtml(V.vno)}</b><span class="tag tag-red">ไม่พบข้อมูล</span></div></div>`;
     const rows = V.lots.length ? V.lots.map((L, li) => {
       let nextIdx = -1;
-      for (let i = 0; i < V.procSeq.length; i++) { if (!(L.qtyByProc[V.procSeq[i]] > 0)) { nextIdx = i; break; } }
+      for (let i = 0; i < V.procSeq.length; i++) { if (!(L.qtyByProc[V.procSeq[i]] > 0) && !L.admByProc[V.procSeq[i]]) { nextIdx = i; break; } }
       const isDone = getJobProc(V.vno, L.lot) === 'DONE';
+      const canFill = admOn && L.lk !== '(no lot)';
       const chips = V.procSeq.map((p, ci) => {
         const q = L.qtyByProc[p] || 0;
         if (q > 0)                return `<span class="spm-chip spm-g" onclick="spmDetail(${vi},${li},${ci})" title="แตะดูจำนวน/เครื่อง/วันที่">${escapeHtml(p)}</span>`;
+        const adm = L.admByProc[p];
+        if (adm) { hasAdm = true; return `<span class="spm-chip spm-a" onclick="spmAdmFill(${vi},${li},${ci})" title="${TT('เพิ่มโดย Admin','added by Admin')} ${nn(adm.qty)}">🔑 ${escapeHtml(p)}</span>`; }
         if (p === 'QC' && isDone) return `<span class="spm-chip spm-g" style="cursor:default" title="จบงานแล้ว — QC อัตโนมัติ">✓ ${escapeHtml(p)}</span>`;
-        if (ci === nextIdx)       return `<span class="spm-chip spm-y">${escapeHtml(p)}</span>`;
-        return `<span class="spm-chip spm-w">${escapeHtml(p)}</span>`;
+        const fillCls  = canFill ? ' spm-add' : '';
+        const fillAttr = canFill ? ` onclick="spmAdmFill(${vi},${li},${ci})" title="${TT('Admin: แตะเพื่อเติมยอดที่พนักงานไม่ได้ลง','Admin: tap to fill a missing quantity')}"` : '';
+        if (ci === nextIdx)       return `<span class="spm-chip spm-y${fillCls}"${fillAttr}>${escapeHtml(p)}</span>`;
+        return `<span class="spm-chip spm-w${fillCls}"${fillAttr}>${escapeHtml(p)}</span>`;
       }).join('');
       const offChip = Object.keys(L.offByProc || {}).length
         ? `<span class="spm-chip spm-r" onclick="spmRemark(${vi},${li})" title="process ที่พนักงานพิมพ์เอง — แตะดู/แก้">📝 หมายเหตุ</span>` : '';
@@ -20115,8 +20146,8 @@ function _spmRender(out) {
   }).join('');
   return `<div class="card" style="margin-bottom:0">
     <div class="card-title"><span class="ci">📋</span>ผลค้นหา ${out.length} Valve <span class="muted" style="font-size:11px;font-weight:600">· พบข้อมูล ${found}</span></div>
-    <div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span><span class="pf-lg" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">ยังไม่ถึง</span></div>
-    <div class="muted" style="font-size:11px;margin:2px 0 8px">💡 แตะชื่อ Process <b style="color:#065F46">สีเขียว</b> เพื่อดูจำนวน/เครื่อง/วันที่ · ค้นหา Valve เดียวจะเห็นตารางแบบละเอียดเหมือนเดิม</div>
+    <div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span><span class="pf-lg" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">ยังไม่ถึง</span>${hasAdm ? `<span class="pf-lg pf-lg-adm">🔑 ${TT('เพิ่มโดย Admin','added by Admin')}</span>` : ''}</div>
+    <div class="muted" style="font-size:11px;margin:2px 0 8px">💡 แตะชื่อ Process <b style="color:#065F46">สีเขียว</b> เพื่อดูจำนวน/เครื่อง/วันที่ · ค้นหา Valve เดียวจะเห็นตารางแบบละเอียดเหมือนเดิม${admOn ? ` · 🔑 ${TT('แตะชิปที่ยังไม่มียอด เพื่อเติมยอดที่พนักงานไม่ได้ลง','tap a chip with no quantity to fill it')}` : ''}</div>
     ${blocks}</div>`;
 }
 // แตะชิปเขียว → เปิดรายละเอียด (จำนวน/เครื่อง/วันที่/พนักงาน + ปุ่ม ✏️) — ใช้ modal เดิมของโหมดเดี่ยว
@@ -20131,6 +20162,103 @@ function spmRemark(vi, li) {
   const L = V.lots[li]; const offKeys = Object.keys(L?.offByProc || {}); if (!offKeys.length) return;
   _spRecords = V.recs; _spValve = V.valve;
   _spShowRecords(L.lk, offKeys, `${V.vno} · ${L.lot} · หมายเหตุ`, true);
+}
+
+/* ═══ ★ v3.76 — Admin เติมยอด Process ที่พนักงานไม่ได้ลง (กติกาดูที่ ADMFILLQ_PREFIX) ═══ */
+// ยอดที่ Admin เติมของ lot นี้ เฉพาะ process ใน flow ที่ "พนักงานยังไม่ได้ลง" — ช่องที่พนักงานลงแล้วใช้ยอดพนักงาน
+function _pfAdmCells(valveNo, lk, procSeq, qtyByProc) {
+  const out = {};
+  if (lk === '(no lot)') return out;
+  const adm = pfAdmOfJob(valveNo, lk);
+  for (const p of procSeq) if (adm[p] && !(qtyByProc[p] > 0)) out[p] = adm[p];
+  return out;
+}
+let _pfAdmCtx = null, _pfAdmBusy = false;
+function spAdmFill(ri, ci) {
+  const ld = _spLotData[ri], proc = _spCols[ci];
+  if (!ld || !proc || !_spValve) return;
+  _pfAdmOpen({ valve: _spValve.valveNo, lk: ld.lk, lot: ld.lot, proc, procSeq: _spCols, qtyByProc: ld.qtyByProc,
+               admByProc: ld.admByProc, recvQty: ld.recvQty, rerender: () => searchProcess() });
+}
+function spmAdmFill(vi, li, ci) {
+  const V = _spmData?.[vi]; if (!V || !V.valve) return;
+  const L = V.lots[li], proc = V.procSeq[ci]; if (!L || !proc) return;
+  // โหมดหลาย Valve: วาดใหม่จากข้อมูลที่มีอยู่ (ไม่ยิง API ซ้ำทีละร้อยวาล์ว)
+  const rerender = () => { _spmData = _spmData.map(X => _spmBuildValve(X.vno, X.recs)); $('searchResult').innerHTML = _spmRender(_spmData); };
+  _pfAdmOpen({ valve: V.valve.valveNo, lk: L.lk, lot: L.lot, proc, procSeq: V.procSeq, qtyByProc: L.qtyByProc,
+               admByProc: L.admByProc, recvQty: L.recvQty, rerender });
+}
+function _pfAdmOpen(c) {
+  const cur = getPfAdm(c.valve, c.lk, c.proc);
+  const admOn = !!state.adminUnlocked;
+  if (!admOn && !cur) { toast(TT('เติมยอดได้เฉพาะ Admin — ปลดล็อก Admin Mode ที่หน้าตั้งค่าก่อน','Admin only — unlock Admin Mode in Settings first'), 'orange'); return; }
+  _pfAdmCtx = c;
+  const dt = cur && cur.date ? new Date(cur.date + 'T00:00:00').toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '';
+  const head = `<div style="font-size:13px;line-height:1.7;margin-bottom:6px">
+      <b style="color:var(--blue)">${escapeHtml(c.valve)}</b> · Lot <b>${escapeHtml(c.lot)}</b> · <span class="tag tag-orange">${escapeHtml(c.proc)}</span></div>`;
+  const rules = `<div style="font-size:11.5px;line-height:1.7;color:#075985;background:#F0F9FF;border:1px dashed #38BDF8;border-radius:9px;padding:7px 10px">
+      • ${TT('ช่องนี้ขึ้นป้าย <b>🔑 Admin</b> แยกจากยอดที่พนักงานลง','This cell is tagged <b>🔑 Admin</b>, separate from operator entries')}<br>
+      • ${TT('พนักงานลงยอด Process นี้เมื่อไหร่ ระบบ<b>ใช้ยอดพนักงานแทน</b>ทันที','Once an operator records this process, <b>their quantity replaces it</b>')}<br>
+      • ${TT('ไม่นับเป็นยอดผลิต — KPI · Output ของ Process · Dashboard ไม่เปลี่ยน','Not counted as production — KPI · Process Output · Dashboard are unchanged')}</div>`;
+  if (!admOn) {   // พนักงาน/ผู้ใช้ทั่วไป → ดูได้อย่างเดียว
+    openModal('🔑 ' + TT('ยอดที่ Admin เติม','Filled by Admin'), `${head}
+      <div style="font-size:22px;font-weight:900;color:#075985">${nn(cur.qty)} <span style="font-size:13px">${TT('ชิ้น','pcs')}</span></div>
+      <div class="muted" style="font-size:12px;margin:0 0 10px">${TT('เพิ่มโดย Admin','Added by Admin')}${dt ? ' · ' + escapeHtml(dt) : ''}</div>
+      ${rules}
+      <div class="muted" style="font-size:11px;margin-top:8px">${TT('แก้ไข/ลบได้เฉพาะ Admin','Only Admin can edit or delete')}</div>
+      <button class="btn btn-outline btn-block mt-12" onclick="closeModal()">${TT('ปิด','Close')}</button>`);
+    return;
+  }
+  // ค่าเริ่มต้น = ยอดของ process ถัดไปที่มียอด (ของต้องผ่านขั้นนี้มาแล้ว) → ไม่มีค่อยใช้ขั้นก่อนหน้า → ยอดรับเข้า WIP IN 1.5
+  const eff = p => (c.qtyByProc[p] > 0 ? c.qtyByProc[p] : (c.admByProc[p] ? c.admByProc[p].qty : 0));
+  const i = c.procSeq.indexOf(c.proc);
+  let sugg = 0, from = '';
+  for (let j = i + 1; j < c.procSeq.length && !sugg; j++) if (eff(c.procSeq[j]) > 0) { sugg = eff(c.procSeq[j]); from = c.procSeq[j]; }
+  for (let j = i - 1; j >= 0 && !sugg; j--) if (eff(c.procSeq[j]) > 0) { sugg = eff(c.procSeq[j]); from = c.procSeq[j]; }
+  if (!sugg && c.recvQty > 0) { sugg = c.recvQty; from = 'WIP IN 1.5'; }
+  const val = cur ? cur.qty : sugg;
+  openModal('🔑 ' + (cur ? TT('แก้ยอดที่ Admin เติม','Edit Admin fill') : TT('เติมยอด Process ที่ขาด','Fill a missing process')), `${head}
+    <div class="muted" style="font-size:12px;margin-bottom:8px">${cur
+      ? TT('เติมไว้','Filled') + ` <b>${nn(cur.qty)}</b> ${TT('ชิ้น','pcs')}${dt ? ' · ' + escapeHtml(dt) : ''}`
+      : TT('พนักงานไม่ได้ลงยอด Process นี้ — เติมยอดเพื่อให้ Process ต่อเนื่อง','No operator recorded this process — fill it so the flow is continuous')}</div>
+    <div class="fr"><label>${TT('ยอด (ชิ้น)','Quantity (pcs)')} *</label>
+      <input type="number" id="pfAdmQty" inputmode="numeric" min="1" step="1" value="${val || ''}" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();pfAdmSave();}">
+    </div>
+    ${!cur && from ? `<div class="muted" style="font-size:11px;margin:-4px 0 8px">💡 ${TT('ใส่ค่าเริ่มต้นตามยอด','Pre-filled from')} <b>${escapeHtml(from)}</b> — ${TT('แก้ได้','editable')}</div>` : ''}
+    ${rules}
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      ${cur ? `<button class="btn btn-outline" style="color:var(--red);margin-right:auto" onclick="pfAdmSave(true)">🗑 ${TT('ลบ','Delete')}</button>` : ''}
+      <button class="btn btn-outline" onclick="closeModal()">${TT('ยกเลิก','Cancel')}</button>
+      <button class="btn btn-green" onclick="pfAdmSave()">💾 ${TT('บันทึก','Save')}</button>
+    </div>`);
+  setTimeout(() => { const el = $('pfAdmQty'); if (el) { el.focus(); el.select(); } }, 60);
+}
+// del = ลบยอดที่ Admin เติม (เขียน 0) · ใช้ทั้งในหน้าต่างเติมยอด และปุ่มล้างยอดค้างในรายละเอียดช่อง
+async function pfAdmSave(del) {
+  const c = _pfAdmCtx;
+  if (!c || _pfAdmBusy) return;
+  if (!state.adminUnlocked) { toast('ต้องปลดล็อก Admin ก่อน', 'orange'); return; }
+  let q = 0;
+  if (!del) {
+    q = Math.round(Number($('pfAdmQty')?.value) || 0);
+    if (!(q > 0)) { toast(TT('กรอกยอดมากกว่า 0','Enter a quantity above 0'), 'orange'); return; }
+  } else if (!await _confirmEditDialog()) return;
+  _pfAdmBusy = true;
+  showBusy(TT('กำลังบันทึกยอดที่ Admin เติม…','Saving Admin fill…'));
+  try {
+    await setPfAdm(c.valve, c.lk, c.proc, q);   // Cloud ล้มเหลว → throw → local ไม่เปลี่ยน
+    hideBusy();
+    closeModal();
+    toast(del ? `🗑 ${TT('ลบยอด Admin ที่','Removed Admin fill at')} ${c.proc}`
+              : `🔑 ${c.proc} = ${nn(q)} ${TT('ชิ้น (เพิ่มโดย Admin)','pcs (added by Admin)')}${API ? '' : ' (local)'}`, 'green');
+    if (c.rerender) c.rerender();
+  } catch (e) {
+    hideBusy();
+    toast(TT('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — ยังไม่เปลี่ยน กรุณาลองใหม่','❌ Cloud save failed — nothing changed, please retry'), 'red');
+  } finally {
+    _pfAdmBusy = false;
+  }
 }
 
 /* ============================================================
@@ -20177,6 +20305,9 @@ function _spRecsFor(lk, procKeys) {
 function _spShowRecords(lk, procKeys, title, isOff) {
   const recs = _spRecsFor(lk, procKeys);
   if (!recs.length) { toast('ไม่พบรายการ', 'orange'); return; }
+  // ★ v3.76: ช่องนี้เคยมียอดที่ Admin เติม แต่พนักงานลงแล้ว → บอกให้รู้ว่าใช้ยอดพนักงาน (Admin ลบทิ้งได้ ไม่ต้องวาดใหม่)
+  const admOld = (!isOff && procKeys.length === 1 && _spValve) ? getPfAdm(_spValve.valveNo, lk, procKeys[0]) : null;
+  if (admOld) _pfAdmCtx = { valve: _spValve.valveNo, lk, proc: _procCanon(procKeys[0]), rerender: null };
   let total = 0, ghostQty = 0, ghostN = 0;
   const rowsH = recs.map(r => {
     const q = Number(r.quantity) || 0; total += q;
@@ -20211,6 +20342,10 @@ function _spShowRecords(lk, procKeys, title, isOff) {
       <b>👻 ในยอดรวมนี้มี ${nn(ghostQty)} ชิ้น (${ghostN} รายการ) ที่ไม่มีใน KPI</b><br>
       <span style="color:#7F1D1D">ถ้ายึดหน้าประวัติเป็นหลัก ยอดจริงคือ <b>${nn(total - ghostQty)} ชิ้น</b> —
       ส่วนต่างเกิดจาก KPI ถูกลบไปแล้วแต่ยอดผลิตค้างอยู่ ให้ Admin ตรวจที่หน้าตั้งค่า → 🔗 ตรวจ/ซ่อมความสอดคล้อง</span>
+    </div>` : ''}
+    ${admOld ? `<div style="margin-top:8px;border:1px dashed #38BDF8;background:#F0F9FF;border-radius:9px;padding:7px 10px;font-size:11.5px;line-height:1.6;color:#075985">
+      🔑 ${TT('เคยเติมโดย Admin','Previously filled by Admin')} <b>${nn(admOld.qty)}</b> ${TT('ชิ้น','pcs')} — ${TT('พนักงานลงยอดแล้ว จึง<b>ใช้ยอดพนักงานแทน</b>','an operator has recorded it, so <b>their quantity is used</b>')}
+      ${state.adminUnlocked ? `<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:11px;margin-left:4px" onclick="pfAdmSave(true)">🗑 ${TT('ลบยอด Admin','Remove Admin fill')}</button>` : ''}
     </div>` : ''}
     <div class="muted" style="font-size:11px;margin-top:8px">${isOff
       ? '💡 process เหล่านี้พนักงานพิมพ์เอง (นอก flow ของวาล์ว) — กด ✏️ เพื่อแก้เป็น process ที่ถูกต้อง บันทึกแล้วอัปเดตฐานข้อมูลทันที'
@@ -23479,7 +23614,19 @@ function _postFgQtyByProc() {
   return map;
 }
 // ยอดรายชื่อ process ของงานเดียว (ใช้กับ eligibility) — ไม่มีข้อมูล = {}
-function postFgQtyOf(valve, lot) { return _postFgQtyByProc()[jobKey(valve, lot)] || {}; }
+//   ★ v3.76: รวมยอดที่ Admin เติมให้ process ที่พนักงานไม่ได้ลงด้วย (เฉพาะ process ที่ยังไม่มียอดจริง)
+//     ไม่งั้นหน้าค้นหา Process เห็นว่าเติมแล้ว แต่ปุ่มจบงานยังบล็อกว่า "ยังไม่ลงยอด"
+function postFgQtyOf(valve, lot) {
+  const real = _postFgQtyByProc()[jobKey(valve, lot)] || {};
+  const adm  = pfAdmOfJob(valve, lot);
+  let out = real;
+  for (const p in adm) {
+    if (Number(real[p]) > 0) continue;            // พนักงานลงแล้ว → ใช้ยอดพนักงาน
+    if (out === real) out = { ...real };           // อย่าแก้ object ใน cache
+    out[p] = adm[p].qty;
+  }
+  return out;
+}
 // คืน { ok, bad[] } — bad = process หลัง FG ที่ทำให้ยังจบไม่ได้ (ยังไม่มียอด + ไม่ใช่งานปลายทาง)
 //   qtyByProc = ยอดผลิตรายชื่อ process ของงานนั้น (จาก postFgQtyOf) · ไม่ส่ง = ตัดสินด้วยชื่อล้วนแบบเดิม
 function postFgEligibility(valve, qtyByProc) {
@@ -23526,6 +23673,52 @@ async function setJobProc(valve, lot, process, qty) {
   if (API) await api('/api/targets', { body });                     // ล้มเหลว → throw → ผู้เรียกจัดการ
   state.targets = { ...state.targets, ...body };
   lsSave(LS.TARGETS, state.targets);
+}
+
+/* ═══ ★ 2026-10-09 (v3.76) — Admin เติมยอด Process ที่พนักงานไม่ได้ลง (หน้าติดตามงาน → ค้นหา Process) ═══
+   ที่มา (ผู้ใช้ 9/10 + รูป VV6279A0): พนักงานบางคนไม่ได้ลงบันทึกบาง Process → ตารางขาดตอน
+     เช่น Lot 2607S080006 ว่างที่ SSG · TOP&HOD ทั้งที่ VET · CB · COT · TG มียอดแล้ว
+   กติกา:
+   • Admin แตะช่องว่างในตาราง → เติมยอดได้ · ช่องนั้นขึ้นป้าย "🔑 Admin" แยกจากยอดพนักงาน
+   • พนักงานลงยอด Process นั้นเมื่อไหร่ (หรือ Admin ลงผิด แล้วพนักงานลงทีหลัง) → ใช้ยอดพนักงานแทนทันที
+     (ตัดสินตอนแสดงผลรายช่อง — ยอด Admin ค้างไว้เฉย ๆ ไม่ถูกนับ)
+   • ไม่ใช่ยอดผลิต: ไม่สร้าง production/KPI record → KPI · Output ของ Process · Dashboard ไม่เปลี่ยน
+     ใช้แค่ต่อ Process ให้ต่อเนื่อง (สีเหลือง "ขั้นถัดไป" เลื่อนไปถูกที่) + เกณฑ์จบงานหลัง FG
+   เก็บใน targets store (key→ตัวเลข · upsert · ทุกเครื่องดึงผ่าน /api/init) — ไม่ต้องแก้ Worker
+     admfillq.<VALVE>::<LOT>@<PROCESS> = ยอดชิ้น (0 = ลบแล้ว) · admfilld.… = วันที่เติม YYYYMMDD */
+const ADMFILLQ_PREFIX = 'admfillq.';
+const ADMFILLD_PREFIX = 'admfilld.';
+function _pfAdmKey(valve, lot, proc) { return jobKey(valve, lot) + '@' + _procCanon(String(proc || '').trim()); }
+// ดัชนี { jobKey: { process: {qty, date} } } — สร้างใหม่เมื่อ state.targets ถูกแทนที่ (ทุกจุดแทนที่ทั้ง object)
+let _pfAdmIdx = null, _pfAdmIdxSrc = null;
+function _pfAdmByJob() {
+  const t = state.targets || {};
+  if (_pfAdmIdx && _pfAdmIdxSrc === t) return _pfAdmIdx;
+  const out = {};
+  for (const k in t) {
+    if (!k.startsWith(ADMFILLQ_PREFIX)) continue;
+    const q = Number(t[k]) || 0;
+    if (!(q > 0)) continue;
+    const rest = k.slice(ADMFILLQ_PREFIX.length);
+    const at = rest.lastIndexOf('@');
+    if (at < 0) continue;
+    (out[rest.slice(0, at)] = out[rest.slice(0, at)] || {})[rest.slice(at + 1)] = { qty: q, date: _ymdToIso(t[ADMFILLD_PREFIX + rest]) };
+  }
+  _pfAdmIdx = out; _pfAdmIdxSrc = t;
+  return out;
+}
+function pfAdmOfJob(valve, lot) { return _pfAdmByJob()[jobKey(valve, lot)] || {}; }
+function getPfAdm(valve, lot, proc) { return pfAdmOfJob(valve, lot)[_procCanon(String(proc || '').trim())] || null; }
+// เขียน Cloud ให้สำเร็จก่อนแล้วค่อยอัปเดต local (แบบเดียวกับ setJobProc) · qty 0 = ลบ
+async function setPfAdm(valve, lot, proc, qty) {
+  const k = _pfAdmKey(valve, lot, proc);
+  const q = Math.max(0, Math.round(Number(qty) || 0));
+  const body = { [ADMFILLQ_PREFIX + k]: q, [ADMFILLD_PREFIX + k]: q ? Number(todayISO().replace(/-/g, '')) : 0 };
+  if (API) await api('/api/targets', { body });
+  state.targets = { ...state.targets, ...body };
+  lsSave(LS.TARGETS, state.targets);
+  // cache ของ /api/init (15 วิ) ยังถือค่าเก่า → ค้นหาซ้ำทันทีจะดึงค่าเก่ามาทับ — แก้ cache ให้ตรงด้วย
+  if (_initCache && _initCache.targets) Object.assign(_initCache.targets, body);
 }
 
 let _postFgRecs = null;   // ชุด record ที่ดึงแบบเต็ม (ปุ่ม "ดึงทั้งหมด") — null = ใช้ state.kpiRecords
