@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.76 — 2026-10-09 — ค้นหา Process: Admin เติมยอด Process ที่พนักงานไม่ได้ลง (ป้าย 🔑 Admin · ยอดพนักงานมาแทนอัตโนมัติ)  ⏳ ยังไม่ deploy
+## v3.76 — 2026-10-09 — ค้นหา Process: Admin เติมยอด Process ที่พนักงานไม่ได้ลง (ป้าย 🔑 Admin · ยอดพนักงานมาแทนอัตโนมัติ)  ✅ deployed (Pages cee1eb7 · Worker ไม่เปลี่ยน)
 
 **ที่มา (ผู้ใช้ 9/10 + รูป VV6279A0):** พนักงานบางคนไม่ได้ลงบันทึกบาง Process → ตารางค้นหา Process ขาดตอน
 เช่น Lot `2607S080006` ว่างที่ SSG · TOP&HOD ทั้งที่ VET · CB · COT · TG มียอดแล้ว / Lot `2602S020002` ว่างที่ VET · CB
