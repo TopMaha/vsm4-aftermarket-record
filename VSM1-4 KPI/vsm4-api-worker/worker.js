@@ -40,6 +40,9 @@
  *   POST /api/mccaps                 → upsert        body:{caps:[...], replace?:true, by?}
  *   POST /api/mccaps/delete          → ลบ            body:{machine_id}
  *   (valves มี sd + vtype เพิ่ม — เขียนเฉพาะเมื่อ body มีคีย์นั้น)
+ *   GET  /api/mpman                  → แผนที่ Admin วางเอง (pin) · วันคาดว่า WIP IN เข้า (exp) · เครื่องปิดถาวร (off)
+ *   POST /api/mpman                  → upsert รายแถว  body:{items:[{id, kind, ...}], by?}
+ *   POST /api/mpman/delete           → ลบ            body:{ids:[...]}
  *
  * Deploy:
  *   1) Cloudflare Dashboard → Workers & Pages → Create → Worker → Paste this file
@@ -185,6 +188,11 @@ export default {
       if (path === '/api/mccaps'        && m === 'POST') return ok(await upsertMcCaps(env, await readJson(request)));
       if (path === '/api/mccaps/delete' && m === 'POST') return ok(await deleteMcCap(env, await readJson(request)));
 
+      // ★ 2026-10-12 (v3.77) วางแผนเอง (ลาก Valve No ลงเครื่อง) — ไม่อยู่ใน /api/init (โหลดเฉพาะตอนเปิดตัววางแผน)
+      if (path === '/api/mpman'        && m === 'GET')  return ok({ items: await getMpMan(env) });
+      if (path === '/api/mpman'        && m === 'POST') return ok(await upsertMpMan(env, await readJson(request)));
+      if (path === '/api/mpman/delete' && m === 'POST') return ok(await deleteMpMan(env, await readJson(request)));
+
       // production records
       if (path === '/api/records'         && m === 'GET')  return isWideHistoryQuery(url.searchParams)
         ? await servedCached(ctx, url, 'prodall-v1', 60, async () => ok(await withSync(env, url.searchParams, 'prod', getRecords)))
@@ -268,7 +276,7 @@ export default {
    แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
    เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
    เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
-const SCHEMA_VER = '2026-10-01-planner';
+const SCHEMA_VER = '2026-10-12-mpman';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
@@ -375,6 +383,16 @@ async function ensureSchema(env) {
        active        INTEGER NOT NULL DEFAULT 1,
        updated_at    TEXT,
        updated_by    TEXT)`,
+
+    /* ★ 2026-10-12 (v3.77) — แผนที่ Admin วางเอง (ลาก Valve No ลงเครื่อง) + วันคาดว่า WIP IN 1.5 เข้า + เครื่องปิดถาวร
+       1 แถว = 1 รายการ (ไม่ใช่ก้อนเดียว) → Admin สองเครื่องแก้คนละเบอร์พร้อมกันไม่ทับกัน
+       data = JSON ของรายการ (client เป็นคนกำหนดรูปแบบ) · ตารางใหม่ล้วน ไม่แตะข้อมูลเดิม */
+    `CREATE TABLE IF NOT EXISTS mp_manual (
+       id         TEXT PRIMARY KEY,
+       kind       TEXT NOT NULL,
+       data       TEXT NOT NULL DEFAULT '{}',
+       updated_at TEXT,
+       updated_by TEXT)`,
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
@@ -635,6 +653,52 @@ async function deleteMcCap(env, body) {
   if (!id) throw new Error('machine_id is required');
   const r = await env.DB.prepare('DELETE FROM machine_caps WHERE machine_id = ?').bind(id).run();
   return { deleted: r.meta?.changes || 0 };
+}
+
+/* ── ★ 2026-10-12 (v3.77) mp_manual — แผนที่ Admin วางเอง ─────────────────────
+   kind: pin (เบอร์/ล็อต → เครื่อง + ลำดับคิว) · exp (วันคาดว่า WIP IN 1.5 เข้า) · off (เครื่องปิดถาวร)
+   ทุกคำขอเขียนคืนรายการทั้งหมด (ตารางเล็ก หลักร้อยแถว) → client ได้ของจริงจาก Cloud ทันที */
+const MPMAN_KINDS = new Set(['pin', 'exp', 'off']);
+function _mpmanRow(r) {
+  let d = {};
+  try { d = JSON.parse(r.data || '{}') || {}; } catch (e) { d = {}; }
+  return { ...d, id: r.id, kind: r.kind, updated_at: r.updated_at || '', updated_by: r.updated_by || '' };
+}
+async function getMpMan(env) {
+  const { results } = await env.DB.prepare('SELECT id, kind, data, updated_at, updated_by FROM mp_manual ORDER BY id').all();
+  return (results || []).map(_mpmanRow);
+}
+async function upsertMpMan(env, body) {
+  const list = Array.isArray(body.items) ? body.items : [];
+  if (list.length > 3000) throw new Error('too many items (max 3000)');
+  const now = new Date().toISOString();
+  const by  = String(body.by || '').slice(0, 60);
+  const stmt = env.DB.prepare(`
+    INSERT INTO mp_manual (id, kind, data, updated_at, updated_by) VALUES (?,?,?,?,?)
+    ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, data=excluded.data, updated_at=excluded.updated_at, updated_by=excluded.updated_by`);
+  const batch = [];
+  for (const it of list) {
+    const id = String((it && it.id) || '').trim();
+    const kind = String((it && it.kind) || '').trim();
+    if (!id || id.length > 200 || !MPMAN_KINDS.has(kind)) continue;
+    const d = { ...it };
+    for (const k of ['id', 'kind', 'updated_at', 'updated_by', '_local']) delete d[k];
+    const data = JSON.stringify(d);
+    if (data.length > 2000) continue;
+    batch.push(stmt.bind(id, kind, data, now, by || String(it.by || '').slice(0, 60)));
+  }
+  for (let i = 0; i < batch.length; i += 100) await env.DB.batch(batch.slice(i, i + 100));
+  return { count: batch.length, items: await getMpMan(env) };
+}
+async function deleteMpMan(env, body) {
+  const ids = (Array.isArray(body.ids) ? body.ids : [body.id]).map(x => String(x || '').trim()).filter(Boolean).slice(0, 3000);
+  let n = 0;
+  for (let i = 0; i < ids.length; i += 50) {
+    const part = ids.slice(i, i + 50);
+    const r = await env.DB.prepare(`DELETE FROM mp_manual WHERE id IN (${part.map(() => '?').join(',')})`).bind(...part).run();
+    n += r.meta?.changes || 0;
+  }
+  return { deleted: n, items: await getMpMan(env) };
 }
 
 async function deleteValve(env, body) {
