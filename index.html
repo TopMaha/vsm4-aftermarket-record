@@ -525,6 +525,14 @@ tr.hv-detail.hv-done>td{opacity:.55}
 /* Admin ปลดล็อกอยู่ → ช่องว่างแตะเติมยอดได้ (มี ＋ จาง ๆ) */
 .pf-cell.pf-add::after{content:"＋";color:#94A3B8;font-weight:900}
 .pf-cell.pf-next.pf-add::after{color:#854D0E}
+/* ★ v3.78 — งานเข้า QC แล้ว → Admin กด "🔑 เติมให้ครบ" เติมทุกช่องที่ว่างในครั้งเดียว (+ จบงาน) */
+.pf-fillall{display:block;margin-top:3px;font:inherit;font-size:10px;font-weight:900;color:#fff;cursor:pointer;width:max-content;
+  background:linear-gradient(135deg,#0369A1,#0EA5E9);border:0;border-radius:999px;padding:1px 8px;line-height:17px}
+.pf-fillall:hover,.spm-chip.spm-fill:hover{filter:brightness(1.08);outline:2px solid #7DD3FC;outline-offset:1px}
+.spm-chip.spm-fill{background:linear-gradient(135deg,#0369A1,#0EA5E9);border-color:#0369A1;color:#fff;cursor:pointer}
+.pfa-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px dashed #E2E8F0}
+.pfa-row .tag{min-width:78px;text-align:center}
+.pfa-row input{width:110px;margin:0}
 /* ═══ ★ v3.77 — กล่อง "ต้องปรับแผน" + กระดานวางแผนเอง (ลาก Valve No ลงเครื่อง) ═══ */
 .mp-alerts{border:1.5px solid;border-radius:10px;padding:7px 11px;margin-bottom:10px}
 .mp-alerts summary{cursor:pointer;font-weight:800;font-size:12.5px}
@@ -2383,7 +2391,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.77</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.78</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -9503,7 +9511,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.77":"Production Record + KPI · v3.77",
+"ระบบบันทึกผลิต + KPI · v3.78":"Production Record + KPI · v3.78",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -20046,6 +20054,7 @@ async function searchProcess() {
     let hasAutoQc = false;   // มีช่อง QC ที่เติมเขียวอัตโนมัติเพราะจบงานหรือไม่ (ใช้โชว์คำอธิบาย)
     const admOn = !!state.adminUnlocked;                     // ★ v3.76 Admin → แตะช่องว่างเติมยอดได้
     const hasAdm = lotData.some(l => Object.keys(l.admByProc).length);
+    let hasFillAll = false;                                  // ★ v3.78 มีแถวที่กด "เติมให้ครบ" ได้ (ใช้โชว์คำอธิบาย)
     const rowsHtml = lotData.map((ld, ri) => {
       // ยอดต่อช่องที่ใช้ตัดสินสี = ยอดพนักงาน หรือยอดที่ Admin เติม (ช่องที่พนักงานไม่ได้ลง)
       const effQ = c => (ld.qtyByProc[c] > 0 ? ld.qtyByProc[c] : (ld.admByProc[c] ? ld.admByProc[c].qty : 0));
@@ -20063,6 +20072,10 @@ async function searchProcess() {
         }
       }
       const canFill = admOn && ld.lk !== '(no lot)';         // แถวไม่มีเลข Lot → เติมไม่ได้ (ไม่มีงานให้ผูก)
+      // ★ v3.78 งานเข้า QC แล้วแต่ตารางยังมีช่องว่าง → ปุ่ม "🔑 เติมให้ครบ" ใต้เลข Lot (เห็นเฉพาะ Admin)
+      const fillAll = canFill && _pfQcReached(ld.valveNo, ld.lot, ld.qtyByProc, ld.admByProc)
+        && _pfGapCells(cols, ld.qtyByProc, ld.admByProc, ld.recvQty, isDone).length > 0;
+      if (fillAll) hasFillAll = true;
       // ป้ายสายบนช่องที่ "ไม่ใช่สายที่กำลังดู" — เห็นทันทีว่า process ไหนไปทำที่อีกสาย
       const vsmTag = (c) => {
         if (!ld.crossVsm) return '';
@@ -20110,7 +20123,10 @@ async function searchProcess() {
       const recvTag = ld.recvQty > 0
         ? `<div class="pf-recv" title="${TT('ยอดที่รับเข้า WIP IN 1.5','received into WIP IN 1.5')}${ld.recvTs?' · '+String(ld.recvTs).slice(0,10):''}">📥 ${nn(ld.recvQty)}${ld.recvOnly?' · '+TT('รอผลิต','waiting'):''}</div>`
         : '';
-      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}${recvTag}</td>${tds}${remarkTd}</tr>`;
+      const fillBtn = fillAll
+        ? `<button type="button" class="pf-fillall" onclick="event.stopPropagation();spFillAll(${ri})" title="${TT('งานเข้า QC แล้ว — เติมทุกช่องที่ว่างในครั้งเดียว','Reached QC — fill every empty cell at once')}">🔑 ${TT('เติมให้ครบ','Fill all')}</button>`
+        : '';
+      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}${recvTag}${fillBtn}</td>${tds}${remarkTd}</tr>`;
     }).join('');
     const _recvOnlyN = lotData.filter(l => l.recvOnly).length;
     const tableHtml = lotData.length
@@ -20123,7 +20139,7 @@ async function searchProcess() {
         ${TT('แถวสีอ่อนด้านล่าง · Process แรกเป็นสีเหลือง = รอผลิต','the pale rows below · first process in yellow = waiting')}
       </div>` : '';
     const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${_recvOnlyN ? `<span class="pf-lg pf-lg-recv">📥 ${TT('รับเข้าแล้ว · ยังไม่ลงยอดผลิต','received · no production yet')}</span>` : ''}${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasAdm ? `<span class="pf-lg pf-lg-adm">🔑 ${TT('เพิ่มโดย Admin','added by Admin')}</span>` : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}</div>` : '';
-    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}${admOn ? ` · 🔑 ${TT('แตะ <b>ช่องว่าง (＋)</b> เพื่อเติมยอด Process ที่พนักงานไม่ได้ลง','tap an <b>empty cell (＋)</b> to fill a missing process')}` : ''}</div>` : '';
+    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}${admOn ? ` · 🔑 ${TT('แตะ <b>ช่องว่าง (＋)</b> เพื่อเติมยอด Process ที่พนักงานไม่ได้ลง','tap an <b>empty cell (＋)</b> to fill a missing process')}` : ''}${hasFillAll ? ` · 🔑 ${TT('งานที่เข้า QC แล้ว กด <b>เติมให้ครบ</b> ใต้เลข Lot = เติมทุกช่องที่ว่าง + จบงานในครั้งเดียว','lots that reached QC: tap <b>Fill all</b> under the lot to fill every gap and finish it')}` : ''}</div>` : '';
     // ★ บอกให้ชัดว่าตารางนี้รวม VSM3+VSM4 (ต่างจากหน้าอื่นที่แยกสาย) เพื่อไม่ให้เข้าใจผิดว่ายอดปน
     const crossNote = hasVsmPeers()
       ? `<div style="font-size:11px;font-weight:700;color:#6D28D9;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:5px 9px;margin:0 0 6px;display:inline-block">🔗 ${TT('ค้นหานี้รวม','This search spans')} <b>VSM 3 + VSM 4</b> ${TT('(งานล็อตเดียวกันวิ่งข้ามสายได้) — หน้าอื่นยังแยกสายตามเดิม','(a lot can run across both) — other pages stay per-VSM')}</div>`
@@ -20233,7 +20249,7 @@ function _spmBuildValve(vno, recs) {
 function _spmRender(out) {
   const found = out.filter(V => V.valve).length;
   const admOn = !!state.adminUnlocked;   // ★ v3.76 Admin → แตะชิปที่ยังไม่มียอดเพื่อเติมได้
-  let hasAdm = false;
+  let hasAdm = false, hasFill = false;
   const blocks = out.map((V, vi) => {
     if (!V.valve) return `<div class="spm-v"><div class="spm-vh"><b>${escapeHtml(V.vno)}</b><span class="tag tag-red">ไม่พบข้อมูล</span></div></div>`;
     const rows = V.lots.length ? V.lots.map((L, li) => {
@@ -20254,10 +20270,15 @@ function _spmRender(out) {
       }).join('');
       const offChip = Object.keys(L.offByProc || {}).length
         ? `<span class="spm-chip spm-r" onclick="spmRemark(${vi},${li})" title="process ที่พนักงานพิมพ์เอง — แตะดู/แก้">📝 หมายเหตุ</span>` : '';
+      // ★ v3.78 งานเข้า QC แล้วแต่ยังมีชิปว่าง → "🔑 เติมให้ครบ" (เฉพาะ Admin) ต่อท้าย ✓ QC
+      const fillChip = (canFill && _pfQcReached(V.vno, L.lot, L.qtyByProc, L.admByProc)
+          && _pfGapCells(V.procSeq, L.qtyByProc, L.admByProc, L.recvQty, isDone).length)
+        ? `<span class="spm-chip spm-fill" onclick="spmFillAll(${vi},${li})" title="${TT('งานเข้า QC แล้ว — เติมทุกช่องที่ว่างในครั้งเดียว','Reached QC — fill every empty cell at once')}">🔑 ${TT('เติมให้ครบ','Fill all')}</span>` : '';
+      if (fillChip) hasFill = true;
       // ★ req #1: ยอดที่รับเข้า WIP IN 1.5 (แถวที่ยังไม่มีใครลงยอดผลิต จะเห็นชิปนี้กับ Process แรกสีเหลือง)
       const recvChip = L.recvQty > 0
         ? `<span class="spm-chip" style="background:#DBEAFE;color:#1D4ED8;border:1px solid #BFDBFE;cursor:default" title="${TT('รับเข้า WIP IN 1.5 แล้ว','received into WIP IN 1.5')}">📥 ${nn(L.recvQty)}${L.recvOnly?' · '+TT('รอผลิต','waiting'):''}</span>` : '';
-      return `<div class="spm-lot"><span class="spm-lotno">${escapeHtml(L.lot)}</span><span class="spm-chips">${recvChip}${chips}${offChip}</span></div>`;
+      return `<div class="spm-lot"><span class="spm-lotno">${escapeHtml(L.lot)}</span><span class="spm-chips">${recvChip}${chips}${offChip}${fillChip}</span></div>`;
     }).join('') : `<div class="muted" style="font-size:11px;padding:2px 0 4px">ยังไม่มี Production records</div>`;
     return `<div class="spm-v">
       <div class="spm-vh"><b style="color:var(--blue)">${escapeHtml(V.vno)}</b><span class="muted" style="font-size:11px">${escapeHtml(V.valve.customer || '')}</span></div>
@@ -20266,7 +20287,7 @@ function _spmRender(out) {
   return `<div class="card" style="margin-bottom:0">
     <div class="card-title"><span class="ci">📋</span>ผลค้นหา ${out.length} Valve <span class="muted" style="font-size:11px;font-weight:600">· พบข้อมูล ${found}</span></div>
     <div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span><span class="pf-lg" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">ยังไม่ถึง</span>${hasAdm ? `<span class="pf-lg pf-lg-adm">🔑 ${TT('เพิ่มโดย Admin','added by Admin')}</span>` : ''}</div>
-    <div class="muted" style="font-size:11px;margin:2px 0 8px">💡 แตะชื่อ Process <b style="color:#065F46">สีเขียว</b> เพื่อดูจำนวน/เครื่อง/วันที่ · ค้นหา Valve เดียวจะเห็นตารางแบบละเอียดเหมือนเดิม${admOn ? ` · 🔑 ${TT('แตะชิปที่ยังไม่มียอด เพื่อเติมยอดที่พนักงานไม่ได้ลง','tap a chip with no quantity to fill it')}` : ''}</div>
+    <div class="muted" style="font-size:11px;margin:2px 0 8px">💡 แตะชื่อ Process <b style="color:#065F46">สีเขียว</b> เพื่อดูจำนวน/เครื่อง/วันที่ · ค้นหา Valve เดียวจะเห็นตารางแบบละเอียดเหมือนเดิม${admOn ? ` · 🔑 ${TT('แตะชิปที่ยังไม่มียอด เพื่อเติมยอดที่พนักงานไม่ได้ลง','tap a chip with no quantity to fill it')}` : ''}${hasFill ? ` · 🔑 ${TT('งานที่เข้า QC แล้ว กด <b>เติมให้ครบ</b> = เติมทุกชิปที่ว่าง + จบงานในครั้งเดียว','lots that reached QC: tap <b>Fill all</b> to fill every gap and finish it')}` : ''}</div>
     ${blocks}</div>`;
 }
 // แตะชิปเขียว → เปิดรายละเอียด (จำนวน/เครื่อง/วันที่/พนักงาน + ปุ่ม ✏️) — ใช้ modal เดิมของโหมดเดี่ยว
@@ -20299,13 +20320,20 @@ function spAdmFill(ri, ci) {
   _pfAdmOpen({ valve: _spValve.valveNo, lk: ld.lk, lot: ld.lot, proc, procSeq: _spCols, qtyByProc: ld.qtyByProc,
                admByProc: ld.admByProc, recvQty: ld.recvQty, rerender: () => searchProcess() });
 }
+// โหมดหลาย Valve: วาดใหม่จากข้อมูลที่มีอยู่ (ไม่ยิง API ซ้ำทีละร้อยวาล์ว)
+function _spmRerender() { _spmData = _spmData.map(X => _spmBuildValve(X.vno, X.recs)); $('searchResult').innerHTML = _spmRender(_spmData); }
 function spmAdmFill(vi, li, ci) {
   const V = _spmData?.[vi]; if (!V || !V.valve) return;
   const L = V.lots[li], proc = V.procSeq[ci]; if (!L || !proc) return;
-  // โหมดหลาย Valve: วาดใหม่จากข้อมูลที่มีอยู่ (ไม่ยิง API ซ้ำทีละร้อยวาล์ว)
-  const rerender = () => { _spmData = _spmData.map(X => _spmBuildValve(X.vno, X.recs)); $('searchResult').innerHTML = _spmRender(_spmData); };
   _pfAdmOpen({ valve: V.valve.valveNo, lk: L.lk, lot: L.lot, proc, procSeq: V.procSeq, qtyByProc: L.qtyByProc,
-               admByProc: L.admByProc, recvQty: L.recvQty, rerender });
+               admByProc: L.admByProc, recvQty: L.recvQty, rerender: _spmRerender });
+}
+/* ยอดแนะนำของช่องที่ i = ยอดของ Process ถัดไปที่มียอด (ของต้องผ่านขั้นนี้มาแล้ว) → ไม่มีค่อยใช้ขั้นก่อนหน้า → ยอดรับเข้า WIP IN 1.5
+   eff(p) = ยอดพนักงาน หรือยอดที่ Admin เติม · คืน { qty, from } */
+function _pfSuggestQty(seq, i, eff, recvQty) {
+  for (let j = i + 1; j < seq.length; j++) if (eff(seq[j]) > 0) return { qty: eff(seq[j]), from: seq[j] };
+  for (let j = i - 1; j >= 0; j--) if (eff(seq[j]) > 0) return { qty: eff(seq[j]), from: seq[j] };
+  return recvQty > 0 ? { qty: recvQty, from: 'WIP IN 1.5' } : { qty: 0, from: '' };
 }
 function _pfAdmOpen(c) {
   const cur = getPfAdm(c.valve, c.lk, c.proc);
@@ -20330,11 +20358,7 @@ function _pfAdmOpen(c) {
   }
   // ค่าเริ่มต้น = ยอดของ process ถัดไปที่มียอด (ของต้องผ่านขั้นนี้มาแล้ว) → ไม่มีค่อยใช้ขั้นก่อนหน้า → ยอดรับเข้า WIP IN 1.5
   const eff = p => (c.qtyByProc[p] > 0 ? c.qtyByProc[p] : (c.admByProc[p] ? c.admByProc[p].qty : 0));
-  const i = c.procSeq.indexOf(c.proc);
-  let sugg = 0, from = '';
-  for (let j = i + 1; j < c.procSeq.length && !sugg; j++) if (eff(c.procSeq[j]) > 0) { sugg = eff(c.procSeq[j]); from = c.procSeq[j]; }
-  for (let j = i - 1; j >= 0 && !sugg; j--) if (eff(c.procSeq[j]) > 0) { sugg = eff(c.procSeq[j]); from = c.procSeq[j]; }
-  if (!sugg && c.recvQty > 0) { sugg = c.recvQty; from = 'WIP IN 1.5'; }
+  const { qty: sugg, from } = _pfSuggestQty(c.procSeq, c.procSeq.indexOf(c.proc), eff, c.recvQty);
   const val = cur ? cur.qty : sugg;
   openModal('🔑 ' + (cur ? TT('แก้ยอดที่ Admin เติม','Edit Admin fill') : TT('เติมยอด Process ที่ขาด','Fill a missing process')), `${head}
     <div class="muted" style="font-size:12px;margin-bottom:8px">${cur
@@ -20371,6 +20395,128 @@ async function pfAdmSave(del) {
     closeModal();
     toast(del ? `🗑 ${TT('ลบยอด Admin ที่','Removed Admin fill at')} ${c.proc}`
               : `🔑 ${c.proc} = ${nn(q)} ${TT('ชิ้น (เพิ่มโดย Admin)','pcs (added by Admin)')}${API ? '' : ' (local)'}`, 'green');
+    if (c.rerender) c.rerender();
+  } catch (e) {
+    hideBusy();
+    toast(TT('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — ยังไม่เปลี่ยน กรุณาลองใหม่','❌ Cloud save failed — nothing changed, please retry'), 'red');
+  } finally {
+    _pfAdmBusy = false;
+  }
+}
+
+/* ═══ ★ v3.78 — งานเข้า QC แล้ว → Admin กด "🔑 เติมให้ครบ" ทีเดียว (+ จบงาน) ═══
+   ผู้ใช้ (14/10 + รูปโหมดหลาย Valve ที่วง ✓ QC): งานเข้า QC แล้ว แต่ตารางยังมีช่องว่างที่พนักงานไม่ได้ลง
+     → เพิ่มปุ่มให้ Admin เติมทุกช่องที่ว่างให้ครบในครั้งเดียว (เห็นเฉพาะ Admin) · เติมครบแล้ว "จบงาน" ด้วย (ผู้ใช้เลือก)
+   • ยอดแต่ละช่อง = กติกาเดียวกับเติมทีละช่อง (_pfSuggestQty) · แก้ได้ทุกช่องก่อนบันทึก
+   • ทุกช่องเป็นยอด Admin แบบ v3.76 (ไม่ใช่ยอดผลิต · พนักงานลงทีหลัง → ใช้ยอดพนักงานแทน)
+   • จบงาน = กติกาเดียวกับปุ่มจบงานหลัง FG (jobproc DONE + วันที่ + ยอด FG จริง) — ติ๊กออกได้ · เอากลับได้ที่กล่องงานหลัง FG
+   • เขียนยอดทุกช่อง + สถานะจบงานใน request เดียว → ไม่มีทางสำเร็จครึ่งเดียว */
+// งานนี้ "เข้า QC แล้ว" = สถานะหลัง FG อยู่ที่ QC / จบงานแล้ว · หรือช่อง QC มียอด (พนักงานลง / Admin เติม)
+function _pfQcReached(valve, lot, qtyByProc, admByProc) {
+  const st = getJobProc(valve, lot);
+  if (st === 'QC' || st === 'DONE') return true;
+  return (qtyByProc.QC > 0) || !!(admByProc && admByProc.QC);
+}
+// ช่องที่ยังว่าง (ไม่มีทั้งยอดพนักงานและยอด Admin) ตามลำดับ flow + ยอดแนะนำ · skipQc = จบงานแล้ว/จะจบ (QC ขึ้น ✓ อัตโนมัติ)
+function _pfGapCells(procSeq, qtyByProc, admByProc, recvQty, skipQc) {
+  const seq = [...new Set(procSeq)];   // flow บางเบอร์มี process ซ้ำ (เช่น TG สองรอบ) — ช่องใช้ยอดก้อนเดียวกัน
+  const eff = p => (qtyByProc[p] > 0 ? qtyByProc[p] : (admByProc[p] ? admByProc[p].qty : 0));
+  const out = [];
+  seq.forEach((p, i) => {
+    if (eff(p) > 0 || (skipQc && p === 'QC')) return;
+    out.push({ proc: p, ..._pfSuggestQty(seq, i, eff, recvQty) });
+  });
+  return out;
+}
+let _pfAllCtx = null;
+function spFillAll(ri) {
+  const ld = _spLotData[ri];
+  if (!ld || !_spValve) return;
+  _pfFillAllOpen({ valve: _spValve.valveNo, lk: ld.lk, lot: ld.lot, procSeq: _spCols, qtyByProc: ld.qtyByProc,
+                   admByProc: ld.admByProc, recvQty: ld.recvQty, rerender: () => searchProcess() });
+}
+function spmFillAll(vi, li) {
+  const V = _spmData?.[vi]; if (!V || !V.valve) return;
+  const L = V.lots[li]; if (!L) return;
+  _pfFillAllOpen({ valve: V.valve.valveNo, lk: L.lk, lot: L.lot, procSeq: V.procSeq, qtyByProc: L.qtyByProc,
+                   admByProc: L.admByProc, recvQty: L.recvQty, rerender: _spmRerender });
+}
+function _pfFillAllCells(c) { return _pfGapCells(c.procSeq, c.qtyByProc, c.admByProc, c.recvQty, c.isDone || c.markDone); }
+function _pfFillAllList() {
+  const c = _pfAllCtx, cells = _pfFillAllCells(c);
+  if (!cells.length) return `<div class="muted" style="font-size:12px;padding:6px 0">${TT('ไม่มีช่องว่างให้เติม','No empty cells')}${c.markDone ? ' — ' + TT('บันทึก = จบงานอย่างเดียว','save = finish the job only') : ''}</div>`;
+  return cells.map(x => `<div class="pfa-row"><span class="tag tag-orange">${escapeHtml(x.proc)}</span>
+      <input type="number" class="pfa-q" data-proc="${escapeHtml(x.proc)}" inputmode="numeric" min="1" step="1" autocomplete="off"
+             value="${escapeHtml(String(c.vals[x.proc] != null ? c.vals[x.proc] : (x.qty || '')))}" oninput="_pfAllCtx.vals[this.dataset.proc]=this.value">
+      <span class="muted" style="font-size:11px">${x.from ? TT('ตามยอด','from') + ' ' + escapeHtml(x.from) : TT('ไม่มียอดให้อ้างอิง — กรอกเอง','no reference — enter it')}</span></div>`).join('');
+}
+function _pfFillAllBtnText() {
+  const c = _pfAllCtx, n = _pfFillAllCells(c).length;
+  return `💾 ${n ? TT('เติม','Fill') + ' ' + n + ' ' + TT('ช่อง','cells') : ''}${n && c.markDone && !c.isDone ? ' + ' : ''}${c.markDone && !c.isDone ? '✅ ' + TT('จบงาน','Finish') : ''}`;
+}
+function pfFillAllToggleDone(on) {
+  if (!_pfAllCtx) return;
+  _pfAllCtx.markDone = !!on;
+  $('pfaList').innerHTML = _pfFillAllList();
+  $('pfaSave').innerHTML = _pfFillAllBtnText();
+}
+function _pfFillAllOpen(c) {
+  if (!state.adminUnlocked) { toast(TT('เติมยอดได้เฉพาะ Admin — ปลดล็อก Admin Mode ที่หน้าตั้งค่าก่อน','Admin only — unlock Admin Mode in Settings first'), 'orange'); return; }
+  const st = getJobProc(c.valve, c.lot);
+  c.isDone = st === 'DONE';
+  c.markDone = !c.isDone;            // ผู้ใช้เลือก (14/10): เติมครบแล้วจบงานด้วย — ติ๊กออกได้
+  c.vals = {};
+  _pfAllCtx = c;
+  const stTag = c.isDone ? `<span class="tag tag-green">✅ ${TT('จบงานแล้ว','finished')}</span>`
+    : `<span class="tag tag-orange">${escapeHtml(st || 'QC')}</span>`;
+  openModal('🔑 ' + TT('เติมให้ครบทุกช่อง','Fill every empty cell'), `
+    <div style="font-size:13px;line-height:1.7;margin-bottom:4px"><b style="color:var(--blue)">${escapeHtml(c.valve)}</b> · Lot <b>${escapeHtml(c.lot)}</b> · ${stTag}</div>
+    <div class="muted" style="font-size:12px;margin-bottom:6px">${TT('งานเข้า QC แล้ว — เติมยอดทุก Process ที่พนักงานไม่ได้ลง (แก้ยอดได้ทุกช่อง)','Reached QC — fill every process no operator recorded (each quantity is editable)')}</div>
+    <div id="pfaList">${_pfFillAllList()}</div>
+    ${c.isDone ? '' : `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;margin:10px 0 4px">
+      <input type="checkbox" id="pfaDone" checked style="width:auto;margin:0" onchange="pfFillAllToggleDone(this.checked)"> ✅ ${TT('จบงานด้วย (DONE)','Also finish the job (DONE)')}</label>`}
+    <div style="font-size:11.5px;line-height:1.7;color:#075985;background:#F0F9FF;border:1px dashed #38BDF8;border-radius:9px;padding:7px 10px;margin-top:8px">
+      • ${TT('ทุกช่องขึ้นป้าย <b>🔑 Admin</b> · พนักงานลงยอดทีหลัง → ใช้ยอดพนักงานแทนทันที','Every cell is tagged <b>🔑 Admin</b> · a later operator entry replaces it')}<br>
+      • ${TT('ไม่นับเป็นยอดผลิต — KPI · Output ของ Process · Dashboard ไม่เปลี่ยน','Not counted as production — KPI · Process Output · Dashboard are unchanged')}<br>
+      ${c.isDone ? '' : `• ${TT('จบงาน = ออกจาก WIP กำลังผลิต + ตัววางแผนเครื่องจักร · ช่อง QC ขึ้น ✓ อัตโนมัติ · เอากลับได้ที่กล่องงานหลัง FG','Finishing removes it from WIP and the machine planner · QC shows ✓ · undo from the post-FG box')}`}</div>
+    <div class="row mt-12" style="gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">${TT('ยกเลิก','Cancel')}</button>
+      <button class="btn btn-green" id="pfaSave" onclick="pfFillAllSave()">${_pfFillAllBtnText()}</button>
+    </div>`);
+}
+async function pfFillAllSave() {
+  const c = _pfAllCtx;
+  if (!c || _pfAdmBusy) return;
+  if (!state.adminUnlocked) { toast('ต้องปลดล็อก Admin ก่อน', 'orange'); return; }
+  const markDone = c.markDone && !c.isDone;
+  // สถานะจบงานต้องให้ทุกเครื่องเห็นตรงกัน → ห้ามจบงานตอนออฟไลน์ (กติกาเดียวกับปุ่มจบงานหลัง FG)
+  if (markDone && !API) { toast(TT('⚠️ ออฟไลน์อยู่ — ต้องออนไลน์ก่อนจึงจบงานได้ (เอาติ๊ก "จบงาน" ออกเพื่อเติมยอดอย่างเดียว)','⚠️ Offline — go online to finish the job (untick "finish" to fill only)'), 'orange'); return; }
+  const ymd = Number(todayISO().replace(/-/g, ''));
+  const body = {};
+  const cells = _pfFillAllCells(c);
+  for (const x of cells) {
+    const el = [...document.querySelectorAll('.pfa-q')].find(e => e.dataset.proc === x.proc);
+    const q = Math.round(Number(el ? el.value : x.qty) || 0);
+    if (!(q > 0)) { toast(`${TT('กรอกยอด','Enter a quantity for')} ${x.proc} ${TT('มากกว่า 0','above 0')}`, 'orange'); if (el) el.focus(); return; }
+    const k = _pfAdmKey(c.valve, c.lk, x.proc);
+    body[ADMFILLQ_PREFIX + k] = q;
+    body[ADMFILLD_PREFIX + k] = ymd;
+  }
+  if (markDone) {
+    const jk = jobKey(c.valve, c.lk);
+    body[JOBPROC_PREFIX  + jk] = procCode('DONE');
+    body[JOBPROCD_PREFIX + jk] = ymd;
+    // ยอดจบ = ยอดที่บันทึกตอนขยับงานหลัง FG ไว้แล้ว · ไม่มี = ยอด FG ที่พนักงานลงจริง (ยอด Admin ไม่นับเป็นยอดผลิต)
+    body[JOBPROCQ_PREFIX + jk] = getJobProcQty(c.valve, c.lk) || Number(c.qtyByProc.FG) || 0;
+  }
+  if (!Object.keys(body).length) { closeModal(); return; }
+  _pfAdmBusy = true;
+  showBusy(TT('กำลังบันทึกยอดที่ Admin เติม…','Saving Admin fill…'));
+  try {
+    await _pfTargetsPut(body);   // Cloud ล้มเหลว → throw → local ไม่เปลี่ยน
+    hideBusy();
+    closeModal();
+    toast(`🔑 ${c.valve} · ${c.lot}${cells.length ? ' — ' + TT('เติม','filled') + ' ' + cells.length + ' ' + TT('ช่อง','cells') : ''}${markDone ? ' · ✅ ' + TT('จบงานแล้ว','finished') : ''}${API ? '' : ' (local)'}`, 'green');
     if (c.rerender) c.rerender();
   } catch (e) {
     hideBusy();
@@ -23833,6 +23979,10 @@ async function setPfAdm(valve, lot, proc, qty) {
   const k = _pfAdmKey(valve, lot, proc);
   const q = Math.max(0, Math.round(Number(qty) || 0));
   const body = { [ADMFILLQ_PREFIX + k]: q, [ADMFILLD_PREFIX + k]: q ? Number(todayISO().replace(/-/g, '')) : 0 };
+  await _pfTargetsPut(body);
+}
+// เขียนชุดคีย์ targets ขึ้น Cloud ให้สำเร็จก่อน แล้วค่อยอัปเดต local (ล้มเหลว → throw · local ไม่เปลี่ยน)
+async function _pfTargetsPut(body) {
   if (API) await api('/api/targets', { body });
   state.targets = { ...state.targets, ...body };
   lsSave(LS.TARGETS, state.targets);
@@ -24573,7 +24723,16 @@ const LS_MCCAPS = 'vsm4_mc_caps';
 const LS_MCCAPS_DEL = 'vsm4_mc_caps_del';
 const LS_MPSET = 'vsm4_mp_settings';
 const LS_VSPEC_PEND = 'vsm4_vspec_pending';
-const VTYPE_LIST = ['OP', 'SW', 'SWFS', 'OPFS', 'OPTW', 'OPTWFS', 'SWTW', 'SWTWFS'];
+const VTYPE_LIST = ['OP', 'OPFS', 'OPTW', 'OPFSTW', 'SW', 'SWFS', 'HW'];   // ★ v3.78 เรียงตามความยาก (ผู้ใช้ 14/10) = ชุดที่มีใน Master จริง
+/* ★ v3.78 ลำดับ TYPE ในคิวเครื่อง — ง่ายทำก่อน (ผู้ใช้ 14/10): OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW
+   อ่านเป็น ตัวหลัก (OP / SW / HW) + ส่วนเสริม (FS, TW) → OPTWFS = OPFSTW · SWTW ต่อท้าย SWFS · ว่าง/ไม่รู้จัก = ท้ายสุด */
+function mpTypeRank(t) {
+  const s = String(t || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const base = ['OP', 'SW', 'HW'].findIndex(b => s.startsWith(b));
+  if (base < 0) return 99;
+  const rest = s.slice(2);
+  return base * 10 + (rest.includes('FS') ? 1 : 0) + (rest.includes('TW') ? 2 : 0);
+}
 const MP_EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
 
 function _mpLoadLS(key, fb, isArr) {
@@ -25062,7 +25221,8 @@ function mpDefaults() {
   return { start: todayISO(), days: 21, hours: 20, workSat: true, workSun: false, holidays: '', eff: 0.85, histEff: true,
     lagH: 8, setupH: 0.5, sdStick: 8, splitH: 20, maxSplit: 3, sdFloor: 6, postFgDays: 2, noRange: 'allow', dedicated: true,
     incWip: true, incIn: true, onlyPlan: false, cust: '', defaultCt: 20, extLagH: 20, skipBlocked: true,
-    usePins: true, incOrder: true, orderBackDays: 14, alertDays: 14, histDays: 90 };   // ★ v3.77
+    usePins: true, incOrder: true, orderBackDays: 14, alertDays: 14, histDays: 90,   // ★ v3.77
+    seqDays: 7 };   // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
 }
 function mpSettings() {
   const s = { ...mpDefaults(), ..._mpLoadLS(LS_MPSET, {}, false) };
@@ -25303,19 +25463,29 @@ function mpJobs(S, ctx) {
   }
   let out = jobs.concat(orders.filter(j => !j.noflow));
   if (S.onlyPlan) out = out.filter(j => j.due);
-  /* ลำดับความสำคัญ: วันขายก่อน (EDD) → งานไม่มีแผนขายต่อท้ายตาม "สัปดาห์ที่รับเข้า"
-     ภายในวันขายเดียวกัน / สัปดาห์เดียวกัน เรียงตาม SD — เครื่องจะได้รันขนาดเดียวกันต่อกัน
-     (ประวัติจริงเปลี่ยน SD แทบทุกกะ · วัดกับข้อมูลจริง: เรียง SD ในกลุ่มลดการตั้งเครื่องในแผนลงชัดเจน) */
+  /* ลำดับความสำคัญ: วันขายก่อน (EDD) → งานไม่มีแผนขายต่อท้าย
+     ★ v3.78 ผู้ใช้ (14/10): คิวในเครื่อง ① SD น้อย→มาก (สลับขนาดไปมา = เปลี่ยนรุ่นนาน) ② TYPE ง่าย→ยาก (mpTypeRank)
+       ผู้ใช้เลือก "ทีละสัปดาห์ขาย": งานที่วันขายอยู่รอบเดียวกัน (S.seqDays · ค่าเริ่มต้น 7 = สัปดาห์ จ.–อา.) รวมเป็น 1 รอบ
+       → ในรอบเรียง SD → TYPE → วันขาย · รอบถัดไปเริ่ม SD เล็กใหม่ · แผนขายที่เลยวันขายแล้วรวมเป็นรอบแรกสุด
+       (เดิม v3.74 เรียง SD เฉพาะงานวันขายเดียวกัน — วันขายต่างกันวันเดียวก็สลับ SD ไปมาแล้ว) */
   const wk = d => { if (!d) return '9999-99-99'; const t = new Date(d + 'T00:00:00'); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return _mpIso(t); };
+  const seqN = Math.max(1, Math.round(+S.seqDays || 7));
+  const seqAnchor = seqN === 7 ? wk(S.start) : S.start;
+  const seqOf = d => d < S.start ? -1 : Math.floor(_mpDayDiff(seqAnchor, d) / seqN);
   const sdk = j => { const e = mpSdEff(j.sd, S.sdFloor); return e == null ? 999 : e; };
+  const tyk = j => mpTypeRank(j.vtype);
   const isOrd = j => (j.kind === 'order' ? 1 : 0);
   out.sort((a, b) => {
-    if (a.due && b.due) { if (a.due !== b.due) return a.due < b.due ? -1 : 1; return (isOrd(a) - isOrd(b)) || (sdk(a) - sdk(b)) || String(a.recv || '').localeCompare(String(b.recv || '')); }
+    if (a.due && b.due) {
+      const sa = seqOf(a.due), sb = seqOf(b.due);
+      if (sa !== sb) return sa - sb;
+      return (isOrd(a) - isOrd(b)) || (sdk(a) - sdk(b)) || (tyk(a) - tyk(b)) || a.due.localeCompare(b.due) || String(a.recv || '').localeCompare(String(b.recv || ''));
+    }
     if (a.due || b.due) return a.due ? -1 : 1;
-    const wa = wk(a.recv), wb = wk(b.recv);
-    if (wa !== wb) return wa < wb ? -1 : 1;
-    if (a.kind !== b.kind) return a.kind === 'wip' ? -1 : 1;
-    return (sdk(a) - sdk(b)) || String(a.recv || '').localeCompare(String(b.recv || ''));
+    /* งานไม่มีแผนขาย = รอบเดียวกันทั้งหมด (ต่อท้ายงานที่มีวันขาย) → SD → TYPE → กำลังผลิตก่อนยังไม่เริ่ม → วันรับเข้า
+       วัดกับข้อมูลจริง 14/10 (447 งาน): แบ่งรอบตามสัปดาห์รับเข้าแบบเดิม = 30 รอบสลับกันบนเครื่อง → ตั้งเครื่อง 683 ครั้ง
+       รวมเป็นรอบเดียว = 589 ครั้ง (ทันวันขายเท่าเดิม · งานรับเข้าเก่าก่อน ส.ค. ที่ไม่มีแผนขายเสร็จช้าลงเฉลี่ย ~12 วัน) */
+    return (sdk(a) - sdk(b)) || (tyk(a) - tyk(b)) || ((a.kind === 'wip' ? 0 : 1) - (b.kind === 'wip' ? 0 : 1)) || String(a.recv || '').localeCompare(String(b.recv || ''));
   });
   out.forEach((j, i) => { j.prio = i + 1; j.dueFg = j.due ? _mpAddDays(j.due, -(+S.postFgDays || 0)) : ''; });
   shortages.sort((a, b) => a.date.localeCompare(b.date));
@@ -25723,6 +25893,7 @@ function openMachinePlanner() {
     <div style="font-size:12px;line-height:1.7;background:var(--blue-light);border:1px solid var(--blue-soft);border-radius:9px;padding:8px 11px;margin-bottom:10px">
       ${TT('วางแผนจากงานที่เข้า VSM4 แล้ว (WIP IN 1.5 + กำลังผลิต) · เรียงตามวันขายในแผนขาย · เลือกเครื่องที่ทำ Process ได้และ SD อยู่ในช่วง', 'Plans lots already in VSM4 by sale date, choosing machines whose process and SD range fit')}
       · <b>SD &lt; ${S.sdFloor} ${TT('คิดเป็น', 'counts as')} ${S.sdFloor}</b> (${TT('เช่น เครื่อง 6–8 ทำ SD ≤ 8 ได้ทั้งหมด', 'e.g. a 6–8 machine takes any SD ≤ 8')})
+      <br>🔢 ${TT('คิวในเครื่อง: วันขายในรอบเดียวกัน → <b>SD น้อย→มาก</b> → <b>TYPE</b> OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW', 'Machine queue: same sale-date cycle → <b>SD small→large</b> → <b>TYPE</b> OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW')}
     </div>
     <div class="fg-auto" style="margin-bottom:8px">
       <div class="fr" style="margin:0"><label>${TT('วันเริ่มแผน', 'Plan start')}</label><input type="date" id="mp_start" value="${S.start}"></div>
@@ -25730,6 +25901,10 @@ function openMachinePlanner() {
       ${num('mp_hours', S.hours, TT('ชม.ทำงาน/วัน/เครื่อง', 'Hours/day/machine'), 0.5, TT('2 กะ ≈ 20 · 1 กะ ≈ 10', '2 shifts ≈ 20 · 1 shift ≈ 10'))}
       <div class="fr" style="margin:0"><label>${TT('ลูกค้า', 'Customer')}</label><select id="mp_cust">
         ${['', 'MSI', 'SWE', 'OES&OEM', 'Other'].map(c => `<option value="${c}" ${S.cust === c ? 'selected' : ''}>${c || TT('ทุกลูกค้า', 'All')}</option>`).join('')}</select></div>
+      <div class="fr" style="margin:0"><label>${TT('เรียงคิว SD → TYPE ทีละ', 'Sort SD → TYPE per')}</label><select id="mp_seq">
+        ${[[1, TT('วันขาย (ทีละวัน)', 'sale day')], [3, TT('3 วันขาย', '3 sale days')], [7, TT('สัปดาห์ขาย (จ.–อา.)', 'sale week (Mon–Sun)')], [14, TT('2 สัปดาห์ขาย', '2 sale weeks')]]
+          .map(([v, l]) => `<option value="${v}" ${+S.seqDays === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('รอบยาว = เปลี่ยนรุ่นน้อยลง แต่งานวันขายต้นรอบอาจรอนานขึ้น', 'longer = fewer changeovers, early-due jobs may wait')}</div></div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:8px">
       ${ck('mp_incIn', S.incIn, '📦 WIP IN 1.5 (' + TT('ยังไม่เริ่ม', 'not started') + ')')}
@@ -25786,6 +25961,7 @@ function mpReadForm() {
   S.days = Math.max(1, Math.min(90, Math.round(n('mp_days', S.days))));
   S.hours = Math.max(1, Math.min(24, n('mp_hours', S.hours)));
   S.cust = g('mp_cust') ? g('mp_cust').value : S.cust;
+  S.seqDays = Math.max(1, Math.min(31, Math.round(n('mp_seq', S.seqDays))));
   S.incIn = c('mp_incIn', S.incIn); S.incWip = c('mp_incWip', S.incWip); S.onlyPlan = c('mp_onlyPlan', S.onlyPlan);
   S.workSat = c('mp_sat', S.workSat); S.workSun = c('mp_sun', S.workSun);
   S.eff = Math.max(0.3, Math.min(1, n('mp_eff', S.eff)));
@@ -25861,6 +26037,11 @@ function _mpResultHtml(res) {
       ${pinA ? k(nn(pinA), TT('📌 งานที่วางเอง', '📌 Manual items'), '#5B21B6') : ''}
     </div>
     <div class="muted" style="font-size:11.5px;margin-bottom:8px">🔁 ${TT('เปลี่ยน SD ในแผน', 'SD changeovers in plan')}: <b>${setups}</b> ${TT('ครั้ง', 'times')}${ordN ? ` · 📭 ${TT('ยังไม่มีของ', 'not received')} <b>${nn(ordQ)}</b> ${TT('ชิ้น', 'pcs')} (${TT('วางได้เมื่อใส่วันคาดว่าเข้า', 'planned once an expected date is set')}: <b>${nn(res.orderJobs.filter(j => !j.wait).length)}</b>/${nn(ordN)})` : ''}</div>
+    <div class="muted" style="font-size:11.5px;margin-bottom:8px">🏭 ${TT('ราย Zone (Excel ชีท 3.1–3.3)', 'Per zone (Excel sheets 3.1–3.3)')}: ${MP_ZONES.map(z => {
+      const zA = res.assigns.filter(a => a.m.zone === z);
+      if (!zA.length) return `<b>${z}</b> —`;
+      return `<b>${z}</b> ${new Set(zA.map(a => a.m.id)).size} ${TT('เครื่อง', 'mc')} · ${nn(zA.length)} ${TT('งาน', 'jobs')} · 🔁 ${zA.filter(a => a.setup > 0).length} · ${TT('เสร็จหมด', 'done')} ${_mpD(res.cal.dateAt(Math.max(...zA.map(a => a.e))))}`;
+    }).join(' &nbsp;|&nbsp; ')}</div>
     ${res.bottleneck.length ? `<div class="muted" style="font-size:11.5px;margin-bottom:8px">🚧 ${TT('คอขวด (คิวยาวสุด)', 'Bottlenecks')}: ${res.bottleneck.slice(0, 5).map(b => `<b>${escapeHtml(b.m.id)}</b> ${escapeHtml([...b.m.fams].join('/'))} → ${_mpD(b.endDate)}`).join(' · ')}</div>` : ''}
     ${late ? `<div style="font-weight:800;font-size:12.5px;color:var(--red);margin:6px 0 4px">⏰ ${TT('จะไม่ทันวันขาย (มากสุด 8 รายการ)', 'Will be late (top 8)')}</div>
       <div class="tbl-wrap"><table style="font-size:12px"><thead><tr><th>Valve / Lot</th><th class="right">Q'ty</th><th>${TT('วันขาย', 'Sale')}</th><th>${TT('FG เสร็จ', 'FG done')}</th><th class="right">${TT('ช้า (วัน)', 'Late d')}</th></tr></thead><tbody>${lateRows}</tbody></table></div>` : ''}
@@ -26055,6 +26236,7 @@ async function mpExportExcel(res) {
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
       ['แผนที่ Admin วางเอง', S.usePins === false ? 'ไม่ใช้' : `ใช้ (${(res.pins && res.pins.size) || 0} รายการ · 📌 ในชีท 1–3)`],
       ['CT / ประสิทธิภาพ', `ครั้งก่อนหน้าของเบอร์+Process (ประวัติ ${S.histDays} วัน) > ประวัติเครื่อง`],
+      ['ลำดับคิวในเครื่อง', `วันขายรอบละ ${S.seqDays || 7} วัน → SD น้อย→มาก → TYPE (OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW) · งานไม่มีแผนขาย = รอบสุดท้าย`],
       ['🚫 เครื่องปิดถาวร (ไม่ใช้วางแผน)', offList.length ? offList.join(', ') : '—']];
     for (const [l, v] of prm) {
       ws.mergeCells(r2, 5, r2, 6);
@@ -26063,6 +26245,18 @@ async function mpExportExcel(res) {
       r2++;
     }
     r = Math.max(r, r2) + 1;
+    // ★ v3.78 สรุปราย Zone (รายละเอียดอยู่ชีท 3.1–3.3)
+    ws.mergeCells(r, 1, r, 7); ws.getCell(r, 1).value = '🏭 สรุปราย Zone (ใบคุมการผลิตแต่ละ Zone = ชีท 3.1–3.3)'; ws.getCell(r, 1).font = { name: FONT, size: 12, bold: true, color: { argb: NAVY } }; r++;
+    header(ws, r, ['Zone', 'เครื่องมีงาน / ทั้งหมด', 'งานในคิว', 'ชิ้นรวม', 'ชม.เครื่องรวม', 'เปลี่ยน SD', 'งานสุดท้ายเสร็จ']); r++;
+    for (const z of [...new Set([...MP_ZONES, ...ctx.machines.map(m => m.zone)])]) {
+      const zm = ctx.machines.filter(m => m.zone === z); if (!zm.length) continue;
+      const zA = res.assigns.filter(a => a.m.zone === z);
+      const vals = [z, `${new Set(zA.map(a => a.m.id)).size} / ${zm.length}`, zA.length, zA.reduce((s, a) => s + a.qty, 0),
+        Math.round(zA.reduce((s, a) => s + (a.e - a.s), 0)), zA.filter(a => a.setup > 0).length, zA.length ? _mpD(cal.dateAt(Math.max(...zA.map(a => a.e)))) : '-'];
+      vals.forEach((v, i) => { const c = ws.getCell(r, i + 1); c.value = v; cellStyle(c, { h: i ? 'right' : 'left', bold: i === 0, fmt: typeof v === 'number' ? '#,##0' : undefined }); });
+      r++;
+    }
+    r++;
     // งานไม่ทัน
     ws.mergeCells(r, 1, r, 7); ws.getCell(r, 1).value = '⏰ ล็อตที่จะไม่ทันวันขาย (วันขายยังไม่ถึง · เรียงจากช้ามากสุด)'; ws.getCell(r, 1).font = { name: FONT, size: 12, bold: true, color: { argb: 'FFDC2626' } }; r++;
     header(ws, r, ['Valve / Lot', 'Q\'ty', 'วันขาย', 'FG ต้องเสร็จ', 'FG เสร็จตามแผน', 'ช้า (วัน)', 'Process ที่ใช้เวลานานสุด'], { color: 'FFB91C1C' }); r++;
@@ -26103,7 +26297,7 @@ async function mpExportExcel(res) {
     r++;
     ws.mergeCells(r, 1, r + 3, 7);
     const note = ws.getCell(r, 1);
-    note.value = 'วิธีอ่าน: ชีท 1 = แต่ละ Lot ผลิตที่เครื่องไหนวันไหน · ชีท 2 = แต่ละวันต้องเปิดเครื่องไหน ผลิตอะไร · ชีท 3 = คิวงานของแต่ละเครื่อง (ลำดับ 1, 2, 3…) · ชีท 4 = โหลดเครื่องรายวัน · ชีท 5 = งานที่วางแผนไม่ได้ + Order ที่ยังไม่มีงานเข้า · ชีท 6 = ข้อมูลเครื่องที่ใช้คำนวณ · ชีท 7 = วิเคราะห์ประวัติการผลิต\n' +
+    note.value = 'วิธีอ่าน: ชีท 1 = แต่ละ Lot ผลิตที่เครื่องไหนวันไหน · ชีท 2 = แต่ละวันต้องเปิดเครื่องไหน ผลิตอะไร (แบ่งตาม Zone) · ชีท 3.1–3.3 = ใบคุมการผลิตแต่ละ Zone: ภาพรวมรายเครื่อง + คิวงานของแต่ละเครื่อง (ลำดับ 1, 2, 3… · ช่อง ✍ ให้หน้างานกรอก) · ชีท 4 = โหลดเครื่องรายวัน · ชีท 5 = งานที่วางแผนไม่ได้ + Order ที่ยังไม่มีงานเข้า · ชีท 6 = ข้อมูลเครื่องที่ใช้คำนวณ · ชีท 7 = วิเคราะห์ประวัติการผลิต\n' +
       'แผนนี้เป็นการคำนวณจากข้อมูลในระบบ (heuristic) — ใช้ประกอบการตัดสินใจ หน้างานปรับได้ตามจริง';
     note.font = { name: FONT, size: 9.5, color: { argb: 'FF334155' } }; note.alignment = { wrapText: true, vertical: 'top' }; note.fill = fill('FFF8FAFC');
   }
@@ -26168,8 +26362,16 @@ async function mpExportExcel(res) {
       header(ws, r, cols, { color: 'FF15803D', h: 22 }); r++;
       const loadM = {}; for (const x of L) loadM[x.a.m.id] = (loadM[x.a.m.id] || 0) + x.d.hrs;
       L.sort((p, q) => mOrder(p.a.m, q.a.m) || (p.a.s - q.a.s));
-      let prevM = '', zebra = false;
+      let prevM = '', prevZ = '', zebra = false;
       for (const { a, d } of L) {
+        if (a.m.zone !== prevZ) {   // ★ v3.78 แบ่งช่วงตาม Zone — หัวหน้าแต่ละ Zone ดูเฉพาะส่วนของตัวเองได้ทันที
+          const zL = L.filter(x => x.a.m.zone === a.m.zone);
+          ws.mergeCells(r, 1, r, cols.length);
+          const zc = ws.getCell(r, 1);
+          zc.value = `▸ ${a.m.zone}  ·  เปิด ${new Set(zL.map(x => x.a.m.id)).size} เครื่อง  ·  ${nn(zL.reduce((s, x) => s + x.d.qty, 0))} ชิ้น`;
+          cellStyle(zc, { bold: true, fill: 'FFDCFCE7', color: 'FF166534' });
+          prevZ = a.m.zone; prevM = ''; r++;
+        }
         if (a.m.id !== prevM) zebra = !zebra;
         const notes = [];
         if (d.setup && a.setup > 0) notes.push(`🔁 เปลี่ยน SD ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)}`);
@@ -26192,55 +26394,119 @@ async function mpExportExcel(res) {
     }
   }
 
-  /* ── ชีท 3: ตามเครื่อง (คิว 1 2 3) ─────────────────────── */
+  /* ── ชีท 3.1–3.3: ตามเครื่อง แยก Zone (คิว 1 2 3 · ใบคุมการผลิต) ─────────────
+     ★ v3.78 ผู้ใช้ (14/10): "Report แผนเครื่องจักร — ข้อมูลตามเครื่อง แยกออกมาเป็น 3 Zone เพื่อให้ควบคุมการผลิตได้ง่าย"
+     1 Zone = 1 ชีท (ตั้งพิมพ์ A4 แนวนอน กว้างพอดีหน้า → แจกหัวหน้า Zone ได้เลย)
+       ① สรุป Zone   ② ภาพรวมรายเครื่อง (1 แถว/เครื่อง รวมเครื่องที่ไม่มีงาน/ปิด)
+       ③ คิวงานของแต่ละเครื่องตามเวลา + ช่อง ✍ ให้หน้างานกรอกผลจริง (ผลิตได้ · เสร็จจริง · หมายเหตุ) */
   {
-    const ws = wb.addWorksheet('3 ตามเครื่อง', { properties: { tabColor: { argb: 'FF7C3AED' } }, views: [{ state: 'frozen', ySplit: 2, showGridLines: false }] });
-    const cols = ['คิว', 'Valve No', 'Lot', 'Process', 'SD', 'TYPE', 'ชิ้น', 'เริ่ม', 'เสร็จ', 'ชม.', 'CT (วิ)', 'วันขาย', 'สถานะ', 'หมายเหตุ'];
-    [6, 12, 13, 10, 6, 8, 9, 11, 11, 7, 8, 11, 15, 30].forEach((w, i) => ws.getColumn(i + 1).width = w);
-    title(ws, '3) แผนตามเครื่อง — แต่ละเครื่องรอผลิตอะไร เรียงตามลำดับ', sub, cols.length);
     const byM = new Map();
     for (const a of res.assigns) { if (!byM.has(a.m.id)) byM.set(a.m.id, []); byM.get(a.m.id).push(a); }
-    let r = 4;
-    const ms = ctx.machines.filter(m => byM.has(m.id)).sort(mOrder);
-    for (const m of ms) {
-      const L = byM.get(m.id).sort((p, q) => p.s - q.s);
-      const hrs = L.reduce((s, a) => s + (a.e - a.s), 0);
-      ws.mergeCells(r, 1, r, cols.length);
-      const h = ws.getCell(r, 1);
-      h.value = `🏭 ${m.id}  ·  ${m.zone}  ·  ${[...m.fams].join(', ')}  ·  SD ${m.ranges.length ? mpRangesText(m.ranges) : (m.only.length ? 'ผลิตเฉพาะเบอร์' : 'ไม่จำกัด')}` +
-        `${m.label ? '  ·  ' + m.label : ''}  ·  ${L.length} งาน · ${hrs.toFixed(1)} ชม. · เสร็จหมด ${_mpD(cal.dateAt(L[L.length - 1].e))}`;
-      h.font = { name: FONT, size: 11.5, bold: true, color: { argb: 'FFFFFFFF' } }; h.fill = fill('FF5B21B6'); h.alignment = { vertical: 'middle', indent: 1 };
-      ws.getRow(r).height = 24; r++;
-      header(ws, r, cols, { color: 'FF6D28D9', h: 22 }); r++;
-      L.forEach((a, i) => {
-        const [stTxt, stBg, stFg] = statusOf(a.job);
-        const notes = [];
-        if (a.setup > 0) notes.push(`🔁 เปลี่ยน SD ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ชม.)`);
-        if (a.parts > 1) notes.push(`แบ่งล็อต ${a.part}/${a.parts}`);
-        if (a.ctSrc !== 'Admin' && /เริ่มต้น|default/.test(a.ctSrc)) notes.push('CT ค่าเริ่มต้น');
-        else notes.push(`CT: ${a.ctSrc} · ประสิทธิภาพ ${Math.round(a.eff * 100)}% (${a.effSrc})`);
-        if (a.pin) notes.unshift('📌 Admin วางเอง' + (a.pin.lk && a.pin.lk !== '*' ? '' : ' (ทั้งเบอร์)'));
-        if (a.shifted > 0.5) notes.push(`⏩ เลื่อน +${Math.round(a.shifted * 10) / 10} ชม. (ขั้นก่อนหน้าเสร็จช้ากว่าคิว)`);
-        if (a.job.kind === 'order') notes.unshift(`📭 รอของเข้า (คาด ${_mpD(a.job.expIn)})`);
-        const vals = [i + 1, pinTxt(a) + a.job.valve, lotTxt(a.job), a.step.proc, a.job.sd == null ? '-' : a.job.sd, a.job.vtype || '-', a.qty,
-          _mpDW(cal.dateAt(a.s + 1e-6)), _mpDW(cal.dateAt(a.e)), Math.round((a.e - a.s) * 10) / 10, a.ct, _mpD(a.job.due), stTxt, notes.join(' · ')];
+    for (const L of byM.values()) L.sort((p, q) => p.s - q.s);
+    const zones = [...new Set([...MP_ZONES, ...ctx.machines.map(m => m.zone)])].filter(z => ctx.machines.some(m => m.zone === z));
+    const ZCOL = ['FF5B21B6', 'FF0E7490', 'FFB45309', 'FF475569'];
+    const cols = ['คิว', 'Valve No', 'Lot', 'Process', 'SD', 'TYPE', 'ชิ้น', 'เริ่ม', 'เสร็จ', 'ชม.', 'CT (วิ)', 'วันขาย', 'สถานะ', 'หมายเหตุ', '✍ ผลิตได้', '✍ เสร็จจริง', '✍ หมายเหตุหน้างาน'];
+    const nPlan = cols.length - 3;          // 3 คอลัมน์ท้าย = ช่องให้หน้างานกรอก
+    const CTL_BG = 'FFFEFCE8';
+    zones.forEach((z, zi) => {
+      const zc = ZCOL[Math.min(zi, ZCOL.length - 1)];
+      const ws = wb.addWorksheet(`3.${zi + 1} ${z}`, { properties: { tabColor: { argb: zc } }, views: [{ state: 'frozen', ySplit: 2, showGridLines: false }],
+        pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:2',
+          margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } } });
+      [8, 12, 13, 10, 6, 8, 9, 11, 11, 7, 8, 11, 15, 30, 10, 10, 18].forEach((w, i) => ws.getColumn(i + 1).width = w);
+      title(ws, `3.${zi + 1}) ${z} — แผนตามเครื่อง · ใบคุมการผลิต (คิวเรียงตามเวลา · วันขายรอบละ ${S.seqDays || 7} วัน → SD น้อย→มาก → TYPE)`, sub, cols.length);
+      const zm = ctx.machines.filter(m => m.zone === z).sort(mOrder);
+      const zA = res.assigns.filter(a => a.m.zone === z);
+      const zEnd = zA.length ? Math.max(...zA.map(a => a.e)) : 0;
+      const lateOf = L => new Set(L.filter(a => a.job.lateDays > 0 && a.job.due && a.job.due >= S.start).map(a => a.job)).size;
+      let r = 4;
+      const secTitle = txt => {
+        ws.mergeCells(r, 1, r, cols.length); const c = ws.getCell(r, 1);
+        c.value = txt; c.font = { name: FONT, size: 12, bold: true, color: { argb: zc } }; r++;
+      };
+      /* ① สรุป Zone — 8 ช่อง (ป้ายบน · ตัวเลขล่าง · ช่องละ 2 คอลัมน์) */
+      secTitle(`📊 สรุป ${z}`);
+      const stats = [['เครื่องใน Zone', zm.length], ['มีงานในแผน', zm.filter(m => byM.has(m.id)).length], ['งานในคิว', zA.length],
+        ['ชิ้นรวม', zA.reduce((s, a) => s + a.qty, 0)], ['ชม.เครื่องรวม', Math.round(zA.reduce((s, a) => s + (a.e - a.s), 0))],
+        ['เปลี่ยน SD (ตั้งเครื่อง)', zA.filter(a => a.setup > 0).length], ['ล็อตที่จะไม่ทันวันขาย', lateOf(zA)],
+        ['งานสุดท้ายเสร็จ', zA.length ? _mpDW(cal.dateAt(zEnd)) : '-']];
+      stats.forEach(([l, v], i) => {
+        ws.mergeCells(r, i * 2 + 1, r, i * 2 + 2); ws.mergeCells(r + 1, i * 2 + 1, r + 1, i * 2 + 2);
+        const a = ws.getCell(r, i * 2 + 1), b = ws.getCell(r + 1, i * 2 + 1);
+        a.value = l; b.value = v;
+        cellStyle(a, { fill: 'FFF8FAFC', bold: true, h: 'center', size: 9, color: 'FF475569', wrap: true });
+        cellStyle(b, { bold: true, h: 'center', size: 13, fmt: typeof v === 'number' ? '#,##0' : undefined, color: /ไม่ทัน/.test(l) && v ? 'FFDC2626' : 'FF0F172A' });
+      });
+      ws.getRow(r).height = 28; ws.getRow(r + 1).height = 26; r += 3;
+      /* ② ภาพรวมรายเครื่อง */
+      secTitle('🏭 ภาพรวมรายเครื่อง');
+      header(ws, r, ['เครื่อง', 'Process ที่ทำ', '', 'ช่วง SD', 'งาน', 'ชิ้น', 'ชม.', 'เริ่ม', 'เสร็จหมด', 'โหลดเฉลี่ย', 'เปลี่ยน SD', 'ล็อตไม่ทัน', 'สถานะเครื่อง', 'หมายเหตุเครื่อง'], { color: zc, h: 24 });
+      ws.mergeCells(r, 2, r, 3); r++;
+      for (const m of zm) {
+        const L = byM.get(m.id) || [], has = L.length > 0;
+        const o = res.load.get(m.id) || {};
+        let lh = 0, ln = 0; for (let d = 0; d < days.length; d++) if (o[d]) { lh += o[d]; ln++; }
+        const late = has ? lateOf(L) : 0;
+        const vals = [m.id, [...m.fams].join(', ') || '-', '', m.ranges.length ? mpRangesText(m.ranges) : (m.only.length ? 'เฉพาะเบอร์' : '— ไม่จำกัด'),
+          has ? L.length : '', has ? L.reduce((s, a) => s + a.qty, 0) : '', has ? Math.round(L.reduce((s, a) => s + (a.e - a.s), 0) * 10) / 10 : '',
+          has ? _mpDW(cal.dateAt(L[0].s + 1e-6)) : '', has ? _mpDW(cal.dateAt(L[L.length - 1].e)) : '', ln ? lh / (ln * H) : '',
+          has ? L.filter(a => a.setup > 0).length : '', late || '',
+          m.offPerm ? '🚫 ปิดถาวร' : !m.active ? '⛔ ปิดใช้งาน' : has ? '▶ มีงาน' : '💤 ไม่มีงานในแผน',
+          [m.label, m.remark, m.only.length ? 'ผลิตเฉพาะ ' + m.only.join(', ') : '', m.except.length ? 'ยกเว้น ' + m.except.join(', ') : ''].filter(Boolean).join(' · ')];
         vals.forEach((v, k) => {
           const c = ws.getCell(r, k + 1); c.value = v;
-          cellStyle(c, { h: [0, 4, 6, 9, 10].includes(k) ? 'right' : 'left', fmt: k === 6 ? '#,##0' : k === 9 ? '0.0' : undefined, bold: k === 0 || k === 1, size: 9.5,
-            fill: k === 3 ? _mpPCol(a.step.fam) : (i % 2 ? 'FFF8FAFC' : undefined), wrap: k === 13 });
+          cellStyle(c, { h: [4, 5, 6, 9, 10, 11].includes(k) ? 'right' : 'left', fmt: k === 5 ? '#,##0' : k === 6 ? '0.0' : k === 9 ? '0%' : undefined,
+            bold: k === 0 || k === 12, size: 9.5, wrap: k === 1 || k === 13, color: has ? undefined : 'FF94A3B8' });
         });
-        const sc = ws.getCell(r, 13); sc.fill = fill(stBg); sc.font = { name: FONT, size: 9.5, bold: true, color: { argb: stFg } };
+        ws.mergeCells(r, 2, r, 3);
+        if (vals[9] !== '' && vals[9] > 0.95) ws.getCell(r, 10).font = { name: FONT, size: 9.5, bold: true, color: { argb: 'FFDC2626' } };
+        if (late) ws.getCell(r, 12).font = { name: FONT, size: 9.5, bold: true, color: { argb: 'FFDC2626' } };
         r++;
-      });
+      }
       r++;
-    }
-    const idle = ctx.machines.filter(m => !byM.has(m.id)).sort(mOrder);
-    if (idle.length) {
-      ws.mergeCells(r, 1, r, cols.length);
-      const c = ws.getCell(r, 1);
-      c.value = `💤 เครื่องที่ไม่มีงานในแผน (${idle.length}): ` + idle.map(m => `${m.id}${m.offPerm ? ' (🚫 ปิดถาวร)' : m.active ? '' : ' (ปิด)'}`).join(', ');
-      cellStyle(c, { fill: 'FFF1F5F9', color: 'FF475569', wrap: true }); ws.getRow(r).height = 36;
-    }
+      /* ③ คิวงานของแต่ละเครื่อง + ช่องให้หน้างานกรอก */
+      secTitle('📋 คิวงานแต่ละเครื่อง (เรียงตามเวลา) — ช่อง ✍ สีเหลือง ให้หน้างานกรอกผลจริง');
+      const ms = zm.filter(m => byM.has(m.id));
+      if (!ms.length) { ws.mergeCells(r, 1, r, cols.length); ws.getCell(r, 1).value = `ไม่มีงานในแผนของ ${z}`; cellStyle(ws.getCell(r, 1), { color: 'FF64748B' }); r++; }
+      for (const m of ms) {
+        const L = byM.get(m.id);
+        const hrs = L.reduce((s, a) => s + (a.e - a.s), 0);
+        ws.mergeCells(r, 1, r, cols.length);
+        const h = ws.getCell(r, 1);
+        h.value = `🏭 ${m.id}  ·  ${[...m.fams].join(', ')}  ·  SD ${m.ranges.length ? mpRangesText(m.ranges) : (m.only.length ? 'ผลิตเฉพาะเบอร์' : 'ไม่จำกัด')}` +
+          `${m.label ? '  ·  ' + m.label : ''}  ·  ${L.length} งาน · ${hrs.toFixed(1)} ชม. · ${_mpDW(cal.dateAt(L[0].s + 1e-6))} → เสร็จหมด ${_mpDW(cal.dateAt(L[L.length - 1].e))}` +
+          `  ·  เปลี่ยน SD ${L.filter(a => a.setup > 0).length} ครั้ง`;
+        h.font = { name: FONT, size: 11.5, bold: true, color: { argb: 'FFFFFFFF' } }; h.fill = fill(zc); h.alignment = { vertical: 'middle', indent: 1 };
+        ws.getRow(r).height = 24; r++;
+        header(ws, r, cols, { color: zc, h: 22 });
+        for (let k = nPlan; k < cols.length; k++) ws.getCell(r, k + 1).fill = fill('FFB45309');
+        r++;
+        L.forEach((a, i) => {
+          const [stTxt, stBg, stFg] = statusOf(a.job);
+          const prev = i ? L[i - 1] : null;
+          const notes = [];
+          if (a.setup > 0) notes.push(`🔁 เปลี่ยน SD ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ชม.)`);
+          if (prev && prev.job.vtype && a.job.vtype && prev.job.vtype !== a.job.vtype) notes.push(`↪ TYPE ${prev.job.vtype} → ${a.job.vtype}`);
+          if (a.parts > 1) notes.push(`แบ่งล็อต ${a.part}/${a.parts}`);
+          if (a.ctSrc !== 'Admin' && /เริ่มต้น|default/.test(a.ctSrc)) notes.push('CT ค่าเริ่มต้น');
+          else notes.push(`CT: ${a.ctSrc} · ประสิทธิภาพ ${Math.round(a.eff * 100)}% (${a.effSrc})`);
+          if (a.pin) notes.unshift('📌 Admin วางเอง' + (a.pin.lk && a.pin.lk !== '*' ? '' : ' (ทั้งเบอร์)'));
+          if (a.shifted > 0.5) notes.push(`⏩ เลื่อน +${Math.round(a.shifted * 10) / 10} ชม. (ขั้นก่อนหน้าเสร็จช้ากว่าคิว)`);
+          if (a.job.kind === 'order') notes.unshift(`📭 รอของเข้า (คาด ${_mpD(a.job.expIn)})`);
+          const vals = [i + 1, pinTxt(a) + a.job.valve, lotTxt(a.job), a.step.proc, a.job.sd == null ? '-' : a.job.sd, a.job.vtype || '-', a.qty,
+            _mpDW(cal.dateAt(a.s + 1e-6)), _mpDW(cal.dateAt(a.e)), Math.round((a.e - a.s) * 10) / 10, a.ct, _mpD(a.job.due), stTxt, notes.join(' · '), '', '', ''];
+          vals.forEach((v, k) => {
+            const c = ws.getCell(r, k + 1); c.value = v;
+            cellStyle(c, { h: [0, 4, 6, 9, 10].includes(k) ? 'right' : 'left', fmt: k === 6 ? '#,##0' : k === 9 ? '0.0' : undefined, bold: k === 0 || k === 1, size: 9.5,
+              fill: k === 3 ? _mpPCol(a.step.fam) : k >= nPlan ? CTL_BG : (i % 2 ? 'FFF8FAFC' : undefined), wrap: k === 13 });
+          });
+          const sc = ws.getCell(r, 13); sc.fill = fill(stBg); sc.font = { name: FONT, size: 9.5, bold: true, color: { argb: stFg } };
+          if (a.setup > 0) ws.getCell(r, 5).font = { name: FONT, size: 9.5, bold: true, color: { argb: 'FFDC2626' } };
+          r++;
+        });
+        r++;
+      }
+    });
   }
 
   /* ── ชีท 4: โหลดเครื่องรายวัน ──────────────────────────── */
@@ -26253,9 +26519,12 @@ async function mpExportExcel(res) {
     days.forEach((d, i) => ws.getColumn(fixed.length + i + 1).width = 8.5);
     let r = 4;
     const openPerDay = new Array(days.length).fill(0);
+    const openByZone = new Map();   // ★ v3.78 จำนวนเครื่องที่ต้องเปิดแยก Zone
     for (const m of ctx.machines.slice().sort(mOrder)) {
       const o = res.load.get(m.id) || {};
-      let hs = 0, n = 0; for (let d = 0; d < days.length; d++) if (o[d]) { hs += o[d]; n++; openPerDay[d]++; }
+      if (!openByZone.has(m.zone)) openByZone.set(m.zone, new Array(days.length).fill(0));
+      const oz = openByZone.get(m.zone);
+      let hs = 0, n = 0; for (let d = 0; d < days.length; d++) if (o[d]) { hs += o[d]; n++; openPerDay[d]++; oz[d]++; }
       const vals = [m.id, m.zone, [...m.fams].join(', '), m.ranges.length ? mpRangesText(m.ranges) : (m.only.length ? 'เฉพาะเบอร์' : '—'), Math.round(hs * 10) / 10, n];
       vals.forEach((v, i) => { const c = ws.getCell(r, i + 1); c.value = v; cellStyle(c, { bold: i === 0, h: i >= 4 ? 'right' : 'left', fmt: i === 4 ? '0.0' : undefined, size: 9.5, color: m.active ? undefined : 'FF94A3B8' }); });
       for (let d = 0; d < days.length; d++) {
@@ -26268,6 +26537,11 @@ async function mpExportExcel(res) {
     }
     const lab = ws.getCell(r, 1); ws.mergeCells(r, 1, r, fixed.length); lab.value = 'จำนวนเครื่องที่ต้องเปิด'; cellStyle(lab, { bold: true, fill: 'FFFEF3C7', h: 'right' });
     for (let d = 0; d < days.length; d++) { const c = ws.getCell(r, fixed.length + d + 1); c.value = openPerDay[d]; cellStyle(c, { bold: true, h: 'center', fill: 'FFFEF3C7' }); }
+    for (const [z, arr] of openByZone) {
+      r++;
+      const zl = ws.getCell(r, 1); ws.mergeCells(r, 1, r, fixed.length); zl.value = `— ${z}`; cellStyle(zl, { fill: 'FFFFFBEB', h: 'right', size: 9.5 });
+      for (let d = 0; d < days.length; d++) { const c = ws.getCell(r, fixed.length + d + 1); c.value = arr[d]; cellStyle(c, { h: 'center', size: 9.5, fill: 'FFFFFBEB' }); }
+    }
   }
 
   /* ── ชีท 5: วางแผนไม่ได้ + Order ที่ยังไม่มีงาน ─────────── */
@@ -26535,7 +26809,8 @@ function _mpbRows() {
     r.late = r.items.some(x => x.j.lateDays > 0 && x.j.due >= B.S.start);
   }
   const sdk = r => { const e = mpSdEff(r.sd, B.S.sdFloor); return e == null ? 999 : e; };
-  return [...by.values()].sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || (sdk(a) - sdk(b)) || a.vk.localeCompare(b.vk));
+  return [...by.values()].sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || (sdk(a) - sdk(b))
+    || (mpTypeRank(a.vtype) - mpTypeRank(b.vtype)) || a.vk.localeCompare(b.vk));
 }
 function _mpbRenderList() {
   const B = _mpb, el = $('mpbList'); if (!el || !B.res) return;
