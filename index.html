@@ -745,6 +745,32 @@ button.mpv-chip{cursor:pointer;min-height:28px}
 .mpv-idle b{color:#334155}
 .mpv-idle .mpv-chip{margin-left:4px}
 .mpv-empty{background:#fff;border:1.5px dashed #CBD5E1;border-radius:14px;padding:26px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
+/* ★ v3.83 เส้นทาง VSM3 ⇄ VSM4 — ③ = VSM3 (ชมพู) · ④ = VSM4 (เขียวน้ำทะเล) · แผนกอื่น = เทา · ✓ = ทำครบแล้ว */
+.mpv-v3t{flex:0 0 auto;display:flex}
+.mpv-v3t .mpv-z{min-width:150px}
+.mpv-rts{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px 2px;line-height:1.5}
+.mpv-rts>i{font-style:normal;color:#94A3B8;font-size:11px;padding:0 1px}
+.mpv-rt{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 6px;border:1px solid transparent;white-space:nowrap}
+.mpv-rt.l3{background:#FCE7F3;color:#9D174D;border-color:#FBCFE8}
+.mpv-rt.l4{background:#CCFBF1;color:#115E59;border-color:#99F6E4}
+.mpv-rt.lx{background:#F1F5F9;color:#475569;border-color:#E2E8F0}
+.mpv-rt.dn{opacity:.55;font-weight:700}
+.mpv-rt.adm{box-shadow:0 0 0 1.5px #1E293B}
+.mpv-rt.mix{border-style:dashed;border-color:#B45309}
+.mpv-rtd{font-size:10.5px;font-weight:800;color:#9D174D;white-space:nowrap}
+.mpv-v3n{font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 6px;background:#FCE7F3;color:#9D174D;white-space:nowrap}
+.mpv-v3h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:9px 12px;border-bottom:1px solid #EEF2F7;font-size:13.5px;font-weight:900;color:#831843;background:#FDF2F8}
+.mpv-v3h small{font-size:11.5px;font-weight:700;color:#9D174D}
+.mpv-r.v3{--pc:#F9A8D4}
+.mpv-r .nx{font-size:11.5px;font-weight:700;color:#334155}
+.mpv-r .nx b{color:#115E59}
+.mp-rtv{border:1px solid #E2E8F0;border-radius:10px;padding:8px 10px;margin-top:8px;background:#fff}
+.mp-rtv .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:13px;font-weight:900;margin-bottom:6px}
+.mp-rtv .hd small{font-size:11px;font-weight:600;color:var(--muted)}
+.mp-rtv .mpv-rts{gap:5px 3px}
+button.mpv-rt{cursor:pointer;font-family:inherit;min-height:30px;font-size:11.5px;padding:3px 8px}
+button.mpv-rt:hover{filter:brightness(.96)}
+button.mpv-rt:disabled{cursor:default}
 .mpv-sk{border-radius:14px;background:linear-gradient(90deg,#E8EEF7 25%,#F5F8FC 50%,#E8EEF7 75%);background-size:200% 100%;animation:mpvSk 1.3s ease-in-out infinite}
 @keyframes mpvSk{0%{background-position:100% 0}100%{background-position:-100% 0}}
 .mpv-set h4{font-size:13px;font-weight:900;color:#0F766E;margin:12px 0 6px}
@@ -772,6 +798,8 @@ button.mpv-chip{cursor:pointer;min-height:28px}
   .mpv-z{padding:6px 8px 6px 11px;min-height:48px}
   .mpv-z b{font-size:13.5px}
   .mpv-grid{grid-template-columns:1fr}
+  .mpv-v3t .mpv-z{min-width:0;min-height:42px;padding:4px 10px 4px 12px}
+  .mpv-q{flex-basis:150px;min-width:150px}
 }
 /* ===== หน้าวางแผน — ช่องกรอกในตาราง (★ 2026-08-02 UX) =====
    เดิม Lot/Q'ty แคบจนตัวเลขโดนตัด · หมายเหตุยืดกินที่ทั้งแถว → คุมความกว้างให้พอดีเนื้อหาจริง */
@@ -2531,7 +2559,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.82</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.83</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10055,7 +10083,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.82":"Production Record + KPI · v3.82",
+"ระบบบันทึกผลิต + KPI · v3.83":"Production Record + KPI · v3.83",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -25972,13 +26000,127 @@ function mpAutoFams(mc, hist) {
   return [...set].filter(Boolean);
 }
 
+/* ============================================================
+   ★ 2026-10-16 (v3.83) — เส้นทาง VSM3 ⇄ VSM4 ราย "เบอร์ × Process"
+   ผู้ใช้ (16/10): Valve เดียวกัน บาง Process ทำที่ VSM3 บาง Process ทำที่ VSM4 (แยกกันทำ) → จัดแผนงานซับซ้อน
+   เดิม: Process ไหนมีเครื่อง VSM4 ทำได้ = ถือว่าทำที่ VSM4 ทุกเบอร์
+     วัดจริง 16/10: 737 จาก 2,714 ขั้นที่ลงเครื่อง VSM4 เคยผลิตที่ VSM3 อย่างเดียว (164 จาก 435 ล็อต)
+     เช่น VV7295M0 = IND ที่ VSM4 แล้ว SSG → TOP&HOD → COT → TG → SFG → FG ที่ VSM3 → เครื่อง VSM4 ถูกจองงานที่ไม่ได้ทำ
+   ใหม่: ทุกขั้นมี "สาย" — ③ VSM3 · ④ VSM4 · แผนกอื่น (P/T · T/T · QC …)
+     ① Admin กำหนดเอง (🔀 เส้นทาง) — targets store: mproute.<VALVE>@<FAM> = 3 | 4 (0 = อัตโนมัติ) · ไม่ต้องแก้ Worker
+     ② อัตโนมัติจากประวัติจริง (KPI ทั้งหมด): สายที่ผลิตเบอร์นี้ Process นี้มากกว่า — มีข้อมูล 90 วันล่าสุด = ใช้ช่วงนั้น (ย้ายสายแล้วตามทัน)
+     ③ ไม่เคยผลิต: ขั้นก่อน/หลังที่รู้สายเป็น VSM3 ทั้งคู่ + VSM3 มีเครื่อง Process นี้ → VSM3 (ไม่ส่งไปกลับเพื่อขั้นเดียว)
+        นอกนั้น VSM4 มีเครื่อง → VSM4 · VSM3 มีเครื่อง → VSM3 · ไม่มีทั้งคู่ → แผนกอื่น (เหมือนเดิม)
+   ในแผน: ขั้น VSM3 ที่อยู่ติดกัน = "ส่ง VSM3 1 รอบ" ใช้ S.v3Days วันทำงาน (ล็อตอยู่ที่ VSM3 แล้ว = S.v3RunDays)
+     วัดจริง 16/10 (646 รอบที่ล็อตไป VSM3): ทำครบรอบ (กลาง 6 Process) ใน 1 วัน · รอเข้า VSM3 กลาง 2 วัน → ค่าเริ่มต้น 3 / 1
+   ============================================================ */
+const MPROUTE_PREFIX = 'mproute.';
+const mpLineLbl = line => line === 'vsm3' ? 'VSM3' : line === 'vsm4' ? 'VSM4' : TT('แผนกอื่น', 'other dept');
+let _mpRtIdx = null, _mpRtSrc = null;
+/* { VALVE: { FAM: 'vsm3'|'vsm4' } } — สร้างใหม่เมื่อ state.targets ถูกแทนที่ (ทุกจุดแทนที่ทั้ง object) */
+function mpRouteOvAll() {
+  const t = state.targets || {};
+  if (_mpRtIdx && _mpRtSrc === t) return _mpRtIdx;
+  const out = {};
+  for (const k in t) {
+    if (!k.startsWith(MPROUTE_PREFIX)) continue;
+    const v = Number(t[k]); if (v !== 3 && v !== 4) continue;
+    const rest = k.slice(MPROUTE_PREFIX.length), at = rest.lastIndexOf('@'); if (at <= 0) continue;
+    (out[rest.slice(0, at)] = out[rest.slice(0, at)] || {})[rest.slice(at + 1)] = v === 3 ? 'vsm3' : 'vsm4';
+  }
+  _mpRtIdx = out; _mpRtSrc = t;
+  return out;
+}
+function mpRouteOv(vk, fam) { const o = mpRouteOvAll()[vKey(vk)]; return (o && o[fam]) || ''; }
+// line: 'vsm3' | 'vsm4' | '' (= กลับเป็นอัตโนมัติ) · Cloud ก่อนแล้วค่อย local (ล้มเหลว → throw)
+async function mpSetRoute(vk, fam, line) {
+  await _pfTargetsPut({ [MPROUTE_PREFIX + vKey(vk) + '@' + fam]: line === 'vsm3' ? 3 : line === 'vsm4' ? 4 : 0 });
+}
+/* ประวัติว่า "เบอร์ × Process" ผลิตที่สายไหน (ชิ้น) + Process ที่เครื่อง VSM3 ทำได้ */
+let _mpRhCache = null, _mpRhSig = '';
+function mpRouteHist() {
+  const src = (typeof _allKpi !== 'undefined' && _allKpi) ? _allKpi : (state.kpiRecords || []);
+  const today = todayISO(), sig = src.length + '/' + _fvVer + '/' + today;
+  if (_mpRhCache && _mpRhSig === sig) return _mpRhCache;
+  const recent = _mpAddDays(today, -90), famMemo = new Map(), vf = new Map();
+  for (const r of src) {
+    const line = vsmOf(r); if (line !== 'vsm3' && line !== 'vsm4') continue;
+    const q = +r.opr || 0; if (!(q > 0)) continue;
+    const vk = vKey(r.valve_no); if (!vk) continue;
+    const p = r.last_process; let fam = famMemo.get(p); if (fam === undefined) famMemo.set(p, fam = mpFam(p));
+    if (!fam) continue;
+    const k = vk + '|' + fam; let o = vf.get(k);
+    if (!o) vf.set(k, o = { q3: 0, q4: 0, r3: 0, r4: 0, d3: '', d4: '' });
+    const d = String(r.shift_date || r.record_date || '').slice(0, 10), is3 = line === 'vsm3';
+    if (is3) { o.q3 += q; if (d >= recent) o.r3 += q; if (d > o.d3) o.d3 = d; }
+    else     { o.q4 += q; if (d >= recent) o.r4 += q; if (d > o.d4) o.d4 = d; }
+  }
+  const fam3 = new Set();
+  for (const z of zonesForVsm('vsm3')) for (const m of ((state.machines || {})[z] || [])) { const f = mpFam(mcProcess(m)); if (f) fam3.add(f); }
+  _mpRhCache = { vf, fam3, n: src.length };
+  _mpRhSig = sig;
+  return _mpRhCache;
+}
+/* สายของทุกขั้นใน flow ของเบอร์หนึ่ง → [{ line, src, q3, q4, mixed }] เรียงตาม flow
+   src: 'admin' | 'hist' | 'near' (ขั้นข้าง ๆ ทำที่ VSM3) | 'mc' (มีเครื่องสายนั้น) | 'none'
+   cap4 = Process ที่เครื่อง VSM4 ทำได้ (รวมเครื่องที่ปิด — เลือกสายตามความสามารถ · ลงเครื่องตามที่เปิดอยู่)
+   ประวัตินับเฉพาะสายที่มีเครื่องทำ Process นั้น — กัน P/T · QC ที่เคยลงยอดผ่านเครื่อง VSM3 กลายเป็น "ทำที่ VSM3" */
+function mpRouteFlow(vk, fams, cap4, noOv) {
+  const RH = mpRouteHist(), ov = noOv ? {} : (mpRouteOvAll()[vKey(vk)] || {});   // noOv = "ถ้าไม่กำหนดเอง ระบบจะเลือกอะไร"
+  const out = fams.map(fam => {
+    const o = RH.vf.get(vKey(vk) + '|' + fam), ok3 = RH.fam3.has(fam), ok4 = cap4.has(fam);
+    const base = { q3: o && ok3 ? o.q3 : 0, q4: o && ok4 ? o.q4 : 0, d3: o ? o.d3 : '', d4: o ? o.d4 : '' };
+    // ทำทั้ง 2 สายจริง (สายรองเกิน 20%) — ไว้เตือนให้ Admin เลือก
+    base.mixed = base.q3 > 0 && base.q4 > 0 && Math.min(base.q3, base.q4) / Math.max(base.q3, base.q4) >= 0.2;
+    if (ov[fam]) return { ...base, line: ov[fam], src: 'admin' };
+    if (o) {
+      const rec = (ok3 && o.r3) || (ok4 && o.r4);
+      const a = ok3 ? (rec ? o.r3 : o.q3) : 0, b = ok4 ? (rec ? o.r4 : o.q4) : 0;
+      if (a > 0 || b > 0) return { ...base, line: a > b ? 'vsm3' : 'vsm4', src: 'hist' };
+    }
+    return { ...base, line: '', src: 'none' };
+  });
+  out.forEach((x, i) => {
+    if (x.line) return;
+    const fam = fams[i];
+    const known = dir => { for (let k = i + dir; k >= 0 && k < out.length; k += dir) if (out[k].src === 'admin' || out[k].src === 'hist') return out[k].line; return ''; };
+    if (RH.fam3.has(fam) && known(-1) === 'vsm3' && known(1) === 'vsm3') { x.line = 'vsm3'; x.src = 'near'; return; }
+    if (cap4.has(fam)) { x.line = 'vsm4'; x.src = 'mc'; return; }
+    if (RH.fam3.has(fam)) { x.line = 'vsm3'; x.src = 'mc'; return; }
+    x.line = 'ext';
+  });
+  return out;
+}
+/* ขั้น VSM3 ที่ติดกัน (ข้ามขั้นที่ทำครบแล้ว) = ส่ง VSM3 1 รอบ · ขั้นแผนกอื่น/VSM4 ที่ยังต้องทำ = ตัดรอบ
+   st.v3b = รอบที่ขั้นนั้นอยู่ · รอบ.head = ขั้นแรกของรอบ (เวลาของรอบคิดที่ขั้นนี้ครั้งเดียว) */
+function _mpMarkV3(j) {
+  j.v3b = [];
+  let cur = null;
+  j.steps.forEach((st, si) => {
+    if (!(st.need > 0)) return;
+    if (!st.v3) { cur = null; return; }
+    if (!cur) j.v3b.push(cur = { i0: si, i1: si, head: st, steps: [], started: false });
+    cur.i1 = si; cur.steps.push(st); st.v3b = cur;
+    if (st.done > 0) cur.started = true;
+  });
+  // ล็อตอยู่ที่ VSM3 แล้ว = ขั้นแรกของรอบเริ่มไปแล้ว หรือขั้นก่อนหน้าที่ทำครบเป็นขั้น VSM3
+  for (const b of j.v3b) { const p = j.steps[b.i0 - 1]; if (p && p.v3 && !(p.need > 0) && p.done > 0) b.started = true; }
+}
+/* รอบ VSM3 ที่เกี่ยวกับแผน VSM4 = มีขั้น VSM4 ตามหลัง หรือยังไม่ถึง FG
+   รอบหลัง FG ที่ไม่มีงาน VSM4 ตามมา (เช่น POL) ไม่แสดง — วัดจริง 16/10: 87 จาก 285 รอบเป็นแบบนี้ (รก ไม่ช่วยจัดแผน) */
+function _mpKeepV3(j, lastInt) {
+  const fgI = j.steps.findIndex(s => s.fam === 'FG');
+  j.v3b = j.v3b.filter(b => b.i0 < lastInt || (fgI >= 0 && b.i0 <= fgI));
+}
+
 /* ---------- ตั้งค่าตัววางแผน ---------- */
 function mpDefaults() {
   return { start: todayISO(), days: 21, hours: 20, workSat: true, workSun: false, holidays: '', eff: 0.85, histEff: true,
     lagH: 8, setupH: 0.5, sdStick: 8, splitH: 20, maxSplit: 3, sdFloor: 6, postFgDays: 2, noRange: 'allow', dedicated: true,
     incWip: true, incIn: true, onlyPlan: false, cust: '', defaultCt: 20, extLagH: 20, skipBlocked: true,
     usePins: true, incOrder: true, orderBackDays: 14, alertDays: 14, histDays: 90,   // ★ v3.77
-    seqDays: 7 };   // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
+    seqDays: 7,     // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
+    v3Days: 3, v3RunDays: 1 };   // ★ v3.83 ส่ง VSM3 1 รอบ = กี่วันทำงาน (ยังไม่ส่ง / ล็อตอยู่ที่ VSM3 แล้ว)
 }
 function mpSettings() {
   const s = { ...mpDefaults(), ..._mpLoadLS(LS_MPSET, {}, false) };
@@ -26056,8 +26198,11 @@ function mpContext(S) {
       offPerm: offSet.has(mc.id), capOff: !!(cap && cap.active === 0),
       active: (cap ? cap.active !== 0 : true) && !offSet.has(mc.id), eff, effSrc, lastSd: hist.lastSd.has(mc.id) ? hist.lastSd.get(mc.id) : null });
   }
-  const famInternal = new Set();
-  for (const m of machines) if (m.active) for (const f of m.fams) { famInternal.add(f); if (f === 'TOP&HOD') { famInternal.add('TOP'); famInternal.add('HOD'); } }
+  const famInternal = new Set(), famCap4 = new Set();
+  for (const m of machines) for (const f of m.fams) {
+    const add = s => { s.add(f); if (f === 'TOP&HOD') { s.add('TOP'); s.add('HOD'); } };
+    add(famCap4); if (m.active) add(famInternal);
+  }
   /* CT: Admin > ★ ครั้งก่อนหน้า (เบอร์นี้ · Process นี้ · เครื่องนี้) > ★ ครั้งก่อนหน้า (เบอร์นี้ · Process นี้ · เครื่องอื่น)
          > ประวัติ (เครื่อง+Process+SD) > (เครื่อง+Process) > (Process+ช่วง SD) > เครื่อง > ค่าเริ่มต้น
      v3.77 ผู้ใช้ขอ (12/10): "พอเพิ่มเข้าไปจะคำนวณตาม CT ของครั้งก่อนหน้า · ประสิทธิภาพของครั้งก่อนหน้า" */
@@ -26102,7 +26247,7 @@ function mpContext(S) {
     } else if (!m.only.length && S.noRange === 'block') return { ok: false, why: 'norange' };
     return { ok: true };
   };
-  return { S, hist, machines, mById: new Map(machines.map(m => [m.id, m])), famInternal, ctOf, effOf, canDo, dedicatedFor };
+  return { S, hist, machines, mById: new Map(machines.map(m => [m.id, m])), famInternal, famCap4, ctOf, effOf, canDo, dedicatedFor };
 }
 
 /* ---------- งานที่ต้องวางแผน (จาก 3 ถัง WIP ของ VSM4) + วันขาย ---------- */
@@ -26137,7 +26282,18 @@ function mpJobs(S, ctx) {
     }
     raw.push(...Object.values(by));
   }
-  const jobs = [], skipped = { done: 0, cust: 0, noflow: 0 };
+  const jobs = [], skipped = { done: 0, cust: 0, noflow: 0, v3: 0 };
+  /* ★ v3.83 ขั้นของเบอร์ + สายที่ทำ (③ VSM3 / ④ VSM4 / แผนกอื่น) — คิดครั้งเดียวต่อเบอร์ */
+  const rtMemo = new Map();
+  const stepsOf = (vk, flow) => {
+    let base = rtMemo.get(vk);
+    if (!base) {
+      const fams = flow.map(mpFam), rt = mpRouteFlow(vk, fams, ctx.famCap4);
+      rtMemo.set(vk, base = flow.map((p, i) => ({ proc: p, fam: fams[i], line: rt[i].line, lineSrc: rt[i].src, mixed: rt[i].mixed, q3: rt[i].q3, q4: rt[i].q4,
+        v3: rt[i].line === 'vsm3', internal: rt[i].line === 'vsm4' && ctx.famInternal.has(fams[i]) })));
+    }
+    return base.map(s => ({ ...s }));
+  };
   for (const j of raw) {
     j.vk = vKey(j.valve); j.k = jobKey(j.valve, j.lot);
     if (S.cust && custGroup(j.customer) !== S.cust) { skipped.cust++; continue; }
@@ -26145,7 +26301,8 @@ function mpJobs(S, ctx) {
     j.sd = mpValveSd(j.vk); j.vtype = mpValveType(j.vk);
     const flow = v ? procsOf(v, MP_VSM) : [];
     const doneP = recsByJob[j.k] || {}, doneK = kpiByJob[j.k] || {};
-    j.steps = flow.map(p => { const fam = mpFam(p); return { proc: p, fam, internal: ctx.famInternal.has(fam), done: Math.max(doneP[fam] || 0, doneK[fam] || 0) }; });
+    j.steps = stepsOf(j.vk, flow);
+    for (const st of j.steps) st.done = Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
     if (!j.steps.length) { j.noflow = true; jobs.push(j); continue; }
     let run = 0;
     for (let i = j.steps.length - 1; i >= 0; i--) { run = Math.max(run, j.steps[i].done); j.steps[i].effDone = run; }
@@ -26154,8 +26311,13 @@ function mpJobs(S, ctx) {
       if (need < Math.max(5, j.total * 0.01)) need = 0;
       st.need = need;
     }
+    _mpMarkV3(j);
     const lastInt = j.steps.map(s => s.internal && s.need > 0).lastIndexOf(true);
-    if (lastInt < 0) { skipped.done++; continue; }
+    _mpKeepV3(j, lastInt);
+    /* ไม่เหลือขั้นที่ VSM4 แต่ยังมีขั้นที่ VSM3 → ล็อตของ VSM3 (ไม่ใช้เครื่อง VSM4) — ยังรับวันขายแบบ FIFO ตามเดิม
+       แล้วแยกออกไปแสดงในแท็บ 🔀 VSM3 (ไม่ปนกับตัวเลขทัน/ไม่ทันของเครื่อง VSM4) */
+    if (lastInt < 0 && !j.v3b.length) { skipped.done++; continue; }
+    if (lastInt < 0) j.v3only = true;
     j.lastInt = lastInt;
     j.firstStep = j.steps.findIndex(s => s.need > 0);
     j.progress = j.steps.length ? j.firstStep / j.steps.length : 0;
@@ -26209,15 +26371,19 @@ function mpJobs(S, ctx) {
         order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk) };
       j.sd = mpValveSd(vk); j.vtype = mpValveType(vk);
       const flow = v ? procsOf(v, MP_VSM) : [];
-      j.steps = flow.map(pp => { const fam = mpFam(pp); return { proc: pp, fam, internal: ctx.famInternal.has(fam), done: 0, effDone: 0, need: r.missing }; });
+      j.steps = stepsOf(vk, flow);
+      for (const st of j.steps) { st.done = 0; st.effDone = 0; st.need = r.missing; }
       if (!j.steps.length) { j.noflow = true; orders.push(j); continue; }
+      _mpMarkV3(j);
       j.lastInt = j.steps.map(s => s.internal).lastIndexOf(true);
-      if (j.lastInt < 0) continue;
+      if (j.lastInt < 0) continue;      // ★ v3.83 ทุกขั้นที่ต้องใช้เครื่องอยู่ VSM3 = ไม่ใช่งานเครื่อง VSM4
+      _mpKeepV3(j, j.lastInt);
       j.firstStep = 0; j.progress = 0;
       orders.push(j);
     }
   }
-  let out = jobs.concat(orders.filter(j => !j.noflow));
+  const v3jobs = jobs.filter(j => j.v3only);   // ★ v3.83 ล็อตที่เหลือแต่ขั้น VSM3 — ได้วันขายแล้ว แยกออกจากคิวเครื่อง VSM4
+  let out = jobs.filter(j => !j.v3only).concat(orders.filter(j => !j.noflow));
   if (S.onlyPlan) out = out.filter(j => j.due);
   /* ลำดับความสำคัญ: วันขายก่อน (EDD) → งานไม่มีแผนขายต่อท้าย
      ★ v3.78 ผู้ใช้ (14/10): คิวในเครื่อง ① SD น้อย→มาก (สลับขนาดไปมา = เปลี่ยนรุ่นนาน) ② TYPE ง่าย→ยาก (mpTypeRank)
@@ -26244,14 +26410,17 @@ function mpJobs(S, ctx) {
     return (sdk(a) - sdk(b)) || (tyk(a) - tyk(b)) || ((a.kind === 'wip' ? 0 : 1) - (b.kind === 'wip' ? 0 : 1)) || String(a.recv || '').localeCompare(String(b.recv || ''));
   });
   out.forEach((j, i) => { j.prio = i + 1; j.dueFg = j.due ? _mpAddDays(j.due, -(+S.postFgDays || 0)) : ''; });
+  skipped.v3 = v3jobs.length;
+  v3jobs.forEach((j, i) => { j.prio = out.length + i + 1; j.dueFg = j.due ? _mpAddDays(j.due, -(+S.postFgDays || 0)) : ''; });
   shortages.sort((a, b) => a.date.localeCompare(b.date));
-  return { jobs: out, shortages, skipped, orders };
+  return { jobs: out, shortages, skipped, orders, v3jobs: S.onlyPlan ? v3jobs.filter(j => j.due) : v3jobs };
 }
 
 /* ---------- ตัวจัดตาราง ---------- */
 const MP_WHY = {
   proc: 'ไม่ทำ Process นี้', off: 'ปิดใช้งาน', except: 'ยกเว้นเบอร์นี้', only: 'ผลิตเฉพาะเบอร์อื่น',
   dedicated: 'เบอร์นี้มีเครื่องเฉพาะ', nosd: 'วาล์วไม่มี SD', sd: 'SD นอกช่วง', norange: 'เครื่องยังไม่กำหนดช่วง SD',
+  v3: 'เบอร์นี้ Process นี้ทำที่ VSM3 (แก้ที่ 🔀 เส้นทาง)',   // ★ v3.83
 };
 /* ตัวจัดตาราง — v3.77 เพิ่ม "แผนที่ Admin วางเอง" (pins) + งานที่ของยังไม่เข้า (kind 'order')
    pins = Map  "<VALVE>::<LOT>@<FAM>" (ล็อตนั้น) / "<VALVE>::*@<FAM>" (ทั้งเบอร์ รวมของที่จะเข้าทีหลัง) → { m, rank }
@@ -26288,8 +26457,9 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
   // ล้างผลรอบก่อน — กระดานวางแผนเองเรียกซ้ำบนงานชุดเดิมทุกครั้งที่ลาก
   for (const job of jobs) {
     job.assign = [];
-    for (const k of ['blocked', 'skipped', 'endT', 'finish', 'lateDays', 'wait', 'ready0', 'leadH', 'leadDays', 'mustBy']) delete job[k];
-    for (const st of (job.steps || [])) for (const k of ['skipped', 'external', 'start', 'end', 'machines', 'pin', 'pinBad', '_c']) delete st[k];
+    for (const k of ['blocked', 'skipped', 'endT', 'finish', 'lateDays', 'wait', 'ready0', 'leadH', 'leadDays', 'mustBy', 'fgT']) delete job[k];
+    for (const st of (job.steps || [])) for (const k of ['skipped', 'external', 'start', 'end', 'machines', 'pin', 'pinBad', '_c', 'atV3']) delete st[k];
+    for (const b of (job.v3b || [])) { delete b.s; delete b.e; }
   }
   for (const job of jobs) {
     job.ready0 = 0;
@@ -26315,6 +26485,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
   };
   // เวลาของขั้นหนึ่ง "ถ้าไม่มีคิวแย่ง" (เครื่องที่เร็วสุด) + รอส่งต่อ — ใช้ประมาณขั้นก่อนหน้า และคิดวันที่ของต้องเข้า
   const estDur = (job, st) => {
+    if (st.v3) return (st.v3b && st.v3b.head === st) ? mpV3Dur(st.v3b, S, H) : 0;   // ★ v3.83 ส่ง VSM3 = ทั้งรอบคิดที่ขั้นแรก
     if (!st.internal) return extLag;
     const { cands } = candsOf(job, st);
     if (!cands.length) return extLag;
@@ -26334,6 +26505,10 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
     if (job.noflow || job.wait) continue;
     for (let si = 0; si <= job.lastInt; si++) {
       const st = job.steps[si];
+      if (st.need > 0 && st.v3) {   // ★ v3.83 เบอร์นี้ Process นี้ทำที่ VSM3 → ที่วางไว้บนเครื่อง VSM4 ไม่ใช้ (เตือนใน ⚠️ ต้องปรับแผน)
+        const pin = pinOf(job, st); if (pin) st.pinBad = { m: pin.m, why: 'v3', pin };
+        continue;
+      }
       if (st.need <= 0 || !st.internal) continue;
       const pin = pinOf(job, st); if (!pin) continue;
       const m = ctx.mById.get(pin.m);
@@ -26390,6 +26565,12 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
     for (let si = 0; si <= job.lastInt; si++) {
       const st = job.steps[si];
       if (st.need <= 0) continue;
+      if (st.v3) {   // ★ v3.83 ส่ง VSM3 — ขั้นที่ติดกันเป็นรอบเดียว: ของกลับมาเมื่อครบรอบ (ไม่ใช้เครื่อง VSM4)
+        st.atV3 = true;
+        const b = st.v3b;
+        if (b && b.head === st) { b.s = ready; ready += mpV3Dur(b, S, H); b.e = ready; }
+        continue;
+      }
       if (!st.internal) { ready += extLag; st.external = true; continue; }   // Process นอก VSM4 (ส่งแผนกอื่น) = รอ 1 วันทำงาน
       const pp = pinnedBySt.get(st);
       if (pp) {
@@ -26469,8 +26650,10 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
       st.machines = placed.map(a => a.m.id);
       ready = st.end + lag;
     }
+    // ★ v3.83 หลังขั้น VSM4 สุดท้าย: ส่ง VSM3 / แผนกอื่น → FG ที่ทำที่ VSM3 เสร็จเมื่อไร (ใช้ตัดสินทันวันขาย)
+    if (!job.blocked) { const fgT = mpTailWalk(job, job.lastInt + 1, ready, S, H, extLag); if (fgT != null) job.fgT = fgT; }
     if (job.assign.length) {
-      job.endT = Math.max(...job.assign.map(a => a.e));
+      job.endT = Math.max(...job.assign.map(a => a.e), job.fgT != null ? job.fgT : 0);
       job.finish = cal.dateAt(job.endT);
       job.lateDays = job.dueFg ? _mpDayDiff(job.dueFg, job.finish) : null;
     }
@@ -26492,6 +26675,61 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
   }
   return { cal, assigns, unplan, load, H, waitIn, pinnedN: pinned.length, observed, shiftedN };
 }
+/* ★ v3.83 ส่ง VSM3 1 รอบ = กี่ชั่วโมงทำงาน (ยังไม่ส่ง = v3Days · ล็อตอยู่ที่ VSM3 แล้ว = v3RunDays) */
+function mpV3Dur(b, S, H) {
+  const d = b.started ? (S.v3RunDays != null ? +S.v3RunDays : 1) : (S.v3Days != null ? +S.v3Days : 3);
+  return Math.max(0, d || 0) * H;
+}
+/* เดินขั้นที่ไม่ใช้เครื่อง VSM4 ตั้งแต่ขั้น si0 → จดเวลา ส่ง/คืน ของรอบ VSM3 (b.s / b.e)
+   คืน "เวลาที่ FG เสร็จ" ถ้า FG อยู่ในช่วงนี้และยังต้องทำ (FG ทำที่ VSM3 / แผนกอื่น) · ไม่งั้น null */
+function mpTailWalk(job, si0, t, S, H, extLag) {
+  let fgT = null;
+  for (let si = Math.max(0, si0); si < job.steps.length; si++) {
+    const st = job.steps[si];
+    if (!(st.need > 0)) continue;
+    if (st.v3) {
+      st.atV3 = true;
+      const b = st.v3b;
+      if (b && b.head === st) { b.s = t; t += mpV3Dur(b, S, H); b.e = t; }
+      if (st.fam === 'FG' && fgT == null) fgT = b && b.e != null ? b.e : t;
+    } else if (st.internal) break;          // (ไม่เกิด — หลังขั้น VSM4 สุดท้ายไม่มีขั้น VSM4 ที่ต้องทำ)
+    else {
+      t += extLag; st.external = true;
+      if (st.fam === 'FG' && fgT == null) fgT = t;
+    }
+  }
+  return fgT;
+}
+/* ล็อตที่เหลือแต่ขั้น VSM3 (ไม่ใช้เครื่อง VSM4) — เวลาส่ง/คืน + FG เสร็จ (ถ้า FG ทำที่ VSM3) เริ่มจากวันเริ่มแผน */
+function mpV3OnlyTimes(v3jobs, S, R) {
+  const H = R.H, extLag = +S.extLagH || H;
+  for (const j of (v3jobs || [])) {
+    for (const k of ['endT', 'finish', 'lateDays', 'fgT']) delete j[k];
+    for (const b of (j.v3b || [])) { delete b.s; delete b.e; }
+    const fgT = mpTailWalk(j, 0, 0, S, H, extLag);
+    const last = (j.v3b || []).reduce((m, b) => b.e != null ? Math.max(m, b.e) : m, 0);
+    j.fgT = fgT;
+    j.endT = fgT != null ? fgT : last;
+    j.finish = R.cal.dateAt(j.endT);
+    j.lateDays = (fgT != null && j.dueFg) ? _mpDayDiff(j.dueFg, j.finish) : null;
+  }
+}
+/* รายการ "ส่ง VSM3" ของแผน (หน้าจอแท็บ 🔀 VSM3 + Excel ชีท 3.4) — 1 แถว = ล็อต 1 รอบ
+   prev = ขั้น VSM4 ที่ทำก่อนส่ง (ถ้ามี) · next = ขั้นถัดไปหลังรอบ (VSM4 = เครื่อง/วันที่ตามแผน · ไม่มี = จบที่ VSM3) */
+function mpV3Visits(res) {
+  const out = [];
+  for (const j of (res.jobs || []).concat(res.v3jobs || [])) {
+    for (const b of (j.v3b || [])) {
+      if (b.s == null || b.e == null) continue;
+      let prev = null, next = null;
+      for (let i = b.i0 - 1; i >= 0; i--) { const s = j.steps[i]; if (s.need > 0) { prev = s; break; } }
+      for (let i = b.i1 + 1; i < j.steps.length; i++) { const s = j.steps[i]; if (s.need > 0) { next = s; break; } }
+      out.push({ job: j, b, prev, next, qty: j.kind === 'order' ? j.qty : Math.max(...b.steps.map(s => s.need)) });
+    }
+  }
+  return out.sort((x, y) => (x.b.s - y.b.s) || (x.b.e - y.b.e) || (x.job.prio - y.job.prio));
+}
+
 /* ถอยหลัง n วันทำงานจากวันที่ iso (ตามปฏิทินเดียวกับแผน: เสาร์/อาทิตย์/วันหยุด) */
 function mpWorkDayBack(S, iso, n) {
   const hol = new Set(mpList(S.holidays).map(x => _planDateISO(x) || x));
@@ -26509,10 +26747,11 @@ function mpCoverageGaps(ctx, S) {
   for (const v of (state.valves || [])) {
     const sd = mpValveSd(v.valveNo); if (sd == null) continue;
     const e = mpSdEff(sd, S.sdFloor);
-    for (const p of procsOf(v, MP_VSM)) {
-      const f = mpFam(p); if (!ctx.famInternal.has(f)) continue;
+    const fams = procsOf(v, MP_VSM).map(mpFam), rt = mpRouteFlow(v.valveNo, fams, ctx.famCap4);   // ★ v3.83 ขั้นที่ทำที่ VSM3 ไม่นับ
+    fams.forEach((f, i) => {
+      if (!ctx.famInternal.has(f) || rt[i].line !== 'vsm4') return;
       const mp = famSd[f] = famSd[f] || new Map(); mp.set(e, (mp.get(e) || 0) + 1);
-    }
+    });
   }
   const out = [];
   for (const [f, mp] of Object.entries(famSd)) {
@@ -26534,6 +26773,7 @@ function mpPlan(S) {
   return mpSummarize(S, ctx, J, R, pins);
 }
 function mpSummarize(S, ctx, J, R, pins) {
+  mpV3OnlyTimes(J.v3jobs, S, R);   // ★ v3.83 ล็อตที่เหลือแต่ขั้น VSM3 → เวลาส่ง/คืน (ไม่ใช้เครื่อง VSM4)
   const real = J.jobs.filter(j => j.kind !== 'order');
   const orderJobs = J.jobs.filter(j => j.kind === 'order');
   const planned = real.filter(j => j.assign && j.assign.length && !j.blocked && !(j.skipped && j.skipped.length));
@@ -26551,7 +26791,7 @@ function mpSummarize(S, ctx, J, R, pins) {
   const alerts = mpAlerts(S, J.jobs, R, pins);
   const blockedN = R.unplan.filter(j => j.kind !== 'order' && j.blocked).length;   // ล็อตจริงที่หยุดวางทั้งล็อต (งานจำลอง Order ไม่นับ)
   return { S, ctx, ...J, ...R, planned, partial, late, overdue, onTime, bottleneck, gaps, orderJobs, alerts, pins, blockedN,
-    at: new Date(), by: CURRENT_USER ? `${CURRENT_USER.id} ${CURRENT_USER.name || ''}`.trim() : '' };
+    v3: mpV3Visits(J), at: new Date(), by: CURRENT_USER ? `${CURRENT_USER.id} ${CURRENT_USER.name || ''}`.trim() : '' };
 }
 /* ★ v3.77 "ต้องปรับแผน" — รวมทุกเหตุที่แผนเดินต่อไม่ได้ / ต้องย้าย ไว้ที่เดียว (หน้าจอ + Excel ใช้ชุดเดียวกัน)
    lvl: 3 = ไม่ทันแน่ / เลยกำหนดแล้ว · 2 = ต้องทำอะไรสักอย่าง · 1 = แจ้งให้รู้ */
@@ -26756,7 +26996,8 @@ async function openMachinePlanner() {
       <div id="mpvHead"></div>
       <div class="mpv-stk">
         <div class="mpv-zones" id="mpvTabs" role="tablist" aria-label="Zone"></div>
-        <div class="mpv-q"><input type="search" id="mpvQ" placeholder="🔎 ${TT('ค้นหา Valve No / Lot / เครื่อง', 'Search valve / lot / machine')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="${TT('ค้นหา Valve No, Lot หรือหมายเลขเครื่อง', 'Search valve, lot or machine')}"></div>
+        <div class="mpv-v3t" id="mpvV3Tab" role="tablist" aria-label="${TT('ส่ง VSM3', 'Sent to VSM3')}"></div>
+        <div class="mpv-q"><input type="search" id="mpvQ" placeholder="🔎 ${TT('Valve / Lot / เครื่อง', 'Valve / lot / machine')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="${TT('ค้นหา Valve No, Lot หรือหมายเลขเครื่อง', 'Search valve, lot or machine')}"></div>
       </div>
       <div id="mpvZone"></div>
     </div></div>`;
@@ -26877,6 +27118,8 @@ function _mpvRenderHead() {
     `🏭 ${TT('ใช้', 'using')} <b>${M.used.size}/${M.active}</b> ${TT('เครื่อง', 'machines')} · ${TT('โหลดเฉลี่ย', 'avg load')} <b>${Math.round(M.util * 100)}%</b>`,
     `🔁 ${TT('เปลี่ยน SD', 'SD changes')} <b>${nn(M.setups)}</b>`,
   ] : [`📅 ${TT('ไม่มีวันทำงานในเดือนนี้ (ตามวันเริ่มแผน / วันหยุด)', 'No working days this month')}`];
+  const v3W = (res.v3 || []).filter(x => x.b.s < W.T1 - 1e-9 && x.b.e > W.T0 + 1e-9);   // ★ v3.83
+  if (v3W.length) meta.push(`<button type="button" class="mpv-chip" data-act="zone" data-z="VSM3" style="background:#FDF2F8;color:#9D174D;border-color:#FBCFE8" title="${TT('ล็อตที่ต้องส่งไปทำ Process ที่ VSM3 — ไม่กินเวลาเครื่อง VSM4', 'Lots sent to VSM3 for some processes — no VSM4 machine time')}">🔀 ${TT('ส่ง VSM3', 'to VSM3')} ${nn(new Set(v3W.map(x => x.job.k)).size)} ${TT('ล็อต', 'lots')}</button>`);
   if (noSd) meta.push(`<button type="button" class="mpv-chip warn" data-act="issues">⚠️ ${TT('เบอร์ไม่มี SD', 'valves w/o SD')} ${noSd}</button>`);
   if (V.f) meta.push(`<button type="button" class="mpv-chip on" data-act="clearf">${V.f === 'late' ? '⏰ ' + TT('เฉพาะไม่ทัน', 'late only') : '⌛ ' + TT('เฉพาะเลยวันขาย', 'past due only')} ✕</button>`);
   el.innerHTML = `<div class="mpv-kpis">${kp.join('')}</div>
@@ -26884,9 +27127,9 @@ function _mpvRenderHead() {
     ${(res.alerts || []).length ? `<div class="mpv-alerts" id="mpvAlerts" style="margin-top:10px">${mpAlertsHtml(res.alerts, { closed: !V.alertsOpen, max: 12 })}</div>` : ''}`;
 }
 function _mpvRenderZone() {
-  const V = _mpv, res = V && V.res, el = $('mpvZone'), tb = $('mpvTabs'); if (!res || !el || !tb) return;
+  const V = _mpv, res = V && V.res, el = $('mpvZone'), tb = $('mpvTabs'), t3 = $('mpvV3Tab'); if (!res || !el || !tb) return;
   const W = V.W || mpWin(res, V.S.month), S = res.S, cal = res.cal, ctx = res.ctx;
-  if (W.d1 <= W.d0) { V.zHits = null; tb.innerHTML = ''; el.innerHTML = `<div class="mpv-empty">📅 ${TT('เดือนนี้ไม่มีวันทำงานในแผน', 'No working days in this month')}</div>`; return; }
+  if (W.d1 <= W.d0) { V.zHits = null; tb.innerHTML = ''; if (t3) t3.innerHTML = ''; el.innerHTML = `<div class="mpv-empty">📅 ${TT('เดือนนี้ไม่มีวันทำงานในแผน', 'No working days in this month')}</div>`; return; }
   const qn = String(V.q || '').trim().toUpperCase();
   const fSet = V.f === 'late' ? new Set((V.M || mpMonthStats(res, W)).late) : V.f === 'over' ? new Set(res.overdue) : null;
   const filtering = !!(qn || fSet);
@@ -26903,7 +27146,7 @@ function _mpvRenderZone() {
   const byS = (x, y) => res.assigns[x].s - res.assigns[y].s;
   for (const o of byM.values()) { o.all.sort(byS); o.hit.sort(byS); }
   const zones = [...new Set([...MP_ZONES, ...ctx.machines.map(m => m.zone)])].filter(z => ctx.machines.some(m => m.zone === z));
-  if (!zones.includes(V.zone)) V.zone = zones[0];
+  if (!zones.includes(V.zone) && V.zone !== 'VSM3') V.zone = zones[0];
   const lateN = idx => new Set(idx.map(i => res.assigns[i].job).filter(j => _mpIsLate(j, S))).size;
   V.zHits = {};
   const tabs = zones.map(z => {
@@ -26915,6 +27158,18 @@ function _mpvRenderZone() {
       : `${withW.length}/${zm.filter(m => m.active).length} ${TT('เครื่อง', 'mc')} · ${nn(all.length)} ${TT('งาน', 'jobs')}${lt ? ` · <span class="lt">⏰ ${lt}</span>` : ''}`;
     return `<button type="button" class="mpv-z${z === V.zone ? ' on' : ''}" role="tab" aria-selected="${z === V.zone}" data-act="zone" data-z="${escapeHtml(z)}" style="--zc:${zc};--zl:${zl}"><b>${escapeHtml(z)}</b><small>${sub}</small></button>`;
   }).join('');
+  /* ★ v3.83 แท็บ 🔀 ส่ง VSM3 — ล็อตที่ต้องส่งไปทำ Process ที่ VSM3 ในเดือนนี้ (ส่งวันไหน · คืนวันไหน · กลับมาทำอะไรต่อที่ VSM4) */
+  const v3In = (res.v3 || []).filter(x => x.b.s < W.T1 - 1e-9 && x.b.e > W.T0 + 1e-9);
+  const v3H = v3In.filter(x => (!fSet || fSet.has(x.job)) && (!qn || String(x.job.valve || '').toUpperCase().includes(qn) || String(x.job.lot || '').toUpperCase().includes(qn)));
+  V.zHits.VSM3 = v3H.length;
+  if (t3) {
+    const lots = new Set(v3In.map(x => x.job.k)).size, back = new Set(v3In.filter(x => x.next && x.next.internal).map(x => x.job.k)).size;
+    const on = V.zone === 'VSM3';
+    t3.innerHTML = `<button type="button" class="mpv-z${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-act="zone" data-z="VSM3" style="--zc:#BE185D;--zl:#FDF2F8"
+      title="${TT('ล็อตที่ต้องส่งไปทำ Process ที่ VSM3 (Valve เดียวกัน แยกกันทำ)', 'Lots that go to VSM3 for some processes')}"><b>🔀 ${TT('ส่ง VSM3', 'To VSM3')}</b><small>${filtering
+        ? `${TT('พบ', 'found')} ${nn(v3H.length)} ${TT('รอบ', 'trips')}` : `${nn(lots)} ${TT('ล็อต', 'lots')}${back ? ` · ${TT('กลับ VSM4', 'back')} ${nn(back)}` : ''}`}</small></button>`;
+  }
+  if (V.zone === 'VSM3') { tb.innerHTML = tabs; el.innerHTML = _mpvV3Body(res, W, v3In, v3H, filtering); return; }
   const z = V.zone, zm = ctx.machines.filter(m => m.zone === z);
   const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
   const famR = m => Math.min(99, ...[...m.fams].map(_mpbFamRank));
@@ -26983,9 +27238,14 @@ function _mpvRow(a, i, n, res) {
   const sdTxt = a.setup > 0
     ? `<span class="su" title="${TT('เปลี่ยน SD', 'SD change')} ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ${TT('ชม.', 'h')})">🔁 SD ${sd}</span>` : `<span>SD ${sd}</span>`;
   const lot = j.kind === 'order' ? '📭 ' + TT('ยังไม่มีของ', 'no stock yet') : (j.lot || '-');
+  // ★ v3.83 ขั้นก่อน/ถัดไปทำที่ VSM3 → ป้ายบอกหน้างาน (รอของคืนจาก VSM3 / ทำเสร็จแล้วส่ง VSM3)
+  const nb = d => { for (let k = a.si + d; k >= 0 && k < j.steps.length; k += d) if (j.steps[k].need > 0) return j.steps[k]; return null; };
+  const pv = nb(-1), nx = nb(1);
+  const v3tag = (pv && pv.v3 ? `<span class="mpv-v3n" title="${TT('รอของคืนจาก VSM3', 'waits for parts back from VSM3')}">↩︎ VSM3</span>` : '')
+    + (nx && nx.v3 ? `<span class="mpv-v3n" title="${TT('ทำเสร็จแล้วส่งต่อ VSM3', 'goes to VSM3 next')}: ${escapeHtml(nx.v3b ? nx.v3b.steps.map(s => s.proc).join(' · ') : nx.proc)}">→ VSM3</span>` : '');
   return `<div class="mpv-r${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}" style="--pc:#${_mpPCol(a.step.fam)}">
     <span class="n">${n}</span>
-    <span class="v">${a.pin ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span></span>
+    <span class="v">${a.pin ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${v3tag}</span>
     <span class="q">${nn(a.qty)}</span>
     <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span><span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
     <span class="mpv-st ${sc}">${st}</span>
@@ -27000,17 +27260,206 @@ function _mpvRowDetail(a, res) {
   if (a.setup > 0) out.push(`🔁 ${TT('เปลี่ยน SD', 'SD change')} ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ${TT('ชม. ตั้งเครื่อง', 'h setup')})`);
   const path = (j.assign || []).slice().sort((x, y) => x.s - y.s)
     .map(x => `${x === a ? '<b>' : ''}${escapeHtml(x.step.proc)} ${escapeHtml(x.m.id)} ${_mpD(cal.dateAt(x.s + 1e-6)).slice(0, 5)}${x === a ? '</b>' : ''}`);
-  if (path.length > 1) out.push(`🧭 ${TT('เส้นทางล็อต', 'Lot route')}: ${path.join(' → ')}`);
-  if (j.finish) out.push(`🏁 FG ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
+  const hasV3 = (j.steps || []).some(s => s.v3);
+  if (hasV3) out.push(`🔀 ${TT('เส้นทาง', 'Route')} (③ VSM3 · ④ VSM4): ${_mpRouteHtml(j, cal)}`);      // ★ v3.83
+  else if (path.length > 1) out.push(`🧭 ${TT('เส้นทางล็อต', 'Lot route')}: ${path.join(' → ')}`);
+  const fgAt3 = j.fgT != null && (j.steps || []).some(s => s.fam === 'FG' && s.v3 && s.need > 0);
+  if (j.finish) out.push(`🏁 FG${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
+  if (hasV3) out.push(`<button type="button" class="mpv-chip" data-act="route" data-vk="${escapeHtml(j.vk)}">✎ ${TT('แก้เส้นทาง VSM3/VSM4 ของเบอร์นี้', 'Edit this valve\'s VSM3/VSM4 route')}</button>`);
   if (j.kind === 'order') out.push(`📭 ${TT('ยังไม่มี WIP IN 1.5 · คาดว่าเข้า', 'no WIP IN 1.5 yet · expected')} ${_mpD(j.expIn) || '-'}`);
   if (a.pin) out.push(`📌 ${TT('Admin วางเอง', 'Placed manually')}${a.shifted > 0.5 ? ` · ⏩ ${TT('เลื่อน', 'shifted')} +${Math.round(a.shifted * 10) / 10} ${TT('ชม. (ขั้นก่อนหน้าเสร็จช้ากว่าคิว)', 'h (previous step later than queued)')}` : ''}`);
   if (j.skipped && j.skipped.length) out.push(`⚠️ ${TT('ข้าม', 'skipped')} ${escapeHtml(j.skipped.map(x => x.proc).join(', '))} (${TT('ไม่มีเครื่องรับ SD', 'no machine for SD')})`);
   return `<div class="mpv-dt">${out.map(x => `<div>${x}</div>`).join('')}</div>`;
 }
+/* ============================================================
+   ★ v3.83 แสดงเส้นทาง VSM3 ⇄ VSM4
+   ============================================================ */
+function _mpRouteTip(s) {
+  const src = s.lineSrc === 'admin' ? TT('กำหนดเอง', 'set manually') : s.lineSrc === 'hist' ? TT('ตามประวัติผลิตจริง', 'from production history')
+    : s.lineSrc === 'near' ? TT('ขั้นก่อน/หลังทำที่ VSM3', 'neighbour steps run at VSM3') : s.lineSrc === 'mc' ? TT('ยังไม่เคยผลิต — ใช้สายที่มีเครื่อง', 'never produced — line that has a machine')
+    : TT('ไม่มีเครื่อง VSM3/VSM4 ทำ', 'no VSM3/VSM4 machine');
+  const q = (s.q3 || s.q4) ? ` · ${TT('เคยผลิต', 'made')} VSM3 ${nn(s.q3 || 0)} / VSM4 ${nn(s.q4 || 0)} ${TT('ชิ้น', 'pcs')}` : '';
+  return `${s.proc}: ${mpLineLbl(s.line)} (${src}${q})${s.mixed ? ' · ⚖️ ' + TT('ทำทั้ง 2 สาย', 'made on both lines') : ''}`;
+}
+/* ทุกขั้นของล็อต: ③ VSM3 / ④ VSM4 / แผนกอื่น · ✓ = ทำครบแล้ว · ขั้น VSM4 = เครื่อง + วันเริ่มตามแผน · ท้ายรอบ VSM3 = ส่ง → คืน */
+function _mpRouteHtml(j, cal) {
+  const dd = t => _mpD(cal.dateAt(t)).slice(0, 5);
+  const shown = new Set(j.v3b || []), parts = [];
+  (j.steps || []).forEach((s, i) => {
+    const done = !(s.need > 0), cls = s.line === 'vsm3' ? 'l3' : s.line === 'vsm4' ? 'l4' : 'lx';
+    let txt = escapeHtml(s.proc) + (s.line === 'vsm3' ? ' ③' : s.line === 'vsm4' ? ' ④' : '');
+    if (!done && s.internal && s.start != null && s.machines) txt += ` <span style="font-weight:600">${escapeHtml(s.machines.join('/'))} ${dd(s.start + 1e-6)}</span>`;
+    parts.push(`<span class="mpv-rt ${cls}${done ? ' dn' : ''}${s.lineSrc === 'admin' ? ' adm' : ''}${s.mixed ? ' mix' : ''}" title="${escapeHtml(_mpRouteTip(s))}">${done ? '✓ ' : ''}${txt}</span>`);
+    const b = s.v3b;
+    if (!done && b && b.i1 === i && shown.has(b) && b.s != null) parts.push(`<span class="mpv-rtd">${b.started && b.s < 1e-6 ? '📍 ' + TT('อยู่ VSM3', 'at VSM3') : '📤 ' + dd(b.s + 1e-6)} → 📥 ${dd(b.e)}</span>`);
+  });
+  return `<span class="mpv-rts">${parts.join('<i>›</i>')}</span>`;
+}
+/* แท็บ 🔀 ส่ง VSM3 — กลุ่มตามวันส่ง (ล็อตที่อยู่ VSM3 แล้วขึ้นก่อน) · แต่ละแถว = ล็อต 1 รอบ: Process ที่ VSM3 · ส่ง → คืน · กลับมาทำอะไรต่อ */
+function _mpvV3Body(res, W, all, hits, filtering) {
+  const V = _mpv, cal = res.cal, S = res.S;
+  if (!all.length) return `<div class="mpv-empty">🔀 ${TT('เดือนนี้ไม่มีล็อตที่ต้องส่งไปทำ Process ที่ VSM3', 'No lots go to VSM3 this month')}
+    <br><button type="button" class="mpv-chip" data-act="route" style="margin-top:8px">✎ ${TT('เส้นทาง VSM3/VSM4 ของแต่ละเบอร์', 'VSM3/VSM4 route per valve')}</button></div>`;
+  if (!hits.length) return `<div class="mpv-empty">🔎 ${TT('ไม่พบล็อตที่ตรงกับตัวกรองในรายการส่ง VSM3', 'Nothing matches in the VSM3 list')} — <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button></div>`;
+  const idx = new Map((res.v3 || []).map((x, i) => [x, i]));
+  const back = all.filter(x => x.next && x.next.internal).length, at = all.filter(x => x.b.started).length;
+  const sum = filtering ? '' : `<div class="mpv-zsum"><span>🔀 <b>${nn(all.length)}</b> ${TT('รอบ', 'trips')} · <b>${nn(new Set(all.map(x => x.job.k)).size)}</b> ${TT('ล็อต', 'lots')} · <b>${nn(all.reduce((s, x) => s + x.qty, 0))}</b> ${TT('ชิ้น', 'pcs')}</span>
+      <span>↩️ ${TT('กลับมาทำต่อที่ VSM4', 'come back to VSM4')} <b>${nn(back)}</b></span>
+      <span>🏁 ${TT('จบที่ VSM3 (ส่งต่อ T/T · QC)', 'finish at VSM3 (→ T/T · QC)')} <b>${nn(all.length - back)}</b></span>
+      ${at ? `<span>📍 ${TT('อยู่ที่ VSM3 แล้ว', 'already at VSM3')} <b>${nn(at)}</b></span>` : ''}</div>
+    <div class="mpv-meta" style="margin-top:6px">
+      <span>⏱️ ${TT('ส่ง → ได้คืน', 'send → back')} <b>${_mpNum(+S.v3Days)}</b> ${TT('วันทำงาน/รอบ', 'working days/trip')} · ${TT('อยู่ VSM3 แล้ว', 'already there')} <b>${_mpNum(+S.v3RunDays)}</b> ${TT('วัน', 'd')}</span>
+      <button type="button" class="mpv-chip" data-act="settings">⚙️ ${TT('ปรับเวลา', 'Adjust')}</button>
+      <button type="button" class="mpv-chip" data-act="route">✎ ${TT('เส้นทาง VSM3/VSM4', 'VSM3/VSM4 routes')}</button>
+      <span>③ = VSM3 · ④ = VSM4 · ${TT('สายของแต่ละ Process มาจากประวัติผลิตจริง (แก้เองได้)', 'line per process comes from real production history (editable)')}</span></div>`;
+  const groups = new Map();
+  for (const x of hits) {
+    const k = x.b.started && x.b.s < 1e-6 ? 'at' : cal.dateAt(x.b.s + 1e-6);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(x);
+  }
+  const keys = [...groups.keys()].sort((a, b) => a === 'at' ? -1 : b === 'at' ? 1 : a.localeCompare(b));
+  const LIM = 8;
+  const cards = keys.map(k => {
+    const L = groups.get(k), mk = 'v3:' + k, more = V.moreM.has(mk), showAll = filtering || more;
+    const e0 = Math.min(...L.map(x => x.b.e)), e1 = Math.max(...L.map(x => x.b.e));
+    const backTxt = _mpDW(cal.dateAt(e0)) === _mpDW(cal.dateAt(e1)) ? _mpDW(cal.dateAt(e0)) : `${_mpDW(cal.dateAt(e0))} – ${_mpDW(cal.dateAt(e1))}`;
+    const head = k === 'at' ? `📍 ${TT('อยู่ที่ VSM3 แล้ว', 'Already at VSM3')}` : `📤 ${TT('ส่ง VSM3', 'Send to VSM3')} ${_mpDW(k)}${k === todayISO() ? ' (' + TT('วันนี้', 'today') + ')' : ''}`;
+    const rows = (showAll ? L : L.slice(0, LIM)).map((x, i) => _mpvV3Row(x, idx.get(x), i + 1, res)).join('');
+    const btn = showAll || L.length <= LIM ? (more ? `<button type="button" class="mpv-more" data-act="more" data-mid="${mk}" aria-expanded="true">▴ ${TT('ย่อ', 'Collapse')}</button>` : '')
+      : `<button type="button" class="mpv-more" data-act="more" data-mid="${mk}" aria-expanded="false">▾ ${TT('ดูทั้งหมด', 'Show all')} (${TT('อีก', '+')} ${nn(L.length - LIM)} ${TT('ล็อต', 'lots')})</button>`;
+    return `<article class="mpv-m" aria-label="${escapeHtml(head)}">
+      <div class="mpv-v3h">${head}<small>${nn(L.length)} ${TT('ล็อต', 'lots')} · ${nn(L.reduce((s, x) => s + x.qty, 0))} ${TT('ชิ้น', 'pcs')} · 📥 ${TT('คืน', 'back')} ${backTxt}</small></div>
+      <div class="mpv-qs">${rows}</div>${btn}</article>`;
+  }).join('');
+  return `${sum}<div class="mpv-grid" style="margin-top:8px">${cards}</div>`;
+}
+function _mpvV3Key(x) { return `v3|${x.job.k}|${x.b.i0}`; }
+function _mpvV3Row(x, vi, n, res) {
+  const j = x.job, b = x.b, cal = res.cal, S = res.S, open = _mpv.openRows.has(_mpvV3Key(x));
+  const [sc, st] = mpJobSt(j, S);
+  const lot = j.kind === 'order' ? '📭 ' + TT('ยังไม่มีของ', 'no stock yet') : (j.lot || '-');
+  const nx = x.next;
+  const nxt = !nx ? `🏁 ${TT('จบที่ VSM3', 'ends at VSM3')}`
+    : nx.internal ? `↩️ ${TT('ต่อ', 'then')} <b>${escapeHtml(nx.proc)} ④</b>${nx.machines ? ' ' + escapeHtml(nx.machines.join('/')) : ''}${nx.start != null ? ' ' + _mpDW(cal.dateAt(nx.start + 1e-6)) : ''}`
+    : `🏁 ${TT('จบที่ VSM3 → ', 'ends at VSM3 → ')}${escapeHtml(nx.proc)}`;
+  const send = b.started && b.s < 1e-6 ? `📍 ${TT('อยู่ VSM3', 'at VSM3')}` : `📤 ${_mpDW(cal.dateAt(b.s + 1e-6))}`;
+  return `<div class="mpv-r v3${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="v3row" data-vi="${vi}" data-n="${n}">
+    <span class="n">${n}</span>
+    <span class="v">${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> ${b.steps.map(s => `<span class="mpv-rt l3">${escapeHtml(s.proc)}</span>`).join('')}</span>
+    <span class="q">${nn(x.qty)}</span>
+    <span class="s"><span>${send} → 📥 ${_mpDW(cal.dateAt(b.e))}</span><span class="nx">${nxt}</span></span>
+    <span class="mpv-st ${sc}">${st}</span>
+    ${open ? _mpvV3Detail(x, res) : ''}
+  </div>`;
+}
+function _mpvV3Detail(x, res) {
+  const j = x.job, cal = res.cal, out = [];
+  out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')} · SD ${j.sd == null ? '-' : _mpNum(j.sd)} · ${escapeHtml(j.vtype || '-')}`);
+  out.push(`🔀 ${TT('เส้นทาง', 'Route')}: ${_mpRouteHtml(j, cal)}`);
+  const p = x.prev;
+  if (p && p.internal && p.start != null) out.push(`⬅️ ${TT('ก่อนส่ง', 'before')}: <b>${escapeHtml(p.proc)} ④</b> ${escapeHtml((p.machines || []).join('/'))} ${_mpDW(cal.dateAt(p.start + 1e-6))} → ${_mpDW(cal.dateAt(p.end))}`);
+  else if (x.b.started) out.push(`📍 ${TT('ล็อตอยู่ที่ VSM3 แล้ว (เริ่มทำบาง Process แล้ว) — คิดเวลาเหลือ', 'already at VSM3 — remaining time')} ${_mpNum(+res.S.v3RunDays)} ${TT('วัน', 'd')}`);
+  const fgAt3 = j.fgT != null && (j.steps || []).some(s => s.fam === 'FG' && s.v3 && s.need > 0);
+  if (j.finish) out.push(`🏁 FG${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
+  const mixed = (j.steps || []).filter(s => s.mixed && s.lineSrc !== 'admin');
+  if (mixed.length) out.push(`⚖️ ${TT('ทำได้ทั้ง 2 สาย', 'made on both lines')}: ${mixed.map(s => `${escapeHtml(s.proc)} (VSM3 ${nn(s.q3)} / VSM4 ${nn(s.q4)})`).join(', ')} — ${TT('ระบบเลือกสายที่ผลิตมากกว่า', 'the plan uses the line that made more')}`);
+  out.push(`<button type="button" class="mpv-chip" data-act="route" data-vk="${escapeHtml(j.vk)}">✎ ${TT('แก้เส้นทาง VSM3/VSM4 ของเบอร์นี้', 'Edit this valve\'s VSM3/VSM4 route')}</button>`);
+  return `<div class="mpv-dt">${out.map(y => `<div>${y}</div>`).join('')}</div>`;
+}
+
+/* ★ v3.83 🔀 เส้นทาง VSM3/VSM4 ของแต่ละเบอร์ — แตะ Process = สลับสาย (③ ⇄ ④) · สลับกลับให้ตรงกับที่ระบบเลือกเอง = กลับเป็นอัตโนมัติ
+   บันทึกขึ้น Cloud ทันที (targets store) แล้วคำนวณแผนใหม่ */
+let _mpRt = null, _mpRtTimer = 0;
+function openMpRouteModal(vk) {
+  const res = _mpv && _mpv.res;
+  const ctx = res ? res.ctx : mpContext(mpSettings());
+  _mpRt = { ctx, res, busy: false };
+  openModal('🔀 ' + TT('เส้นทาง VSM3 / VSM4 ของแต่ละเบอร์', 'VSM3 / VSM4 route per valve'), `<div class="mpv-set">
+    <div class="hint" style="margin-top:0">${TT(`Valve เดียวกัน บาง Process ทำที่ <b>③ VSM3</b> บาง Process ทำที่ <b>④ VSM4</b> — ระบบเลือกสายจาก<b>ประวัติผลิตจริง</b>ของเบอร์นั้น (90 วันล่าสุด ถ้ามี)
+      · ขั้น VSM3 ไม่ลงเครื่อง VSM4 · ขั้น VSM3 ที่ติดกัน = ส่ง 1 รอบ · <b>แตะ Process เพื่อสลับสาย</b> (กรอบดำ = กำหนดเอง · กรอบประ ⚖️ = เคยทำทั้ง 2 สาย)`,
+      `Same valve, some processes at <b>③ VSM3</b> and some at <b>④ VSM4</b> — chosen from <b>real production history</b> · <b>tap a process to switch line</b> (black frame = set manually · dashed ⚖️ = made on both lines)`)}</div>
+    <div class="fr" style="margin:10px 0 0"><input type="search" id="mpRtQ" value="${escapeHtml(vk || '')}" placeholder="🔎 ${TT('ค้นหา Valve No (ทุกเบอร์ใน Master)', 'Search valve (whole master)')}" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div id="mpRtList" aria-live="polite"></div>
+    <button type="button" class="btn btn-outline btn-block" style="margin-top:12px" onclick="closeModal()">${TT('ปิด', 'Close')}</button></div>`, { wide: true });
+  const q = $('mpRtQ');
+  let t = 0;
+  q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(_mpRtRender, 150); });
+  $('mpRtList').addEventListener('click', _mpRtClick);
+  _mpRtRender();
+}
+function _mpRtValves() {
+  const R = _mpRt, q = vKey(($('mpRtQ') || {}).value || '');
+  if (q) return (state.valves || []).map(v => vKey(v.valveNo)).filter(v => v && v.includes(q)).sort().slice(0, 30).map(vk => ({ vk, lots: 0 }));
+  // ไม่ค้นหา = เบอร์ในแผนตอนนี้ที่มีขั้นที่ VSM3 / ทำทั้ง 2 สาย / กำหนดเองไว้
+  const by = new Map();
+  const res = R.res, jobs = res ? res.jobs.concat(res.v3jobs || []) : [];
+  for (const j of jobs) {
+    if (j.noflow) continue;
+    let o = by.get(j.vk); if (!o) by.set(j.vk, o = { vk: j.vk, lots: 0, mixed: false, v3: false });
+    if (j.kind !== 'order') o.lots++;
+    for (const s of j.steps) { if (s.mixed && s.lineSrc !== 'admin') o.mixed = true; if (s.v3) o.v3 = true; }
+  }
+  for (const vk of Object.keys(mpRouteOvAll())) if (!by.has(vk)) by.set(vk, { vk, lots: 0, adm: true });
+  return [...by.values()].filter(o => o.mixed || o.v3 || o.adm)
+    .sort((a, b) => ((b.mixed ? 1 : 0) - (a.mixed ? 1 : 0)) || (b.lots - a.lots) || a.vk.localeCompare(b.vk)).slice(0, 60);
+}
+function _mpRtRender() {
+  const R = _mpRt, el = $('mpRtList'); if (!R || !el) return;
+  const RH = mpRouteHist(), cap4 = R.ctx.famCap4;
+  const list = _mpRtValves(), q = (($('mpRtQ') || {}).value || '').trim();
+  if (!list.length) { el.innerHTML = `<div class="mpv-empty" style="margin-top:10px">${q ? TT('ไม่พบเบอร์นี้ใน Master valve', 'No such valve in the master') : TT('แผนตอนนี้ไม่มีเบอร์ที่ทำที่ VSM3 — พิมพ์ค้นหาเบอร์เพื่อกำหนดเอง', 'No valve in the plan uses VSM3 — search a valve to set it')}</div>`; return; }
+  el.innerHTML = list.map(o => {
+    const v = mpValve(o.vk), flow = v ? procsOf(v, MP_VSM) : [];
+    if (!flow.length) return `<div class="mp-rtv"><div class="hd">${escapeHtml(o.vk)} <small>${TT('ไม่มี Process ใน Master valve', 'no process in valve master')}</small></div></div>`;
+    const fams = flow.map(mpFam), rt = mpRouteFlow(o.vk, fams, cap4), auto = mpRouteFlow(o.vk, fams, cap4, true);
+    const nAdm = rt.filter(x => x.src === 'admin').length;
+    const chips = flow.map((p, i) => {
+      const x = rt[i], f = fams[i], cls = x.line === 'vsm3' ? 'l3' : x.line === 'vsm4' ? 'l4' : 'lx';
+      const to = x.line === 'vsm3' ? 'vsm4' : 'vsm3', can = to === 'vsm3' ? RH.fam3.has(f) : cap4.has(f);
+      const tip = _mpRouteTip({ ...x, proc: p, lineSrc: x.src }) + (can ? ` — ${TT('แตะ = ย้ายไป', 'tap = move to')} ${mpLineLbl(to)}` : ` — ${mpLineLbl(to)} ${TT('ไม่มีเครื่อง Process นี้', 'has no machine for this process')}`);
+      return `<button type="button" class="mpv-rt ${cls}${x.src === 'admin' ? ' adm' : ''}${x.mixed ? ' mix' : ''}" data-act="rt" data-vk="${escapeHtml(o.vk)}" data-fam="${escapeHtml(f)}" data-to="${to}" data-auto="${auto[i].line}"
+        ${can && x.line !== 'ext' ? '' : 'disabled'} title="${escapeHtml(tip)}">${escapeHtml(p)}${x.line === 'vsm3' ? ' ③' : x.line === 'vsm4' ? ' ④' : ''}${x.src === 'admin' ? ' 🔑' : x.mixed ? ' ⚖️' : ''}</button>`;
+    }).join('<i>›</i>');
+    const mix = rt.map((x, i) => x.mixed ? `${escapeHtml(flow[i])} VSM3 ${nn(x.q3)} / VSM4 ${nn(x.q4)}` : '').filter(Boolean);
+    return `<div class="mp-rtv"><div class="hd">${escapeHtml(o.vk)}<small>${escapeHtml(custOfValve(o.vk) || '')}${o.lots ? ` · ${nn(o.lots)} ${TT('ล็อตในแผน', 'lots in plan')}` : ''}${nAdm ? ` · 🔑 ${TT('กำหนดเอง', 'manual')} ${nAdm}` : ''}</small>
+      ${nAdm ? `<button type="button" class="mpv-chip" data-act="rtauto" data-vk="${escapeHtml(o.vk)}" style="margin-left:auto">↺ ${TT('กลับเป็นอัตโนมัติทั้งเบอร์', 'reset to automatic')}</button>` : ''}</div>
+      <span class="mpv-rts">${chips}</span>
+      ${mix.length ? `<div class="muted" style="font-size:11px;margin-top:5px">⚖️ ${TT('เคยทำทั้ง 2 สาย (ชิ้น)', 'made on both lines (pcs)')}: ${mix.join(' · ')}</div>` : ''}</div>`;
+  }).join('') + (q ? '' : `<div class="muted" style="font-size:11px;margin-top:8px">${TT('แสดงเบอร์ในแผนตอนนี้ที่มีขั้นทำที่ VSM3 / ทำทั้ง 2 สาย / กำหนดเองไว้ (⚖️ ขึ้นก่อน) — เบอร์อื่นพิมพ์ค้นหาได้', 'Valves in the plan with VSM3 steps / both lines / manual routes (⚖️ first) — search for others')}</div>`);
+}
+async function _mpRtClick(ev) {
+  const t = ev.target.closest('[data-act]'); if (!t || !_mpRt || _mpRt.busy) return;
+  const vk = t.dataset.vk;
+  let body = null, msg = '';
+  if (t.dataset.act === 'rt') {
+    const fam = t.dataset.fam, to = t.dataset.to;
+    body = [[fam, to === t.dataset.auto ? '' : to]];       // สลับกลับตรงกับที่ระบบเลือกเอง = ลบที่กำหนดเอง
+    msg = `🔀 ${vk} · ${fam} → ${mpLineLbl(to)}`;
+  } else if (t.dataset.act === 'rtauto') {
+    body = Object.keys(mpRouteOvAll()[vKey(vk)] || {}).map(f => [f, '']);
+    msg = `↺ ${vk} · ${TT('กลับเป็นอัตโนมัติ', 'back to automatic')}`;
+  }
+  if (!body || !body.length) return;
+  _mpRt.busy = true; t.disabled = true;
+  try {
+    await _pfTargetsPut(Object.fromEntries(body.map(([f, line]) => [MPROUTE_PREFIX + vKey(vk) + '@' + f, line === 'vsm3' ? 3 : line === 'vsm4' ? 4 : 0])));
+    toast(msg + ' ✅', 'green');
+  } catch (e) {
+    toast('❌ ' + TT('บันทึกเส้นทางไม่สำเร็จ', 'Could not save the route') + ' — ' + ((e && e.message) || e), 'red');
+  } finally { if (_mpRt) _mpRt.busy = false; }
+  _mpRtRender();
+  // คำนวณแผนใหม่ (รวบการแตะติด ๆ กันเป็นครั้งเดียว)
+  clearTimeout(_mpRtTimer);
+  _mpRtTimer = setTimeout(() => {
+    if (_mpv && _mpv.open && _mpv.res) mpvRecompute().then(() => { if (_mpRt) { _mpRt.res = _mpv.res; _mpRt.ctx = _mpv.res.ctx; } }).catch(_mpvErr);
+    else if (_mpb && _mpb.open) { mpbBuild(); mpbRecompute(); }
+  }, 700);
+}
 function _mpvClick(ev) {
   const V = _mpv, t = ev.target.closest('[data-act]'); if (!V || !t) return;
   const act = t.dataset.act;
-  if (act === 'row' && ev.target.closest('.mpv-dt')) return;      // แตะในกล่องรายละเอียด = ไม่พับ (เลือกข้อความได้)
+  if ((act === 'row' || act === 'v3row') && ev.target.closest('.mpv-dt')) return;      // แตะในกล่องรายละเอียด = ไม่พับ (เลือกข้อความได้)
   switch (act) {
     case 'close': closeMpPlan(); break;
     case 'board': openMpBoard(); break;
@@ -27040,6 +27489,15 @@ function _mpvClick(ev) {
       _mpvRenderHead(); _mpvRenderZone(); break;
     }
     case 'more': { const id = t.dataset.mid; if (V.moreM.has(id)) V.moreM.delete(id); else V.moreM.add(id); _mpvRenderZone(); break; }
+    case 'route': openMpRouteModal(t.dataset.vk || ''); break;     // ★ v3.83
+    case 'v3row': {
+      const x = V.res && (V.res.v3 || [])[+t.dataset.vi]; if (!x) break;
+      const key = _mpvV3Key(x);
+      if (V.openRows.has(key)) V.openRows.delete(key); else V.openRows.add(key);
+      t.outerHTML = _mpvV3Row(x, +t.dataset.vi, +t.dataset.n, V.res);
+      const nr = document.querySelector(`#mpvOv .mpv-r[data-vi="${t.dataset.vi}"]`); if (nr) nr.focus({ preventScroll: true });
+      break;
+    }
     case 'row': {
       const a = V.res && V.res.assigns[+t.dataset.ai]; if (!a) break;
       const key = _mpvRowKey(a);
@@ -27094,6 +27552,14 @@ function openMpvSettings() {
         .map(([v, l]) => `<option value="${v}" ${+S.seqDays === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
     <div class="hint">${TT(`วันขายในรอบเดียวกัน → <b>SD น้อย→มาก</b> → <b>TYPE</b> OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW · SD &lt; ${S.sdFloor} คิดเป็น ${S.sdFloor} · รอบยาว = เปลี่ยนรุ่นน้อยลง แต่งานวันขายต้นรอบอาจรอนานขึ้น`,
       `Same sale cycle → <b>SD small→large</b> → <b>TYPE</b> OP → … → HW · SD &lt; ${S.sdFloor} counts as ${S.sdFloor} · longer cycle = fewer changeovers`)}</div>
+    <h4>🔀 ${TT('ส่ง VSM3 (Valve เดียวกัน บาง Process ทำที่ VSM3)', 'Sent to VSM3 (same valve, some processes at VSM3)')}</h4>
+    <div class="fg-auto">
+      ${num('mp_v3d', S.v3Days, TT('ส่ง → ได้คืน (วันทำงาน/รอบ)', 'Send → back (working days/trip)'), 0.5, TT('ขั้น VSM3 ที่ติดกัน = 1 รอบ · รวมเวลารอเข้า VSM3', 'consecutive VSM3 steps = 1 trip · includes waiting'))}
+      ${num('mp_v3r', S.v3RunDays, TT('ล็อตอยู่ VSM3 แล้ว เหลือ (วัน)', 'Already at VSM3 — days left'), 0.5)}
+    </div>
+    <div class="hint">${TT('วัดจริง ต.ค. 2026 (646 รอบ): VSM3 ทำครบรอบ (กลาง 6 Process) ใน ~1 วัน · รอเข้า VSM3 ~2 วัน · สายของแต่ละ Process มาจากประวัติผลิตจริง',
+      'Measured Oct 2026 (646 trips): VSM3 finishes a trip (median 6 processes) in ~1 day · waits ~2 days to get in')}
+      · ${TT('แก้สายรายเบอร์ที่แท็บ 🔀 ส่ง VSM3 → ✎ เส้นทาง', 'edit per valve in the 🔀 To VSM3 tab → ✎ routes')}</div>
     <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:800;font-size:12.5px;color:var(--blue-dark);min-height:30px;display:flex;align-items:center">🛠️ ${TT('ขั้นสูง (CT / ประสิทธิภาพ / ตั้งเครื่อง / แบ่งล็อต)', 'Advanced (CT / efficiency / setup / split)')}</summary>
       <div class="fg-auto" style="margin-top:8px">
         ${num('mp_eff', S.eff, TT('ประสิทธิภาพ (0–1)', 'Efficiency (0–1)'), 0.01, TT('ใช้เมื่อเครื่องไม่มีประวัติ', 'used when no history'))}
@@ -27181,6 +27647,7 @@ function mpReadForm() {
   S.usePins = c('mp_pins', S.usePins); S.incOrder = c('mp_incOrder', S.incOrder);
   S.histDays = Math.max(7, Math.min(365, Math.round(n('mp_hist', S.histDays))));
   S.alertDays = Math.max(1, Math.min(90, Math.round(n('mp_alert', S.alertDays))));
+  S.v3Days = Math.max(0, Math.min(30, n('mp_v3d', S.v3Days))); S.v3RunDays = Math.max(0, Math.min(30, n('mp_v3r', S.v3RunDays)));   // ★ v3.83
   S.extLagH = S.hours;
   return S;
 }
@@ -27329,6 +27796,7 @@ async function mpExportExcel(res) {
     `ทำงาน จ–${S.workSat ? 'ส' : 'ศ'}${S.workSun ? '+อา' : ''} · SD < ${S.sdFloor} คิดเป็น ${S.sdFloor} (ช่วงรวมปลายทั้งสองข้าง) · 📅 แผนเดือน ${W.label} (${W.range})`;
   const jobsSorted = res.jobs;
   const mOrder = (a, b) => (a.zone.localeCompare(b.zone)) || a.id.localeCompare(b.id, undefined, { numeric: true });
+  const V3W = (res.v3 || []).filter(x => x.b.s < W.T1 - 1e-9 && x.b.e > W.T0 + 1e-9);   // ★ v3.83 รอบส่ง VSM3 ของเดือน
 
   /* ── ชีท 0: สรุป ───────────────────────────────────────── */
   {
@@ -27348,6 +27816,7 @@ async function mpExportExcel(res) {
       ['ทั้งแผน: วางแผนไม่ได้ (ดูชีท 5)', res.blockedN], ['ทั้งแผน: งานสุดท้ายเสร็จ', _mpD(res.planned.map(j => j.finish).sort().pop() || '')],
       ['📌 งานที่ Admin วางเอง (ชิ้นงานในแผน)', res.assigns.filter(a => a.pin).length],
       ['⚠️ ต้องปรับแผน (ดูชีท 5)', (res.alerts || []).filter(x => x.lvl >= 2).length],
+      ['🔀 ส่ง VSM3 ในเดือน (รอบ · ดูชีท 3.4)', V3W.length], ['— กลับมาทำต่อที่ VSM4', V3W.filter(x => x.next && x.next.internal).length],
     ];
     let r = 4;
     ws.mergeCells(r, 1, r, 2); ws.getCell(r, 1).value = '📊 ภาพรวม'; ws.getCell(r, 1).font = { name: FONT, size: 12, bold: true, color: { argb: NAVY } }; r++;
@@ -27371,6 +27840,7 @@ async function mpExportExcel(res) {
       ['แผนที่ Admin วางเอง', S.usePins === false ? 'ไม่ใช้' : `ใช้ (${(res.pins && res.pins.size) || 0} รายการ · 📌 ในชีท 1–3)`],
       ['CT / ประสิทธิภาพ', `ครั้งก่อนหน้าของเบอร์+Process (ประวัติ ${S.histDays} วัน) > ประวัติเครื่อง`],
       ['ลำดับคิวในเครื่อง', `วันขายรอบละ ${S.seqDays || 7} วัน → SD น้อย→มาก → TYPE (OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW) · งานไม่มีแผนขาย = รอบสุดท้าย`],
+      ['🔀 Process ที่ทำที่ VSM3', `ตามประวัติผลิตจริงของเบอร์นั้น (แก้เองได้) · ไม่ลงเครื่อง VSM4 · ส่ง 1 รอบ = ${S.v3Days} วันทำงาน (อยู่ VSM3 แล้ว ${S.v3RunDays} วัน)`],
       ['🚫 เครื่องปิดถาวร (ไม่ใช้วางแผน)', offList.length ? offList.join(', ') : '—']];
     for (const [l, v] of prm) {
       ws.mergeCells(r2, 5, r2, 6);
@@ -27450,7 +27920,7 @@ async function mpExportExcel(res) {
     const jobIn = j => W.dueIn(j) || (j.assign || []).some(W.inWin) || (W.cur && !(j.assign && j.assign.length));   // ★ v3.79 เฉพาะงานของเดือน
     for (const j of jobsSorted.filter(jobIn)) {
       const [stTxt, stBg, stFg] = statusOf(j);
-      const cur = j.steps && j.firstStep >= 0 ? (j.kind === 'in' ? 'รอเริ่ม ' : j.kind === 'order' ? 'รอของ → ' : '') + j.steps[j.firstStep].proc : '';
+      const cur = j.steps && j.firstStep >= 0 ? (j.kind === 'in' ? 'รอเริ่ม ' : j.kind === 'order' ? 'รอของ → ' : '') + j.steps[j.firstStep].proc + (j.steps[j.firstStep].v3 ? ' (VSM3)' : '') : '';
       const vals = [j.prio, j.valve, lotTxt(j), j.qty, custGroup(j.customer), j.sd == null ? '-' : j.sd, j.vtype || '-', cur, _mpD(j.due), _mpD(j.finish) || '-', stTxt];
       vals.forEach((v, i) => { const c = ws.getCell(r, i + 1); c.value = v; cellStyle(c, { h: [0, 3, 5].includes(i) ? 'right' : 'left', fmt: i === 3 ? '#,##0' : undefined, bold: i === 1, size: 9.5 }); });
       const sc = ws.getCell(r, 11); sc.fill = fill(stBg); sc.font = { name: FONT, size: 9.5, bold: true, color: { argb: stFg } };
@@ -27461,11 +27931,16 @@ async function mpExportExcel(res) {
         const di = d.d - D0; if (di < 0 || di >= days.length || d.qty <= 0) continue;
         (cells[di] = cells[di] || []).push({ txt: `${pinTxt(a)}${a.step.proc} @ ${a.m.id} (${nn(d.qty)})`, fam: a.step.fam });
       }
+      for (const b of (j.v3b || [])) {   // ★ v3.83 วันส่ง VSM3 (ไม่ใช้เครื่อง VSM4)
+        if (b.s == null) continue;
+        const di = Math.floor((b.s + 1e-6) / H) - D0; if (di < 0 || di >= days.length) continue;
+        (cells[di] = cells[di] || []).push({ txt: `🔀 ส่ง VSM3: ${b.steps.map(s => s.proc).join('·')} → คืน ${_mpD(cal.dateAt(b.e)).slice(0, 5)}`, v3: true });
+      }
       let maxL = 1;
       for (let di = 0; di < days.length; di++) {
         const c = ws.getCell(r, fixed.length + di + 1);
         const L = cells[di];
-        if (L) { c.value = L.map(x => x.txt).join('\n'); maxL = Math.max(maxL, L.length); cellStyle(c, { fill: _mpPCol(L[0].fam), size: 9, wrap: true }); }
+        if (L) { c.value = L.map(x => x.txt).join('\n'); maxL = Math.max(maxL, L.length); cellStyle(c, { fill: L[0].v3 ? 'FFFCE7F3' : _mpPCol(L[0].fam), size: 9, wrap: true }); }
         else if (!j.blocked) { cellStyle(c, { size: 9 }); if (days[di] === j.due) { c.value = '🎯 วันขาย'; c.font = { name: FONT, size: 9, bold: true, color: { argb: 'FFDC2626' } }; } }
       }
       const beyond = j.assign.some(a => a.days.some(d => d.d - D0 >= days.length));
@@ -27642,6 +28117,42 @@ async function mpExportExcel(res) {
         r++;
       }
     });
+  }
+
+  /* ── ชีท 3.4: ส่ง VSM3 (★ v3.83) — ล็อตที่ต้องไปทำ Process ที่ VSM3 · ส่งวันไหน · คืนวันไหน · กลับมาทำอะไรต่อ + ช่อง ✍ ให้หน้างาน ── */
+  {
+    const VC = 'FFBE185D';
+    const ws = wb.addWorksheet('3.4 ส่ง VSM3', { properties: { tabColor: { argb: VC } }, views: [{ state: 'frozen', ySplit: 3, showGridLines: false }],
+      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:3',
+        margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } } });
+    const cols = ['#', 'ส่ง VSM3', 'คืน VSM4', 'Valve No', 'Lot', 'ชิ้น', 'SD', 'TYPE', 'Process ที่ VSM3', 'ก่อนส่ง (VSM4)', 'หลังคืน', 'วันขาย', 'สถานะ', 'เส้นทางทั้งล็อต (③ VSM3 · ④ VSM4)', '✍ ส่งจริง', '✍ รับคืนจริง', '✍ หมายเหตุ'];
+    const nPlan = cols.length - 3;
+    [5, 11, 11, 12, 13, 9, 6, 8, 26, 22, 24, 11, 16, 46, 10, 10, 18].forEach((w, i) => ws.getColumn(i + 1).width = w);
+    title(ws, `3.4) ส่ง VSM3 — Valve เดียวกัน บาง Process ทำที่ VSM3 (ไม่ใช้เครื่อง VSM4) · 1 รอบ = ${S.v3Days} วันทำงาน (อยู่ VSM3 แล้ว ${S.v3RunDays} วัน)`,
+      sub + ' · สายของแต่ละ Process มาจากประวัติผลิตจริงของเบอร์นั้น (แก้ได้ที่หน้าแผนผลิต → 🔀 ส่ง VSM3 → ✎ เส้นทาง)', cols.length);
+    header(ws, 3, cols, { color: VC, h: 30 });
+    for (let k = nPlan; k < cols.length; k++) ws.getCell(3, k + 1).fill = fill('FFB45309');
+    const stepAt = s => s ? `${s.proc}${s.internal ? ' ④' + (s.machines ? ' ' + s.machines.join('/') : '') + (s.start != null ? ' ' + _mpDW(cal.dateAt(s.start + 1e-6)) : '') : s.v3 ? ' ③' : ''}` : '';
+    const route = j => (j.steps || []).map(s => `${!(s.need > 0) ? '✓' : ''}${s.proc}${s.line === 'vsm3' ? '③' : s.line === 'vsm4' ? '④' : ''}`).join(' › ');
+    let r = 4;
+    if (!V3W.length) { ws.mergeCells(r, 1, r, cols.length); ws.getCell(r, 1).value = `เดือน ${W.label} ไม่มีล็อตที่ต้องส่งไปทำที่ VSM3`; cellStyle(ws.getCell(r, 1), { color: 'FF64748B' }); }
+    V3W.forEach((x, i) => {
+      const j = x.job, b = x.b, [stTxt, stBg, stFg] = statusOf(j);
+      const send = b.started && b.s < 1e-6 ? '📍 อยู่ VSM3 แล้ว' : _mpDW(cal.dateAt(b.s + 1e-6));
+      const after = !x.next ? '🏁 จบที่ VSM3' : x.next.internal ? '↩️ ' + stepAt(x.next) : `🏁 จบที่ VSM3 → ${x.next.proc}`;
+      const vals = [i + 1, send, _mpDW(cal.dateAt(b.e)), j.valve, lotTxt(j), x.qty, j.sd == null ? '-' : j.sd, j.vtype || '-', b.steps.map(s => s.proc).join(' · '),
+        x.prev ? stepAt(x.prev) : (b.started ? '—' : 'พร้อมส่ง'), after, _mpD(j.due), stTxt, route(j), '', '', ''];
+      vals.forEach((v, k) => {
+        const c = ws.getCell(r, k + 1); c.value = v;
+        cellStyle(c, { h: [0, 5, 6].includes(k) ? 'right' : 'left', fmt: k === 5 ? '#,##0' : undefined, bold: k === 1 || k === 3, size: 9.5, wrap: k === 8 || k === 13,
+          fill: k === 8 ? 'FFFCE7F3' : k >= nPlan ? 'FFFEFCE8' : (i % 2 ? 'FFF8FAFC' : undefined) });
+      });
+      const sc = ws.getCell(r, 13); sc.fill = fill(stBg); sc.font = { name: FONT, size: 9.5, bold: true, color: { argb: stFg } };
+      if (x.next && x.next.internal) ws.getCell(r, 11).font = { name: FONT, size: 9.5, bold: true, color: { argb: 'FF115E59' } };
+      ws.getRow(r).height = Math.max(18, Math.ceil(route(j).length / 52) * 13 + 4);
+      r++;
+    });
+    if (V3W.length) ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: nPlan } };
   }
 
   /* ── ชีท 4: โหลดเครื่องรายวัน ──────────────────────────── */
@@ -28086,7 +28597,7 @@ function _mpbJobsOf(src) {
   for (const j of B.J.jobs) {
     if (j.vk !== src.vk || j.noflow) continue;
     if (src.t === 'l' && (j.kind === 'order' || lotKey(j.lot) !== src.lk)) continue;
-    const st = j.steps.find((s, i) => i <= j.lastInt && s.fam === fam && s.need > 0);
+    const st = j.steps.find((s, i) => i <= j.lastInt && s.fam === fam && s.need > 0 && s.internal);   // ★ v3.83 ขั้นที่ทำที่ VSM3 ลากลงเครื่อง VSM4 ไม่ได้
     if (st) out.push({ job: j, st });
   }
   return out;
@@ -28447,8 +28958,10 @@ function mpAnalysis(res) {
   if (noCap.length) ins.push(`เครื่องที่ยังไม่กำหนดช่วง SD (${noCap.length}): ${noCap.map(m => m.id).join(', ')}`);
   const noSd = [...new Set(res.jobs.filter(j => j.sd == null).map(j => j.valve))];
   if (noSd.length) ins.push(`เบอร์วาล์วในงานที่ยังไม่มี SD ใน Master valve (${noSd.length}): ${noSd.slice(0, 40).join(', ')}${noSd.length > 40 ? ' …' : ''}`);
-  const ext = new Set(); for (const j of res.jobs) for (const s of (j.steps || [])) if (!s.internal) ext.add(s.proc);
+  const ext = new Set(); for (const j of res.jobs) for (const s of (j.steps || [])) if (!s.internal && !s.v3) ext.add(s.proc);
   if (ext.size) ins.push(`Process ที่ไม่มีเครื่อง VSM4 ทำ (ถือเป็นแผนกอื่น/ส่งต่อ — นับเวลารอ ${res.S.extLagH} ชม.): ${[...ext].join(', ')}`);
+  const v3V = res.v3 || [];   // ★ v3.83
+  if (v3V.length) ins.push(`ส่ง VSM3 ${v3V.length} รอบ (${new Set(v3V.map(x => x.job.k)).size} ล็อต) — Process ของเบอร์นั้นที่ทำที่ VSM3 ไม่ลงเครื่อง VSM4 · 1 รอบ = ${res.S.v3Days} วันทำงาน (ล็อตอยู่ VSM3 แล้ว ${res.S.v3RunDays} วัน) · ดูชีท 3.4`);
   for (const g of (res.gaps || []).slice(0, 8)) ins.push(`ไม่มีเครื่อง ${g.fam} รับ SD ${g.gaps.map(([e]) => _mpNum(e)).join(', ')} (${g.valves} เบอร์ใน Master) — เครื่อง ${g.fam} ที่มี: ${g.machines}`);
   const bands = ['≤6', '6–9', '>9'];
   const ctLine = Object.entries(ctTbl).filter(([f, o]) => bands.filter(b => o[b]).length >= 2).slice(0, 8)
