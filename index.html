@@ -680,7 +680,7 @@ body.mpv-lock{overflow:hidden}
 .mpv-mo:hover{border-color:#5EEAD4}
 .mpv-mo.on{background:#0F766E;border-color:#0F766E;color:#fff;box-shadow:0 4px 12px rgba(15,118,110,.28)}
 .mpv-mo.on small,.mpv-mo.on small .lt{color:#CCFBF1}
-.mpv-q{flex:1 1 220px;min-width:180px;max-width:340px;margin-left:auto}
+.mpv-q{flex:1 1 240px;min-width:180px;max-width:340px;margin-left:auto}
 .mpv-q input{width:100%;min-height:42px;padding:8px 12px;border:1.5px solid var(--blue-soft);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
 .mpv-q input:focus{outline:none;border-color:#0F766E;box-shadow:0 0 0 3px rgba(15,118,110,.16)}
 .mpv-kpis{display:flex;gap:8px;flex-wrap:wrap}
@@ -699,7 +699,9 @@ button.mpv-k:hover{border-color:var(--blue-soft)}
 .mpv-chip.on{background:#CCFBF1;color:#115E59;border-color:#5EEAD4}
 button.mpv-chip{cursor:pointer;min-height:28px}
 .mpv-alerts .mp-alerts{margin-bottom:0}
-.mpv-zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;position:sticky;top:-12px;z-index:3;background:var(--bg);padding:6px 0 4px}
+/* ★ v3.82 แถบ Zone + ช่องค้นหา ล็อกติดบนสุดด้วยกันตอนเลื่อนลง (top ติดลบ = หักลบ padding บนของ .mpv-body) */
+.mpv-stk{position:sticky;top:-12px;z-index:3;background:var(--bg);padding:6px 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.mpv-zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;flex:1 1 470px;min-width:0}
 .mpv-z{border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:7px 12px 7px 14px;cursor:pointer;font-family:inherit;text-align:left;color:var(--text);min-height:52px;display:flex;flex-direction:column;justify-content:center;gap:1px;box-shadow:inset 5px 0 0 var(--zc);transition:background .15s,border-color .15s}
 .mpv-z b{font-size:15px;font-weight:900}
 .mpv-z small{font-size:11px;color:var(--muted);font-weight:700}
@@ -751,6 +753,9 @@ button.mpv-chip{cursor:pointer;min-height:28px}
 .mpv-cks{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}
 .mpv-cks label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin:0;min-height:30px;cursor:pointer}
 .mpv-cks input{width:18px;height:18px}
+@media (max-width:760px){
+  .mpv-q{max-width:none;margin-left:0}
+}
 @media (max-width:640px){
   .mpv-top{padding-left:10px;padding-right:10px;gap:6px}
   .mpv-title b{font-size:14.5px}
@@ -758,12 +763,12 @@ button.mpv-chip{cursor:pointer;min-height:28px}
   .mpv-acts .btn{flex:1 1 auto;padding:6px 8px;font-size:12px}
   .mpv-acts .mpv-x{flex:0 0 auto}
   .mpv-body{padding:10px 10px calc(24px + env(safe-area-inset-bottom))}
-  .mpv-q{max-width:none;margin-left:0}
   .mpv-k{flex-basis:calc(50% - 4px);min-width:0;padding:7px 10px;min-height:46px;gap:8px}
   .mpv-k b{font-size:19px}
   .mpv-k:not(.info) span small{display:none}
   .mpv-z small{font-size:10.5px}
-  .mpv-zones{grid-template-columns:repeat(3,minmax(0,1fr));top:-10px}
+  .mpv-stk{top:-10px}
+  .mpv-zones{grid-template-columns:repeat(3,minmax(0,1fr))}
   .mpv-z{padding:6px 8px 6px 11px;min-height:48px}
   .mpv-z b{font-size:13.5px}
   .mpv-grid{grid-template-columns:1fr}
@@ -2526,7 +2531,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.81</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.82</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10050,7 +10055,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.81":"Production Record + KPI · v3.81",
+"ระบบบันทึกผลิต + KPI · v3.82":"Production Record + KPI · v3.82",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -26747,15 +26752,18 @@ async function openMachinePlanner() {
     <div class="mpv-body"><div class="mpv-wrap">
       <div class="mpv-bar">
         <div class="mpv-months" id="mpvMonths" role="tablist" aria-label="${TT('เดือนของแผน', 'Plan month')}"></div>
-        <div class="mpv-q"><input type="search" id="mpvQ" placeholder="🔎 ${TT('ค้นหา Valve No / Lot', 'Search valve / lot')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="${TT('ค้นหา Valve No หรือ Lot', 'Search valve or lot')}"></div>
       </div>
       <div id="mpvHead"></div>
+      <div class="mpv-stk">
+        <div class="mpv-zones" id="mpvTabs" role="tablist" aria-label="Zone"></div>
+        <div class="mpv-q"><input type="search" id="mpvQ" placeholder="🔎 ${TT('ค้นหา Valve No / Lot / เครื่อง', 'Search valve / lot / machine')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="${TT('ค้นหา Valve No, Lot หรือหมายเลขเครื่อง', 'Search valve, lot or machine')}"></div>
+      </div>
       <div id="mpvZone"></div>
     </div></div>`;
   ov.classList.add('open');
   document.body.classList.add('mpv-lock');
   let qT = 0;
-  $('mpvQ').addEventListener('input', e => { clearTimeout(qT); const v = e.target.value; qT = setTimeout(() => { if (_mpv) { _mpv.q = v; _mpvRenderZone(); } }, 150); });
+  $('mpvQ').addEventListener('input', e => { clearTimeout(qT); const v = e.target.value; qT = setTimeout(() => { if (_mpv) { _mpv.q = v; _mpvRenderZone(); _mpvZoneToHit(); _mpvToList(); } }, 150); });
   _mpvRenderMonths(); _mpvSkeleton();
   try {
     if (API) await Promise.all([ensureAllJobsLoaded().catch(() => false), mcCapsLoad().catch(() => null), mpManLoad().catch(() => null)]);
@@ -26765,6 +26773,7 @@ async function openMachinePlanner() {
     console.error('[mpv]', e);
     const z = $('mpvZone'); if (z) z.innerHTML = `<div class="mpv-empty" style="color:var(--red)">❌ ${escapeHtml((e && e.message) || String(e))}</div>`;
     const h = $('mpvHead'); if (h) h.innerHTML = '';
+    const tb = $('mpvTabs'); if (tb) tb.innerHTML = '';
     return;
   }
   mpvLoadHistory();
@@ -26815,10 +26824,24 @@ function _mpvSub() {
   el.textContent = bits.join(' · ');
 }
 function _mpvSkeleton() {
-  const h = $('mpvHead'), z = $('mpvZone');
+  const h = $('mpvHead'), z = $('mpvZone'), tb = $('mpvTabs');
   if (h) h.innerHTML = `<div class="mpv-kpis">${'<div class="mpv-k mpv-sk" style="border:0"></div>'.repeat(3)}</div>`;
-  if (z) z.innerHTML = `<div class="mpv-zones">${'<div class="mpv-sk" style="height:52px"></div>'.repeat(3)}</div>
-    <div class="mpv-grid" style="margin-top:8px">${'<div class="mpv-sk" style="height:230px"></div>'.repeat(4)}</div>`;
+  if (tb) tb.innerHTML = '<div class="mpv-sk" style="height:52px"></div>'.repeat(3);
+  if (z) z.innerHTML = `<div class="mpv-grid">${'<div class="mpv-sk" style="height:230px"></div>'.repeat(4)}</div>`;
+}
+/* ★ v3.82 แถบ Zone + ช่องค้นหา ล็อกติดบนสุดตอนเลื่อนลง (.mpv-stk sticky) — ค้นหา/สลับ Zone ตอนเลื่อนลงไปแล้ว
+   = เลื่อนกลับมาให้เห็นผลแรกใต้แถบพอดี (ไม่ค้างอยู่กลางรายการที่ถูกวาดใหม่) · ยังไม่ได้เลื่อนลง = ไม่ขยับ */
+function _mpvToList() {
+  const b = document.querySelector('#mpvOv .mpv-body'), st = document.querySelector('#mpvOv .mpv-stk'), z = $('mpvZone');
+  if (!b || !st || !z) return;
+  const d = z.getBoundingClientRect().top - st.getBoundingClientRect().bottom - 10;   // 10 = gap ของ .mpv-wrap
+  if (d < -1) b.scrollTop += d;
+}
+/* ★ v3.82 พิมพ์ค้นหาแล้ว Zone ที่เปิดอยู่ไม่มีผลเลย แต่ Zone อื่นมี (เช่น พิมพ์เครื่องของ ZONE3 ตอนอยู่ ZONE1) → สลับไป Zone นั้นให้เอง */
+function _mpvZoneToHit() {
+  const V = _mpv; if (!V || !V.zHits || !String(V.q || '').trim() || V.zHits[V.zone]) return;
+  const z = Object.keys(V.zHits).find(k => V.zHits[k] > 0);
+  if (z) { V.zone = z; _mpvRenderZone(); }
 }
 function _mpvRenderMonths() {
   const V = _mpv, el = $('mpvMonths'); if (!V || !el) return;
@@ -26861,13 +26884,16 @@ function _mpvRenderHead() {
     ${(res.alerts || []).length ? `<div class="mpv-alerts" id="mpvAlerts" style="margin-top:10px">${mpAlertsHtml(res.alerts, { closed: !V.alertsOpen, max: 12 })}</div>` : ''}`;
 }
 function _mpvRenderZone() {
-  const V = _mpv, res = V && V.res, el = $('mpvZone'); if (!res || !el) return;
+  const V = _mpv, res = V && V.res, el = $('mpvZone'), tb = $('mpvTabs'); if (!res || !el || !tb) return;
   const W = V.W || mpWin(res, V.S.month), S = res.S, cal = res.cal, ctx = res.ctx;
-  if (W.d1 <= W.d0) { el.innerHTML = `<div class="mpv-empty">📅 ${TT('เดือนนี้ไม่มีวันทำงานในแผน', 'No working days in this month')}</div>`; return; }
+  if (W.d1 <= W.d0) { V.zHits = null; tb.innerHTML = ''; el.innerHTML = `<div class="mpv-empty">📅 ${TT('เดือนนี้ไม่มีวันทำงานในแผน', 'No working days in this month')}</div>`; return; }
   const qn = String(V.q || '').trim().toUpperCase();
   const fSet = V.f === 'late' ? new Set((V.M || mpMonthStats(res, W)).late) : V.f === 'over' ? new Set(res.overdue) : null;
   const filtering = !!(qn || fSet);
-  const hit = a => (!fSet || fSet.has(a.job)) && (!qn || String(a.job.valve || '').toUpperCase().includes(qn) || String(a.job.lot || '').toUpperCase().includes(qn));
+  // ★ v3.82 ค้นหาหมายเลขเครื่องได้ด้วย (ตรงเครื่อง = เห็นคิวทั้งเครื่อง) · ไม่สนขีด/ช่องว่าง: G1108 = g 1108 = G-1108
+  const qm = qn.replace(/[^A-Z0-9]/g, ''), mMemo = new Map();
+  const mHit = m => { let v = mMemo.get(m.id); if (v === undefined) mMemo.set(m.id, v = !!qm && String(m.id).toUpperCase().replace(/[^A-Z0-9]/g, '').includes(qm)); return v; };
+  const hit = a => (!fSet || fSet.has(a.job)) && (!qn || mHit(a.m) || String(a.job.valve || '').toUpperCase().includes(qn) || String(a.job.lot || '').toUpperCase().includes(qn));
   const byM = new Map();
   res.assigns.forEach((a, i) => {
     if (!W.inWin(a)) return;
@@ -26879,9 +26905,11 @@ function _mpvRenderZone() {
   const zones = [...new Set([...MP_ZONES, ...ctx.machines.map(m => m.zone)])].filter(z => ctx.machines.some(m => m.zone === z));
   if (!zones.includes(V.zone)) V.zone = zones[0];
   const lateN = idx => new Set(idx.map(i => res.assigns[i].job).filter(j => _mpIsLate(j, S))).size;
+  V.zHits = {};
   const tabs = zones.map(z => {
     const zm = ctx.machines.filter(m => m.zone === z), withW = zm.filter(m => byM.has(m.id));
     const all = withW.flatMap(m => byM.get(m.id).all), hits = withW.reduce((s, m) => s + byM.get(m.id).hit.length, 0), lt = lateN(all);
+    V.zHits[z] = hits;
     const [zc, zl] = MP_ZCOL[z] || ['#475569', '#F8FAFC'];
     const sub = filtering ? `${TT('พบ', 'found')} ${nn(hits)} ${TT('งาน', 'jobs')}`
       : `${withW.length}/${zm.filter(m => m.active).length} ${TT('เครื่อง', 'mc')} · ${nn(all.length)} ${TT('งาน', 'jobs')}${lt ? ` · <span class="lt">⏰ ${lt}</span>` : ''}`;
@@ -26914,7 +26942,8 @@ function _mpvRenderZone() {
       ${off.length ? `${idleM.length ? '<br>' : ''}🚫 ${TT('ปิด / ไม่ใช้วางแผน', 'Off / not planned')}: <b>${off.map(m => escapeHtml(m.id)).join(', ')}</b>` : ''}
       <button type="button" class="mpv-chip" data-act="off">✎ ${TT('แก้เครื่องที่ปิด', 'Edit off machines')}</button></div>`;
   }
-  el.innerHTML = `<div class="mpv-zones" role="tablist" aria-label="Zone">${tabs}</div>${body}${idle}`;
+  tb.innerHTML = tabs;
+  el.innerHTML = body + idle;
 }
 function _mpvCard(m, o, W, res, filtering) {
   const V = _mpv, S = res.S, cal = res.cal, H = res.H;
@@ -26995,7 +27024,7 @@ function _mpvClick(ev) {
       _mpSave(LS_MPSET, V.S);
       if (V.res) mpvRender(); else _mpvRenderMonths();
       break;
-    case 'zone': V.zone = t.dataset.z; _mpSave(LS_MPV, { zone: V.zone }); _mpvRenderZone(); break;
+    case 'zone': V.zone = t.dataset.z; _mpSave(LS_MPV, { zone: V.zone }); _mpvRenderZone(); _mpvToList(); break;
     case 'kpi': {
       const k = t.dataset.k;
       if (k === 'late' || k === 'over') { V.f = V.f === k ? '' : k; _mpvRenderHead(); _mpvRenderZone(); }
