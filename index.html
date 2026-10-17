@@ -1823,6 +1823,65 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 /* ปุ่ม 📝 ต่อกะ ก็ไม่เกี่ยวกับหน้านี้ — ซ่อนทั้งโหมดปกติและเต็มจอ (req: "เอาต่อกะออก") */
 .iot-page2 #hoAddBtn{display:none!important}
 
+/* ═══ ★ v3.84 (ผู้ใช้ 17/10 ข้อ 4) — IOT "หน้า 3": แผนผลิตรายเครื่อง ═══
+   ใช้กติกาเดียวกับหน้า 2: ปกติ = แทนที่ผัง · เต็มจอ = กินเต็มกว้าง (ตัดแผงต่อกะ/แถบ OAE/WIP ออก) */
+#iotPlanPage{display:none;--isl-s:1}
+.iot-page3 > #mcViewFloor,.iot-page3 > #iotMapBtn{display:none!important}
+.iot-page3 #iotPlanPage{display:block}
+.iot-fs.iot-page3 > #iotPlanPage{grid-area:floor;grid-column:1 / -1;min-height:0;overflow:auto;display:block}
+.iot-fs.iot-page3 > #iotFsSide,.iot-fs.iot-page3 > #iotSplit,.iot-fs.iot-page3 > #iotOaeStrip,.iot-fs.iot-page3 > #iotWipStrip{display:none!important}
+.iot-page3 #hoAddBtn{display:none!important}
+.mpi-bar{gap:8px}
+.mpi-sub{font-size:calc(11.5px*var(--isl-s));color:var(--muted);font-weight:700}
+.mpi-q{flex:1 1 180px;min-width:150px;max-width:300px;min-height:34px;border:1.5px solid var(--blue-soft);border-radius:9px;padding:5px 10px;font-size:13px;font-family:inherit}
+.mpi-hint{font-size:calc(10.5px*var(--isl-s));color:var(--muted);margin:-4px 0 8px;line-height:1.5}
+.mpi-empty{padding:28px 10px;text-align:center;color:var(--muted);font-size:13px;font-weight:700}
+.mpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.mpi-m{background:var(--card,#fff);border:1.5px solid var(--border);border-left:5px solid var(--zc,#475569);border-radius:12px;padding:9px 10px;min-width:0}
+.mpi-mh{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px}
+.mpi-id{font-family:'Courier New',monospace;font-weight:900;font-size:calc(16px*var(--isl-s));color:var(--text);letter-spacing:.3px}
+.mpi-z{font-size:10px;font-weight:800;color:var(--zc,#475569);background:#F8FAFC;border:1px solid var(--border);border-radius:6px;padding:1px 6px}
+.mpi-ld{margin-left:auto;font-weight:900;font-size:calc(13px*var(--isl-s));font-variant-numeric:tabular-nums}
+.mpi-ld.lo{color:#15803d}.mpi-ld.md{color:#B45309}.mpi-ld.hi{color:#B91C1C}
+.mpi-sec{font-size:calc(10.5px*var(--isl-s));font-weight:900;color:#334155;margin:7px 0 4px}
+.mpi-j{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:6px 8px;border-radius:9px;background:#F8FAFC;margin-bottom:4px;border-left:4px solid var(--pc,#94A3B8)}
+.mpi-j.hit{background:#FEF9C3}
+.mpi-j .v{font-weight:800;font-size:calc(13px*var(--isl-s));min-width:0;overflow-wrap:anywhere}
+.mpi-j .lot{color:var(--muted);font-weight:700;font-size:calc(11px*var(--isl-s))}
+.mpi-j .q{font-weight:900;text-align:right;font-variant-numeric:tabular-nums;font-size:calc(14px*var(--isl-s))}
+.mpi-j .q small{font-weight:700;color:var(--muted);font-size:.72em}
+.mpi-j .m{grid-column:1 / -1;font-size:calc(10.5px*var(--isl-s));color:var(--muted);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.mpi-mvb{margin-left:auto;min-height:30px;padding:3px 10px;border-radius:8px;border:1.5px solid #C4B5FD;background:#F5F3FF;color:#5B21B6;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit}
+.mpi-mvb:hover{background:#EDE9FE}
+.mpi-mvb:focus-visible,.mpmv-m:focus-visible,.mpmv-why button:focus-visible{outline:2.5px solid #7C3AED;outline-offset:2px}
+.mpi-tag{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}
+.mpi-tag.in{background:#EDE9FE;color:#5B21B6}
+.mpi-tag.warn{background:#FEF3C7;color:#92400E}
+.mpi-none{font-size:12px;color:var(--muted);padding:4px 2px}
+.mpi-out{margin-top:6px;font-size:calc(10.5px*var(--isl-s));color:#5B21B6;background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:8px;padding:4px 8px;line-height:1.6}
+.mpi-act{margin-top:6px;padding-top:5px;border-top:1px dashed var(--border);font-size:calc(11px*var(--isl-s));color:#334155;line-height:1.5}
+/* หน้าต่างย้ายเครื่อง (ใช้ทั้งหน้าแผนผลิต 🏭 และ IOT) — ปุ่มเครื่องใหญ่พอสำหรับนิ้ว (≥ 48px) */
+.mpmv-job{font-size:14px;line-height:1.6}
+.mpmv-from{font-size:12.5px;color:var(--muted);margin:2px 0 8px}
+.mpmv-lbl{font-size:12px;font-weight:900;color:#334155;margin:10px 0 6px}
+.mpmv-why{display:flex;flex-wrap:wrap;gap:6px}
+.mpmv-why button{min-height:36px;padding:5px 11px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit}
+.mpmv-why button[aria-checked="true"]{background:#5B21B6;border-color:#5B21B6;color:#fff}
+.mpmv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.mpmv-m{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:8px 10px;border-radius:11px;border:1.5px solid #99F6E4;background:#F0FDFA;cursor:pointer;text-align:left;font-family:inherit}
+.mpmv-m b{font-family:'Courier New',monospace;font-size:16px;color:#0F766E}
+.mpmv-m small{font-size:10.5px;color:var(--muted);font-weight:700;line-height:1.35}
+.mpmv-m:hover{background:#CCFBF1}
+.mpmv-m.warn{border-color:#FDE68A;background:#FFFBEB}.mpmv-m.warn b{color:#92400E}
+.mpmv-m.hint{box-shadow:0 0 0 2.5px #0F766E}
+.mpmv-real{font-size:10px;font-weight:900;color:#fff;background:#0F766E;border-radius:6px;padding:1px 6px}
+.mpmv-more{margin-top:10px}
+.mpmv-more summary{cursor:pointer;font-weight:800;font-size:12px;color:#92400E;min-height:30px;display:flex;align-items:center}
+.mpmv-row{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #F1F5F9;font-size:12.5px;line-height:1.55}
+.mpmv-row > div{flex:1;min-width:0}
+.mpmv-row.warn{background:#FFFBEB;border-radius:8px;padding:8px}
+.mpmv-row .muted{font-size:11px}
+
 /* แถบหัว: เลือกเดือน + ตัวกรองลูกค้า + ตัวเลขสรุป */
 .isl-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .isl-ttl{display:flex;align-items:center;gap:6px;font-size:calc(13px*var(--isl-s));font-weight:900;color:var(--blue-dark);letter-spacing:-.2px}
@@ -2559,7 +2618,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.83</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.84</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2642,6 +2701,8 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
         <span id="iotPageSeg" class="iot-pgseg" role="group" aria-label="สลับหน้า IOT">
           <button type="button" id="iotPg1" class="on" onclick="iotSetPage(1)" title="ผังเครื่องจักร">🏭 <span class="pg-t">ผัง</span></button>
           <button type="button" id="iotPg2" onclick="iotSetPage(2)" title="รายการงานขายเดือนนี้ (จากการวางแผนขาย)">📋 <span class="pg-t">งานขายเดือนนี้</span></button>
+          <!-- ★ v3.84 (ผู้ใช้ 17/10 ข้อ 4) หน้า 3 = แผนผลิตรายเครื่อง (VSM4) -->
+          <button type="button" id="iotPg3" onclick="iotSetPage(3)" title="แผนงานผลิตรายเครื่อง (วันนี้ / ถัดไป / ทำจริง · ย้ายเครื่องได้)">📅 <span class="pg-t">แผนรายเครื่อง</span></button>
         </span>
         <button id="iotAllBtn" onclick="iotAllOpen()" title="IOT รวมทุก VSM (ต้องใช้รหัสพิเศษ)" aria-label="IOT รวมทุก VSM" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #7C3AED;background:#F5F3FF;color:#6D28D9;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">🌐 รวม 4 VSM</button>
         <button id="hoAddBtn" onclick="openHandoverAdd()" title="เพิ่มบันทึกต่อกะ" aria-label="เพิ่มบันทึกต่อกะ" style="height:30px;padding:0 11px;border-radius:7px;border:1.5px solid #0E9F6E;background:#F3FAF7;color:#057A55;font-size:12.5px;cursor:pointer;font-weight:800;line-height:1;display:flex;align-items:center;gap:5px">📝 ต่อกะ</button>
@@ -2655,6 +2716,8 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="mcViewFloor"></div>
     <!-- ★ 2026-08-02 (req #6 + #8) — "หน้า 2" ของ IOT: รายการติดตามงานขายของเดือนนั้น (จากการวางแผนขาย) -->
     <div id="iotSalesPage"></div>
+    <!-- ★ v3.84 "หน้า 3" ของ IOT: แผนผลิตรายเครื่อง (ตัววางแผน VSM4) -->
+    <div id="iotPlanPage"></div>
     <!-- แผงข้อมูลต่อกะ (แสดงเฉพาะตอน IOT เต็มจอ) -->
     <div id="iotFsSide" aria-label="ข้อมูลต่อกะ"></div>
     <!-- เส้นแบ่งลากปรับขนาด ต่อกะ ⇄ ผัง (เฉพาะเต็มจอจอใหญ่) -->
@@ -6495,7 +6558,22 @@ function _planRecIdx(){
 }
 function _planAutoStatus(p){
   const vk = vKey(p.valve_no||''); if(!vk) return null;
-  /* ★ 2026-09-01 (req) — แผน 1 ใบ = Valve No + จำนวน + วันที่ส่ง · จับคู่ของจริงด้วยเบอร์วาล์วล้วน */
+  /* ★ v3.84 (ผู้ใช้ 17/10) — สถานะมาจาก "Lot ที่จัดสรรให้แผนนี้" (planLotAlloc) ไม่ใช่ระดับเบอร์วาล์วแล้ว
+     ✅ จบแล้ว = Lot ที่จัดสรรให้จบงานครบยอด · ⚙️ กำลังผลิต = มี Lot แล้ว (ผ่าน FG / กำลังผลิต / รับเข้ารอผลิต)
+     📋 วางแผน = ยังไม่มี Lot ไหนเป็นของแผนนี้ (Lot เก่าที่เสร็จนานแล้วไม่นับ — ดู planFinDays) */
+  const A = planAllocOf(p);
+  if (A) {
+    const base = { lots: A.lots, alloc: A };
+    if (A.st === 'done') return { ...base, code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:'DONE', color:'#15803d', bg:'#DCFCE7' };
+    if (A.st === 'in_progress') {
+      const s = A.slow;
+      const proc = !s ? 'DONE' : s.st === 'in' ? TT('รับเข้า WIP IN 1.5 · รอผลิต','received (WIP IN 1.5) · waiting')
+                 : s.st === 'fg' ? TT('ผ่าน FG','passed FG') + (s.proc && s.proc !== 'FG' ? ' · ' + s.proc : '') : (s.proc || TT('เริ่มผลิตแล้ว','started'));
+      return { ...base, code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc, color:'#c2410c', bg:'#FFEDD5' };
+    }
+    return { ...base, code:'planned', label:TT('📋 วางแผน','📋 Planned'), proc:'', color:'#1d4ed8', bg:'#DBEAFE' };
+  }
+  /* ↓ แผนที่ตัวจัดสรรไม่รับ (ยอด 0 / วันที่ผิดรูป) — ใช้กติกาเดิมระดับเบอร์ (★ 2026-09-01) */
   if(_valveJobDone(p.valve_no||''))
     return { code:'done', label:TT('✅ ผลิตจบแล้ว','✅ Finished'), proc:'DONE', color:'#15803d', bg:'#DCFCE7' };
   const v = valveByKey(vk);
@@ -6585,6 +6663,138 @@ function _valveJobDone(valve){
     _vJobDoneSet=set; _vJobDoneT=t; _vJobDoneVer=_fvVer;
   }
   return _vJobDoneSet.has(vk);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v3.84 (ผู้ใช้ 17/10 ข้อ 1) — แผนขาย ↔ Lot: ระบบวิเคราะห์ว่า "แผนขายใบนี้จะขาย Lot ไหน"
+   ปัญหาเดิม: ตัดสิน "จบ/ไม่จบ" ระดับเบอร์วาล์ว (_valveJobDone) — VV1234 Lot 123456 จบไปแล้ว (ขายรอบก่อน)
+     + VV1234 Lot 789456 กำลังผลิต ต้องขาย 30/10 → ระบบเห็นว่าเบอร์นี้ "มี Lot จบแล้ว"
+     ⇒ แผน 30/10 ขึ้น ✅ ผลิตจบแล้ว · ตัววางแผนเครื่อง 🏭 ไม่ผูกวันขายให้ Lot 789456 (ไปต่อท้ายคิว "ไม่มีแผนขาย")
+     วัดจริง 17/10: แผน ต.ค. 51 จาก 149 ใบขึ้น "จบแล้ว" เพราะ Lot เก่าของเบอร์เดียวกัน เช่น VV4569A0
+     Lot 2604S040286 ผ่าน FG 28/05 (กดจบ 10/07) แต่แผนขาย 30/10 ต้องใช้ Lot 2605S050346 ที่เพิ่งรับเข้า 15/10
+   กติกาใหม่ — จัดสรรต่อเบอร์ ไล่แผนตามวันขาย น้อย→มาก:
+     ① แผนที่ระบุ Lot ไว้ (ข้อมูลเก่า) → ได้ Lot นั้นก่อน
+     ② ของที่ "ผลิตเสร็จแล้ว" (ผ่าน FG / จบงาน) นับให้แผนได้ก็ต่อเมื่อเสร็จไม่เกิน N วันก่อนวันขาย
+        (ค่าเริ่มต้น 30 วัน · ตั้งได้ที่ 🏭 ⚙️ ตั้งค่า) — เสร็จนานกว่านั้น = ส่งขายรอบก่อนไปแล้ว ไม่ใช่ของแผนนี้
+     ③ ที่เหลือใช้ Lot ที่ยังอยู่ในไลน์: กำลังผลิต (ใกล้เสร็จก่อน) → รับเข้าแล้วรอผลิต (รับก่อนได้ก่อน)
+     ④ ยังไม่พอ = "ยังไม่มีของ" (Order ที่รอ WIP IN 1.5)
+   1 Lot แบ่งให้หลายแผนได้ · แผนเดียวใช้หลาย Lot ได้ · ทุกหน้าที่ตอบว่า "แผนขายนี้มีของหรือยัง / ใช้ Lot ไหน" อ่านจากตรงนี้
+   (สถานะในตารางแผน · กราฟ Order/WIP IN/WIP OUT · บอร์ด IOT งานขาย · ตัววางแผนเครื่อง 🏭 วันขายของแต่ละ Lot)
+   ═══════════════════════════════════════════════════════════════════════ */
+const PLAN_FIN_DAYS = 30;
+const _PLA_ST_LB = { done:['✅ จบแล้ว','✅ done'], fg:['ผ่าน FG','passed FG'], wip:['กำลังผลิต','in production'], in:['รอผลิต','waiting'] };
+function planFinDays() {
+  try { const s = JSON.parse(localStorage.getItem('vsm4_mp_settings') || 'null');   // = LS_MPSET (ตั้งที่ 🏭 ⚙️)
+        const n = (s && s.finDays != null && s.finDays !== '') ? Math.round(+s.finDays) : NaN;
+        return (n >= 0 && n <= 365) ? n : PLAN_FIN_DAYS; } catch (e) { return PLAN_FIN_DAYS; }
+}
+// ยอดขาดเล็กน้อย (เศษ scrap) ไม่นับว่าขาด — ล็อต 998 ส่งแผน 1,000 = ครบ (กติกาเดียวกับ need ของตัววางแผน)
+function planTol(order) { return Math.max(5, Math.round((+order || 0) * 0.02)); }
+let _plaCache = null, _plaKey = null, _plaSeq = 0;
+function planLotAlloc(b) {
+  b = b || getWipBucketsView();
+  const key = { b, plans: state.plans, fv: _fvVer, t: state.targets, vsm: viewVsm(), fin: planFinDays(),
+                wi: (typeof _wipinVer !== 'undefined') ? _wipinVer : 0 };
+  if (_plaCache && _plaKey && Object.keys(key).every(k => key[k] === _plaKey[k])) return _plaCache;
+  const fin = key.fin, today = todayISO();
+  const iso = d => `${d.getFullYear()}-${P(d.getMonth()+1)}-${P(d.getDate())}`;
+  const back = (d, n) => { const t = new Date(d + 'T00:00:00'); t.setDate(t.getDate() - n); return iso(t); };
+  const byV = new Map();
+  const old = back(today, 120);   // แผนที่วันขายเก่ากว่า 120 วัน (รวมวันที่เสียแบบ 2001-08) ไม่ใช่งานที่ยังเดินอยู่ — ไม่ให้แย่ง Lot (กติกาเดียวกับตัววางแผน)
+  for (const p of filterVsm(state.plans || [])) {
+    if (p.status === 'cancelled' || !(Number(p.quantity) > 0) || !_planDateISO(p.plan_date) || _planDateISO(p.plan_date) < old) continue;
+    const vk = vKey(p.valve_no); if (!vk) continue;
+    let a = byV.get(vk); if (!a) byV.set(vk, a = []); a.push(p);
+  }
+  // ── ของจริงต่อเบอร์ (เฉพาะเบอร์ที่มีแผน) — 1 ล็อตอาจมี 2 ส่วน: ผ่าน FG ไปแล้ว + ยังค้างในไลน์
+  const parts = new Map();
+  const add = (vk, x) => { if (!(x.qty > 0)) return; let a = parts.get(vk); if (!a) parts.set(vk, a = []); a.push(x); };
+  const progOf = (valve, proc) => { const f = _valveFlow(valve).map(_procCanon); const i = f.indexOf(_procCanon(proc || '')); return f.length ? (i + 1) / f.length : 0; };
+  for (const it of (b.wipOut.items || [])) {
+    const vk = vKey(it.valve); if (!byV.has(vk)) continue;
+    const isDone = it.curProc === 'DONE';
+    let q = Number(it.qty) || 0;
+    if (!q && isDone) q = getJobProcQty(it.valve, it.lot);
+    // date = วันที่ผ่าน FG จริง (ไม่ใช่วันที่ Admin กดจบ — กดย้อนหลังทีละมาก ๆ ได้)
+    const f = String(it.date || it.moveDate || '').slice(0, 10);
+    add(vk, { lot: it.lot, lk: lotKey(it.lot), st: isDone ? 'done' : 'fg', qty: q, fin: f, proc: isDone ? 'DONE' : (it.curProc || 'FG'), prog: 2, recv: f });
+  }
+  const wipAll = (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || []);
+  for (const it of wipAll) {
+    const vk = vKey(it.valve); if (!byV.has(vk)) continue;
+    add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: Number(it.qty) || 0, proc: it.curProc || '', prog: progOf(it.valve, it.curProc),
+              recv: String(it.date || '').slice(0, 10), noIntake: it.basis === 'produced' });
+  }
+  const inBy = new Map();
+  for (const it of (b.wipIn.items || [])) {
+    if (it.started || it.unknown) continue;
+    const vk = vKey(it.valve); if (!byV.has(vk)) continue;
+    if (getJobProc(it.valve, it.lot) === 'DONE') continue;
+    const k = jobKey(it.valve, it.lot);
+    let o = inBy.get(k); if (!o) inBy.set(k, o = { vk, x: { lot: it.lot, lk: lotKey(it.lot), st: 'in', qty: 0, proc: '', prog: 0, recv: '' } });
+    o.x.qty += Number(it.qty) || 0;
+    const d = String(it.ts || '').slice(0, 10); if (d && (!o.x.recv || d < o.x.recv)) o.x.recv = d;
+  }
+  for (const o of inBy.values()) add(o.vk, o.x);
+  // ── จัดสรร ──
+  const RK = { done: 0, fg: 0, wip: 1, in: 2 };
+  const isFin = x => x.st === 'done' || x.st === 'fg';
+  const byPlan = new Map(), byId = new Map(), byLot = new Map(), spare = new Map();
+  for (const [vk, ps] of byV) {
+    ps.sort((a, c) => _planDateISO(a.plan_date).localeCompare(_planDateISO(c.plan_date)) || String(a.plan_id || '').localeCompare(String(c.plan_id || '')));
+    const L = (parts.get(vk) || []).map(x => ({ ...x, left: x.qty }));
+    L.sort((a, c) => (RK[a.st] - RK[c.st]) || (a.st === 'wip' ? c.prog - a.prog : 0)
+      || String(isFin(a) ? a.fin : a.recv).localeCompare(String(isFin(c) ? c.fin : c.recv)) || a.lk.localeCompare(c.lk));
+    const R = ps.map(p => ({ p, vk, due: _planDateISO(p.plan_date), order: Number(p.quantity) || 0, need: Number(p.quantity) || 0, lots: [] }));
+    const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake }); };
+    for (const r of R) {                                   // ① แผนที่ผูก Lot ไว้เอง → Lot นั้นก่อน (คนเลือกแล้ว ไม่ดูช่วงวัน)
+      const lk = lotKey(r.p.lot); if (!lk) continue;
+      for (const x of L) { if (r.need <= 0) break; if (x.lk === lk && x.left > 0) give(r, x, Math.min(r.need, x.left)); }
+    }
+    for (const r of R) {                                   // ②③ ตามวันขาย
+      if (r.need <= 0) continue;
+      const cut = back(r.due, fin);
+      for (const x of L) {
+        if (r.need <= 0) break;
+        if (x.left <= 0 || (isFin(x) && x.fin && x.fin < cut)) continue;   // เสร็จนานเกิน N วันก่อนวันขาย = ขายรอบก่อนไปแล้ว
+        give(r, x, Math.min(r.need, x.left));
+      }
+    }
+    for (const r of R) {
+      const s = { done: 0, fg: 0, wip: 0, in: 0 };
+      for (const l of r.lots) s[l.st] += l.qty;
+      Object.assign(r, s);
+      r.got = s.done + s.fg + s.wip + s.in;
+      r.short = Math.max(0, r.order - r.got);
+      const tol = planTol(r.order);
+      r.st = (s.done >= r.order - tol) ? 'done' : (r.got > 0 ? 'in_progress' : 'planned');
+      r.shortSig = r.short > tol;                          // ขาดจริง (เกินเศษ scrap)
+      // Lot ที่ "ตามหลังสุด" = ตัวกำหนดว่าแผนนี้จะเสร็จเมื่อไร
+      const open = r.lots.filter(l => l.st !== 'done');
+      r.slow = open.length ? open.slice().sort((a, c) => (RK[c.st] - RK[a.st]) || (a.prog - c.prog))[0] : null;
+      r.ignored = L.filter(x => isFin(x) && x.fin && x.fin < back(r.due, fin) && !r.lots.some(l => l.lk === x.lk));   // ล็อตเก่าที่ไม่นับ (บอกเหตุผลได้)
+      byPlan.set(r.p, r); if (r.p.plan_id) byId.set(r.p.plan_id, r);
+      for (const l of r.lots) {
+        const k = vk + '::' + l.lk;
+        let a = byLot.get(k); if (!a) byLot.set(k, a = []);
+        a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order });
+      }
+    }
+    spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, fin: x.fin || '' })));
+  }
+  _plaKey = key;
+  return (_plaCache = { byPlan, byId, byLot, spare, fin, seq: ++_plaSeq, today });
+}
+function planAllocOf(p) {
+  if (!p) return null;
+  const A = planLotAlloc();
+  return A.byPlan.get(p) || (p.plan_id ? A.byId.get(p.plan_id) : null) || null;
+}
+/* ป้ายสั้นของ Lot ที่จัดสรรให้แผน — "2605S050346 · 1,000 · รอผลิต" (ใช้ในตาราง/ป๊อปอัป/บอร์ด) */
+function planLotTxt(l) {
+  const lb = _PLA_ST_LB[l.st] || ['', ''];
+  const where = l.st === 'wip' ? (l.proc || TT(lb[0], lb[1])) : l.st === 'fg' ? `${TT(lb[0], lb[1])}${l.proc && l.proc !== 'FG' ? ' · ' + l.proc : ''}` : TT(lb[0], lb[1]);
+  return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${where}`;
 }
 
 /* ── บันทึกแผน 1 ใบขึ้น Cloud แบบ "ไม่หายแน่นอน" (req #6) ──
@@ -6845,7 +7055,8 @@ let _planAutoMemo = new Map(), _planAutoMemoVer = '';
 function planAutoStatus(p) {
   // ★ req #5: สถานะขึ้นกับ "รายการรับเข้า WIP IN 1.5" ด้วย → รวม _wipinVer ในคีย์ล้าง cache
   //   ไม่งั้นเข้ายอดรับเข้าแล้วสถานะแผนยังค้างเป็น "วางแผน" จนกว่าข้อมูลชุดอื่นจะเปลี่ยน
-  const ver = _fvVer + '/' + ((typeof _wipinVer !== 'undefined') ? _wipinVer : 0);
+  // ★ v3.84 + รอบของตัวจัดสรร Lot (ยอด WIP คิดใหม่เบื้องหลังเสร็จ = Lot เปลี่ยน แม้ _fvVer ไม่ขยับ)
+  const ver = _fvVer + '/' + ((typeof _wipinVer !== 'undefined') ? _wipinVer : 0) + '/' + planLotAlloc().seq;
   if (_planAutoMemoVer !== ver) { _planAutoMemo.clear(); _planAutoMemoVer = ver; }
   const k = p.plan_id || `${p.valve_no}§${p.lot}§${p.plan_date}`;
   let v = _planAutoMemo.get(k);
@@ -7639,7 +7850,7 @@ function renderPlanCompare(visibleRows){
   for(const r of inRows){
     const o=outBy[r.id]||{got:0};
     const shipShort=Math.max(0,r.order-o.got);
-    if(!shipShort) continue;
+    if(shipShort<=planTol(r.order)) continue;             // ★ v3.84 เศษ scrap ไม่นับว่าขาด (กติกาเดียวกับสถานะแผน)
     if(r.due && r.due<today)          W.late.push({...r,short:shipShort,out:o.got});
     else if(r.due && r.due<=soonCut)  W.soon.push({...r,short:shipShort,out:o.got});
     if(r.got===0 && r.due && r.due<=soonCut) W.noIn.push({...r,short:shipShort,out:o.got});
@@ -7661,7 +7872,7 @@ function renderPlanCompare(visibleRows){
       ${barRow('Order',r.order,'#94A3B8',0)}
       ${barRow('WIP IN',r.inQ,'#1A56DB',r.order)}
       ${barRow('WIP OUT',r.outQ,'#059669',r.order)}
-      <div class="pc-gap">${r.order>r.outQ
+      <div class="pc-gap">${r.order-r.outQ>planTol(r.order)
         ? `<span style="color:#DC2626">${TT('ยังต้องส่งอีก','still to ship')} <b>${nn(r.order-r.outQ)}</b></span>`
         : `<span style="color:#059669">✓ ${TT('ออกครบยอดสั่งแล้ว','shipped in full')}</span>`}
         ${r.inQ<r.order?` · <span style="color:#B45309">${TT('ของยังไม่เข้าอีก','not yet received')} <b>${nn(r.order-r.inQ)}</b></span>`:''}</div>
@@ -7681,6 +7892,7 @@ function renderPlanCompare(visibleRows){
       <div class="muted" style="font-size:11px;line-height:1.6;margin-bottom:8px">
         ${TT('คิดจากแถวที่กำลังกรองอยู่ในตารางข้างล่าง','Based on the rows currently filtered in the table below')}
         (${nn(inRows.length)} ${TT('แผน','plans')}) · ${TT('WIP IN = ของที่รับเข้ามาแล้ว · WIP OUT = ของที่ผ่าน FG แล้ว','WIP IN = received · WIP OUT = passed FG')}
+        · ${TT(`นับเฉพาะ Lot ที่จัดสรรให้แผนนั้น (Lot ที่เสร็จก่อนวันขายเกิน ${planFinDays()} วัน = ขายรอบก่อนไปแล้ว ไม่นับ)`,`only lots allocated to each plan (lots finished more than ${planFinDays()} days before the sale date count as already sold)`)}
       </div>
       <div class="pc-grid">${cards}</div>
       ${anyWarn?`<div class="pc-ws">
@@ -8097,9 +8309,9 @@ function planRowHtml(p) {
   const stBadge = cancelled
     ? `<span style="display:inline-block;font-size:11px;font-weight:800;color:var(--red);background:var(--red-bg);border-radius:6px;padding:3px 8px;white-space:nowrap">${TT('❌ ยกเลิกแผน','❌ Cancelled')}</span>`
     : (auto ? `<span title="${escapeHtml(stTitle)}" style="display:inline-block;font-size:11px;font-weight:800;color:${auto.color};background:${auto.bg};border-radius:6px;padding:3px 8px;white-space:nowrap">${auto.label}</span>
-               ${auto.proc?`<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(auto.proc)}</div>`:''}` : '');
+               ${auto.proc && auto.proc!=='DONE'?`<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(auto.proc)}</div>`:''}` : '');
   // หมายเหตุ "ระบบกำหนดเอง" อยู่ที่หัวคอลัมน์ + tooltip แล้ว — ไม่ต้องซ้ำทุกแถวให้ตารางสูงขึ้นเปล่า ๆ
-  const autoBadge = `<div title="${escapeHtml(stTitle)}">${stBadge}</div>`;
+  const autoBadge = `<div title="${escapeHtml(stTitle)}">${stBadge}${cancelled ? '' : _planLotsHtml(auto && auto.alloc)}</div>`;
   const sel = '';
   return `<tr data-pid="${pid}" class="${picked?'sel':''}"${cancelled?' style="opacity:.55"':''}>
     <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
@@ -8114,6 +8326,22 @@ function planRowHtml(p) {
       <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 6px;font-size:11px" title="ลบแผน" onclick="deletePlanRow('${pid}')">🗑️</button>
     </td>
   </tr>`;
+}
+
+/* ★ v3.84 — ใต้ป้ายสถานะ: "ขาย Lot ไหน" (จากตัวจัดสรร planLotAlloc) + ขาดเท่าไร + Lot เก่าที่ไม่นับเพราะอะไร */
+function _planLotsHtml(A) {
+  if (!A) return '';
+  const st = { done:'#15803d', fg:'#0E7490', wip:'#c2410c', in:'#1d4ed8' };
+  const L = A.lots || [], MAX = 3;
+  const rows = L.slice(0, MAX).map(l => `<div style="font-size:9.5px;font-weight:700;color:${st[l.st]||'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(planLotTxt(l))}">📦 ${escapeHtml(planLotTxt(l))}</div>`);
+  if (L.length > MAX) rows.push(`<div style="font-size:9.5px;color:var(--muted)">+${L.length - MAX} Lot</div>`);
+  if (A.shortSig) rows.push(`<div style="font-size:9.5px;font-weight:800;color:#B91C1C" title="${escapeHtml(TT('ยังไม่มี Lot ไหนรองรับยอดนี้ — รอ WIP IN 1.5','No lot covers this qty yet — waiting for WIP IN 1.5'))}">📭 ${TT('ยังไม่มีของ','no stock')} ${nn(A.short)}</div>`);
+  const ign = (A.ignored || []).filter(x => !L.some(l => l.lk === x.lk));
+  if (ign.length && !L.length) {
+    const x = ign[ign.length - 1];
+    rows.push(`<div style="font-size:9px;color:var(--muted2,#94A3B8)" title="${escapeHtml(TT(`Lot ที่เสร็จก่อนวันขายเกิน ${planFinDays()} วัน ถือว่าส่งขายรอบก่อนไปแล้ว — ตั้งจำนวนวันได้ที่ 🏭 ⚙️ ตั้งค่า`,`Lots finished more than ${planFinDays()} days before the sale date count as already sold — change it in 🏭 ⚙️ Settings`))}">↷ ${TT('ไม่นับ','skipped')} ${escapeHtml(x.lot)} (${TT('เสร็จ','done')} ${escapeHtml(_fmtThDate(x.fin))})${ign.length > 1 ? ` +${ign.length - 1}` : ''}</div>`);
+  }
+  return rows.length ? `<div style="margin-top:3px;max-width:190px">${rows.join('')}</div>` : '';
 }
 
 /* คีย์ระบุแผนซ้ำ — ★ 2026-09-01 (req) เลิกใช้ Lot: วาล์ว + วันที่ส่ง + จำนวน
@@ -8511,6 +8739,9 @@ async function _exportPlanRows(rows, tag) {
     // ★ req #5: สถานะ = ของจริงที่ระบบคิด (ยกเลิก = คนกด) · เพิ่ม process ล่าสุดเป็นอีกคอลัมน์
     'สถานะ': PLAN_STATUS[planEffStatus(p)]?.label || planEffStatus(p),
     'ถึง Process': (planAutoStatus(p) || {}).proc || '',
+    // ★ v3.84 ขาย Lot ไหน + ยังไม่มีของกี่ชิ้น (ตัวจัดสรร planLotAlloc)
+    'Lot ที่จะขาย': (() => { const A = planAllocOf(p); return A ? A.lots.map(planLotTxt).join(' | ') : ''; })(),
+    'ยังไม่มีของ': (() => { const A = planAllocOf(p); return A && A.shortSig ? A.short : ''; })(),
     'หมายเหตุ': p.note,
     'ผู้สร้าง': p.created_by,
   }));
@@ -10083,7 +10314,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.83":"Production Record + KPI · v3.83",
+"ระบบบันทึกผลิต + KPI · v3.84":"Production Record + KPI · v3.84",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -10350,7 +10581,7 @@ const I18N_X = {
 // header / IOT
 "เลือกภาษา / Language":"Language","ไทย":"TH","เวลาปัจจุบัน (ประเทศไทย)":"Current time (Thailand)",
 "สลับหน้า IOT":"Switch IOT page","ผังเครื่องจักร":"Floor map","ผัง":"Map",
-"รายการงานขายเดือนนี้ (จากการวางแผนขาย)":"This month's sales jobs (from the sales plan)","งานขายเดือนนี้":"Sales this month",
+"รายการงานขายเดือนนี้ (จากการวางแผนขาย)":"This month's sales jobs (from the sales plan)","งานขายเดือนนี้":"Sales this month","แผนรายเครื่อง":"Machine plan","แผนงานผลิตรายเครื่อง (วันนี้ / ถัดไป / ทำจริง · ย้ายเครื่องได้)":"Production plan per machine (today / next / actual · moves)",
 "IOT รวมทุก VSM (ต้องใช้รหัสพิเศษ)":"IOT for all VSMs (special code required)","IOT รวมทุก VSM":"IOT — all VSMs",
 "🌐 รวม 4 VSM":"🌐 All 4 VSMs","สรุป WIP IN 1.5 / WIP OUT + TOP ปัญหา":"WIP IN 1.5 / WIP OUT summary + top issues",
 "📈 กำลังเตรียม Dashboard…":"📈 Preparing dashboard…","กำลังอัปเดตหน้าจอ…":"Updating the screen…",
@@ -10727,6 +10958,7 @@ function renderMachineStatusChecker(recs) {
   renderFloorPlan(activeMachines, oaeMap);
   // ★ ถ้าเปิดอยู่ที่ "หน้า 2" (รายการงานขาย) ให้รีเฟรชด้วย ไม่งั้นตัวเลขค้างของเก่า
   if (_iotPage === 2 && typeof renderIotSales === 'function') renderIotSales();
+  else if (_iotPage === 3 && typeof renderIotPlan === 'function') renderIotPlan();   // ★ v3.84 (คำนวณใหม่เองเมื่อข้อมูลเปลี่ยน ไม่ถี่กว่า 1 นาที)
 }
 
 /* แถบสรุป OAE — รวมทั้งหมด + รายโซน (เฉพาะค่า OAE) แสดงเหนือผังเครื่องจักร/ในมุมมองต่อกะ */
@@ -11333,13 +11565,13 @@ function islSetDays(d) {
   renderIotSales(true);
 }
 function iotSetPage(n) {
-  _iotPage = (n === 2) ? 2 : 1;
+  _iotPage = (n === 2 || n === 3) ? n : 1;      // ★ v3.84 หน้า 3 = แผนรายเครื่อง
   const card = document.getElementById('iotCard');
-  if (card) card.classList.toggle('iot-page2', _iotPage === 2);
-  const b1 = document.getElementById('iotPg1'), b2 = document.getElementById('iotPg2');
-  if (b1) b1.classList.toggle('on', _iotPage === 1);
-  if (b2) b2.classList.toggle('on', _iotPage === 2);
+  if (card) { card.classList.toggle('iot-page2', _iotPage === 2); card.classList.toggle('iot-page3', _iotPage === 3); }
+  for (const k of [1, 2, 3]) { const b = document.getElementById('iotPg' + k); if (b) { b.classList.toggle('on', _iotPage === k); b.setAttribute('aria-pressed', String(_iotPage === k)); } }
+  if (typeof iotCloseMcPop === 'function') iotCloseMcPop();
   if (_iotPage === 2) renderIotSales();
+  else if (_iotPage === 3) renderIotPlan();
   else if (_iotData) renderFloorPlan(_iotData.active, _iotData.oae);
 }
 function islSetMonth(ym) { _islMonth = ym || ''; renderIotSales(true); }
@@ -11372,6 +11604,8 @@ let _islZoom = (() => { const v = parseFloat(localStorage.getItem(LS_ISL_ZOOM) |
 function _islApplyZoom() {
   const box = document.getElementById('iotSalesPage');
   if (box) box.style.setProperty('--isl-s', String(_islZoom));
+  const pp = document.getElementById('iotPlanPage');     // ★ v3.84 หน้า 3 แผนรายเครื่อง
+  if (pp) pp.style.setProperty('--isl-s', String(_islZoom));
 }
 function islZoom(dir) {
   _islZoom = dir === 0 ? 1 : Math.min(1.8, Math.max(.75, Math.round((_islZoom + dir * .1) * 100) / 100));
@@ -11383,20 +11617,31 @@ function islZoom(dir) {
    ★ 2026-08-12 — สร้างตารางจัดสรรของให้แต่ละงวดส่ง (_islAllocMap) ต่อท้ายในฟังก์ชันเดียวกัน
      สองอย่างนี้ต้องมาจากข้อมูลรอบเดียวกันเสมอ ถ้าแยกให้ผู้เรียกกดเองแล้วลืมอันใดอันหนึ่ง
      ตัวเลขบนบอร์ดจะกลายเป็นคนละรอบข้อมูลโดยไม่มีอะไรฟ้อง */
+let _islLotIdx = new Map();   // ★ v3.84 ยอดต่อ Process ราย (valve::lot) — "ผลิตได้" ของ Lot ที่จัดสรรให้แผน
 function _islProdIndex() {
-  const idx = {};
+  const idx = {}, lix = new Map();
   for (const r of filterVsmPeer(_wipProdSrc())) {
     const vno = (r.valve_no || r.valveNo || '').trim(); if (!vno) continue;
     const k = vKey(vno);            // ★ 2026-09-01 (req) รวมยอดระดับ "เบอร์วาล์ว" — เลิกแยกตาม Lot
     const proc = _procCanon((r.current_process || r.currentProcess || '').trim());
     const e = idx[k] || (idx[k] = { byProc: {}, vsms: new Set(), last: '' });
     if (proc) e.byProc[proc] = (e.byProc[proc] || 0) + (Number(r.quantity) || 0);
+    if (proc) { const jk = jobKey(vno, r.lot || ''); let o = lix.get(jk); if (!o) lix.set(jk, o = {}); o[proc] = (o[proc] || 0) + (Number(r.quantity) || 0); }
     e.vsms.add(vsmOf(r));
     const d = (r.timestamp || r.shift_date || r.record_date || '').slice(0, 10);
     if (d > e.last) e.last = d;
   }
+  _islLotIdx = lix;
   _islAllocMap = _islBuildAlloc(idx);
   return idx;
+}
+/* ★ v3.84 ยอดที่ Lot หนึ่งผลิตได้ ณ process ที่ไกลสุดตาม flow (ใช้กับ Lot ที่ยังอยู่ในไลน์ที่จัดสรรให้แผน) */
+function _islLotMade(valve, lot) {
+  const o = _islLotIdx.get(jobKey(valve, lot)); if (!o) return 0;
+  const flow = _valveFlow(valve).map(_procCanon);
+  let best = -2, q = 0;
+  for (const pr in o) { const rk = flow.indexOf(pr); if (rk > best || (rk === best && o[pr] > q)) { best = rk; q = o[pr]; } }
+  return q;
 }
 /* ยอดที่ผลิตได้ของ "เบอร์วาล์วนั้นทั้งหมด" + process ที่ไกลสุดตาม flow (= ตัวแทนสถานะ)
    ★ 2026-09-01 (req) เลิกผูก Lot — นับรวมทุก Lot ของเบอร์เดียวกัน
@@ -11456,6 +11701,22 @@ function _islRow(p, idx) {
   const lot   = (p.lot || '').trim();
   const due   = _planDateISO(p.plan_date);
   const order = Number(p.quantity) || 0;
+  /* ★ v3.84 (ผู้ใช้ 17/10) — แถวของแผนอ่านจาก "Lot ที่จัดสรรให้แผนนี้" (planLotAlloc) ไม่ใช่ยอดสะสมทั้งเบอร์
+     qty   = ผลิตได้ของ Lot ของแผนนี้ (จบ/ผ่าน FG เต็มยอด + Lot ที่ยังในไลน์ = ยอด ณ process ที่ไกลสุด)
+     short = ยอดที่ยังไม่มี Lot ไหนรองรับ (เกินเศษ scrap) · 'short' = มี Lot แล้วแต่ไม่พอ · 'none' = ยังไม่มี Lot เลย */
+  const A = planAllocOf(p);
+  if (A) {
+    const e = idx[vKey(valve)];
+    let made = A.done + A.fg;
+    for (const l of A.lots) if (l.st === 'wip') made += Math.min(l.qty, _islLotMade(valve, l.lot));
+    const done = A.st === 'done', short = A.shortSig ? A.short : 0;
+    const s = A.slow;
+    const proc = done ? 'DONE' : !s ? '' : s.st === 'in' ? TT('รอผลิต (WIP IN 1.5)', 'waiting (WIP IN 1.5)') : s.st === 'fg' ? 'FG ✓' + (s.proc && s.proc !== 'FG' ? ' · ' + s.proc : '') : (s.proc || TT('กำลังผลิต', 'running'));
+    const st = done ? 'done' : (A.got > 0 && short > 0) ? 'short' : (A.got > 0 ? 'run' : 'none');
+    return { valve, lot, order, due, qty: made, lotQty: A.got, short, taken: 0, proc, cust: custOfValve(valve), st, alloc: A,
+      remark: e ? [...e.vsms].map(v => (VSM_LABEL[v] || v).replace(/\s+/g, '')).sort().join(' · ') : '',
+      lastDate: e ? e.last : '', late: !!due && due < todayISO() && !done, planStatus: p.status || 'planned' };
+  }
   const pr    = _islLotProd(valve, idx);
   const e     = pr.e, proc = pr.proc;
   const done  = pr.done || _valveJobDone(valve);
@@ -11562,7 +11823,7 @@ function _islTable(rows) {
           r.st === 'short' ? `<i class="sh">${TT('ขาด','short')} ${nn(r.short)}</i>` : ''}</div>
         <div class="isl-bar-t"><i style="width:${bar}%"></i></div>
       </div></td>
-      <td><span class="isl-st isl-st-${r.st}">${stTxt}</span></td>
+      <td><span class="isl-st isl-st-${r.st}"${r.alloc ? ` title="${escapeHtml(r.alloc.lots.length ? 'Lot: ' + r.alloc.lots.map(planLotTxt).join(' | ') : TT('ยังไม่มี Lot ของแผนนี้', 'no lot for this plan yet'))}"` : ''}>${stTxt}</span></td>
       <td>${r.remark ? r.remark.split(' · ').map(v => `<span class="isl-rm">${escapeHtml(v)}</span>`).join('') : '<span class="isl-dash">—</span>'}</td>
     </tr>`;
   }).join('');
@@ -11714,8 +11975,7 @@ function _ismHtml(rows, ym) {
       const lab = `${e.valve} · ${_fmtThDate(iso)} · ${TT('ขาย', 'sell')} ${nn(c.order)} ${TT('ชิ้น', 'pcs')}`
         + (nLot > 1 ? ` · ${nLot} ${TT('รายการ', 'rows')}` : '')
         + ` · ${TT('ของพร้อมส่งงวดนี้', 'ready for this delivery')} ${nn(c.qty)} (${pc}%)`
-        + (shortNow ? ` · ${TT('ขาด', 'short')} ${nn(c.short)} — ${TT('ของเบอร์นี้ถูกงวดที่ถึงก่อนตัดไปแล้ว',
-              'this valve’s stock was already taken by an earlier delivery')} ${nn(c.taken)} ${TT('ชิ้น', 'pcs')}` : '');
+        + (shortNow ? ` · ${TT('ขาด', 'short')} ${nn(c.short)} — ${TT('Lot ที่มีไม่พอยอดสั่ง', 'the lots available do not cover the order')}` : '');
       // ★ 2026-08-15: คลิก = ดูรายละเอียด (เหมือนเดิม) · ดับเบิลคลิก/กดค้าง = แก้ยอดของวันนั้น
       return `<td class="ism-c${m.cls}"><button type="button" class="ism-q q-${st}"
         aria-label="${escapeHtml(lab)}" title="${escapeHtml(lab + ' — ' + TT('กดดูรายละเอียด/สถานะ · ดับเบิลคลิก (หรือกดค้าง) เพื่อแก้ยอด', 'tap for details & status · double-click or long-press to edit qty'))}"
@@ -12070,8 +12330,9 @@ function _islJobAt(valve, recsOfValve) {
   const flow = _valveFlow(valve).map(_procCanon);
   const fin  = flow[flow.length - 1] || '';
   const cur  = last ? _procCanon(last.proc) : '';
+  // ★ v3.84 เลิกใช้ _valveJobDone (ระดับเบอร์) — ผู้เรียกส่ง record เฉพาะ Lot ของงวดนั้นมาแล้ว · จบ/ไม่จบดูที่แถวแผน (r.st)
   return { pop, flow, cur, curQty: last ? last.qty : 0, curDate: last ? last.date : '',
-           machines: last ? last.machines : [], done: (!!cur && !!fin && cur === fin) || _valveJobDone(valve) };
+           machines: last ? last.machines : [], done: (!!cur && !!fin && cur === fin) };
 }
 function _islPop(valve, iso) {
   const ym  = _islMonth || todayISO().slice(0, 7);
@@ -12098,32 +12359,35 @@ function _islPop(valve, iso) {
   const nLate = items.filter(r => r.late).length;
   const nDone = items.filter(r => r.st === 'done').length;
 
-  // ดึง production ของ "เบอร์นี้" ครั้งเดียว แล้วใช้ซ้ำทุกการ์ด (ทุกงวดใช้ยอดชุดเดียวกัน)
+  // ดึง production ของ "เบอร์นี้" ครั้งเดียว แล้วแต่ละการ์ดกรองเฉพาะ Lot ของงวดนั้น
   const recsV = filterVsmPeer(_wipProdSrc()).filter(r => vKey(r.valve_no || r.valveNo) === vKey(valve));
-  const atV   = _islJobAt(valve, recsV);      // ★ 2026-09-01 สถานะการผลิตเป็นของ "เบอร์วาล์ว" ไม่ใช่รายล็อต
 
   const CAP = 40;
+  const stC = { done: '#15803d', fg: '#0E7490', wip: '#c2410c', in: '#1d4ed8' };
   const cards = lots.slice(0, CAP).map(e => {
     const r  = e.r;
-    const at = atV;
-    const st = r.late ? 'late' : e.short > 0 ? 'short' : (at.done || r.st === 'done') ? 'done'
-             : (at.cur || r.st === 'run') ? 'run' : 'none';
+    /* ★ v3.84 (ผู้ใช้ 17/10) — "ตอนนี้อยู่ที่" = เฉพาะ Lot ที่จัดสรรให้งวดนี้ (เดิมรวมทุก Lot ของเบอร์ = Lot เก่าที่ขายไปแล้วปนมา) */
+    const lotsE = e.rows.flatMap(x => (x.alloc && x.alloc.lots) || []);
+    const lks = new Set(lotsE.map(l => l.lk));
+    const at = _islJobAt(valve, recsV.filter(x => lks.has(lotKey(x.lot))));
+    const st = r.late ? 'late' : e.short > 0 ? 'short' : e.rows.every(x => x.st === 'done') ? 'done'
+             : e.rows.some(x => x.st === 'run' || x.st === 'short') ? 'run' : 'none';
     const stTxt = st === 'done' ? TT('ผลิตเสร็จ', 'Done') : st === 'late' ? TT('เลยกำหนดขาย', 'Overdue')
                 : st === 'short' ? TT('ของไม่พอส่ง', 'Short')
                 : st === 'run' ? TT('กำลังผลิต', 'Running') : TT('ยังไม่เริ่ม', 'Not started');
     const lpc = e.order > 0 ? Math.round(e.qty / e.order * 100) : (e.qty > 0 ? 100 : 0);
     const rel = _islDueRel(e.dues[0]);
-    /* ★ 2026-08-12 — เบอร์เดียวถูกวางแผนขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง (FIFO)
-       ต้องกางให้เห็นว่า "งวดไหนตัดไปเท่าไร เหลือให้งวดนี้เท่าไร" ไม่งั้นเลขในช่องอธิบายตัวเองไม่ได้
-       ★ 2026-09-01 (req) แบ่งระดับ "เบอร์วาล์ว" แล้ว — ไม่ใช่รายล็อตอีกต่อไป */
-    const lotAll = all.slice().sort((a, b) => String(a.due).localeCompare(String(b.due)));
-    const alloc = lotAll.length > 1 ? `<div class="ismp-alloc">
-        🧮 ${TT('ของเบอร์นี้ที่ผลิตได้ทั้งหมด', 'All stock produced for this valve')} <b>${nn(e.lotQty)}</b> ${TT('ชิ้น', 'pcs')}
-        — ${TT('แบ่งให้แต่ละงวดตามลำดับวันส่ง', 'split across deliveries in due-date order')}:
-        ${lotAll.map(x => `<span class="al ${x.st === 'short' ? 'bad' : x.qty >= x.order ? 'ok' : ''}${iso && x.due === iso ? ' on' : ''}">${
-          escapeHtml(_fmtThDate(x.due))} · ${nn(x.qty)}/${nn(x.order)}${
-          x.st === 'short' ? ` · ${TT('ขาด', 'short')} ${nn(x.short)}` : ''}</span>`).join('')}
-      </div>` : '';
+    /* ★ v3.84 (ผู้ใช้ 17/10) — "งวดนี้ขาย Lot ไหน" (ตัวจัดสรร planLotAlloc) แทน "ของทั้งเบอร์แบ่งตามวันส่ง"
+       Lot ที่เสร็จก่อนวันขายนานเกินกำหนด = ขายรอบก่อนไปแล้ว → บอกไว้ว่าไม่นับ (จะได้ไม่งงว่าทำไมของที่มีไม่ถูกนับ) */
+    const ign = e.rows.flatMap(x => (x.alloc && x.alloc.ignored) || []).filter((x, i, a) => a.findIndex(y => y.lk === x.lk && y.st === x.st) === i && !lks.has(x.lk));
+    const noStock = e.rows.reduce((s, x) => s + (x.alloc && x.alloc.shortSig ? x.alloc.short : 0), 0);
+    const alloc = `<div class="ismp-alloc">
+        📦 ${TT('Lot ที่จะขายงวดนี้', 'Lots for this delivery')}:
+        ${lotsE.length ? lotsE.map(l => `<span class="al" style="color:${stC[l.st] || 'inherit'}">${escapeHtml(planLotTxt(l))}</span>`).join('')
+          : `<span class="al bad">${TT('ยังไม่มี Lot', 'no lot yet')}</span>`}
+        ${noStock ? `<span class="al bad">📭 ${TT('ยังไม่มีของ', 'no stock')} ${nn(noStock)}</span>` : ''}
+        ${ign.length ? `<div style="font-size:10.5px;color:var(--muted);margin-top:3px">↷ ${TT('ไม่นับ', 'not counted')}: ${ign.slice(0, 4).map(x => `${escapeHtml(x.lot)} (${TT('เสร็จ', 'done')} ${escapeHtml(_fmtThDate(x.fin))})`).join(', ')}${ign.length > 4 ? ` +${ign.length - 4}` : ''} — ${TT(`เสร็จก่อนวันขายเกิน ${planFinDays()} วัน = ขายรอบก่อนไปแล้ว`, `finished over ${planFinDays()} days before the sale = sold earlier`)}</div>` : ''}
+      </div>`;
     const qmap = {}; for (const p of at.pop) qmap[_procCanon(p.proc)] = p.qty;
     const chips = at.flow.map(p => {
       const q = qmap[p] || 0;
@@ -12169,12 +12433,12 @@ function _islPop(valve, iso) {
     ${lots.length ? cards : `<div class="center muted" style="padding:14px 0;font-size:13px">${TT('ไม่มีรายการขายของเบอร์นี้ในช่วงที่เลือก', 'No sales rows for this valve in the selected range')}</div>`}
     ${lots.length > CAP ? `<div style="font-size:11px;color:var(--muted);padding:2px 2px 6px">… ${TT('และอีก', 'and')} ${nn(lots.length - CAP)} ${TT('งวด', 'deliveries')}</div>` : ''}
     <div class="ismp-hint">
-      📍 ${TT('“ตอนนี้อยู่ที่” = process ที่ไกลสุดตาม flow ของวาล์วนี้ จากยอดผลิตที่บันทึกไว้จริง (รวมสายพี่น้อง VSM3 ⇄ VSM4)',
-              '“Now at” = the farthest process along this valve’s flow, from recorded production (peer lines VSM3 ⇄ VSM4 included)')}<br>
-      🧮 ${TT('เบอร์เดียวที่ขายหลายงวด: ของกองเดียวถูกแบ่งตามลำดับวันส่ง — งวดที่ถึงก่อนตัดของก่อนจนครบยอดสั่ง เหลือเท่าไรจึงตกเป็นของงวดถัดไป (ไม่ดู Lot แล้ว)',
-              'One valve sold over several deliveries: the stock is split in due-date order — the earliest delivery takes what it needs first, and only the remainder rolls to the next (lots are ignored)')}<br>
-      🟥 ${TT('“ของไม่พอส่ง” = ของที่ผลิตได้ถูกงวดที่ถึงก่อนตัดไปจนงวดนี้ไม่เหลือพอ — ต้องผลิตเพิ่มให้ทันหรือเลื่อนงวดนี้',
-              '“Short” = earlier deliveries already took the stock, leaving this one without enough — produce more in time or move this delivery')}<br>
+      📍 ${TT('“ตอนนี้อยู่ที่” = process ที่ไกลสุดตาม flow ของ Lot ที่จะขายงวดนั้น จากยอดผลิตที่บันทึกไว้จริง (รวมสายพี่น้อง VSM3 ⇄ VSM4)',
+              '“Now at” = the farthest process of the lots for that delivery, from recorded production (peer lines VSM3 ⇄ VSM4 included)')}<br>
+      📦 ${TT(`ระบบจัด Lot ให้แต่ละงวดตามวันขาย: Lot ที่เสร็จแล้ว (ไม่เกิน ${planFinDays()} วันก่อนวันขาย) → Lot ที่กำลังผลิต (ใกล้เสร็จก่อน) → Lot ที่รับเข้ารอผลิต`,
+              `Lots are assigned to deliveries by sale date: finished lots (within ${planFinDays()} days before the sale) → lots in production (closest to done first) → received lots`)}<br>
+      🟥 ${TT('“ของไม่พอส่ง” = มี Lot แล้วแต่ยอดไม่พอยอดสั่ง — ต้องรอ WIP IN 1.5 เพิ่ม หรือเลื่อนงวดนี้',
+              '“Short” = lots exist but not enough for the order — needs more WIP IN 1.5 or move this delivery')}<br>
       🟪 ${TT('ชิปสีม่วง = process ที่ลงไว้แต่ไม่อยู่ใน flow ของวาล์วนี้ — ควรตรวจว่าลงถูกขั้นไหม',
               'purple chip = a process recorded outside this valve’s flow — worth checking')}
     </div>
@@ -12853,7 +13117,7 @@ let _iotUserZoom=false;
 function iotZoomBtn(dir){
   // ★ 2026-08-03 — อยู่หน้า 2 (บอร์ดงานขาย) ไม่มีผังให้ซูม → ปุ่มชุดนี้ปรับขนาดตัวอักษรบอร์ดแทน
   //   (เดิมกดแล้วไม่มีอะไรเกิดขึ้นเลย = ปุ่มตาย ผู้ใช้กดแล้วงง)
-  if(_iotPage===2){ islZoom(dir); return; }
+  if(_iotPage===2||_iotPage===3){ islZoom(dir); return; }   // ★ v3.84 หน้า 3 (แผนรายเครื่อง) ใช้ขนาดตัวอักษรชุดเดียวกัน
   if(_iotIsFs()){                       // เต็มจอ = ซูมผังที่ยืดเต็มกรอบ (คนละตัวกับซูมตอนอยู่ในหน้า)
     _iotFsScale = dir===0 ? 1 : Math.min(IOT_FSZ_MAX,Math.max(1,+(_iotFsScale+dir*0.25).toFixed(2)));
     _applyIotZoom();
@@ -13098,6 +13362,8 @@ function iotShowMcPop(id){
       ${noRows?`<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">${TT('ไม่มีรายละเอียดงาน','No job details')}</div>`:''}
       ${_iotHelpBlock(det)}`;
   }
+  // ★ v3.84 (ข้อ 4) จากผัง → แผนของเครื่องนี้ (IOT หน้า 3 กรองเฉพาะเครื่องนี้)
+  if(viewVsm()===MP_VSM) body+=`<button type="button" class="btn btn-outline btn-block" style="margin-top:10px;min-height:42px;font-weight:800" onclick="iotCloseMcPop();mpiOpenMachine('${escapeHtml(id)}')">📅 ${TT('ดูแผนผลิตของเครื่องนี้','See this machine’s plan')}</button>`;
   const pop=document.createElement('div');
   pop.id='iotMcPop'; pop.className='iotpop-bg';
   _iotMcId=id;                                    // จำไว้ให้สลับภาษาแล้ววาดใหม่ได้ (iotCloseMcPop ล้างให้)
@@ -16335,6 +16601,7 @@ function _wipViewsRefresh(){
   const pane=document.querySelector('section.pane.active')?.id;
   if(pane==='pane-home' || pane==='pane-prod'){ try{ refreshProcOutput(true); }catch(e){} }
   if(pane==='pane-plan'){ try{ renderPlans(); }catch(e){} }
+  if(pane==='pane-home' && typeof _iotPage!=='undefined' && _iotPage===3){ try{ renderIotPlan(); }catch(e){} }   // ★ v3.84
 }
 /* ── ตัวแบ่งงานเป็นช่วง (time-slicing) ── generator พัก (yield) เมื่อ _sliceDue() — โหมดรวดเดียว _sliceEnd = Infinity จึงไม่พักเลย */
 let _sliceEnd=Infinity;
@@ -17265,20 +17532,24 @@ function _wipPlanRows(ym, months){
   /* ★ 2026-08-16 (req) — months = Set เดือนที่มี Order · ส่งมาแล้วยอด "รับเข้า" จะนับ
      เฉพาะใบที่รับเข้าในเดือนพวกนั้น ให้ตรงกับกราฟและตารางเทียบ Order ในป๊อปอัปเดียวกัน */
   const wip=_wipinList().filter(e=>!months || months.has(String(e.ts||'').slice(0,7)));
-  /* ★ 2026-09-01 (req) — เลิกผูก Lot: นับยอดรับเข้าทุก Lot ของเบอร์วาล์วนั้น */
-  const recvOf=(valve,lot)=>wip.filter(e=>vKey(e.valve)===vKey(valve))
-                               .reduce((s,e)=>s+(Number(e.qty)||0),0);
+  /* ★ 2026-09-01 (req) — เลิกผูก Lot: นับยอดรับเข้าทุก Lot ของเบอร์วาล์วนั้น
+     ★ v3.84 — ไม่ได้กรองเดือน = ยอดของ "Lot ที่จัดสรรให้แผนนี้" (planLotAlloc) แทนยอดสะสมทั้งเบอร์ */
+  const recvOf=(valve,lot,p)=>{
+    if(!months && p){ const A=planAllocOf(p); if(A) return A.got; }
+    return wip.filter(e=>vKey(e.valve)===vKey(valve)).reduce((s,e)=>s+(Number(e.qty)||0),0);
+  };
   return filterVsm(state.plans||[])
     // ★ req #5: สถานะเป็นของระบบแล้ว — "แผนที่ยังนับ" = ทุกแผนที่ไม่ได้ถูกยกเลิก
     //   (ของเดิมเช็ค planned/in_progress ซึ่งเป็นค่าที่คนกดเอง จะหล่นหายทันทีที่ไม่มีใครกด)
     .filter(p=>p.status!=='cancelled')
     .filter(p=>!ym || _planDateISO(p.plan_date).slice(0,7)===ym)
     .map(p=>{
-      const planned=Number(p.quantity)||0, received=recvOf(p.valve_no||'', p.lot||'');
+      const planned=Number(p.quantity)||0, received=recvOf(p.valve_no||'', p.lot||'', p);
       const v=valveByKey(p.valve_no||'');
+      const tol=months?0:planTol(planned);
       return { id:p.plan_id||'', date:p.plan_date||'', valve:p.valve_no||'', lot:p.lot||'',
                customer:custGroup(v?v.customer:'Other'), planned, received,
-               missing:Math.max(0,planned-received), enough:planned>0&&received>=planned };
+               missing:(planned-received>tol)?planned-received:0, enough:planned>0&&received>=planned-tol };
     });
 }
 /* P1-11..14 (2026-07-16): ตารางแผนขายใน WIP IN 1.5 —
@@ -17708,6 +17979,27 @@ function _orderSupplyMap(kind, months){
 }
 /* แถวสรุป: แผนขายทุกใบของสายนี้ + ของจริงที่จัดสรรให้ + เดือนของ Order (= เดือนวันที่ขาย) */
 function _orderReconRows(kind, months){
+  /* ★ v3.84 (ผู้ใช้ 17/10) — ไม่ได้กรองเดือน = ใช้ตัวจัดสรร "แผนขาย ↔ Lot" (planLotAlloc) ชุดเดียวกับสถานะแผน/ตัววางแผน
+     in = ของที่ "Lot ของแผนนี้" รับเข้าแล้ว (ทุกสถานะ) · out = ส่วนที่ผ่าน FG / จบแล้ว
+     เดิมเป็นยอดสะสมทั้งเบอร์ทุกช่วงเวลา → Lot เก่าที่ขายไปแล้ว (เช่น VV4569A0 ผ่าน FG 1,406 เมื่อ พ.ค.)
+     ทำให้แผน 30/10 ขึ้น "WIP OUT 141% · ออกครบยอดสั่งแล้ว" ทั้งที่ Lot ของแผนนี้ยังไม่เริ่มผลิต
+     โหมด "นับเฉพาะเดือนที่มี Order" (months) ในป๊อปอัป WIP IN ยังใช้กติกาเดิม (นับตามเดือนที่รับเข้า) */
+  if(!months){
+    const rows=[];
+    for(const p of filterVsm(state.plans||[])){
+      if(p.status==='cancelled') continue;
+      const valve=(p.valve_no||'').trim(); if(!valve) continue;
+      const due=_planDateISO(p.plan_date);
+      const order=Math.max(0,Number(p.quantity)||0);
+      const A=planAllocOf(p);
+      const got=A ? (kind==='out' ? A.done+A.fg : A.got) : 0;
+      const tol=planTol(order);
+      rows.push({ id:p.plan_id||'', valve, lot:(p.lot||'').trim(), due, ym:due.slice(0,7)||'—',
+                  cust:custOfValve(valve), order, got, missing:(order-got>tol)?order-got:0,
+                  late: !!due && due<todayISO() && got<order-tol });
+    }
+    return rows;
+  }
   const supply=_orderSupplyMap(kind, months);
   /* ★ 2026-09-01 (req) — แผนจับคู่ด้วย Valve No อย่างเดียว: ของทุกล็อตของเบอร์นั้นเป็นของแผนเบอร์นั้น
      (กติกาจับคู่เดียวกับ _wipPlanRows / บอร์ดติดตามงานขาย) */
@@ -20230,6 +20522,17 @@ function acEmpSearch(ev, id) {
     document.getElementById(inputId + '_dd').classList.remove('open');
   });
 }
+/* ★ v3.84 ช่องพนักงานในหน้าแก้ไข KPI — ค้นจากพนักงานของ VSM ของ record นั้น (zone ของ record) */
+function acEmpEditSearch(ev, id, zone) {
+  const q = ev.target.value.trim().toLowerCase();
+  const dd = $(id + '_dd');
+  if (!q) { if (dd) dd.classList.remove('open'); return; }
+  const list = _empPoolForInput(String(zone || '') + '_x', q);
+  acDropdown(id, list, function pickEmpEdit(it, inputId) {
+    document.getElementById(inputId).value = `${it.id} — ${it.name}`;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+  });
+}
 function acValveSearch(ev, id) {
   const q = ev.target.value.trim().toLowerCase();
   if (!q) { $(id + '_dd').classList.remove('open'); return; }
@@ -21302,9 +21605,15 @@ function _spShowRecords(lk, procKeys, title, isOff) {
   const admOld = (!isOff && procKeys.length === 1 && _spValve) ? getPfAdm(_spValve.valveNo, lk, procKeys[0]) : null;
   if (admOld) _pfAdmCtx = { valve: _spValve.valveNo, lk, proc: _procCanon(procKeys[0]), rerender: null };
   let total = 0, ghostQty = 0, ghostN = 0;
+  /* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 3) — 👤 = พนักงานที่เดินเครื่อง (emp_id ของ KPI ที่ผูกกัน) ไม่ใช่คนที่ Lock in บันทึก
+     ยอดผลิตเก็บ operator = ผู้บันทึก → เดิมโชว์ชื่อคนลงข้อมูลแทนชื่อพนักงานที่แก้ไว้ในหน้าบันทึก */
+  const _kById = new Map();
+  for (const k of (state.kpiRecords || [])) if (k && k.record_id) _kById.set(k.record_id, k);
+  const _empOf = r => { const k = r.kpi_record_id && _kById.get(r.kpi_record_id); return (k && (k.emp_id || k.emp_name)) || ''; };
   const rowsH = recs.map(r => {
     const q = Number(r.quantity) || 0; total += q;
     const mc = _spMachineOf(r) || '—';
+    const emp = _empOf(r);
     const proc = _procCanon(((r.currentProcess || r.current_process || '') + '').trim() || '-');
     /* ★ 2026-08-04: โชว์ "วันผลิต" (ตรงกับหน้าประวัติ) ไม่ใช่เวลาที่กดบันทึก
        เวลาที่กดบันทึกยังบอกไว้ต่อท้ายแบบจาง ๆ เผื่อต้องไล่ย้อนว่าใครลงเมื่อไหร่ */
@@ -21319,7 +21628,7 @@ function _spShowRecords(lk, procKeys, title, isOff) {
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:800;color:var(--text)">🛠️ ${escapeHtml(mc)} <span class="tag tag-orange" style="font-size:10px">${escapeHtml(proc === '-' ? '(ไม่ระบุ)' : proc)}</span>${unlinked ? ' <span class="tag" style="font-size:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)" title="หา KPI คู่ของแถวนี้ไม่เจอ — ยอดนี้ไม่มีในหน้าประวัติ (ส่วนใหญ่เกิดจากลบ KPI ทิ้งแต่ยอดผลิตค้าง) · ให้ Admin เปิดหน้าตั้งค่า → ตรวจ/ซ่อมความสอดคล้อง">👻 ไม่มีใน KPI</span>' : ''}</div>
-        <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}</span>` : ''}</div>
+        <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(emp || r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}${emp && r.operator && vKey(String(emp).split('—')[0]) !== vKey(String(r.operator).split('—')[0]) ? ` โดย ${escapeHtml(String(r.operator).split('—')[0].trim())}` : ''}</span>` : ''}</div>
       </div>
       <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
       <button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>
@@ -22164,7 +22473,7 @@ async function exportHistory() {
     ? rows.map(r => {
         // ⚠️ API คืน shifts เป็น string — ต้อง parse ด้วย _shiftsArr ก่อน ไม่งั้น ts/te/ct จะหลุดเป็นค่าว่าง
         const _sh = _shiftsArr(r)[0] || {};
-        return { 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'Scrap (ชิ้นเสีย)': r.scrap||0, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process, 'พนักงาน': r.operator||r.emp_name||r.emp_id||'', 'CT (sec)': r.ct||_sh.ct||'', 'เวลาเริ่ม': r.time_start||_sh.ts||'', 'เวลาสิ้นสุด': r.time_end||_sh.te||'' };
+        return { 'วันที่': r.shift_date||r.record_date, 'กะ': r.shift_type==='day'?'Day':'Night', 'Zone': r.zone, 'เครื่อง': r.machine_id, 'OPR': r.opr, 'Scrap (ชิ้นเสีย)': r.scrap||0, 'OAE': r.oae, 'DLE': r.dle, 'Valve': r.valve_no, 'Lot': r.lot, 'Process': r.last_process, 'พนักงาน': r.emp_id||r.emp_name||r.operator||'', 'บันทึกโดย (Lock in)': r.operator||'', 'CT (sec)': r.ct||_sh.ct||'', 'เวลาเริ่ม': r.time_start||_sh.ts||'', 'เวลาสิ้นสุด': r.time_end||_sh.te||'' };
       })
     : rows.map(r => ({ 'วันผลิต': _spProdDate(r), 'บันทึกเมื่อ': r.timestamp, 'Valve': r.valveNo||r.valve_no, 'Lot': r.lot, 'Qty': r.quantity, 'Process': r.currentProcess||r.current_process, 'Status': r.status, 'Operator': r.operator, 'KPI ที่ผูก': r.kpi_record_id||'(ยังไม่ผูก)' }));
   const ws = XLSX.utils.json_to_sheet(data);
@@ -22345,8 +22654,14 @@ function editKpiRecord(rid) {
     </div>
     <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
     ${(+_sh0.wt_share > 0 && +_sh0.wt_share < 1) ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วงเดียว (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — WT ของ record นี้ = <b>${(+_sh0.wt_share * 100).toFixed(1)}%</b> ของเวลาเริ่ม–สิ้นสุด (แบ่งตามจำนวนชิ้น)</div>` : ''}
-    <div class="fr"><label>👤 พนักงาน</label>
-      <input type="text" id="editKpiOp" value="${escapeHtml(r.operator||r.emp_id||'')}">
+    ${/* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 3) — ช่องนี้ = "พนักงานที่เดินเครื่อง" (emp_id) ไม่ใช่ "คนที่ Lock in บันทึก" (operator)
+         เดิมโชว์ operator ก่อน → เห็นชื่อคนที่ Lock in แทนชื่อที่แก้ไว้ในหน้าบันทึก และกดบันทึกแก้ไขแล้วเขียนทับ emp_id ด้วยชื่อนั้น */''}
+    <div class="fr ac"><label>👤 พนักงาน (คนเดินเครื่อง)</label>
+      <input type="text" id="editKpiOp" value="${escapeHtml(r.emp_id||r.operator||'')}" data-orig="${escapeHtml(r.emp_id||r.operator||'')}"
+        oninput="acEmpEditSearch(event,'editKpiOp','${escapeHtml(r.zone||'')}')" autocomplete="off" placeholder="ค้นรหัส/ชื่อ">
+      <div class="ac-dd" id="editKpiOp_dd"></div>
+      ${String(r.shift_ids||'').includes(',') ? `<div class="muted" style="font-size:10.5px;margin-top:2px">👥 ทีม: ${escapeHtml(r.emp_name||r.shift_ids)} — ช่องนี้แก้ได้เฉพาะคนแรก</div>` : ''}
+      ${r.operator ? `<div class="muted" style="font-size:10.5px;margin-top:2px">🖊️ บันทึกโดย (Lock in): ${escapeHtml(r.operator)}</div>` : ''}
     </div>
     <div class="fr"><label>Valve No</label>
       <input type="text" id="editKpiValve" value="${escapeHtml(r.valve_no||'')}">
@@ -22443,10 +22758,20 @@ async function saveKpiEdit() {
     valve_no:     $('editKpiValve').value.trim(),
     lot:          $('editKpiLot').value.trim(),
     last_process: $('editKpiProc').value.trim(),
-    operator:     $('editKpiOp').value.trim(),
-    emp_id:       $('editKpiOp').value.trim(),
     oae, dle, pplh, scrap_rate: scrapRate,
   };
+  /* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 3) — แก้ "พนักงาน" = แก้ emp_id (+ emp_name / shift_ids ให้ตรงกัน) เท่านั้น
+     operator = คนที่ Lock in บันทึก (ใครเป็นคนลง) ไม่แตะ · ไม่ได้แก้ช่องนี้ = ไม่ส่ง (record เก่าไม่ถูกเขียนทับ) */
+  const _empEl = $('editKpiOp'), _empV = (_empEl ? _empEl.value : '').trim();
+  if (_empEl && _empV !== (_empEl.getAttribute('data-orig') || '').trim()) {
+    const eid = _empV.split('—')[0].trim().split(/\s+/)[0].trim();
+    const ename = _empV.includes('—') ? _empV.split('—').slice(1).join('—').trim() : ((state.employees || []).find(e => String(e.id).toUpperCase() === eid.toUpperCase()) || {}).name || '';
+    patch.emp_id = eid ? `${eid}${ename ? ` — ${ename}` : ''}` : '';
+    const ids = String(r.shift_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+    const names = String(r.emp_name || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (ids.length > 1) { ids[0] = eid; names[0] = ename || eid; patch.shift_ids = ids.join(','); patch.emp_name = names.join(', '); }
+    else { patch.shift_ids = eid; patch.emp_name = ename || eid; }
+  }
   const localPatch = { ...patch, time_start: newTS, time_end: newTE, updated_at: new Date().toISOString() };
   const applyLocal = () => {
     Object.assign(state.kpiRecords[idx], localPatch);
@@ -22458,7 +22783,7 @@ async function saveKpiEdit() {
       for (const p of linked) {
         Object.assign(p, {
           valve_no: patch.valve_no, valveNo: patch.valve_no,
-          lot: patch.lot, operator: patch.operator,
+          lot: patch.lot, operator: p.operator,          // ★ v3.84 ผู้บันทึกไม่เปลี่ยนตามการแก้ชื่อพนักงาน
           machine_id: patch.machine_id, zone: patch.zone,
           shift_date: patch.shift_date, shift_type: patch.shift_type,
           updated_at: localPatch.updated_at,
@@ -26120,13 +26445,31 @@ function mpDefaults() {
     incWip: true, incIn: true, onlyPlan: false, cust: '', defaultCt: 20, extLagH: 20, skipBlocked: true,
     usePins: true, incOrder: true, orderBackDays: 14, alertDays: 14, histDays: 90,   // ★ v3.77
     seqDays: 7,     // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
-    v3Days: 3, v3RunDays: 1 };   // ★ v3.83 ส่ง VSM3 1 รอบ = กี่วันทำงาน (ยังไม่ส่ง / ล็อตอยู่ที่ VSM3 แล้ว)
+    v3Days: 3, v3RunDays: 1,     // ★ v3.83 ส่ง VSM3 1 รอบ = กี่วันทำงาน (ยังไม่ส่ง / ล็อตอยู่ที่ VSM3 แล้ว)
+    finDays: PLAN_FIN_DAYS };    // ★ v3.84 Lot ที่เสร็จก่อนวันขายเกินกี่วัน = ขายรอบก่อนไปแล้ว (ดู planLotAlloc)
 }
 function mpSettings() {
   const s = { ...mpDefaults(), ..._mpLoadLS(LS_MPSET, {}, false) };
-  if (!s.start || s.start < todayISO()) s.start = todayISO();
+  if (!s.start || s.start < mpProdDay()) s.start = mpProdDay();
   return s;
 }
+/* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 5) — แผนเริ่มที่ "วันผลิต" ไม่ใช่วันตามปฏิทิน
+   วันผลิตของโรงงาน = 08:00 → 08:00 วันถัดไป (กะเช้า 08–20 + กะดึก 20–08 · กติกาเดียวกับ _resolveShift ตอนบันทึก)
+   เดิม: แผนเริ่มที่ todayISO() และให้วันแรกเต็ม S.hours ชม. เสมอ
+     • 23:00 ของ 17/10 → วันแรก 17/10 ได้เต็ม 20 ชม. (ทั้งที่กะเช้าผ่านไปแล้ว)
+     • 01:00 ของ 18/10 → แผนเริ่ม 18/10 (ทั้งที่ยังอยู่กะดึกของ 17/10) → คิวทั้งหมดเลื่อนไป 1 วันกลางกะ
+   ตอนนี้: เริ่มที่วันผลิตปัจจุบัน + หักชั่วโมงที่ผ่านไปแล้วของวันผลิตนั้น (สัดส่วนของ 24 ชม. × ชม.ทำงาน/วัน)
+     ⇒ เปิดดู 23:00 (17/10) กับ 01:00 (18/10) = วันผลิตเดียวกัน คิวเดียวกัน ต่างแค่เวลาที่เหลือของกะดึก */
+const MP_DAY_START_H = 8;
+function mpProdDay(now) { const d = new Date(now || Date.now()); if (d.getHours() < MP_DAY_START_H) d.setDate(d.getDate() - 1); return _mpIso(d); }
+function mpElapsedH(S, now) {
+  const n = new Date(now || Date.now());
+  if (!S || S.start !== mpProdDay(n)) return 0;
+  const st = new Date(S.start + 'T00:00:00'); st.setHours(MP_DAY_START_H, 0, 0, 0);
+  const frac = Math.max(0, Math.min(1, (n - st) / 864e5));
+  return Math.round(frac * (+S.hours || 20) * 100) / 100;
+}
+function mpShiftNow(now) { const h = new Date(now || Date.now()).getHours(); return (h >= MP_DAY_START_H && h < 20) ? 'day' : 'night'; }
 
 /* ---------- ปฏิทินทำงาน (นาฬิกา "ชั่วโมงทำงาน") ---------- */
 function _mpIso(d) { return `${d.getFullYear()}-${P(d.getMonth() + 1)}-${P(d.getDate())}`; }
@@ -26323,29 +26666,25 @@ function mpJobs(S, ctx) {
     j.progress = j.steps.length ? j.firstStep / j.steps.length : 0;
     jobs.push(j);
   }
-  // ── วันขาย: จับคู่แผนขาย (VSM4 · ยังไม่จบ/ไม่ยกเลิก) → ล็อตแบบ FIFO ต่อเบอร์วาล์ว
-  const plans = filterVsm(state.plans || []).map(p => ({ p, st: planEffStatus(p), date: _planDateISO(p.plan_date), qty: Number(p.quantity) || 0 }))
-    .filter(x => x.date && x.st !== 'cancelled' && x.st !== 'done' && x.qty > 0 && x.date >= _mpAddDays(S.start, -120));
-  const byValve = {};
-  for (const x of plans) (byValve[vKey(x.p.valve_no)] = byValve[vKey(x.p.valve_no)] || []).push(x);
-  const jobsByValve = {};
-  for (const j of jobs) if (!j.noflow) (jobsByValve[j.vk] = jobsByValve[j.vk] || []).push(j);
+  /* ── วันขาย: ★ v3.84 (ผู้ใช้ 17/10) อ่านจากตัวจัดสรรกลาง "แผนขาย ↔ Lot" (planLotAlloc) — Lot ไหนขายแผนไหน
+     เดิม: ตัดแผนที่ planEffStatus = 'done' ทิ้งก่อน (สถานะระดับเบอร์ → Lot เก่าจบแล้ว = ทุกแผนของเบอร์ "จบ")
+       แล้วจับคู่ FIFO เฉพาะล็อตในคิวนี้ ⇒ VV4569A0 Lot 2605S050346 (รับเข้า 15/10) ไม่ได้วันขาย 30/10 ไปต่อท้าย "ไม่มีแผนขาย"
+     ตอนนี้: ของที่เสร็จแล้ว (ในช่วง N วันก่อนวันขาย) ถูกหักออกจากแผนก่อน · ที่เหลือแบ่งให้ล็อตในไลน์ตามลำดับวันขาย
+       → ล็อตได้วันขายของแผนที่ "ขายล็อตนี้จริง" · ส่วนที่ยังไม่มีล็อตไหนรองรับ = Order รอของ (ด้านล่าง) */
+  const A = planLotAlloc(b);
+  const minDue = _mpAddDays(S.start, -120);
+  for (const j of jobs) {
+    if (j.noflow) continue;
+    for (const x of (A.byLot.get(j.k) || [])) {
+      if ((x.st !== 'wip' && x.st !== 'in') || x.date < minDue) continue;
+      (j.plans = j.plans || []).push({ date: x.date, qty: x.qty });
+      if (!j.due || x.date < j.due) j.due = x.date;
+    }
+  }
   const shortages = [];
-  for (const [vk, list] of Object.entries(byValve)) {
-    list.sort((a, b) => a.date.localeCompare(b.date));
-    const js = (jobsByValve[vk] || []).slice().sort((a, b) => (b.progress - a.progress) || String(a.recv).localeCompare(String(b.recv)));
-    for (const j of js) j._left = j.qty;
-    const give = (j, x, q) => { j._left -= q; x.left -= q; (j.plans = j.plans || []).push({ date: x.date, qty: q }); if (!j.due || x.date < j.due) j.due = x.date; };
-    for (const x of list) x.left = x.qty;
-    for (const x of list) {                      // ① แผนเก่าที่ผูก Lot ไว้ → ให้ล็อตนั้นก่อน
-      const lk = lotKey(x.p.lot); if (!lk) continue;
-      const j = js.find(y => lotKey(y.lot) === lk && y._left > 0);
-      if (j) give(j, x, Math.min(x.left, j._left));
-    }
-    for (const x of list) {                      // ② ที่เหลือ FIFO ตามวันขาย
-      for (const j of js) { if (x.left <= 0) break; if (j._left <= 0) continue; give(j, x, Math.min(x.left, j._left)); }
-      if (x.left > 0) shortages.push({ valve: x.p.valve_no, date: x.date, order: x.qty, short: x.left, customer: custOfValve(x.p.valve_no), note: x.p.note || '' });
-    }
+  for (const r of A.byPlan.values()) {
+    if (!r.shortSig || r.due < minDue) continue;
+    shortages.push({ valve: r.p.valve_no, date: r.due, order: r.order, short: r.short, customer: custOfValve(r.p.valve_no), note: r.p.note || '' });
   }
   /* ★ v3.77 — Order ที่ "ยังไม่มี WIP IN 1.5" (สั่งแล้ว แต่ของยังไม่เข้า VSM4) → งานจำลอง kind 'order'
      ผู้ใช้ (12/10): WIP IN 1.5 เข้ามาไม่ต่อเนื่อง — Order เยอะแต่ของยังไม่มา แผนผลิตต่อไม่ได้ ต้องเลื่อน
@@ -26356,14 +26695,14 @@ function mpJobs(S, ctx) {
      • ของเข้าจริงเมื่อไร = กลายเป็นล็อตจริง (kind 'in') ยอดงานจำลองลดลงเอง ไม่ต้องแก้แผน */
   const orders = [];
   if (S.incOrder !== false) {
-    const planById = new Map(filterVsm(state.plans || []).map(p => [p.plan_id, p]));
     const back = _mpAddDays(S.start, -(+S.orderBackDays || 0));
-    for (const r of _orderReconRows('in')) {
-      if (!(r.missing > 0) || !r.due || r.due < back) continue;   // ยกเลิกแล้วไม่อยู่ใน r อยู่แล้ว
-      /* ❗ไม่กรองด้วย planEffStatus 'done' — สถานะนั้นเป็นระดับเบอร์ (ล็อตไหนของเบอร์ถูกกดจบ = ทุกแผนของเบอร์ "จบ")
-         วัดจริง 12/10: VV7242M1 แผนขาย 15–29/10 ~9,000 ชิ้น ยังไม่รับเข้าสักชิ้น แต่ขึ้น "จบแล้ว" ทุกใบ → จะไม่ถูกเตือนเลย
-         ใช้ "Order − รับเข้าแล้ว" ตรง ๆ แทน (ของที่จบจริงจะรับเข้าครบ → missing = 0 ไม่โผล่อยู่แล้ว) */
-      const p = planById.get(r.id);
+    /* ★ v3.84 ยอดที่ "ยังไม่มีล็อตไหนรองรับ" มาจากตัวจัดสรรกลางชุดเดียวกับวันขายข้างบน
+       (เดิมใช้ Order − ยอดรับเข้าสะสมทั้งเบอร์ทุกช่วงเวลา → ของที่รับเข้าเมื่อ พ.ค.–ก.ค. ยังถูกนับให้แผน ต.ค. ว่า "มีของแล้ว") */
+    const recon = [...A.byPlan.values()].filter(x => x.shortSig)
+      .map(x => ({ id: x.p.plan_id || '', valve: x.p.valve_no, due: x.due, cust: custOfValve(x.p.valve_no), order: x.order, got: x.got, missing: x.short, p: x.p }));
+    for (const r of recon) {
+      if (!(r.missing > 0) || !r.due || r.due < back) continue;
+      const p = r.p;
       if (S.cust && custGroup(r.cust) !== S.cust) { skipped.cust++; continue; }
       const vk = vKey(r.valve), v = mpValve(vk);
       const j = { kind: 'order', valve: r.valve, lot: '', customer: r.cust, qty: r.missing, total: r.missing, recv: '', curProc: '',
@@ -26435,17 +26774,21 @@ function mpSchedule(jobs, ctx, S, pins) {
   /* รอบแรก ขั้นก่อนหน้าที่ระบบวางเองถูก "ประมาณ" (ไม่มีคิวแย่ง) → งานที่วางเองหลัง ๆ มักโดนเลื่อน
      รอบสอง เอาเวลาที่ของมาถึงจริงจากรอบแรกมาเป็นจุดเริ่ม → คิวที่วางเองเรียงตามที่ Admin ตั้งใจมากขึ้น เลื่อนน้อยลง */
   let out = null, hint = null;
+  const t0 = mpElapsedH(S);          // ★ v3.84 ชั่วโมงของวันผลิตนี้ที่ผ่านไปแล้ว — ห้ามวางงานย้อนเวลา
   for (let pass = 0; pass < 2; pass++) {
-    out = _mpScheduleOnce(jobs, ctx, S, pins, hint);
+    out = _mpScheduleOnce(jobs, ctx, S, pins, hint, t0);
     if (!out.shiftedN) break;
     hint = out.observed;
   }
   return out;
 }
-function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
+function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
   const H = +S.hours || 20;
   const cal = mpCalendar(S, 800);
-  const tl = new Map(ctx.machines.map(m => [m.id, []]));
+  // ★ v3.84 วันแรกของปฏิทิน = วันผลิตปัจจุบัน → ช่วง [0, t0) ของทุกเครื่องผ่านไปแล้ว (จองไว้ ไม่ให้วางงานลง)
+  t0 = (cal.days[0] === S.start) ? Math.max(0, Math.min(H, +t0 || 0)) : 0;
+  const ivPast = () => t0 > 0 ? [{ s: 0, e: t0, sd: null, past: true }] : [];
+  const tl = new Map(ctx.machines.map(m => [m.id, ivPast()]));
   const assigns = [], unplan = [], waitIn = [];
   const today = todayISO();
   const lag = +S.lagH || 0, extLag = +S.extLagH || H, setupH = +S.setupH || 0;
@@ -26537,7 +26880,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
   for (let it = 0; it < 8 && pinned.length; it++) {
     const nEnd = new Map(), nPlace = new Map(); let moved = 0;
     for (const [mid, L] of qByM) {
-      const m = ctx.mById.get(mid), iv = [];
+      const m = ctx.mById.get(mid), iv = ivPast();
       for (const p of L) {
         const ready = readyOf(p, endOf);
         const k = costOf(m, p.job, p.st, p.st.need);
@@ -26673,7 +27016,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint) {
     let o = load.get(a.m.id); if (!o) load.set(a.m.id, o = {});
     o[d.d] = (o[d.d] || 0) + d.hrs;
   }
-  return { cal, assigns, unplan, load, H, waitIn, pinnedN: pinned.length, observed, shiftedN };
+  return { cal, assigns, unplan, load, H, waitIn, pinnedN: pinned.length, observed, shiftedN, t0 };
 }
 /* ★ v3.83 ส่ง VSM3 1 รอบ = กี่ชั่วโมงทำงาน (ยังไม่ส่ง = v3Days · ล็อตอยู่ที่ VSM3 แล้ว = v3RunDays) */
 function mpV3Dur(b, S, H) {
@@ -27031,9 +27374,10 @@ async function mpvRecompute() {
   await yieldUI();
   try {
     V.oldVer = _mpOldKpiVer;
-    const res = mpPlan(V.S);
+    const res = _mpMarkMoves(mpPlan(V.S));      // ★ v3.84 + ตรวจ "ลงยอดคนละเครื่องกับแผน"
     if (_mpv !== V || !V.open) return;
     V.res = res; _mpLast = res;
+    if (_mpi) { _mpi.res = res; _mpi.at = Date.now(); _mpi.key = _mpiKey(V.S); }   // IOT แผนรายเครื่องใช้ผลเดียวกัน
   } finally { V.busy = false; }
   mpvRender();
 }
@@ -27057,7 +27401,9 @@ function mpvRender() {
 function _mpvSub() {
   const V = _mpv, el = $('mpvSub'); if (!V || !el) return;
   const S = V.S, at = V.res && V.res.at;
-  const bits = [`${TT('เริ่มแผน', 'Start')} ${_mpD(S.start).slice(0, 5)}`, `${S.hours} ${TT('ชม./วัน', 'h/day')}`];
+  // ★ v3.84 วันผลิต + กะ + ชั่วโมงที่เหลือของวันผลิตแรก (ตี 1 = ยังกะดึกของเมื่อวาน)
+  const t0 = V.res ? (+V.res.t0 || 0) : 0, sh = mpShiftNow(at || Date.now());
+  const bits = [`${TT('วันผลิต', 'Prod. day')} ${_mpD(S.start).slice(0, 5)}${t0 > 0 ? ` (${sh === 'day' ? TT('กะเช้า', 'day shift') : TT('กะดึก', 'night shift')} · ${TT('เหลือ', 'left')} ${Math.round((S.hours - t0) * 10) / 10} ${TT('ชม.', 'h')})` : ''}`, `${S.hours} ${TT('ชม./วัน', 'h/day')}`];
   if (S.cust) bits.push(S.cust);
   if (at) bits.push(`${TT('คำนวณ', 'calc')} ${P(at.getHours())}:${P(at.getMinutes())}`);
   if (V.busy) bits.push('⏳ ' + TT('กำลังคำนวณ…', 'Calculating…'));
@@ -27120,6 +27466,7 @@ function _mpvRenderHead() {
   ] : [`📅 ${TT('ไม่มีวันทำงานในเดือนนี้ (ตามวันเริ่มแผน / วันหยุด)', 'No working days this month')}`];
   const v3W = (res.v3 || []).filter(x => x.b.s < W.T1 - 1e-9 && x.b.e > W.T0 + 1e-9);   // ★ v3.83
   if (v3W.length) meta.push(`<button type="button" class="mpv-chip" data-act="zone" data-z="VSM3" style="background:#FDF2F8;color:#9D174D;border-color:#FBCFE8" title="${TT('ล็อตที่ต้องส่งไปทำ Process ที่ VSM3 — ไม่กินเวลาเครื่อง VSM4', 'Lots sent to VSM3 for some processes — no VSM4 machine time')}">🔀 ${TT('ส่ง VSM3', 'to VSM3')} ${nn(new Set(v3W.map(x => x.job.k)).size)} ${TT('ล็อต', 'lots')}</button>`);
+  meta.push(_mpMovesChip(res, 'data-act="moves"'));   // ★ v3.84 🔀 ย้ายเครื่อง / ลงยอดไม่ตรงแผน
   if (noSd) meta.push(`<button type="button" class="mpv-chip warn" data-act="issues">⚠️ ${TT('เบอร์ไม่มี SD', 'valves w/o SD')} ${noSd}</button>`);
   if (V.f) meta.push(`<button type="button" class="mpv-chip on" data-act="clearf">${V.f === 'late' ? '⏰ ' + TT('เฉพาะไม่ทัน', 'late only') : '⌛ ' + TT('เฉพาะเลยวันขาย', 'past due only')} ✕</button>`);
   el.innerHTML = `<div class="mpv-kpis">${kp.join('')}</div>
@@ -27219,6 +27566,9 @@ function _mpvCard(m, o, W, res, filtering) {
   const rows = (showAll ? idx : idx.slice(0, LIM)).map(i => _mpvRow(res.assigns[i], i, o.all.indexOf(i) + 1, res)).join('');
   const btn = filtering || idx.length <= LIM ? ''
     : `<button type="button" class="mpv-more" data-act="more" data-mid="${escapeHtml(m.id)}" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อคิว', 'Collapse') : `▾ ${TT('ดูคิวทั้งหมด', 'Show all')} (${TT('อีก', '+')} ${nn(idx.length - LIM)} ${TT('งาน', 'jobs')})`}</button>`;
+  // ★ v3.84 งานที่หน้างานย้ายออกจากเครื่องนี้ (2 วันล่าสุด) — คนคุมแผนเห็นว่าคิวเครื่องนี้ว่างลงเพราะอะไร
+  const outs = mpMoveItems(2).filter(p => p.m !== m.id && String(p.mv.from || '').split('/').includes(m.id));
+  const outH = outs.length ? `<div class="mpi-out">${outs.map(p => `↪ ${TT('ย้ายไป', 'moved to')} <b>${escapeHtml(p.m)}</b>: ${escapeHtml(p.mv.valve || p.vk)} ${escapeHtml(p.mv.proc || p.fam)}${p.mv.why ? ' · ' + mpMoveWhyLbl(p.mv.why) : ''}`).join('<br>')}</div>` : '';
   return `<article class="mpv-m" aria-label="${escapeHtml(m.id)}">
     <div class="mpv-mh">
       <div class="mpv-mid">${escapeHtml(m.id)} ${fams.map(f => `<span class="mpv-pf" style="--pc:#${_mpPCol(f)}">${escapeHtml(f)}</span>`).join('')}<span class="mpv-sdr">${escapeHtml(sdr)}</span></div>
@@ -27226,7 +27576,7 @@ function _mpvCard(m, o, W, res, filtering) {
       <div class="mpv-ms">${nn(L.length)} ${TT('งาน', 'jobs')} · ${nn(qty)} ${TT('ชิ้น', 'pcs')} · ${_mpDW(cal.dateAt(L[0].s + 1e-6))} → ${_mpDW(cal.dateAt(L[L.length - 1].e))}${setups ? ` · 🔁 ${setups}` : ''}${lt ? ` · <span class="lt">⏰ ${lt} ${TT('ล็อตไม่ทัน', 'late')}</span>` : ''}</div>
       <div class="mpv-bars" aria-hidden="true">${bars}</div>
     </div>
-    <div class="mpv-qs">${rows}</div>${btn}
+    <div class="mpv-qs">${rows}</div>${btn}${outH}
   </article>`;
 }
 function _mpvRowKey(a) { return `${a.job.k}|${a.si}|${a.part}`; }
@@ -27245,7 +27595,7 @@ function _mpvRow(a, i, n, res) {
     + (nx && nx.v3 ? `<span class="mpv-v3n" title="${TT('ทำเสร็จแล้วส่งต่อ VSM3', 'goes to VSM3 next')}: ${escapeHtml(nx.v3b ? nx.v3b.steps.map(s => s.proc).join(' · ') : nx.proc)}">→ VSM3</span>` : '');
   return `<div class="mpv-r${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}" style="--pc:#${_mpPCol(a.step.fam)}">
     <span class="n">${n}</span>
-    <span class="v">${a.pin ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${v3tag}</span>
+    <span class="v">${a.pin && !a.pin.mv ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${v3tag}${_mpMvTag(a, res)}</span>
     <span class="q">${nn(a.qty)}</span>
     <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span><span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
     <span class="mpv-st ${sc}">${st}</span>
@@ -27267,8 +27617,12 @@ function _mpvRowDetail(a, res) {
   if (j.finish) out.push(`🏁 FG${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
   if (hasV3) out.push(`<button type="button" class="mpv-chip" data-act="route" data-vk="${escapeHtml(j.vk)}">✎ ${TT('แก้เส้นทาง VSM3/VSM4 ของเบอร์นี้', 'Edit this valve\'s VSM3/VSM4 route')}</button>`);
   if (j.kind === 'order') out.push(`📭 ${TT('ยังไม่มี WIP IN 1.5 · คาดว่าเข้า', 'no WIP IN 1.5 yet · expected')} ${_mpD(j.expIn) || '-'}`);
-  if (a.pin) out.push(`📌 ${TT('Admin วางเอง', 'Placed manually')}${a.shifted > 0.5 ? ` · ⏩ ${TT('เลื่อน', 'shifted')} +${Math.round(a.shifted * 10) / 10} ${TT('ชม. (ขั้นก่อนหน้าเสร็จช้ากว่าคิว)', 'h (previous step later than queued)')}` : ''}`);
+  if (a.pin) out.push(a.pin.mv ? `🔀 ${TT('ย้ายเครื่อง', 'Moved')} ${escapeHtml(a.pin.mv.from || '?')} → ${escapeHtml(a.m.id)} · ${escapeHtml(a.pin.mv.by || '')} ${escapeHtml(a.pin.mv.byName || '')}${a.pin.mv.why ? ' · ' + mpMoveWhyLbl(a.pin.mv.why) : ''}`
+    : `📌 ${TT('Admin วางเอง', 'Placed manually')}${a.shifted > 0.5 ? ` · ⏩ ${TT('เลื่อน', 'shifted')} +${Math.round(a.shifted * 10) / 10} ${TT('ชม. (ขั้นก่อนหน้าเสร็จช้ากว่าคิว)', 'h (previous step later than queued)')}` : ''}`);
   if (j.skipped && j.skipped.length) out.push(`⚠️ ${TT('ข้าม', 'skipped')} ${escapeHtml(j.skipped.map(x => x.proc).join(', '))} (${TT('ไม่มีเครื่องรับ SD', 'no machine for SD')})`);
+  // ★ v3.84 ย้ายเครื่อง 2 แตะ (หน้างานขึ้นงานคนละเครื่องกับแผน) — ปุ่มใหญ่พอสำหรับนิ้ว
+  const ai = res.assigns.indexOf(a);
+  if (ai >= 0 && j.kind !== 'order') out.push(`<button type="button" class="mpv-chip" data-act="move" data-ai="${ai}" style="min-height:34px;padding:6px 12px;font-size:12.5px">🔀 ${TT('ย้ายไปเครื่องอื่น', 'Move to another machine')}</button>`);
   return `<div class="mpv-dt">${out.map(x => `<div>${x}</div>`).join('')}</div>`;
 }
 /* ============================================================
@@ -27461,6 +27815,8 @@ function _mpvClick(ev) {
   const act = t.dataset.act;
   if ((act === 'row' || act === 'v3row') && ev.target.closest('.mpv-dt')) return;      // แตะในกล่องรายละเอียด = ไม่พับ (เลือกข้อความได้)
   switch (act) {
+    case 'move': ev.stopPropagation(); openMpMove(V.res, +t.dataset.ai); break;       // ★ v3.84
+    case 'moves': openMpMoves(V.res); break;
     case 'close': closeMpPlan(); break;
     case 'board': openMpBoard(); break;
     case 'excel': _mpvExcel(t); break;
@@ -27531,7 +27887,7 @@ function openMpvSettings() {
     <div id="mpStatus">${_mpStatusHtml()}</div>
     <h4>🕒 ${TT('เวลาทำงาน', 'Working time')}</h4>
     <div class="fg-auto">
-      <div class="fr" style="margin:0"><label for="mp_start">${TT('วันเริ่มแผน', 'Plan start')}</label><input type="date" id="mp_start" value="${S.start}" min="${todayISO()}"></div>
+      <div class="fr" style="margin:0"><label for="mp_start">${TT('วันเริ่มแผน (วันผลิต)', 'Plan start (production day)')}</label><input type="date" id="mp_start" value="${S.start}" min="${mpProdDay()}"><div class="muted" style="font-size:10.5px;margin-top:2px">${TT('วันผลิต = 08:00 → 08:00 วันถัดไป (ตี 1 ยังเป็นกะดึกของเมื่อวาน)', 'Production day = 08:00 → 08:00 next day')}</div></div>
       ${num('mp_hours', S.hours, TT('ชม.ทำงาน/วัน/เครื่อง', 'Hours/day/machine'), 0.5, TT('2 กะ ≈ 20 · 1 กะ ≈ 10', '2 shifts ≈ 20 · 1 shift ≈ 10'))}
       <div class="fr" style="margin:0"><label for="mp_hol">${TT('วันหยุด (คั่นด้วย ,)', 'Holidays (comma)')}</label><input type="text" id="mp_hol" value="${escapeHtml(S.holidays || '')}" placeholder="2026-10-23, 2026-12-05"></div>
     </div>
@@ -27546,6 +27902,10 @@ function openMpvSettings() {
       ${ck('mp_onlyPlan', S.onlyPlan, '📋 ' + TT('เฉพาะงานที่มีแผนขาย', 'Only lots with a sales plan'))}
       ${ck('mp_pins', S.usePins, '📌 ' + TT('ใช้แผนที่วางเอง', 'Use manual plan'))}
     </div>
+    <h4>📦 ${TT('แผนขาย ↔ Lot (ขาย Lot ไหน)', 'Sales plan ↔ lot')}</h4>
+    <div class="fg-auto">${num('mp_finDays', S.finDays != null ? S.finDays : PLAN_FIN_DAYS, TT('Lot ที่เสร็จก่อนวันขายเกิน (วัน) = ขายรอบก่อนไปแล้ว', 'Lots finished more than (days) before the sale = already sold'), 1)}</div>
+    <div class="hint">${TT('ระบบจัด Lot ให้แผนขายตามวันขาย: Lot ที่ผ่าน FG / จบแล้ว (ไม่เกินจำนวนวันนี้ก่อนวันขาย) → Lot ที่กำลังผลิต → Lot ที่รับเข้ารอผลิต · ใช้ทั้งสถานะในตารางแผน กราฟ Order/WIP OUT บอร์ด IOT และวันขายของแต่ละ Lot ในแผนนี้',
+      'Lots are assigned to sales plans by sale date: finished lots (within this many days) → lots in production → received lots · used by plan status, charts, IoT board and this plan')}</div>
     <h4>🔢 ${TT('ลำดับคิวในเครื่อง', 'Machine queue order')}</h4>
     <div class="fg-auto"><div class="fr" style="margin:0"><label for="mp_seq">${TT('เรียง SD → TYPE ทีละ', 'Sort SD → TYPE per')}</label><select id="mp_seq">
       ${[[1, TT('วันขาย (ทีละวัน)', 'sale day')], [3, TT('3 วันขาย', '3 sale days')], [7, TT('สัปดาห์ขาย (จ.–อา.)', 'sale week (Mon–Sun)')], [14, TT('2 สัปดาห์ขาย', '2 sale weeks')]]
@@ -27595,6 +27955,7 @@ function mpvApplySettings() {
   S.month = mpMonthNorm(S, month || S.month);
   _mpSave(LS_MPSET, S);
   closeModal();
+  try { _planRefreshAllViews(); } catch (e) {}   // ★ v3.84 จำนวนวัน "Lot เสร็จนาน = ขายไปแล้ว" ใช้ทั้งตารางแผน/บอร์ด IOT ด้วย
   if (!_mpv || !_mpv.open) return;
   const histChanged = S.histDays !== _mpv.S.histDays;
   _mpv.S = S; _mpv.f = '';
@@ -27628,8 +27989,9 @@ function mpReadForm() {
   const g = id => document.getElementById(id);
   const n = (id, d) => { const v = parseFloat(g(id) && g(id).value); return isFinite(v) ? v : d; };
   const c = (id, d) => g(id) ? !!g(id).checked : d;
-  S.start = (g('mp_start') && g('mp_start').value) || todayISO();
-  if (S.start < todayISO()) S.start = todayISO();
+  S.start = (g('mp_start') && g('mp_start').value) || mpProdDay();
+  if (S.start < mpProdDay()) S.start = mpProdDay();       // ★ v3.84 วันผลิต (ตี 1 ยังเป็นกะดึกของเมื่อวาน)
+  S.finDays = Math.max(0, Math.min(365, Math.round(n('mp_finDays', S.finDays != null ? S.finDays : PLAN_FIN_DAYS))));
   S.days = Math.max(1, Math.min(90, Math.round(n('mp_days', S.days))));
   S.hours = Math.max(1, Math.min(24, n('mp_hours', S.hours)));
   S.cust = g('mp_cust') ? g('mp_cust').value : S.cust;
@@ -28927,6 +29289,325 @@ function mpUpdateBadge() {
   el.style.display = L.length ? '' : 'none';
   el.textContent = L.length ? '⚠️ ' + L.length : '';
   el.title = L.length ? TT(`ต้องปรับแผน ${L.length} Order — ยังไม่มี WIP IN 1.5 (กดดูในตัววางแผน)`, `${L.length} orders need re-planning — no WIP IN 1.5 yet`) : '';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v3.84 (ผู้ใช้ 17/10 ข้อ 2) — 🔀 ย้ายเครื่อง: หน้างานย้ายงานได้ง่าย · คนควบคุมรู้ทุกครั้ง
+   เคสจริง: งานที่แผนให้ขึ้น G-1108 หัวหน้างานเอาไปขึ้น G-1109 (คนไม่พอ) — ถูกต้อง แต่คนคุมแผนไม่รู้
+   2 ทาง (เลือกทางไหนก็ได้ ไม่เพิ่มภาระหน้างาน):
+     ① กดย้ายเอง 2 แตะ: 🔀 ที่งาน → แตะเครื่องปลายทาง (เหตุผลเลือกหรือไม่เลือกก็ได้)
+     ② ไม่ต้องกดอะไร: ลงยอดผลิตที่เครื่องใหม่ตามปกติ → ระบบเทียบกับแผน เจอ "ลงยอดคนละเครื่องกับแผน"
+        แล้วขึ้นรายการให้คนคุม/หน้างานกด ✓ ยืนยันย้าย แตะเดียว
+   เก็บเป็น "แผนที่วางเอง" (pin ใน mp_manual — ไม่ต้องแก้ Worker) + ประวัติการย้ายในตัว pin (mv)
+     → ทุกเครื่องที่เปิดแผนเห็นงานอยู่เครื่องใหม่ · คิวเครื่องเดิมว่างให้งานอื่น · ⏰ ทัน/ไม่ทันคิดใหม่ทันที
+   คนคุมเห็น: ป้าย 🔀 บนหัวแผน (หน้าแผนผลิต + IOT แผนรายเครื่อง) · ป้าย "🔀 จาก G-1108" บนงาน
+             · "↪ ย้ายไป G-1109" บนการ์ดเครื่องเดิม · รายการย้ายทั้งหมด (ใคร/เมื่อไร/เหตุผล) ยกเลิกได้
+   ═══════════════════════════════════════════════════════════════════════ */
+const MP_MOVE_WHY = [['crew', '👷', 'คนไม่พอ', 'short of crew'], ['mc', '🔧', 'เครื่องเสีย/ซ่อม', 'machine down'], ['rush', '⚡', 'งานด่วน', 'rush job'], ['other', '📝', 'อื่น ๆ', 'other']];
+function mpMoveWhyLbl(k) { const w = MP_MOVE_WHY.find(x => x[0] === k); return w ? `${w[1]} ${TT(w[2], w[3])}` : ''; }
+/* การย้ายที่ยังมีผล (pin ที่มีประวัติย้าย) — ใหม่สุดก่อน */
+function mpMoveItems(days) {
+  const cut = days ? new Date(Date.now() - days * 864e5).toISOString() : '';
+  return mpManItems('pin').filter(p => p.mv && p.mv.at && (!cut || p.mv.at >= cut)).sort((a, b) => String(b.mv.at).localeCompare(String(a.mv.at)));
+}
+/* ② ลงยอดคนละเครื่องกับแผน — ยอดผลิต (วันผลิตเมื่อวาน + วันนี้) ของ Valve+Lot+Process ที่ยังเหลือในแผน
+   ถ้าเครื่องที่ลงยอดล่าสุด ไม่ใช่เครื่องที่แผนวางขั้นนั้นไว้ = หน้างานย้ายเครื่องแล้ว แต่แผนยังไม่รู้ */
+function mpMoveDetect(res) {
+  if (!res || !res.ctx) return [];
+  const since = _mpAddDays(mpProdDay(), -1);
+  const v4 = new Set(res.ctx.machines.map(m => m.id));
+  const last = new Map();
+  for (const r of (state.prodRecords || [])) {
+    const m = String(r.machine_id || r.machineId || '').trim(); if (!m || !v4.has(m)) continue;
+    const d = String(r.shift_date || r.timestamp || '').slice(0, 10); if (!d || d < since) continue;
+    const fam = mpFam(r.current_process || r.currentProcess); if (!fam) continue;
+    const k = vKey(r.valve_no || r.valveNo) + '::' + lotKey(r.lot) + '@' + fam;
+    const ts = String(r.timestamp || d);
+    let o = last.get(k); if (!o) last.set(k, o = { m, d, ts: '', qByM: {} });
+    o.qByM[m] = (o.qByM[m] || 0) + (Number(r.quantity) || 0);
+    if (ts >= o.ts) { o.ts = ts; o.m = m; o.d = d; }
+  }
+  const out = [];
+  for (const j of (res.jobs || [])) {
+    if (j.kind === 'order' || !j.steps) continue;
+    for (const st of j.steps) {
+      if (!(st.need > 0) || !st.internal || st.v3 || !st.machines || !st.machines.length) continue;
+      const o = last.get(j.vk + '::' + lotKey(j.lot) + '@' + st.fam); if (!o) continue;
+      if (st.machines.includes(o.m)) continue;
+      out.push({ job: j, st, actual: o.m, planned: st.machines.slice(), d: o.d, q: o.qByM[o.m] || 0, pin: st.pin || null });
+    }
+  }
+  return out;
+}
+/* บันทึกการย้าย = pin ล็อตนั้น Process นั้น ไว้ที่เครื่องใหม่ (ต้นคิวของเครื่อง = กำลังทำอยู่) + ประวัติ mv */
+function mpMoveDo(o) {
+  const lk = o.lk || '*', id = mpPinId(o.vk, lk, o.fam);
+  const prev = _mpMan.find(x => x.id === id) || null;
+  const onTo = mpManItems('pin').filter(p => p.m === o.to && p.id !== id);
+  const rank = onTo.length ? Math.min(...onTo.map(p => +p.rank || 0)) - 1 : 1;
+  const u = CURRENT_USER || {};
+  mpManPut([{ id, kind: 'pin', vk: vKey(o.vk), lk, fam: o.fam, m: o.to, rank,
+    mv: { from: o.from || '', to: o.to, why: o.why || '', by: u.id || '', byName: u.name || '', at: new Date().toISOString(),
+          src: o.src || 'tap', valve: o.valve || '', lot: o.lot || '', proc: o.proc || '', qty: o.qty || 0 } }]);
+  return prev;
+}
+function mpMoveUndo(id) {
+  const p = _mpMan.find(x => x.id === id); if (!p) return;
+  mpManRemove([id]);
+  toast(`↩️ ${TT('ยกเลิกการย้าย', 'Move undone')} ${escapeHtml((p.mv && p.mv.valve) || p.vk)} ${escapeHtml(p.fam)} — ${TT('ให้ระบบวางเครื่องเอง', 'back to automatic')}`, 'blue');
+  _mpMoveAfter();
+}
+/* หลังย้าย/ยกเลิก: คำนวณแผนใหม่ในหน้าที่เปิดอยู่ (หน้าแผนผลิต / IOT แผนรายเครื่อง / กระดานวางเอง) */
+function _mpMoveAfter() {
+  try { if (_mpv && _mpv.open && _mpv.res) mpvRecompute().catch(_mpvErr); } catch (e) {}
+  try { if (_mpb && _mpb.open) { mpbBuild(); mpbRecompute(); } } catch (e) {}
+  try { if (typeof _iotPage !== 'undefined' && _iotPage === 3) renderIotPlan(true); } catch (e) {}
+}
+/* เปิดหน้าต่างเลือกเครื่อง — อยู่บน IOT เต็มจอ = ป๊อปอัปในกรอบ IOT (modal ปกติมองไม่เห็นตอน native fullscreen) */
+function _mpSheet(title, body) {
+  if (document.getElementById('iotCard')?.classList.contains('iot-fs') && typeof _iotPage !== 'undefined' && _iotPage === 3) _openIotPop(title, body, true, true);
+  else openModal(title, body, { wide: true });
+}
+function _mpSheetClose() {
+  document.querySelectorAll('#iotCard .iotpop-bg').forEach(p => { if (p.querySelector('.mpmv')) p.remove(); });
+  if (document.querySelector('#modalBg.open .mpmv')) closeModal();
+}
+let _mpMoveCtx = null;
+/* res = ผลแผนที่กำลังดู · ai = ลำดับงานใน res.assigns · to = (ไม่บังคับ) เครื่องที่ลงยอดจริง (ยืนยันจากรายการ ⚠️) */
+function openMpMove(res, ai, to) {
+  const a = res && res.assigns[ai]; if (!a) return;
+  const j = a.job, st = a.step, ctx = res.ctx;
+  const lk = (j.kind === 'order' || !lotKey(j.lot)) ? '*' : lotKey(j.lot);
+  const from = (st.machines && st.machines.length) ? st.machines.join('/') : a.m.id;
+  const hasDed = ctx.dedicatedFor(j, st.fam);
+  const today0 = res.cal.days[0];
+  const loadOf = id => { const o = res.load.get(id) || {}; return o[0] || 0; };
+  const qOf = id => res.assigns.filter(x => x.m.id === id && x.days.some(d => d.d === 0)).length;
+  const ok = [], weak = [];
+  for (const m of ctx.machines) {
+    if (!m.active || st.machines.includes(m.id) || !mpFamOK(st.fam, m.fams)) continue;
+    const c = ctx.canDo(m, j, st.fam, hasDed);
+    (c.ok ? ok : weak).push({ m, why: c.ok ? '' : (MP_WHY[c.why] || c.why) });
+  }
+  const zA = a.m.zone;
+  const sortM = (x, y) => ((x.m.zone === zA ? 0 : 1) - (y.m.zone === zA ? 0 : 1)) || (loadOf(x.m.id) - loadOf(y.m.id)) || x.m.id.localeCompare(y.m.id, undefined, { numeric: true });
+  ok.sort(sortM); weak.sort(sortM);
+  const pid = mpPinId(j.vk, lk, st.fam), cur = _mpMan.find(x => x.id === pid);
+  _mpMoveCtx = { vk: j.vk, lk, fam: st.fam, from, valve: j.valve, lot: j.lot || '', proc: st.proc, qty: st.need, why: '', res };
+  const btn = (x, warn) => {
+    const ld = Math.round(loadOf(x.m.id) / res.H * 100), n = qOf(x.m.id);
+    return `<button type="button" class="mpmv-m${warn ? ' warn' : ''}${x.m.id === to ? ' hint' : ''}" onclick="mpMoveConfirm('${escapeHtml(x.m.id)}')" title="${escapeHtml(x.why || '')}">
+      <b>${escapeHtml(x.m.id)}</b>${x.m.id === to ? `<span class="mpmv-real">✍ ${TT('ลงยอดที่นี่', 'recorded here')}</span>` : ''}
+      <small>${escapeHtml(x.m.zone)} · ${today0 ? _mpDW(today0) : ''} ${n ? `${n} ${TT('งาน', 'jobs')} · ${ld}%` : TT('ว่าง', 'free')}${warn && x.why ? ` · ⚠️ ${escapeHtml(x.why)}` : ''}</small></button>`;
+  };
+  const body = `<div class="mpmv">
+    <div class="mpmv-job"><span class="mpv-pf" style="--pc:#${_mpPCol(st.fam)}">${escapeHtml(st.proc)}</span> <b>${escapeHtml(j.valve)}</b> ${escapeHtml(j.lot || '')} · ${nn(st.need)} ${TT('ชิ้น', 'pcs')}${j.due ? ` · ${TT('ขาย', 'sale')} ${_mpD(j.due).slice(0, 5)}` : ''}</div>
+    <div class="mpmv-from">${TT('แผนตอนนี้', 'Planned on')}: <b>${escapeHtml(from)}</b>${cur && cur.mv ? ` <span class="mpi-tag in">🔀 ${TT('ย้ายมาจาก', 'moved from')} ${escapeHtml(cur.mv.from || '-')}</span>` : ''}</div>
+    <div class="mpmv-lbl">${TT('เหตุผล (ไม่บังคับ)', 'Reason (optional)')}</div>
+    <div class="mpmv-why" role="radiogroup">${MP_MOVE_WHY.map(w => `<button type="button" role="radio" aria-checked="false" data-w="${w[0]}" onclick="mpMoveWhy(this)">${w[1]} ${TT(w[2], w[3])}</button>`).join('')}</div>
+    <div class="mpmv-lbl">${TT('แตะเครื่องที่ย้ายไป', 'Tap the machine it moved to')} <span class="muted">(${TT('Zone เดียวกันก่อน · ว่างก่อน', 'same zone first · least loaded first')})</span></div>
+    <div class="mpmv-grid">${ok.length ? ok.map(x => btn(x)).join('') : `<div class="muted" style="font-size:12px">${TT('ไม่มีเครื่องอื่นที่ทำ Process นี้ได้ตามช่วง SD', 'No other machine can run this process for this SD')}</div>`}</div>
+    ${weak.length ? `<details class="mpmv-more"${to && weak.some(x => x.m.id === to) ? ' open' : ''}><summary>${TT('เครื่องอื่นที่ทำ', 'Other machines doing')} ${escapeHtml(st.fam)} (${TT('ระบบคิดว่าไม่เข้าเงื่อนไข', 'outside the rules')} · ${weak.length})</summary>
+      <div class="mpmv-grid">${weak.map(x => btn(x, true)).join('')}</div>
+      <div class="muted" style="font-size:10.5px;margin-top:4px">${TT('ย้ายได้ แต่แผนจะขึ้น ⚠️ ให้แก้ช่วง SD / Process ของเครื่องที่ ⚙️ ตั้งค่า', 'Allowed, but the plan flags ⚠️ until the machine SD range / process is fixed')}</div></details>` : ''}
+    ${cur ? `<button type="button" class="btn btn-outline btn-block" style="margin-top:10px" onclick="_mpSheetClose();mpMoveUndo('${escapeHtml(cur.id)}')">↩️ ${TT('ยกเลิกการย้าย / ให้ระบบวางเครื่องเอง', 'Undo move / let the system choose')}</button>` : ''}
+  </div>`;
+  _mpSheet('🔀 ' + TT('ย้ายเครื่อง', 'Move to another machine'), body);
+}
+function mpMoveWhy(b) {
+  const on = b.getAttribute('aria-checked') !== 'true';
+  b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', 'false'));
+  b.setAttribute('aria-checked', on ? 'true' : 'false');
+  if (_mpMoveCtx) _mpMoveCtx.why = on ? b.dataset.w : '';
+}
+function mpMoveConfirm(to) {
+  const c = _mpMoveCtx; if (!c) return;
+  mpMoveDo({ ...c, to, src: c.src || 'tap' });
+  _mpSheetClose();
+  toast(`🔀 ${escapeHtml(c.valve)} ${escapeHtml(c.proc)} ${escapeHtml(c.from)} → ${escapeHtml(to)} ${TT('แล้ว — คนคุมแผนเห็นในรายการ 🔀', 'done — planners see it in 🔀')}`, 'green');
+  _mpMoveCtx = null;
+  _mpMoveAfter();
+}
+/* ⚠️ ลงยอดคนละเครื่อง → ✓ ยืนยันย้ายแตะเดียว (ไม่ต้องเลือกเครื่องอีก — ใช้เครื่องที่ลงยอดจริง) */
+function mpMoveAccept(res, k) {
+  const x = (res && res._mis || [])[k]; if (!x) return;
+  const j = x.job, st = x.st, lk = (j.kind === 'order' || !lotKey(j.lot)) ? '*' : lotKey(j.lot);
+  mpMoveDo({ vk: j.vk, lk, fam: st.fam, from: x.planned.join('/'), to: x.actual, why: '', src: 'auto', valve: j.valve, lot: j.lot || '', proc: st.proc, qty: st.need });
+  toast(`✓ ${escapeHtml(j.valve)} ${escapeHtml(st.proc)} → ${escapeHtml(x.actual)} ${TT('(ตามที่ลงยอดจริง)', '(as recorded)')}`, 'green');
+  _mpMoveAfter();
+}
+/* รายการสำหรับคนคุมแผน: ⚠️ ลงยอดไม่ตรงแผน (รอยืนยัน) + 🔀 ย้ายแล้ว (7 วันล่าสุด) */
+function openMpMoves(res) {
+  res = res || (_mpv && _mpv.res) || _mpi.res;
+  const mis = (res && res._mis) || [];
+  const mv = mpMoveItems(7);
+  const fmtT = iso => { const d = new Date(iso); return `${P(d.getDate())}/${P(d.getMonth() + 1)} ${P(d.getHours())}:${P(d.getMinutes())}`; };
+  const misH = mis.map((x, k) => `<div class="mpmv-row warn">
+      <div><b>${escapeHtml(x.job.valve)}</b> ${escapeHtml(x.job.lot || '')} · <span class="mpv-pf" style="--pc:#${_mpPCol(x.st.fam)}">${escapeHtml(x.st.proc)}</span>
+        <div class="muted">✍ ${TT('ลงยอดที่', 'recorded on')} <b>${escapeHtml(x.actual)}</b> (${escapeHtml(_mpD(x.d).slice(0, 5))} · ${nn(x.q)} ${TT('ชิ้น', 'pcs')}) · ${TT('แผนอยู่', 'plan')} ${escapeHtml(x.planned.join('/'))}</div></div>
+      <button type="button" class="btn btn-sm" style="background:#0F766E;color:#fff;white-space:nowrap" onclick="_mpSheetClose();mpMoveAccept(${res === _mpi.res ? '_mpi.res' : '_mpv.res'},${k})">✓ ${TT('ยืนยันย้าย', 'Confirm move')}</button></div>`).join('');
+  const mvH = mv.map(p => `<div class="mpmv-row">
+      <div><b>${escapeHtml(p.mv.valve || p.vk)}</b> ${escapeHtml(p.mv.lot || (p.lk !== '*' ? p.lk : ''))} · <span class="mpv-pf" style="--pc:#${_mpPCol(p.fam)}">${escapeHtml(p.mv.proc || p.fam)}</span>
+        <div><b>${escapeHtml(p.mv.from || '?')}</b> → <b style="color:#0F766E">${escapeHtml(p.m)}</b>${p.mv.why ? ` · ${mpMoveWhyLbl(p.mv.why)}` : ''}${p.mv.src === 'auto' ? ` · <span class="mpi-tag warn">${TT('จากยอดที่ลงจริง', 'from records')}</span>` : ''}</div>
+        <div class="muted">${fmtT(p.mv.at)} · ${escapeHtml(p.mv.by || '')} ${escapeHtml(p.mv.byName || '')}</div></div>
+      <button type="button" class="btn btn-sm btn-outline" style="white-space:nowrap" onclick="_mpSheetClose();mpMoveUndo('${escapeHtml(p.id)}')">↩️ ${TT('ยกเลิก', 'Undo')}</button></div>`).join('');
+  const body = `<div class="mpmv">
+    ${mis.length ? `<div class="mpmv-lbl" style="color:#B45309">⚠️ ${TT('ลงยอดคนละเครื่องกับแผน — ยืนยันว่าย้ายจริง', 'Recorded on a different machine than planned — confirm the move')} (${mis.length})</div>${misH}` : ''}
+    <div class="mpmv-lbl">🔀 ${TT('ย้ายเครื่องแล้ว (7 วันล่าสุด)', 'Moves (last 7 days)')} (${mv.length})</div>
+    ${mvH || `<div class="muted" style="font-size:12px;padding:6px 0">${TT('ยังไม่มีการย้ายเครื่อง', 'No moves yet')}</div>`}
+    <div class="muted" style="font-size:10.5px;margin-top:8px">${TT('ย้ายได้ 2 ทาง: กด 🔀 ที่งาน แล้วแตะเครื่องใหม่ · หรือลงยอดผลิตที่เครื่องใหม่ตามปกติ แล้วกด ✓ ยืนยันย้าย ที่นี่', 'Two ways: tap 🔀 on a job then the new machine · or just record production on the new machine and confirm it here')}</div>
+  </div>`;
+  _mpSheet('🔀 ' + TT('ย้ายเครื่อง — สำหรับคนคุมแผน', 'Machine moves — for planners'), body);
+}
+/* ป้ายย้ายเข้า/ย้ายออกของงาน 1 ขั้น (ใช้ทั้งหน้าแผนผลิตและ IOT) */
+function _mpMvTag(a, res) {
+  let h = '';
+  if (a.pin && a.pin.mv && a.pin.mv.from && a.pin.mv.from !== a.m.id) h += `<span class="mpi-tag in" title="${escapeHtml(TT('ย้ายเครื่องโดย', 'moved by') + ' ' + (a.pin.mv.by || '') + ' ' + (a.pin.mv.byName || '') + (a.pin.mv.why ? ' · ' + mpMoveWhyLbl(a.pin.mv.why) : ''))}">🔀 ${TT('จาก', 'from')} ${escapeHtml(a.pin.mv.from)}</span>`;
+  const x = ((res && res._misBySt) || new Map()).get(a.step);
+  if (x) h += `<span class="mpi-tag warn" title="${escapeHtml(TT('ลงยอดล่าสุดที่เครื่องอื่น — กด 🔀 ที่หัวแผนเพื่อยืนยันย้าย', 'latest record is on another machine'))}">✍ ${TT('ลงยอดที่', 'recorded on')} ${escapeHtml(x.actual)}</span>`;
+  return h;
+}
+/* ใส่ผลตรวจ "ลงยอดคนละเครื่อง" ลงในผลแผน (เรียกหลังคำนวณทุกครั้ง) */
+function _mpMarkMoves(res) {
+  if (!res) return res;
+  res._mis = mpMoveDetect(res);
+  res._misBySt = new Map(res._mis.map(x => [x.st, x]));
+  return res;
+}
+/* attr = แอตทริบิวต์ที่ใช้เปิดรายการ (หน้าแผนผลิต: data-act · IOT: onclick) */
+function _mpMovesChip(res, attr) {
+  const mis = ((res && res._mis) || []).length, mv = mpMoveItems(2).length;
+  if (!mis && !mv) return `<button type="button" class="mpv-chip" ${attr} title="${escapeHtml(TT('ย้ายงานไปเครื่องอื่น / ดูประวัติการย้าย', 'Move jobs / move history'))}">🔀 ${TT('ย้ายเครื่อง', 'Moves')}</button>`;
+  return `<button type="button" class="mpv-chip${mis ? ' warn' : ''}" ${attr} style="${mis ? '' : 'background:#EDE9FE;color:#5B21B6;border-color:#DDD6FE'}" title="${escapeHtml(TT('ย้ายเครื่อง 2 วันล่าสุด / ลงยอดคนละเครื่องกับแผน — กดดูรายการ', 'Moves in the last 2 days / records off-plan — tap to see'))}">🔀 ${TT('ย้ายเครื่อง', 'Moves')} ${mv ? `<b>${mv}</b>` : ''}${mis ? ` · ⚠️ ${TT('ลงยอดไม่ตรงแผน', 'off-plan')} <b>${mis}</b>` : ''}</button>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v3.84 (ผู้ใช้ 17/10 ข้อ 4) — IOT หน้า 3 "📅 แผนรายเครื่อง"
+   ปุ่มที่ 3 ข้าง 🏭 ผัง / 📋 งานขายเดือนนี้ — ดูแผนผลิตรายเครื่องจากหน้า IOT ได้เลย (มือถือ / จอใหญ่เต็มจอ)
+   1 การ์ด = 1 เครื่อง: ▶ วันผลิตนี้ (งานที่แผนให้ทำ + ชิ้น) · ⏭ ถัดไป · ✍ ทำจริงวันนี้ (จากที่ลงยอด)
+   🔀 ย้ายงานได้จากการ์ด (2 แตะ) · ป้ายย้ายเข้า/ย้ายออก/ลงยอดไม่ตรงแผน ให้คนคุมเห็นทันที
+   ใช้ตัวคำนวณเดียวกับหน้าแผนผลิต 🏭 (mpPlan) — คำนวณเมื่อเปิดหน้านี้ · ข้อมูลเปลี่ยนคำนวณใหม่ (ไม่ถี่กว่า 1 นาที)
+   ═══════════════════════════════════════════════════════════════════════ */
+let _mpi = { res: null, key: '', at: 0, busy: null, zone: 'all', q: '', oldVer: -1 };
+function _mpiKey(S) {
+  const nK = (typeof _allKpi !== 'undefined' && _allKpi) ? _allKpi.length : 0, nP = (typeof _allProd !== 'undefined' && _allProd) ? _allProd.length : 0;
+  return [_fvVer, (typeof _wipinVer !== 'undefined') ? _wipinVer : 0, _mpManAt, _mpMan.length, nK, nP, (state.prodRecords || []).length, JSON.stringify(S), mpProdDay(), viewVsm()].join('|');
+}
+async function _mpiCompute(force) {
+  if (viewVsm() !== MP_VSM) return null;
+  const S = mpSettings(); S.month = mpMonthNorm(S, S.month); S.extLagH = S.hours;
+  const key = _mpiKey(S);
+  if (!force && _mpi.res && (_mpi.key === key || Date.now() - _mpi.at < 60000)) return _mpi.res;
+  if (_mpi.busy) return _mpi.busy;
+  _mpi.busy = (async () => {
+    if (API) await Promise.all([ensureAllJobsLoaded().catch(() => false), mcCapsLoad().catch(() => null), mpManLoad().catch(() => null)]);
+    await yieldUI();
+    const S2 = mpSettings(); S2.month = mpMonthNorm(S2, S2.month); S2.extLagH = S2.hours;
+    _mpi.oldVer = _mpOldKpiVer;
+    const res = _mpMarkMoves(mpPlan(S2));
+    _mpi.res = res; _mpi.key = _mpiKey(S2); _mpi.at = Date.now(); _mpLast = res;
+    // ประวัติ CT 90 วันมาทีหลัง → คำนวณซ้ำอีกรอบให้ CT "ครั้งก่อนหน้า" ครบ (ครั้งเดียว)
+    if (API) mpLoadOldKpi(S2.histDays).then(() => { if (_mpOldKpiVer !== _mpi.oldVer && _iotPage === 3) renderIotPlan(true); }).catch(() => {});
+    return res;
+  })().finally(() => { _mpi.busy = null; });
+  return _mpi.busy;
+}
+function mpiSetZone(z) { _mpi.zone = z || 'all'; renderIotPlan(); }
+function mpiSetQ(v) { _mpi.q = String(v || ''); clearTimeout(_mpi.qT); _mpi.qT = setTimeout(() => renderIotPlan(), 160); }
+function mpiOpenMachine(id) { _mpi.q = id; _mpi.zone = 'all'; iotSetPage(3); }
+async function renderIotPlan(force) {
+  const box = document.getElementById('iotPlanPage'); if (!box) return;
+  if (viewVsm() !== MP_VSM) {
+    box.innerHTML = `<div class="mpi-empty">📅 ${TT('แผนรายเครื่องมีเฉพาะ VSM4 (ตัววางแผนเครื่องจักร) — สลับไปดู VSM4', 'The machine plan is for VSM4 — switch to VSM4')}</div>`;
+    return;
+  }
+  if (!_mpi.res || force) {
+    if (!_mpi.res) box.innerHTML = `<div class="mpi-empty">⏳ ${TT('กำลังคำนวณแผนรายเครื่อง…', 'Calculating the machine plan…')}</div>`;
+    try { await _mpiCompute(!!force); } catch (e) { console.error('[mpi]', e); box.innerHTML = `<div class="mpi-empty" style="color:var(--red)">❌ ${escapeHtml((e && e.message) || String(e))}</div>`; return; }
+  } else _mpiCompute(false).then(r => { if (r && r !== _mpiShown) renderIotPlan(); }).catch(() => {});
+  _mpiPaint(box);
+}
+let _mpiShown = null;
+function _mpiPaint(box) {
+  const res = _mpi.res; if (!res) return;
+  _mpiShown = res;
+  try { _islApplyZoom(); } catch (e) {}
+  if (!res._mis) _mpMarkMoves(res);
+  const S = res.S, cal = res.cal, H = res.H, ctx = res.ctx;
+  const d0 = cal.days[0] || S.start, isToday = d0 === mpProdDay();
+  const t0 = +res.t0 || 0, sh = mpShiftNow();
+  const qn = String(_mpi.q || '').trim().toUpperCase(), qm = qn.replace(/[^A-Z0-9]/g, '');
+  const zones = [...new Set([...MP_ZONES, ...ctx.machines.map(m => m.zone)])].filter(z => ctx.machines.some(m => m.zone === z && m.active));
+  // ทำจริงวันผลิตนี้ (จากยอดที่ลง) ต่อเครื่อง
+  const act = new Map();
+  for (const r of (state.kpiRecords || [])) {
+    if (String(r.shift_date || r.record_date || '').slice(0, 10) !== d0) continue;
+    const m = String(r.machine_id || '').trim(); if (!m) continue;
+    let o = act.get(m); if (!o) act.set(m, o = { opr: 0, items: new Map() });
+    const q = Number(r.opr) || 0; o.opr += q;
+    const k = (r.valve_no || '-') + '|' + (r.lot || '') + '|' + (r.last_process || '');
+    o.items.set(k, (o.items.get(k) || 0) + q);
+  }
+  const byM = new Map();
+  res.assigns.forEach((a, i) => { let L = byM.get(a.m.id); if (!L) byM.set(a.m.id, L = []); L.push(i); });
+  for (const L of byM.values()) L.sort((x, y) => res.assigns[x].s - res.assigns[y].s);
+  const outBy = new Map();     // งานที่ย้ายออกจากเครื่องนี้ (2 วันล่าสุด)
+  for (const p of mpMoveItems(2)) for (const f of String(p.mv.from || '').split('/')) { if (!f) continue; let a = outBy.get(f); if (!a) outBy.set(f, a = []); a.push(p); }
+  const hitA = a => !qn || String(a.job.valve || '').toUpperCase().includes(qn) || String(a.job.lot || '').toUpperCase().includes(qn);
+  const mHit = m => !!qm && String(m.id).toUpperCase().replace(/[^A-Z0-9]/g, '').includes(qm);
+  const famR = m => Math.min(99, ...[...m.fams].map(_mpbFamRank));
+  const ms = ctx.machines.filter(m => m.active && (_mpi.zone === 'all' || m.zone === _mpi.zone))
+    .filter(m => !qn || mHit(m) || (byM.get(m.id) || []).some(i => hitA(res.assigns[i])))
+    .sort((a, b) => a.zone.localeCompare(b.zone) || (famR(a) - famR(b)) || a.id.localeCompare(b.id, undefined, { numeric: true }));
+  const jobRow = (i, today) => {
+    const a = res.assigns[i], j = a.job;
+    const qToday = today ? a.days.filter(d => d.d === 0).reduce((s, d) => s + d.qty, 0) : a.qty;
+    const sD = cal.dateAt(a.s + 1e-6), eD = cal.dateAt(a.e);
+    const [sc, stx] = mpJobSt(j, S);
+    return `<div class="mpi-j${qn && hitA(a) ? ' hit' : ''}" style="--pc:#${_mpPCol(a.step.fam)}">
+      <div class="v"><span class="mpv-pf" style="--pc:#${_mpPCol(a.step.fam)}">${escapeHtml(a.step.proc)}</span> ${escapeHtml(j.valve)} <span class="lot">${escapeHtml(j.kind === 'order' ? '📭 ' + TT('ยังไม่มีของ', 'no stock') : (j.lot || '-'))}</span></div>
+      <div class="q">${nn(qToday)}<small>${today && qToday !== a.qty ? ` / ${nn(a.qty)}` : ''}</small></div>
+      <div class="m">${today ? '' : `<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span>`}<span class="mpv-st ${sc}">${stx}</span>${_mpMvTag(a, res)}
+        <button type="button" class="mpi-mvb" onclick="openMpMove(_mpi.res,${i})" aria-label="${escapeHtml(TT('ย้ายเครื่อง', 'Move machine') + ' ' + j.valve + ' ' + a.step.proc)}">🔀 ${TT('ย้าย', 'Move')}</button></div>
+    </div>`;
+  };
+  const cards = ms.map(m => {
+    const L = byM.get(m.id) || [];
+    const now = L.filter(i => res.assigns[i].days.some(d => d.d === 0));
+    const next = L.filter(i => !now.includes(i)).slice(0, 2);
+    const ld = Math.round(((res.load.get(m.id) || {})[0] || 0) / Math.max(0.1, H - (isToday ? t0 : 0)) * 100);
+    const [zc] = MP_ZCOL[m.zone] || ['#475569'];
+    const ac = act.get(m.id);
+    const acTop = ac ? [...ac.items.entries()].sort((x, y) => y[1] - x[1]).slice(0, 3) : [];
+    const outs = (outBy.get(m.id) || []).filter(p => p.m !== m.id);
+    const fams = [...m.fams].sort((a, b) => _mpbFamRank(a) - _mpbFamRank(b));
+    return `<article class="mpi-m" style="--zc:${zc}" aria-label="${escapeHtml(m.id)}">
+      <div class="mpi-mh"><span class="mpi-id">${escapeHtml(m.id)}</span>${fams.map(f => `<span class="mpv-pf" style="--pc:#${_mpPCol(f)}">${escapeHtml(f)}</span>`).join('')}
+        <span class="mpi-z">${escapeHtml(m.zone)}</span>${now.length ? `<span class="mpi-ld ${ld > 95 ? 'hi' : ld > 70 ? 'md' : 'lo'}">${ld}%</span>` : ''}</div>
+      <div class="mpi-sec">▶ ${isToday ? TT('วันผลิตนี้', 'This production day') : TT('วันทำงานถัดไป', 'Next working day')} ${_mpDW(d0)}</div>
+      ${now.length ? now.map(i => jobRow(i, true)).join('') : `<div class="mpi-none">💤 ${TT('ไม่มีงานในแผนวันนี้', 'No planned work today')}</div>`}
+      ${next.length ? `<div class="mpi-sec">⏭ ${TT('ถัดไป', 'Next')}</div>${next.map(i => jobRow(i, false)).join('')}` : ''}
+      ${outs.length ? `<div class="mpi-out">${outs.map(p => `↪ ${TT('ย้ายไป', 'moved to')} <b>${escapeHtml(p.m)}</b>: ${escapeHtml(p.mv.valve || p.vk)} ${escapeHtml(p.mv.proc || p.fam)}${p.mv.why ? ' · ' + mpMoveWhyLbl(p.mv.why) : ''}`).join('<br>')}</div>` : ''}
+      <div class="mpi-act">✍ ${TT('ทำจริง', 'Actual')} ${_mpDW(d0)}: ${ac ? `<b>${nn(ac.opr)}</b> ${TT('ชิ้น', 'pcs')} · ${acTop.map(([k, q]) => { const [v, l, p] = k.split('|'); return `${escapeHtml(v)}${p ? ' ' + escapeHtml(p) : ''} ${nn(q)}`; }).join(' · ')}` : `<span class="muted">${TT('ยังไม่มีการลงยอด', 'nothing recorded yet')}</span>`}</div>
+    </article>`;
+  }).join('');
+  const segBtn = (v, lb) => `<button type="button" class="${_mpi.zone === v ? 'on' : ''}" onclick="mpiSetZone('${v}')" aria-pressed="${_mpi.zone === v}">${lb}</button>`;
+  const at = res.at ? `${P(res.at.getHours())}:${P(res.at.getMinutes())}` : '';
+  const prevQ = document.getElementById('mpiQ'), hadFocus = prevQ && document.activeElement === prevQ, cur = prevQ ? prevQ.selectionStart : null;
+  box.innerHTML = `
+    <div class="isl-bar mpi-bar">
+      <span class="isl-ttl">📅 ${TT('แผนผลิตรายเครื่อง', 'Machine production plan')}</span>
+      <span class="mpi-sub">${TT('วันผลิต', 'Prod. day')} <b>${_mpDW(d0)}</b>${isToday && t0 > 0 ? ` · ${sh === 'day' ? TT('กะเช้า', 'day shift') : TT('กะดึก', 'night shift')} · ${TT('เหลือ', 'left')} ${Math.round((H - t0) * 10) / 10} ${TT('ชม.', 'h')}` : ''} · ${TT('คำนวณ', 'calc')} ${at}</span>
+      <span class="isl-seg" role="group" aria-label="Zone">${segBtn('all', TT('ทุก Zone', 'All'))}${zones.map(z => segBtn(z, z)).join('')}</span>
+      <input type="search" id="mpiQ" class="mpi-q" value="${escapeHtml(_mpi.q)}" placeholder="🔎 ${TT('เครื่อง / Valve / Lot', 'machine / valve / lot')}" oninput="mpiSetQ(this.value)" autocomplete="off" aria-label="${TT('ค้นหาเครื่อง Valve Lot', 'Search machine valve lot')}">
+      ${_mpMovesChip(res, 'onclick="openMpMoves(_mpi.res)"')}
+      <button type="button" class="mpv-chip" onclick="renderIotPlan(true)" title="${TT('คำนวณแผนใหม่จากข้อมูลล่าสุด', 'Recalculate from the latest data')}">🔄 ${TT('คำนวณใหม่', 'Recalc')}</button>
+      <button type="button" class="mpv-chip" onclick="openMachinePlanner()" title="${TT('เปิดหน้าแผนผลิต VSM4 เต็ม (เดือน / Excel / ตั้งค่า)', 'Open the full VSM4 plan page')}">🏭 ${TT('แผนเต็ม', 'Full plan')}</button>
+    </div>
+    <div class="mpi-hint">${TT('แต่ละการ์ด = 1 เครื่อง · ▶ งานที่แผนให้ทำในวันผลิตนี้ (ชิ้นของวันนี้ / ทั้งงาน) · ⏭ งานถัดไป · ✍ ยอดที่ลงจริง · ขึ้นงานคนละเครื่องกับแผน กด 🔀 ย้าย แล้วแตะเครื่องใหม่',
+      'One card per machine · ▶ planned this production day (today / whole job) · ⏭ next · ✍ recorded · ran it elsewhere? tap 🔀 Move then the new machine')}</div>
+    ${ms.length ? `<div class="mpi-grid">${cards}</div>` : `<div class="mpi-empty">🔎 ${TT('ไม่พบเครื่อง/งานที่ตรงกับคำค้น', 'No machine or job matches')}</div>`}`;
+  if (hadFocus) { const q = document.getElementById('mpiQ'); if (q) { q.focus(); try { q.setSelectionRange(cur, cur); } catch (e) {} } }
 }
 
 /* วิเคราะห์ประวัติ (ชีท 7) — ใช้ร่วมกับหน้าจอได้ */
