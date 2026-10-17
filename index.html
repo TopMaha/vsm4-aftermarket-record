@@ -788,9 +788,10 @@ button.mpv-rt:disabled{cursor:default}
 .mpv-seg button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .mpv-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 /* ★ v3.85 การ์ดเครื่องแบบเรียบ — หัว = เบอร์เครื่อง · ตาราง 4 คอลัมน์ # / Valve No / Lot / จำนวน */
-.mpv-smh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:11px 14px 7px}
+.mpv-smh{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;padding:11px 14px 7px}
 .mpv-smh b{font-size:17px;font-weight:900;color:#0F172A}
-.mpv-smh span{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.mpv-smh .sdr{font-size:11.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.mpv-smh span{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap;margin-left:auto}
 .mpv-smh.v3 b{font-size:14.5px;color:#9D174D}
 .mpv-sth,.mpv-sr{display:grid;grid-template-columns:24px minmax(0,1.1fr) minmax(0,1fr) 62px;column-gap:10px;align-items:center;padding:0 14px 0 8px}
 .mpv-sth{font-size:11px;font-weight:800;color:var(--muted);padding-bottom:5px;border-bottom:1px solid #E2E8F0}
@@ -803,7 +804,11 @@ button.mpv-rt:disabled{cursor:default}
 .mpv-sr:focus-visible{outline:2px solid #0F766E;outline-offset:-2px}
 .mpv-sr .n{font-size:12px;font-weight:800;color:var(--muted2);text-align:center}
 .mpv-sr .v{font-size:15px;font-weight:800;overflow-wrap:anywhere;line-height:1.3}
-.mpv-sr .v small{display:block;font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.25}
+.mpv-sr .v small{display:block;font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.25;font-variant-numeric:tabular-nums}
+.mpv-sr .v small b{color:#334155;font-weight:800}
+/* ★ v3.86 สรุป · แจ้งเตือน ของโหมดวิเคราะห์ พับไว้ — ปุ่มกางอยู่แถวเดียวกับ ✋ วางเอง / ⚙️ ตั้งค่า */
+.mpv-tools:last-child{margin-bottom:0}
+.mpv-sumt[aria-expanded="true"]{background:#F0FDFA;border-color:#5EEAD4;color:#115E59}
 #mpvHead:empty{display:none}
 .mpv-sr .l{font-size:13.5px;font-weight:600;color:#475569;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.3}
 .mpv-sr .l.no{color:#B45309;font-weight:700;font-size:12.5px}
@@ -2654,7 +2659,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.85</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.86</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10350,7 +10355,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.85":"Production Record + KPI · v3.85",
+"ระบบบันทึกผลิต + KPI · v3.86":"Production Record + KPI · v3.86",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -27339,7 +27344,7 @@ async function openMachinePlanner() {
   const S = mpSettings();
   S.month = mpMonthNorm(S, S.month); S.extLagH = S.hours;
   const ui = _mpLoadLS(LS_MPV, {}, false);
-  _mpv = { open: true, S, res: null, W: null, M: null, zone: ui.zone || MP_ZONES[0], q: '', f: '', mode: ui.mode === 'full' ? 'full' : 'simple',
+  _mpv = { open: true, S, res: null, W: null, M: null, zone: ui.zone || MP_ZONES[0], q: '', f: '', mode: ui.mode === 'full' ? 'full' : 'simple', sumOpen: ui.sum === true,
     openRows: new Set(), moreM: new Set(), alertsOpen: false, histBusy: false, busy: false, oldVer: -1 };
   let ov = $('mpvOv');
   if (!ov) {
@@ -27407,7 +27412,7 @@ function closeMpPlan() {
 }
 /* ★ v3.85 มุมมองของหน้า (จำต่อเครื่อง): 'simple' = 📋 แผนงาน · 'full' = 📊 วิเคราะห์ */
 const _mpvSimple = () => !!_mpv && _mpv.mode !== 'full';
-function _mpvSaveUI() { if (_mpv) _mpSave(LS_MPV, { zone: _mpv.zone, mode: _mpv.mode }); }
+function _mpvSaveUI() { if (_mpv) _mpSave(LS_MPV, { zone: _mpv.zone, mode: _mpv.mode, sum: !!_mpv.sumOpen }); }
 function _mpvSegHtml() {
   const s = _mpvSimple();
   return `<button type="button" data-act="mode" data-mode="simple" aria-pressed="${s}" title="${TT('ดูแผน: เครื่อง · Valve No · Lot · จำนวน', 'Plan: machine · valve · lot · qty')}">📋 ${TT('แผนงาน', 'Plan')}</button>`
@@ -27458,7 +27463,8 @@ function _mpvSub() {
 }
 function _mpvSkeleton() {
   const h = $('mpvHead'), z = $('mpvZone'), tb = $('mpvTabs');
-  if (h) h.innerHTML = _mpvSimple() ? '' : `<div class="mpv-kpis">${'<div class="mpv-k mpv-sk" style="border:0"></div>'.repeat(3)}</div>`;
+  if (h) h.innerHTML = _mpvSimple() ? '' : '<div class="mpv-sk" style="height:34px;max-width:440px;border-radius:10px"></div>'
+    + (_mpv.sumOpen ? `<div class="mpv-kpis" style="margin-top:10px">${'<div class="mpv-k mpv-sk" style="border:0"></div>'.repeat(3)}</div>` : '');
   if (tb) tb.innerHTML = '<div class="mpv-sk" style="height:52px"></div>'.repeat(3);
   if (z) z.innerHTML = `<div class="mpv-grid">${'<div class="mpv-sk" style="height:230px"></div>'.repeat(4)}</div>`;
 }
@@ -27495,7 +27501,9 @@ function _mpvRenderHead() {
   const V = _mpv, res = V && V.res, el = $('mpvHead'); if (!res || !el) return;
   const W = V.W = mpWin(res, V.S.month), M = V.M = mpMonthStats(res, W);
   if (_mpvSimple()) { el.innerHTML = ''; return; }      // ★ v3.85 โหมดแผนงาน = ไม่มีตัวเลขวิเคราะห์ด้านบน
-  const kc = (cls, n, lbl, sub, act, on) => {
+  // ★ v3.86 การ์ดตัวเลข · แถบสรุป/ชิป · ต้องปรับแผน = ซ่อนไว้ (ผู้ใช้ 17/10 "ซ่อนไว้เลย ไม่ต้องแสดง") — แตะ 📈 สรุป · แจ้งเตือน ถึงเห็น
+  if (!V.sumOpen) { el.innerHTML = _mpvToolsHtml(); return; }
+  const kc =(cls, n, lbl, sub, act, on) => {
     const inner = `<b>${nn(n)}</b><span>${lbl}${sub ? `<small>${sub}</small>` : ''}</span>`;
     return act ? `<button type="button" class="mpv-k ${cls}${on ? ' on' : ''}" data-act="kpi" data-k="${act}" aria-pressed="${!!on}">${inner}</button>` : `<div class="mpv-k ${cls}">${inner}</div>`;
   };
@@ -27517,14 +27525,23 @@ function _mpvRenderHead() {
   if (v3W.length) meta.push(`<button type="button" class="mpv-chip" data-act="zone" data-z="VSM3" style="background:#FDF2F8;color:#9D174D;border-color:#FBCFE8" title="${TT('ล็อตที่ต้องส่งไปทำ Process ที่ VSM3 — ไม่กินเวลาเครื่อง VSM4', 'Lots sent to VSM3 for some processes — no VSM4 machine time')}">🔀 ${TT('ส่ง VSM3', 'to VSM3')} ${nn(new Set(v3W.map(x => x.job.k)).size)} ${TT('ล็อต', 'lots')}</button>`);
   meta.push(_mpMovesChip(res, 'data-act="moves"'));   // ★ v3.84 🔀 ย้ายเครื่อง / ลงยอดไม่ตรงแผน
   if (noSd) meta.push(`<button type="button" class="mpv-chip warn" data-act="issues">⚠️ ${TT('เบอร์ไม่มี SD', 'valves w/o SD')} ${noSd}</button>`);
-  if (V.f) meta.push(`<button type="button" class="mpv-chip on" data-act="clearf">${V.f === 'late' ? '⏰ ' + TT('เฉพาะไม่ทัน', 'late only') : '⌛ ' + TT('เฉพาะเลยวันขาย', 'past due only')} ✕</button>`);
-  el.innerHTML = `<div class="mpv-tools">
-      <button type="button" class="btn btn-outline btn-sm" data-act="board" title="${TT('ลาก Valve No ลงเครื่องเอง (เห็นโหลดแต่ละเครื่อง)', 'Drag valves onto machines yourself')}">✋ ${TT('วางเอง', 'Manual')}</button>
-      <button type="button" class="btn btn-outline btn-sm" data-act="settings" title="${TT('ตั้งค่าแผน / ข้อมูลที่ใช้คำนวณ', 'Plan settings / data used')}">⚙️ ${TT('ตั้งค่า', 'Settings')}</button>
-    </div>
+  if (V.f) meta.push(_mpvFChip());
+  el.innerHTML = `${_mpvToolsHtml()}<div class="mpv-sum" id="mpvSum">
     <div class="mpv-kpis">${kp.join('')}</div>
     <div class="mpv-meta" style="margin-top:8px">${meta.map(x => `<span>${x}</span>`).join('')}</div>
-    ${(res.alerts || []).length ? `<div class="mpv-alerts" id="mpvAlerts" style="margin-top:10px">${mpAlertsHtml(res.alerts, { closed: !V.alertsOpen, max: 12 })}</div>` : ''}`;
+    ${(res.alerts || []).length ? `<div class="mpv-alerts" id="mpvAlerts" style="margin-top:10px">${mpAlertsHtml(res.alerts, { closed: !V.alertsOpen, max: 12 })}</div>` : ''}</div>`;
+}
+const _mpvFChip = () => `<button type="button" class="mpv-chip on" data-act="clearf">${_mpv.f === 'late' ? '⏰ ' + TT('เฉพาะไม่ทัน', 'late only') : '⌛ ' + TT('เฉพาะเลยวันขาย', 'past due only')} ✕</button>`;
+/* แถวเครื่องมือของโหมดวิเคราะห์: ✋ วางเอง · ⚙️ ตั้งค่า · 📈 สรุป · แจ้งเตือน (พับ/กาง — จำต่อเครื่องใน vsm4_mp_view.sum)
+   ซ่อนสรุปอยู่แต่ยังกรอง ⏰/⌛ ค้างไว้ → ชิป ✕ ขึ้นที่แถวนี้แทน (ไม่งั้นปลดตัวกรองไม่ได้) */
+function _mpvToolsHtml() {
+  const V = _mpv, open = !!V.sumOpen;
+  return `<div class="mpv-tools">
+      <button type="button" class="btn btn-outline btn-sm" data-act="board" title="${TT('ลาก Valve No ลงเครื่องเอง (เห็นโหลดแต่ละเครื่อง)', 'Drag valves onto machines yourself')}">✋ ${TT('วางเอง', 'Manual')}</button>
+      <button type="button" class="btn btn-outline btn-sm" data-act="settings" title="${TT('ตั้งค่าแผน / ข้อมูลที่ใช้คำนวณ', 'Plan settings / data used')}">⚙️ ${TT('ตั้งค่า', 'Settings')}</button>
+      <button type="button" class="btn btn-outline btn-sm mpv-sumt" data-act="sum" aria-expanded="${open}" title="${TT('ทัน/ไม่ทันวันขาย · Order ยังไม่มีของ · ใช้เครื่อง · เปลี่ยน SD · ย้ายเครื่อง · ต้องปรับแผน', 'On time / late · orders w/o stock · machines · SD changes · moves · alerts')}">📈 ${TT('สรุป · แจ้งเตือน', 'Summary · alerts')} <span aria-hidden="true">${open ? '▴' : '▾'}</span></button>
+      ${!open && V.f ? _mpvFChip() : ''}
+    </div>`;
 }
 function _mpvRenderZone() {
   const V = _mpv, res = V && V.res, el = $('mpvZone'), tb = $('mpvTabs'), t3 = $('mpvV3Tab'); if (!res || !el || !tb) return;
@@ -27573,9 +27590,8 @@ function _mpvRenderZone() {
   if (V.zone === 'VSM3') { tb.innerHTML = tabs; el.innerHTML = (simple ? _mpvV3BodyS : _mpvV3Body)(res, W, v3In, v3H, filtering); return; }
   const z = V.zone, zm = ctx.machines.filter(m => m.zone === z);
   const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
-  const famR = m => Math.min(99, ...[...m.fams].map(_mpbFamRank));
-  // โหมดแผนงาน: เรียงตามเบอร์เครื่อง (หน้างานหาเครื่องตัวเองง่าย) · โหมดวิเคราะห์: ตามกลุ่ม Process แล้วเบอร์เครื่อง
-  const ms = zm.filter(m => byM.has(m.id) && (!filtering || byM.get(m.id).hit.length)).sort((a, b) => simple ? byId(a, b) : (famR(a) - famR(b)) || byId(a, b));
+  // ★ v3.86 ทั้ง 📋 แผนงาน และ 📊 วิเคราะห์ เรียงตามเบอร์เครื่องเหมือนกัน (ผู้ใช้ 17/10) — ลำดับเดียวกับ Excel / กระดานวางเอง
+  const ms = zm.filter(m => byM.has(m.id) && (!filtering || byM.get(m.id).hit.length)).sort(byId);
   const zA = zm.filter(m => byM.has(m.id)).flatMap(m => byM.get(m.id).all.map(i => res.assigns[i]));
   let body;
   if (!ms.length) {
@@ -27604,6 +27620,8 @@ function _mpvRenderZone() {
   tb.innerHTML = tabs;
   el.innerHTML = body + idle;
 }
+/* ช่วง SD ที่เครื่องรับได้ (ใช้ทั้งการ์ดวิเคราะห์ และหัวการ์ดแผนงาน) */
+function _mpvSdrTxt(m) { return m.ranges.length ? 'SD ' + mpRangesText(m.ranges) : m.only.length ? TT('ผลิตเฉพาะเบอร์', 'listed valves only') : TT('SD ไม่จำกัด', 'any SD'); }
 function _mpvCard(m, o, W, res, filtering) {
   const V = _mpv, S = res.S, cal = res.cal, H = res.H;
   const L = o.all.map(i => res.assigns[i]);
@@ -27618,7 +27636,7 @@ function _mpvCard(m, o, W, res, filtering) {
     return `<i class="${p <= 0 ? '' : p > 0.95 ? 'l4' : p > 0.7 ? 'l3' : p > 0.35 ? 'l2' : 'l1'}" title="${_mpDW(d)} · ${p > 0 ? Math.round(p * 100) + '%' : TT('ว่าง', 'idle')}"></i>`;
   }).join('');
   const fams = [...m.fams].sort((a, b) => _mpbFamRank(a) - _mpbFamRank(b));
-  const sdr = m.ranges.length ? 'SD ' + mpRangesText(m.ranges) : m.only.length ? TT('ผลิตเฉพาะเบอร์', 'listed valves only') : TT('SD ไม่จำกัด', 'any SD');
+  const sdr = _mpvSdrTxt(m);
   const idx = filtering ? o.hit : o.all, LIM = 6, more = V.moreM.has(m.id), showAll = filtering || more;
   const rows = (showAll ? idx : idx.slice(0, LIM)).map(i => _mpvRow(res.assigns[i], i, o.all.indexOf(i) + 1, res)).join('');
   const btn = filtering || idx.length <= LIM ? ''
@@ -27690,6 +27708,8 @@ function _mpvRowDetail(a, res) {
 const _MPV_LIM_S = 8;
 const _mpvColsS = () => `<div class="mpv-sth" aria-hidden="true"><span>#</span><span>Valve No</span><span>Lot</span><span>${TT('จำนวน', 'Qty')}</span></div>`;
 const _mpvLotS = j => j.kind === 'order' ? `<span class="l no">${TT('รอของเข้า', 'not in yet')}</span>` : `<span class="l">${escapeHtml(j.lot || '-')}</span>`;
+/* ★ v3.86 บรรทัดเล็กใต้ Valve No: [Process ·] SD · TYPE ของ Valve (ผู้ใช้ 17/10 "เพิ่ม SD กับ TYPE ของ Valve ทำเล็กๆ พอ") */
+const _mpvVmS = (j, proc) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}</small>`;
 const _mpvMoreS = (id, total, more) => total <= _MPV_LIM_S ? ''
   : `<button type="button" class="mpv-more" data-act="more" data-mid="${escapeHtml(id)}" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อคิว', 'Collapse') : `▾ ${TT('ดูคิวทั้งหมด', 'Show all')} (${TT('อีก', '+')} ${nn(total - _MPV_LIM_S)})`}</button>`;
 function _mpvCardS(m, o, res, filtering) {
@@ -27698,14 +27718,14 @@ function _mpvCardS(m, o, res, filtering) {
   const multi = new Set(o.all.map(i => res.assigns[i].step.proc)).size > 1;
   const rows = (showAll ? idx : idx.slice(0, _MPV_LIM_S)).map(i => _mpvRowS(res.assigns[i], i, o.all.indexOf(i) + 1, res, multi)).join('');
   return `<article class="mpv-m mpv-sm" aria-label="${escapeHtml(m.id)}">
-    <div class="mpv-smh"><b>${escapeHtml(m.id)}</b><span>${nn(o.all.length)} ${TT('งาน', 'jobs')}</span></div>
+    <div class="mpv-smh"><b>${escapeHtml(m.id)}</b><small class="sdr" title="${TT('ช่วง SD ที่เครื่องรับได้', 'SD range this machine takes')}">${escapeHtml(_mpvSdrTxt(m))}</small><span>${nn(o.all.length)} ${TT('งาน', 'jobs')}</span></div>
     ${_mpvColsS()}<div class="mpv-qs">${rows}</div>${filtering ? '' : _mpvMoreS(m.id, idx.length, more)}
   </article>`;
 }
 function _mpvRowS(a, i, n, res, multi) {
   const j = a.job, open = _mpv.openRows.has(_mpvRowKey(a));
   return `<div class="mpv-sr${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}"${multi ? ' data-p="1"' : ''}>
-    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${multi ? `<small>${escapeHtml(a.step.proc)}</small>` : ''}</span>${_mpvLotS(j)}<span class="q">${nn(a.qty)}</span>
+    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${_mpvVmS(j, multi ? a.step.proc : '')}</span>${_mpvLotS(j)}<span class="q">${nn(a.qty)}</span>
     ${open ? _mpvRowDetailS(a, i, res) : ''}
   </div>`;
 }
@@ -27740,7 +27760,7 @@ function _mpvV3BodyS(res, W, all, hits, filtering) {
 function _mpvV3RowS(x, vi, n, res) {
   const j = x.job, open = _mpv.openRows.has(_mpvV3Key(x));
   return `<div class="mpv-sr${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="v3row" data-vi="${vi}" data-n="${n}">
-    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}</span>${_mpvLotS(j)}<span class="q">${nn(x.qty)}</span>
+    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${_mpvVmS(j, '')}</span>${_mpvLotS(j)}<span class="q">${nn(x.qty)}</span>
     ${open ? _mpvV3DetailS(x, res) : ''}
   </div>`;
 }
@@ -27953,6 +27973,12 @@ function _mpvClick(ev) {
       document.querySelectorAll('#mpvSeg [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));   // ไม่วาดปุ่มใหม่ = โฟกัสอยู่ที่เดิม
       const bd = document.querySelector('#mpvOv .mpv-body'); if (bd) bd.scrollTop = 0;
       if (V.res) mpvRender(); else { _mpvRenderMonths(); _mpvSkeleton(); _mpvSub(); }
+      break;
+    }
+    case 'sum': {           // ★ v3.86 พับ/กาง สรุป · แจ้งเตือน
+      V.sumOpen = !V.sumOpen; _mpvSaveUI();
+      if (V.res) _mpvRenderHead();
+      const b = document.querySelector('#mpvHead [data-act="sum"]'); if (b) b.focus({ preventScroll: true });
       break;
     }
     case 'board': openMpBoard(); break;
