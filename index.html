@@ -2659,7 +2659,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.86</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.87</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -6768,7 +6768,7 @@ function planLotAlloc(b) {
   }
   const inBy = new Map();
   for (const it of (b.wipIn.items || [])) {
-    if (it.started || it.unknown) continue;
+    if (it.started || it.unknown || it.orphan) continue;   // ★ v3.87 ใบค้าง (ดู orphan ใน _wipGen) ไม่ใช่ของจริง — ไม่ให้แย่งแผนขาย
     const vk = vKey(it.valve); if (!byV.has(vk)) continue;
     if (getJobProc(it.valve, it.lot) === 'DONE') continue;
     const k = jobKey(it.valve, it.lot);
@@ -10355,7 +10355,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.86":"Production Record + KPI · v3.86",
+"ระบบบันทึกผลิต + KPI · v3.87":"Production Record + KPI · v3.87",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -16573,8 +16573,15 @@ function* _wipGen(){
     let machines=[];
     const g=groups[k];
     if(g){ const set=new Set(); for(const r of g.recs){ const m=String(r.machine_id||r.machineId||'').trim(); if(m) set.add(m); } machines=[...set]; }
+    const back=_wipinIsBackfill(e);   // ★ 2026-08-16: ระบบลงย้อนหลังให้ (วันที่ = วันเริ่มผลิต ไม่ใช่วันรับเข้า)
+    /* ★ v3.87 (ผู้ใช้ 18/10) ใบค้าง — ใบลงย้อนหลังถูกสร้าง "จากยอดผลิต" ของล็อตนั้น ⇒ ไม่มียอดผลิตเหลือเลย = ต้นทางถูกแก้/ลบไปแล้ว
+       เคสจริง: VF1073A0 SSG 770 ลง Lot "2608S090039/8-8" → กดลงย้อนหลัง 17/10 10:02 → 10:36 แก้ Lot ที่ประวัติ (✏️ KPI)
+       เป็น 2608S090039 แต่ใบไม่ตามไป → กลายเป็นล็อต "รอผลิต" 770 ตัว ถูกวางแผนใหม่ตั้งแต่ SSG + แย่งแผนขาย 30/10 ไป 518
+       ไม่ตัดออกจากยอด WIP IN (ให้คนตัดสินใจลบเอง) — แค่ไม่เอาไปวางแผน + เตือนในแผง "ลืมลงบันทึก WIP IN 1.5"
+       ตัดสินเฉพาะตอนข้อมูลโหลดครบ (_wipDataComplete) — cache ไม่ครบจะเห็นล็อตเก่าเป็น "ไม่มียอดผลิต" ผิด ๆ */
+    const orphan=back && !started && _wipDataComplete();
     wipIn.items.push({id:e.id,valve:e.valve,lot:e.lot,qty:e.qty,customer:cust,ts:e.ts,started,machines,unknown,bad,noPlan,startedNoProd,
-      back:_wipinIsBackfill(e)});   // ★ 2026-08-16: ระบบลงย้อนหลังให้ (วันที่ = วันเริ่มผลิต ไม่ใช่วันรับเข้า)
+      back,orphan});
     if(!started){ wipIn.total+=e.qty; wipIn.byCust[cust]=(wipIn.byCust[cust]||0)+e.qty; }
   }
   return {wipIn,wip,wipOut,alerts};
@@ -16643,6 +16650,7 @@ function _wipViewsRefresh(){
   if(pane==='pane-home' || pane==='pane-prod'){ try{ refreshProcOutput(true); }catch(e){} }
   if(pane==='pane-plan'){ try{ renderPlans(); }catch(e){} }
   if(pane==='pane-home' && typeof _iotPage!=='undefined' && _iotPage===3){ try{ renderIotPlan(); }catch(e){} }   // ★ v3.84
+  if(pane==='pane-settings'){ try{ renderWipinMissing(); }catch(e){} }   // ★ v3.87 ใบค้าง (orphan) มาจากก้อนนี้
 }
 /* ── ตัวแบ่งงานเป็นช่วง (time-slicing) ── generator พัก (yield) เมื่อ _sliceDue() — โหมดรวดเดียว _sliceEnd = Infinity จึงไม่พักเลย */
 let _sliceEnd=Infinity;
@@ -17131,20 +17139,67 @@ function _wipinShortSplit(){
   }
   return {ok,bad};
 }
+/* ★ v3.87 (ผู้ใช้ 18/10) ใบลงย้อนหลังที่ "ไม่มียอดผลิตแล้ว" (orphan · ดู _wipGen) — สถานะมาจากถัง WIP ชุดเดียวกับตัววางแผน
+   ใช้ก้อนที่คิดไว้แล้ว (getWipBucketsView ไม่ค้างจอ · คิดเสร็จ _wipViewsRefresh วาดแผงใหม่) แล้วกรองใบที่เพิ่งลบออกสด ๆ จาก _wipin
+   hint = Lot 11 ตัวหน้า มียอดผลิตอยู่ (เช่น "2608S090039/8-8" → 2608S090039) = ยอดผลิตน่าจะถูกแก้ไปเป็น Lot นั้น */
+function _wipinOrphanItems(){
+  const b=_lastWipBuckets ? getWipBucketsView() : (_wbKick(), null);   // ยังไม่เคยคิด → คิดเบื้องหลัง ไม่ค้างหน้าตั้งค่า
+  return ((b&&b.wipIn&&b.wipIn.items)||[]).filter(i=>i.orphan && _wipin[i.id] && !_wipin[i.id].deleted)
+    .map(i=>{
+      const e=_wipin[i.id], L=lotKey(i.lot), base=L.length>11?L.slice(0,11):'';
+      return {...i, byId:e.byId||'', byName:e.byName||'',
+        hint:(base && LOT_FMT_RE.test(base) && _producedJobs.has(jobKey(i.valve,base))) ? base : ''};
+    })
+    .sort((a,b)=>String(b.ts||'').localeCompare(String(a.ts||'')));
+}
+/* 🗑 ลบใบค้าง — soft delete แบบเดียวกับ 🗑 ในป๊อปอัป WIP IN 1.5 (ยอดผลิต/KPI ไม่ถูกแตะ) */
+async function wipinOrphanDelete(idEnc){
+  const id=decodeURIComponent(idEnc), e=_wipin[id];
+  if(!e || e.deleted){ toast('ไม่พบใบนี้ (ลบไปแล้ว?)','orange'); renderWipinMissing(); return; }
+  if(!(await confirmModal(`ลบใบรับเข้า WIP IN 1.5 ใบนี้?\n\n${e.valve}${e.lot?' / '+e.lot:''} · ${nn(e.qty)} ชิ้น\n📅 ลงย้อนหลังเป็นวันที่ ${String(e.ts||'').slice(0,10)}${e.byName||e.byId?` · โดย ${e.byName||e.byId}`:''}\n\nLot นี้ไม่มียอดผลิตแล้ว — ลบแล้วยอด "รอผลิต" ลดลง ${nn(e.qty)} ชิ้น · ยอดผลิต/KPI ไม่ถูกลบ`,
+    {yes:'🗑 ลบใบนี้'}))) return;
+  deleteWipin(id);
+  renderWipinMissing(); renderWipBuckets(); renderWipInSummary();
+  if(_wipDetailOpen()) _refreshWipDetail();
+  toast(`🗑 ลบใบรับเข้าแล้ว — ${e.valve}${e.lot?' / '+e.lot:''} · ${nn(e.qty)} ชิ้น`,'green');
+}
 let _wipinMissQ='';   // คำค้นในแผง "ลืมลงบันทึก" (คงไว้ข้ามการ re-render)
 function _wipinMissSearch(inp){ _wipinMissQ=(inp.value||'').trim().toLowerCase(); _wipinMissApplyFilter(inp.closest('details')); }
 function _wipinMissApplyFilter(root){
   if(!root) return;
   const q=_wipinMissQ; let shown=0;
-  root.querySelectorAll('[data-vl]').forEach(el=>{ const hit=!q||el.dataset.vl.indexOf(q)>=0; el.style.display=hit?'':'none'; if(hit) shown++; });
+  /* ★ v3.87 คืนค่า display เดิมของแถว (display:flex) — เดิมตั้ง '' = ลบ flex ทิ้ง ปุ่มหล่นไปอยู่ใต้ข้อความทุกแถว (ทุกครั้งที่วาดแผง) */
+  root.querySelectorAll('[data-vl]').forEach(el=>{ const hit=!q||el.dataset.vl.indexOf(q)>=0;
+    if(el.dataset.d0===undefined) el.dataset.d0=el.style.display||'';
+    el.style.display=hit?el.dataset.d0:'none'; if(hit) shown++; });
   const empty=root.querySelector('[data-miss-empty]'); if(empty) empty.style.display=shown?'none':'';
 }
 function renderWipinMissing(){
   const box=$('wipinMissing'); if(!box) return;
   const {ok:items,bad}=_wipinMissingSplit();          // ★ แยกรายการที่ข้อมูลผิดรูปออก ไม่ให้ลงอัตโนมัติ
   const {ok:shortOk}=_wipinShortSplit();             // ★ 2026-08-16: ล็อตที่มีใบแล้วแต่ยอดไม่ครบ
-  if(!items.length && !bad.length && !shortOk.length){ box.innerHTML=''; return; }
+  const orph=_wipinOrphanItems();                    // ★ v3.87: ใบลงย้อนหลังที่ไม่มียอดผลิตแล้ว
+  if(!items.length && !bad.length && !shortOk.length && !orph.length){ box.innerHTML=''; return; }
+  const wasOpen=!!(box.querySelector(':scope > details')||{}).open;   // ★ v3.87 วาดใหม่หลังกดลบ/ลง → แผงไม่พับเอง
   const CAP=300;
+  /* ★ v3.87 (ผู้ใช้ 18/10) "ใบ WIP IN ที่ลงย้อนหลังแต่ไม่มียอดผลิตแล้ว ไม่ต้องเอาไปวางแผน และให้เตือนในแผงนี้พร้อมปุ่มลบ"
+     ไม่วางแผนแล้ว (mpJobs / planLotAlloc ข้าม it.orphan) แต่ยังนับในยอดรอผลิต — ให้คนตรวจแล้วลบเอง ไม่ลบอัตโนมัติ */
+  const orphTot=orph.reduce((s,it)=>s+(Number(it.qty)||0),0);
+  const orphHtml=orph.length?`
+    <div style="margin-top:8px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:9px;padding:8px 10px">
+      <div style="font-weight:800;font-size:12.5px;color:#B91C1C;margin-bottom:4px">🗑 ใบลงย้อนหลังที่ไม่มียอดผลิตแล้ว ${orph.length} ใบ · ${nn(orphTot)} ชิ้น</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:6px">ระบบลงใบพวกนี้ให้จากยอดผลิตของ Lot นั้น แต่ตอนนี้ Lot นั้นไม่มียอดผลิตแล้ว (แก้เลข Lot / ลบยอดผลิตทีหลัง ใบรับเข้าไม่ได้แก้ตาม)
+        <br><b style="color:#B91C1C">ไม่ถูกเอาไปวางแผนผลิต / แผนขายแล้ว</b> แต่ยังนับในยอด "รอผลิต" จนกว่าจะลบ — ตรวจแล้วกด 🗑 ลบ</div>
+      ${orph.map(it=>`<div data-vl="${escapeHtml((it.valve+' '+(it.lot||'')).toLowerCase())}" style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #FECACA">
+        <div style="flex:1;min-width:0">
+          <b style="color:#B91C1C">${escapeHtml(it.valve)}</b> / <span style="overflow-wrap:anywhere">${escapeHtml(it.lot||'-')}</span> · <b>${nn(it.qty)}</b> ชิ้น
+          <div style="font-size:11px;color:var(--muted)">ลงย้อนหลังเป็นวันที่ ${escapeHtml(String(it.ts||'').slice(0,10)||'-')}${it.byName||it.byId?` · โดย ${escapeHtml(it.byName||it.byId)}`:''}</div>
+          ${it.hint?`<div style="font-size:11px;color:#B45309">💡 ยอดผลิตน่าจะถูกแก้เป็น Lot <b>${escapeHtml(it.hint)}</b> — ยอดรับเข้าของ Lot นั้นดูที่ ➕ ยอดรับเข้าขาด</div>`:''}
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;color:#B91C1C;border-color:#FCA5A5"
+          onclick="wipinOrphanDelete('${encodeURIComponent(it.id)}')">🗑 ลบ</button>
+      </div>`).join('')}
+    </div>`:'';
   /* ★ 2026-08-16 (req) — แผงย่อย "ยอดรับเข้าขาด" · แยกปุ่มออกจากกลุ่มบน โดยตั้งใจ
      ผู้ใช้เลือกกติกา "เตือนก่อน ให้กดยืนยันเอง" — ยอดรวมระดับแสนชิ้น ถ้าเอาไปรวมกับปุ่ม
      "ลงบันทึก WIP IN ทั้งหมด" ที่กดกันอยู่ทุกวัน จะกลายเป็นลงยกเข่งโดยไม่มีใครตรวจ
@@ -17204,13 +17259,14 @@ function renderWipinMissing(){
         onclick="wipinQuickAdd('${encodeURIComponent(it.valve)}','${encodeURIComponent(it.lot||'')}',${it.qty},'${it.first||''}','${encodeURIComponent(it.proc||'')}')">➕ ลงบันทึก</button>
     </div>`).join('');
   box.innerHTML=`
-    <details ${_wipinMissQ?'open':''} style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
+    <details ${(_wipinMissQ||wasOpen)?'open':''} style="margin-bottom:10px;border:1.5px solid var(--orange-bd);border-radius:11px;background:var(--orange-bg);padding:8px 12px">
       <summary style="cursor:pointer;list-style:none;font-weight:800;font-size:13.5px;color:var(--orange)">
-        🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length+bad.length+shortOk.length}</span>
-        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ Process แรกแล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู${bad.length?` · ⛔ ${bad.length} รายการต้องแก้ต้นทางก่อน`:''}${shortOk.length?` · ➕ ${shortOk.length} ล็อตยอดขาด`:''}</span>
+        🏬 ลืมลงบันทึก WIP IN 1.5 <span style="background:var(--orange);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px">${items.length+bad.length+shortOk.length+orph.length}</span>
+        <span style="font-weight:600;font-size:11px;color:var(--muted)"> · งานที่ผลิตที่ Process แรกแล้วแต่ยังไม่ลงรับเข้า — กดเพื่อดู${orph.length?` · <b style="color:#B91C1C">🗑 ${orph.length} ใบไม่มียอดผลิตแล้ว</b>`:''}${bad.length?` · ⛔ ${bad.length} รายการต้องแก้ต้นทางก่อน`:''}${shortOk.length?` · ➕ ${shortOk.length} ล็อตยอดขาด`:''}</span>
       </summary>
       ${items.length?`<button type="button" class="btn btn-blue btn-block" style="margin-top:8px;padding:10px;font-size:14px"
         onclick="wipinAddAllMissing()">➕ ลงบันทึก WIP IN ทั้งหมด (${items.length} รายการ)</button>`:''}
+      ${orphHtml}
       ${shortHtml}
       ${badHtml}
       <div style="margin-top:8px"><input type="search" value="${escapeHtml(_wipinMissQ)}" oninput="_wipinMissSearch(this)" placeholder="🔍 ค้นหา Valve No / Lot…" autocomplete="off"
@@ -26658,7 +26714,7 @@ function mpJobs(S, ctx) {
   if (S.incIn) {
     const by = {};
     for (const it of (b.wipIn.items || [])) {
-      if (it.started || it.unknown) continue;
+      if (it.started || it.unknown || it.orphan) continue;   // ★ v3.87 ใบลงย้อนหลังที่ไม่มียอดผลิตแล้ว ไม่วางแผน
       const k = jobKey(it.valve, it.lot);
       const o = by[k] = by[k] || { kind: 'in', valve: it.valve, lot: it.lot, customer: it.customer, qty: 0, total: 0, recv: '', curProc: '' };
       o.qty += +it.qty || 0; o.total += +it.qty || 0;
@@ -26690,9 +26746,11 @@ function mpJobs(S, ctx) {
     if (!j.steps.length) { j.noflow = true; jobs.push(j); continue; }
     let run = 0;
     for (let i = j.steps.length - 1; i >= 0; i--) { run = Math.max(run, j.steps[i].done); j.steps[i].effDone = run; }
+    /* ★ v3.87 (ผู้ใช้ 18/10) เศษที่เหลือ ≤ max(5, 2%) ของล็อต = ถือว่าจบขั้นนั้นแล้ว — กติกาเดียวกับแผนขาย (planTol)
+       เดิม < max(5, 1%) → V77868A0 Lot 2607S070425 รับเข้า 595 · VET 586 → วาง VET 9 ตัวบน G-2029 (วัดจริง 18/10: 40 ขั้นแบบนี้) */
     for (const st of j.steps) {
       let need = Math.max(0, Math.round(j.total - st.effDone));
-      if (need < Math.max(5, j.total * 0.01)) need = 0;
+      if (need <= planTol(j.total)) need = 0;
       st.need = need;
     }
     _mpMarkV3(j);
@@ -27236,7 +27294,7 @@ function _mpDataStatus() {
   if (b) {
     for (const it of b.wip.items || []) { nWip++; lots.add(vKey(it.valve)); }
     const seen = new Set();
-    for (const it of b.wipIn.items || []) { if (it.started || it.unknown) continue; const k = jobKey(it.valve, it.lot); if (seen.has(k)) continue; seen.add(k); nIn++; lots.add(vKey(it.valve)); }
+    for (const it of b.wipIn.items || []) { if (it.started || it.unknown || it.orphan) continue; const k = jobKey(it.valve, it.lot); if (seen.has(k)) continue; seen.add(k); nIn++; lots.add(vKey(it.valve)); }
   }
   const noSd = [...lots].filter(v => mpValveSd(v) == null);
   const sdAll = (state.valves || []).filter(v => v.sd !== null && v.sd !== undefined && v.sd !== '').length;
