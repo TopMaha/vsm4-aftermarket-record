@@ -812,6 +812,16 @@ button.mpv-rt:disabled{cursor:default}
 #mpvHead:empty{display:none}
 .mpv-sr .l{font-size:13.5px;font-weight:600;color:#475569;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.3}
 .mpv-sr .l.no{color:#B45309;font-weight:700;font-size:12.5px}
+/* ★ v3.89 ใต้ Lot = ขายแผนไหน (🛒 ขาย 30/10 · 🔒 = แผนขายระบุ Lot นี้) */
+.mpv-sr .l small.sl,.mpv-rlh .sl{display:block;font-size:11px;font-weight:800;line-height:1.3;margin-top:1px;letter-spacing:0}
+.mpv-rlh .sl{display:inline;font-size:12px}
+.sl.ok{color:#15803D}.sl.over{color:#B91C1C}.sl.none{color:#94A3B8;font-weight:700}
+.mpv-sr .l.no b,.mpv-rlh .l.no b{display:block;color:#5B21B6;font-weight:800}
+.mpv-rlh .l.no b{display:inline;margin-right:6px}
+.mpv-rz.wt{border-style:dashed;border-color:#F59E0B;background:#FFFBEB}
+.mpv-rz.wt b{color:#B45309}
+.pf-sale{font-size:10.5px;font-weight:800;color:#15803D;line-height:1.35;margin-top:2px;white-space:nowrap}
+.pf-sale.named{color:#6D28D9}
 .mpv-sr .q{font-size:15px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
 .mpv-dts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 9px}
 .mpv-dts .mpv-chip{min-height:36px;padding:6px 12px;font-size:12.5px}
@@ -899,6 +909,8 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
   font-family:inherit;background:#fff;min-width:0}
 .pl-in:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
 .pl-lot{font-weight:700;letter-spacing:.1px;font-variant-numeric:tabular-nums;text-overflow:ellipsis}
+.pl-lot::placeholder{color:#94A3B8;font-weight:600}
+.pl-lot.on{border-color:#7C3AED;background:#F5F3FF;color:#5B21B6}   /* ★ v3.89 ระบุ Lot แล้ว = ขายเฉพาะ Lot นี้ */
 .pl-qty{font-weight:800;text-align:center;font-variant-numeric:tabular-nums;padding:5px 2px;
   -moz-appearance:textfield;appearance:textfield}
 /* ซ่อนลูกศร spinner ของ input[type=number] — กินที่จนตัวเลข 4 หลักโดนบัง */
@@ -2710,7 +2722,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.88</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.89</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3109,11 +3121,13 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
            → กำหนดความกว้างให้พอดีเนื้อหาจริง (Lot = 11 ตัวอักษร) แล้วให้ทุกคอลัมน์แชร์ที่ว่างเท่า ๆ กัน
            ★ 2026-08-05 (req): หัวตาราง = ชื่อคอลัมน์ (กด = เรียง) + ปุ่ม ▾ (กด = ตัวกรองแบบ Excel)
            คอลัมน์แรก = ช่องติ๊กเลือกหลายรายการ (ติ๊กบนหัว = เลือกทุกแถวที่กรองอยู่) -->
-      <table id="planTable" style="min-width:920px">
+      <table id="planTable" style="min-width:1050px">
         <thead><tr>
           <th class="center" style="width:36px"><input type="checkbox" class="pl-ck" id="planSelAll" onclick="planSelAll(this.checked)" title="เลือกทุกแถวที่กรองอยู่"></th>
           <th class="pl-th" style="width:122px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('date')" title="กดเพื่อเรียงตามวันที่ขาย">📅 วันที่ขาย<span class="ps-ar" data-psk="date"></span></span><button type="button" class="pl-fb" data-pfc="date" onclick="openPlanFilter(event,'date')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:126px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <!-- ★ v3.89 (ผู้ใช้ 19/10) "Lot ที่จะขาย" กลับมา — ระบุ = ขายเฉพาะ Lot นั้น · ว่าง = ระบบเลือกให้ตามวันขาย -->
+          <th class="pl-th" style="width:130px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น · ว่าง = ระบบเลือก Lot ให้ตามวันขาย">Lot ที่จะขาย<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:110px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (ระบบกำหนดเอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
           <th class="pl-th" style="width:150px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง">▾</button></div></th>
@@ -6782,6 +6796,12 @@ function planFinDays() {
 }
 // ยอดขาดเล็กน้อย (เศษ scrap) ไม่นับว่าขาด — ล็อต 998 ส่งแผน 1,000 = ครบ (กติกาเดียวกับ need ของตัววางแผน)
 function planTol(order) { return Math.max(5, Math.round((+order || 0) * 0.02)); }
+/* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 2) "Lot ที่จะขาย" ที่ระบุในแผนขาย — ใส่ได้หลาย Lot คั่นด้วย , หรือเว้นวรรค
+   ระบุ = แผนนี้ขายเฉพาะ Lot นั้น (Valve + Lot ต้องตรงกับงานที่จะขาย) · ว่าง = ระบบเลือก Lot ให้ตามวันขาย (แบบเดิม)
+   "2609S100093" ตรงกับ 2609S100093 และล็อตย่อย 2609S100093/1-2 */
+function planLotKeys(p) { return [...new Set(String((p && p.lot) || '').split(/[,;\s]+/).map(lotKey).filter(Boolean))]; }
+function planLotNorm(v) { return planLotKeys({ lot: v }).join(', '); }
+const planLotHit = (keys, lk) => !!lk && keys.some(k => lk === k || lk.startsWith(k + '/'));
 let _plaCache = null, _plaKey = null, _plaSeq = 0;
 function planLotAlloc(b) {
   b = b || getWipBucketsView();
@@ -6837,14 +6857,15 @@ function planLotAlloc(b) {
     const L = (parts.get(vk) || []).map(x => ({ ...x, left: x.qty }));
     L.sort((a, c) => (RK[a.st] - RK[c.st]) || (a.st === 'wip' ? c.prog - a.prog : 0)
       || String(isFin(a) ? a.fin : a.recv).localeCompare(String(isFin(c) ? c.fin : c.recv)) || a.lk.localeCompare(c.lk));
-    const R = ps.map(p => ({ p, vk, due: _planDateISO(p.plan_date), order: Number(p.quantity) || 0, need: Number(p.quantity) || 0, lots: [] }));
+    const R = ps.map(p => ({ p, vk, due: _planDateISO(p.plan_date), order: Number(p.quantity) || 0, need: Number(p.quantity) || 0, lots: [], keys: planLotKeys(p) }));
     const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake }); };
-    for (const r of R) {                                   // ① แผนที่ผูก Lot ไว้เอง → Lot นั้นก่อน (คนเลือกแล้ว ไม่ดูช่วงวัน)
-      const lk = lotKey(r.p.lot); if (!lk) continue;
-      for (const x of L) { if (r.need <= 0) break; if (x.lk === lk && x.left > 0) give(r, x, Math.min(r.need, x.left)); }
+    for (const r of R) {                                   // ① แผนที่ระบุ Lot → Lot นั้น (คนเลือกแล้ว ไม่ดูช่วงวัน) ตามลำดับที่พิมพ์
+      if (!r.keys.length) continue;
+      for (const k of r.keys) for (const x of L) { if (r.need <= 0) break; if (x.left > 0 && planLotHit([k], x.lk)) give(r, x, Math.min(r.need, x.left)); }
+      r.lotMiss = r.keys.filter(k => !L.some(x => planLotHit([k], x.lk)));   // Lot ที่ระบุแต่ยังไม่มีใน VSM นี้ (ยังไม่รับเข้า)
     }
-    for (const r of R) {                                   // ②③ ตามวันขาย
-      if (r.need <= 0) continue;
+    for (const r of R) {                                   // ②③ ตามวันขาย — ★ v3.89 เฉพาะแผนที่ไม่ได้ระบุ Lot (ระบุแล้ว = ขาดคือขาด ไม่เอา Lot อื่นมาเติม)
+      if (r.need <= 0 || r.keys.length) continue;
       const cut = back(r.due, fin);
       for (const x of L) {
         if (r.need <= 0) break;
@@ -6869,7 +6890,7 @@ function planLotAlloc(b) {
       for (const l of r.lots) {
         const k = vk + '::' + l.lk;
         let a = byLot.get(k); if (!a) byLot.set(k, a = []);
-        a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order });
+        a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order, named: r.keys.length > 0 });
       }
     }
     spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, fin: x.fin || '' })));
@@ -7117,6 +7138,7 @@ function setPlanSort(key) {
 function _planSortVal(p, key) {
   switch (key) {
     case 'valve':  return (p.valve_no || '').toUpperCase();
+    case 'lot':    return planLotNorm(p.lot) || '~';          // ★ v3.89 ไม่ระบุ Lot ไว้ท้าย
     case 'qty':    return Number(p.quantity) || 0;
     case 'note':   return (p.note || '').toUpperCase();
     // "สถานะ" เรียงตามสถานะจริงจากการผลิต (ที่ผู้ใช้เห็นเป็นป้ายสี) ไม่ใช่ค่า override
@@ -7161,6 +7183,8 @@ const PLAN_COLS = {
             disp:v=>v ? _fmtThDate(v) : TT('(ไม่ระบุวันที่)','(no date)') },
   valve:  { lbl:['Valve No','Valve No'], key:p=>(p.valve_no||'').trim().toUpperCase(),
             disp:v=>v || TT('(ว่าง)','(blank)') },
+  lot:    { lbl:['Lot ที่จะขาย','Lot to sell'], key:p=>planLotNorm(p.lot),          // ★ v3.89
+            disp:v=>v || TT('(อัตโนมัติ — ไม่ระบุ)','(auto — not set)') },
   qty:    { lbl:["Q'ty","Q'ty"], key:p=>String(Math.round(Number(p.quantity)||0)),
             disp:v=>nn(+v)+' '+TT('ชิ้น','pcs'), num:true },
   status: { lbl:['สถานะ','Status'], key:p=>planEffStatus(p),
@@ -7183,7 +7207,7 @@ function filteredPlans(skipCol, ignoreRange) {
     if (from && d && d < from) return false;
     if (to   && d && d > to)   return false;
     if (q) {
-      const hay = `${p.valve_no||''} ${p.note||''} ${d} ${_fmtThDate(d)} ${p.quantity||''}`.toLowerCase();
+      const hay = `${p.valve_no||''} ${p.lot||''} ${p.note||''} ${d} ${_fmtThDate(d)} ${p.quantity||''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     for (const c of cols) if (!_planColF[c].has(PLAN_COLS[c].key(p))) return false;
@@ -7806,7 +7830,7 @@ function renderPlans() {
     }
   }
   tbody.innerHTML = rows.length ? pageRows.map(p => planRowHtml(p)).join('')
-    : `<tr><td colspan="7" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
+    : `<tr><td colspan="8" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
   // ลูกศรบอกคอลัมน์ที่กำลังเรียง (req #5)
   for (const el of document.querySelectorAll('#planTable .ps-ar')) {
     const on = el.dataset.psk === _planSort.key;
@@ -8046,7 +8070,7 @@ function renderPlanNoPlan(){
 /* ➕ เพิ่มแผนขายจากรายการที่รับเข้ามาแล้ว — เติม Valve/จำนวน ให้ล่วงหน้า เหลือแค่ใส่วันที่ส่ง
    ★ 2026-09-01 (req) แผนไม่ผูก Lot แล้ว — พารามิเตอร์ lotEnc คงไว้เพื่อความเข้ากันได้ แต่ไม่ถูกใช้ */
 function openAddPlanFor(valveEnc, lotEnc, qty){
-  const valve=decodeURIComponent(valveEnc||''), lot='';
+  const valve=decodeURIComponent(valveEnc||''), lot=planLotNorm(decodeURIComponent(lotEnc||''));   // ★ v3.89 Lot กลับมา
   openModal('➕ เพิ่มแผนขาย (จากงานที่รับเข้าแล้ว)',`
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:9px 11px;font-size:12px;color:var(--blue-dark);line-height:1.7;margin-bottom:10px">
       งานนี้ <b>รับเข้า WIP IN 1.5 แล้ว</b> แต่ยังไม่มีแผนขาย — ใส่วันที่ขายแล้วบันทึก เพื่อให้ขึ้นบนบอร์ดติดตามงานขาย<br>
@@ -8054,6 +8078,7 @@ function openAddPlanFor(valveEnc, lotEnc, qty){
     </div>
     <div class="fg">
       <div class="fr"><label>Valve No</label><input type="text" id="napValve" value="${escapeHtml(valve)}" style="text-transform:uppercase;font-weight:700"></div>
+      <div class="fr"><label>${TT('Lot ที่จะขาย','Lot to sell')}</label><input type="text" id="napLot" value="${escapeHtml(lot)}" placeholder="${TT('ว่าง = ระบบเลือกให้','blank = auto')}" style="text-transform:uppercase;font-weight:700"></div>
     </div>
     <div class="fg">
       <div class="fr"><label>วันที่ขาย</label><input type="date" id="napDate" value="${escapeHtml(todayISO())}"></div>
@@ -8069,7 +8094,7 @@ function openAddPlanFor(valveEnc, lotEnc, qty){
 }
 async function saveAddPlanFor(){
   const valve=vKey($('napValve')?.value||'');
-  const lot='';                                   // ★ 2026-09-01 แผนไม่ผูก Lot แล้ว
+  const lot=planLotNorm($('napLot')?.value||'');  // ★ v3.89 Lot ที่จะขาย (ว่าง = ระบบเลือกให้ตามวันขาย)
   const date=$('napDate')?.value||'';
   const qty=Math.max(0,Math.round(fnum($('napQty')?.value||'')));
   if(!valve){ toast('กรอก Valve No','orange'); return; }
@@ -8409,6 +8434,7 @@ function planRowHtml(p) {
     <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
     <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
     <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:800;color:var(--blue);font-size:12.5px;width:100%;text-transform:uppercase"></td>
+    <td><input type="text" class="pl-in pl-lot${(p.lot||'').trim()?' on':''}" list="planLotDl" value="${escapeHtml(p.lot||'')}" onfocus="_planLotDlFill('${pid}')" onchange="updatePlanLot('${pid}',this.value)" placeholder="${TT('อัตโนมัติ','auto')}" title="${escapeHtml(TT('Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น (หลาย Lot คั่นด้วย ,) · ว่าง = ระบบเลือก Lot ให้ตามวันขาย','Lot to sell — set = this plan sells only that lot (comma for several) · blank = the system picks by sale date'))}" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></td>
     <td><input type="number" class="pl-in pl-qty" value="${p.quantity||''}" oninput="updatePlan('${pid}','quantity',this.value)" min="0" placeholder="0"></td>
     <td>${autoBadge}${sel}</td>
     <td><input type="text" class="pl-in pl-note" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${pid}','note',this.value)" placeholder="หมายเหตุ" title="${escapeHtml(p.note||'')}"></td>
@@ -8420,6 +8446,34 @@ function planRowHtml(p) {
   </tr>`;
 }
 
+/* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 1) ป้าย "Lot นี้ขายแผนไหน" ใต้เลข Lot (หน้าค้นหา Process) — ตัวจัดสรรเดียวกับตารางแผนขาย
+   🔒 = แผนขายระบุ Lot นี้เอง · ไม่มีป้าย = ยังไม่มีแผนขายที่ใช้ Lot นี้ */
+function _lotSaleTag(valve, lot) {
+  try {
+    const a = planLotAlloc().byLot.get(vKey(valve || '') + '::' + lotKey(lot || ''));
+    if (!a || !a.length) return '';
+    const by = new Map();
+    for (const x of a) { const o = by.get(x.date) || { date: x.date, qty: 0, named: false }; o.qty += x.qty; o.named = o.named || !!x.named; by.set(x.date, o); }
+    return [...by.values()].sort((p, q) => p.date.localeCompare(q.date)).map(o =>
+      `<div class="pf-sale${o.named ? ' named' : ''}" title="${escapeHtml(TT('ส่วนของ Lot นี้ที่ใช้ขายแผนนี้', 'part of this lot used for this sale') + (o.named ? ' · 🔒 ' + TT('แผนขายระบุ Lot นี้', 'lot named in the sales plan') : ''))}">🛒 ${o.named ? '🔒' : ''}${TT('ขาย', 'sale')} ${_mpD(o.date).slice(0, 5)} · ${nn(o.qty)}</div>`).join('');
+  } catch (e) { return ''; }
+}
+/* ★ v3.89 Lot นี้มียอดผลิตที่สายอื่นล่าสุดเมื่อไร (เช่น ยังอยู่ VSM1 ยังไม่ส่งเข้า VSM4) — จำผลต่อเวอร์ชันข้อมูล */
+let _lseMemo = new Map(), _lseVer = -1;
+function _lotSeenElsewhere(vk, lk) {
+  if (_lseVer !== _fvVer) { _lseMemo = new Map(); _lseVer = _fvVer; }
+  const key = vk + '::' + lk;
+  if (_lseMemo.has(key)) return _lseMemo.get(key);
+  let best = null;
+  for (const r of (_wipKpiSrc() || [])) {
+    if (vKey(r.valve_no || '') !== vk) continue;
+    if (!String(r.lot || '').split(/[,;\s]+/).some(l => planLotHit([lk], lotKey(l)))) continue;
+    const d = String(r.shift_date || r.record_date || '').slice(0, 10);
+    if (!best || d > best.d) best = { d, vsm: String(vsmOf(r) || '').toUpperCase() };
+  }
+  _lseMemo.set(key, best);
+  return best;
+}
 /* ★ v3.84 — ใต้ป้ายสถานะ: "ขาย Lot ไหน" (จากตัวจัดสรร planLotAlloc) + ขาดเท่าไร + Lot เก่าที่ไม่นับเพราะอะไร */
 function _planLotsHtml(A) {
   if (!A) return '';
@@ -8428,8 +8482,13 @@ function _planLotsHtml(A) {
   const rows = L.slice(0, MAX).map(l => `<div style="font-size:9.5px;font-weight:700;color:${st[l.st]||'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(planLotTxt(l))}">📦 ${escapeHtml(planLotTxt(l))}</div>`);
   if (L.length > MAX) rows.push(`<div style="font-size:9.5px;color:var(--muted)">+${L.length - MAX} Lot</div>`);
   if (A.shortSig) rows.push(`<div style="font-size:9.5px;font-weight:800;color:#B91C1C" title="${escapeHtml(TT('ยังไม่มี Lot ไหนรองรับยอดนี้ — รอ WIP IN 1.5','No lot covers this qty yet — waiting for WIP IN 1.5'))}">📭 ${TT('ยังไม่มีของ','no stock')} ${nn(A.short)}</div>`);
+  // ★ v3.89 Lot ที่ระบุแต่ยังไม่เข้า VSM นี้ — บอกว่าล่าสุดอยู่ที่ไหน (เช่น ยังอยู่ VSM1)
+  for (const k of (A.lotMiss || []).slice(0, 2)) {
+    const w = _lotSeenElsewhere(A.vk, k);
+    rows.push(`<div style="font-size:9.5px;font-weight:700;color:#6D28D9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔒 ${escapeHtml(k)} · ${TT('ยังไม่รับเข้า','not received in')} ${escapeHtml(viewVsm().toUpperCase())}${w ? ` (${TT('ล่าสุด','last')} ${escapeHtml(w.vsm)} ${escapeHtml(_fmtThDate(w.d))})` : ''}</div>`);
+  }
   const ign = (A.ignored || []).filter(x => !L.some(l => l.lk === x.lk));
-  if (ign.length && !L.length) {
+  if (ign.length && !L.length && !(A.keys && A.keys.length)) {      // ★ v3.89 แผนที่ระบุ Lot — ไม่ต้องบอก Lot อื่นที่ไม่นับ
     const x = ign[ign.length - 1];
     rows.push(`<div style="font-size:9px;color:var(--muted2,#94A3B8)" title="${escapeHtml(TT(`Lot ที่เสร็จก่อนวันขายเกิน ${planFinDays()} วัน ถือว่าส่งขายรอบก่อนไปแล้ว — ตั้งจำนวนวันได้ที่ 🏭 ⚙️ ตั้งค่า`,`Lots finished more than ${planFinDays()} days before the sale date count as already sold — change it in 🏭 ⚙️ Settings`))}">↷ ${TT('ไม่นับ','skipped')} ${escapeHtml(x.lot)} (${TT('เสร็จ','done')} ${escapeHtml(_fmtThDate(x.fin))})${ign.length > 1 ? ` +${ign.length - 1}` : ''}</div>`);
   }
@@ -8440,7 +8499,57 @@ function _planLotsHtml(A) {
    ใส่ "จำนวน" ไว้ด้วยเพราะเบอร์เดียวกัน วันเดียวกัน แต่คนละยอด = คนละรายการจริง ไม่ใช่ของซ้ำ
    (ถ้าตัดเหลือ วาล์ว+วันที่ ระบบจะลบแถวที่ยอดต่างกันทิ้ง = ข้อมูลหาย) */
 function planKey(p) {
+  return `${planKeyBase(p)}::${planLotNorm(p.lot)}`;
+}
+/* ★ v3.89 Lot กลับมาอยู่ในแผนขาย — เบอร์ + วันขาย + จำนวนเดียวกันแต่คนละ Lot = คนละรายการจริง (ขาย 2 Lot วันเดียวกัน)
+   planKeyBase = ไม่ดู Lot (ใช้ตอนวางจาก Excel: แถวเดิมที่ยังไม่ระบุ Lot → เติม Lot ให้แถวเดิม ไม่สร้างแถวซ้ำ) */
+function planKeyBase(p) {
   return `${(p.valve_no||'').trim().toUpperCase()}::${_planDateISO(p.plan_date)}::${Number(p.quantity)||0}`;
+}
+/* ★ v3.89 ช่อง "Lot ที่จะขาย" ในตารางแผน — รายชื่อ Lot ของเบอร์นั้นให้เลือก (พิมพ์เองก็ได้)
+   กำลังผลิต / รับเข้ารอผลิต / ผ่าน FG แล้ว + Lot ที่ยังอยู่สายอื่น 90 วันล่าสุด (เช่น ยังอยู่ VSM1 ยังไม่ส่งเข้า VSM4) */
+function _planLotChoices(valve) {
+  const vk = vKey(valve || ''); if (!vk) return [];
+  const m = new Map();
+  const add = (lot, tag, d, weak) => {
+    const lk = lotKey(lot); if (!lk || lk.length < 8) return;
+    const o = m.get(lk); if (o && (weak || !o.weak)) return;
+    m.set(lk, { lot: String(lot).trim().toUpperCase(), tag, d: d || '', weak: !!weak });
+  };
+  try {
+    const b = getWipBucketsView();
+    for (const it of (b.wip.items || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${it.curProc || ''} · ${nn(it.qty)}`, it.date);
+    for (const it of ((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${it.curProc || ''} · ${nn(it.qty)}`, it.date);
+    for (const it of (b.wipIn.items || [])) if (vKey(it.valve) === vk && !it.orphan) add(it.lot, `${TT('รับเข้า รอผลิต','received, waiting')} · ${nn(it.qty)}`, String(it.ts || '').slice(0, 10));
+    for (const it of (b.wipOut.items || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('ผ่าน FG','passed FG')} ${_fmtThDate(String(it.date || '').slice(0, 10))}`, String(it.date || '').slice(0, 10));
+  } catch (e) {}
+  const t = new Date(); t.setDate(t.getDate() - 90);
+  const since = `${t.getFullYear()}-${P(t.getMonth() + 1)}-${P(t.getDate())}`;
+  for (const r of (_wipKpiSrc() || [])) {
+    if (vKey(r.valve_no || '') !== vk) continue;
+    const d = String(r.shift_date || r.record_date || '').slice(0, 10); if (d < since) continue;
+    for (const l of String(r.lot || '').split(/[,;\s]+/)) add(l, `${String(vsmOf(r) || '').toUpperCase()} · ${_fmtThDate(d)}`, d, true);
+  }
+  return [...m.values()].sort((a, b) => (a.weak - b.weak) || String(b.d).localeCompare(String(a.d))).slice(0, 40);
+}
+function _planLotDlFill(pid) {
+  const p = state.plans.find(x => x.plan_id === pid);
+  let dl = document.getElementById('planLotDl');
+  if (!dl) { dl = document.createElement('datalist'); dl.id = 'planLotDl'; document.body.appendChild(dl); }
+  dl.innerHTML = p ? _planLotChoices(p.valve_no).map(o => `<option value="${escapeHtml(o.lot)}" label="${escapeHtml(o.tag)}">${escapeHtml(o.tag)}</option>`).join('') : '';
+}
+async function updatePlanLot(pid, v) {
+  const idx = state.plans.findIndex(p => p.plan_id === pid); if (idx < 0) return;
+  const p = state.plans[idx], lot = planLotNorm(v);
+  if (lot === (p.lot || '')) { renderPlans(); return; }
+  p.lot = lot;
+  lsSave(LS.PLANS, state.plans);
+  _planRefreshAllViews();                                   // สถานะ / Lot ที่จะขาย / บอร์ด IOT / แผนผลิตคิดใหม่ทันที
+  const r = await _planSave(p);
+  const A = lot ? planAllocOf(p) : null;
+  const miss = A && A.lotMiss && A.lotMiss.length ? ` · ⚠️ ${TT('ยังไม่มี Lot นี้ใน', 'lot not in')} ${viewVsm().toUpperCase()}` : '';
+  toast((lot ? `🔒 ${p.valve_no} ${TT('ขายเฉพาะ Lot', 'sells only lot')} ${lot}${miss}` : `↺ ${p.valve_no} — ${TT('ระบบเลือก Lot ให้ตามวันขาย', 'lot picked by sale date')}`) + _planSaveNote(r),
+    r.ok === false || miss ? 'orange' : 'green');
 }
 // ลบแผนที่ซ้ำกับ keepId (เก็บ keepId = ข้อมูลใหม่ล่าสุด) — เรียกตอน commit (blur/เลือกวันที่)
 async function dedupePlanRow(keepId) {
@@ -8584,7 +8693,7 @@ function parsePasteText(text) {
      แต่ไฟล์เก่าที่ยังติดคอลัมน์ Lot ไว้ช่องที่ 3 ต้องไม่ทำให้ Qty เลื่อนไปอ่านผิดช่อง → เจอแล้วข้ามให้ */
   const legacyLot = !hasHeader && _pasteHasLotCol(dataLines, splitLine);
   const defaultOrder = legacyLot
-    ? ['plan_date','valve_no',null,'quantity','status','note']
+    ? ['plan_date','valve_no','lot','quantity','status','note']    // ★ v3.89 Lot ที่ช่อง 3 = Lot ที่จะขาย (เก็บแล้ว ไม่ข้าม)
     : ['plan_date','valve_no','quantity','status','note'];
   const order = hasHeader ? colMap : defaultOrder;
   _planPasteLotSkipped = hasHeader ? colMap.includes('lot') : legacyLot;
@@ -8599,7 +8708,7 @@ function parsePasteText(text) {
       const v = cols[i] || '';
       if (field === 'plan_date')      obj.plan_date = parseDate(v, _planPasteDateFmt);
       else if (field === 'valve_no')  obj.valve_no = v.toUpperCase().trim();
-      /* field === 'lot' → ไม่เก็บ (แผนไม่ผูก Lot แล้ว) แค่กันไม่ให้คอลัมน์ถัดไปเลื่อน */
+      else if (field === 'lot')       obj.lot = planLotNorm(v);   // ★ v3.89 Lot ที่จะขาย (ว่าง = ระบบเลือกให้)
       else if (field === 'quantity')  obj.quantity = Number(v.replace(/[,\s]/g,'').replace(/[^\d.-]/g,'')) || 0;
       else if (field === 'status')    obj.status = parseStatus(v);
       else if (field === 'note')      obj.note = v.trim();
@@ -8730,7 +8839,7 @@ function previewPaste() {
   const dateWarn = badDates ? `<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#B91C1C;font-weight:700;margin-bottom:6px">
       ⚠️ มี ${badDates} แถวที่อ่านวันที่ไม่ได้ — ลองเปลี่ยน "รูปแบบวันที่ในไฟล์" ด้านบน (เช่นเป็น เดือน/วัน/ปี)</div>` : '';
   const lotNote = _planPasteLotSkipped ? `<div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#3730A3;font-weight:700;margin-bottom:6px">
-      ℹ️ ไฟล์นี้มีคอลัมน์ Lot ติดมา — ข้ามให้แล้ว (แผนไม่ใช้ Lot) · ถ้า Qty ด้านล่างไม่ตรง ให้ลบคอลัมน์ Lot ออกจาก Excel ก่อนวาง</div>` : '';
+      ℹ️ ${TT('มีคอลัมน์ Lot — ใช้เป็น "Lot ที่จะขาย" (แผนที่มี Lot = ขายเฉพาะ Lot นั้น · ช่องว่าง = ระบบเลือกให้ตามวันขาย)','Has a Lot column — used as "lot to sell" (a plan with a lot sells only that lot · blank = picked by sale date)')}</div>` : '';
   prev.innerHTML = `
     ${dateWarn}${lotNote}
     <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">
@@ -8738,10 +8847,11 @@ function previewPaste() {
     </div>
     <div class="tbl-wrap" style="max-height:180px">
       <table style="font-size:11px">
-        <thead><tr><th>วันที่</th><th>Valve</th><th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
+        <thead><tr><th>วันที่</th><th>Valve</th>${_planPasteLotSkipped ? '<th>Lot</th>' : ''}<th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
         <tbody>${rows.slice(0,12).map(r => `<tr>
           <td>${r.plan_date ? escapeHtml(r.plan_date) : '<span style="color:var(--red);font-weight:700">⚠️ อ่านไม่ได้</span>'}</td>
           <td><b>${escapeHtml(r.valve_no)}</b></td>
+          ${_planPasteLotSkipped ? `<td>${escapeHtml(r.lot || '—')}</td>` : ''}
           <td class="center">${nn(r.quantity)}</td>
           <td>${PLAN_STATUS[r.status]?.label || r.status}</td>
           <td>${escapeHtml(r.note||'')}</td>
@@ -8758,17 +8868,23 @@ async function confirmPaste() {
   const rows = window._pasteRows || [];
   if (!rows.length) return;
   // ทำ dedupe: วาล์ว+วันที่ส่ง+จำนวน ซ้ำ → ใช้ข้อมูลใหม่แทน (ทั้งซ้ำในชุดที่วาง และซ้ำกับของเดิม)
-  const existingByKey = {};
-  for (const p of state.plans) existingByKey[planKey(p)] = p;
+  /* ★ v3.89 คีย์รวม Lot แล้ว (คนละ Lot = คนละรายการ) · แถวเดิมที่ "ยังไม่ระบุ Lot" + เบอร์/วันขาย/จำนวนเดียวกัน
+     = แถวเดียวกัน → เติม Lot ให้แถวเดิม (วางไฟล์เดิมซ้ำพร้อมคอลัมน์ Lot ไม่เกิดแถวซ้ำ) */
+  const existingByKey = {}, existingNoLot = {};
+  for (const p of state.plans) { existingByKey[planKey(p)] = p; if (!planLotNorm(p.lot)) existingNoLot[planKeyBase(p)] = p; }
   const seen = {};            // key → plan (รายการล่าสุดชนะ)
+  const used = new Set();
   for (const r of rows) {
     const k = planKey(r);
-    const reuseId = seen[k]?.plan_id || existingByKey[k]?.plan_id || planNewId();
+    let ex = existingByKey[k];
+    if (!ex && planLotNorm(r.lot)) { const b = existingNoLot[planKeyBase(r)]; if (b && !used.has(b.plan_id)) ex = b; }
+    const reuseId = seen[k]?.plan_id || ex?.plan_id || planNewId();
+    used.add(reuseId);
     seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '', vsm: viewVsm() };
   }
   const plans = Object.values(seen);
-  const batchKeys = new Set(Object.keys(seen));
-  const replacedCount = state.plans.filter(p => batchKeys.has(planKey(p))).length;
+  const reuseIds = new Set(plans.map(p => p.plan_id));
+  const replacedCount = state.plans.filter(p => reuseIds.has(p.plan_id)).length;
   // 1) push ขึ้น D1 ก่อน (ถ้ามี API) — กัน race condition กับ auto-pull
   let _bulkFail = null;
   if (API) {
@@ -8781,7 +8897,7 @@ async function confirmPaste() {
     }
   }
   // 2) อัพเดต state local: เอาของเดิมที่ซ้ำออก แล้วใส่ข้อมูลใหม่
-  const kept = state.plans.filter(p => !batchKeys.has(planKey(p)));
+  const kept = state.plans.filter(p => !reuseIds.has(p.plan_id));
   state.plans = [...plans, ...kept];
   lsSave(LS.PLANS, state.plans);
   closeModal();
@@ -8827,6 +8943,7 @@ async function _exportPlanRows(rows, tag) {
   const data = rows.map(p => ({
     'วันที่ขาย': _planDateISO(p.plan_date),
     'Valve No': p.valve_no,
+    'Lot (ระบุ)': p.lot || '',                          // ★ v3.89 Lot ที่จะขาย (ว่าง = ระบบเลือกให้)
     'Qty': p.quantity,
     // ★ req #5: สถานะ = ของจริงที่ระบบคิด (ยกเลิก = คนกด) · เพิ่ม process ล่าสุดเป็นอีกคอลัมน์
     'สถานะ': PLAN_STATUS[planEffStatus(p)]?.label || planEffStatus(p),
@@ -10406,7 +10523,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.88":"Production Record + KPI · v3.88",
+"ระบบบันทึกผลิต + KPI · v3.89":"Production Record + KPI · v3.89",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -10714,7 +10831,6 @@ const I18N_X = {
 "วันที่รับเข้า":"Received on","ทำไมไม่มีในแผน":"Why it's not in the plan",
 "💡 ถ้าเบอร์วาล์วถูกลงผิดตอนรับเข้า ให้ไปแก้ที่การ์ด":"💡 If the valve number was logged wrong on intake, fix it on the card",
 "★ แผนใช้แค่ Valve No · จำนวน · วันที่ขาย — ไม่ต้องมี Lot แล้ว (ถ้าไฟล์เดิมยังติดคอลัมน์ Lot มา ระบบข้ามให้เอง)":"★ A plan only uses Valve No · Qty · Sale date — no Lot needed (if an old file still carries a Lot column it is skipped automatically)",
-"ℹ️ ไฟล์นี้มีคอลัมน์ Lot ติดมา — ข้ามให้แล้ว (แผนไม่ใช้ Lot) · ถ้า Qty ด้านล่างไม่ตรง ให้ลบคอลัมน์ Lot ออกจาก Excel ก่อนวาง":"ℹ️ This file still has a Lot column — skipped (plans don't use Lot) · if the Qty below looks wrong, remove the Lot column in Excel before pasting",
 "(หน้าติดตามงาน) ด้วยปุ่ม ✏️ แทนการเพิ่มแผนใหม่":"(Track page) with the ✏️ button instead of adding a new plan",
 "ℹ️ ข้ามการตรวจ":"ℹ️ Skipped",
 "รายการ — รับเข้าในเดือนที่ยังไม่มีข้อมูลแผนให้เทียบเลย (ตารางแผนเก็บย้อนหลังไม่กี่เดือน)":"items — received in months that have no plan data to compare against (plans are kept only a few months back)",
@@ -16021,7 +16137,7 @@ function startWipinSync(){
     syncWipin();
     ensureFgMonthLoaded().then(ch=>{ if(ch) renderWipBuckets(); }).catch(()=>{});
     ensureAllJobsLoaded()
-      .then(ch=>{ refreshProducedSet(); if(ch){ renderWipBuckets(); renderWipInSummary(); } })
+      .then(ch=>{ refreshProducedSet(); if(ch){ renderWipBuckets(); renderWipInSummary(); if(typeof mpvDataChanged==='function') mpvDataChanged(); } })
       .catch(()=>{ refreshProducedSet(); });
   },AUTO_REFRESH_MS);
 }
@@ -21302,10 +21418,11 @@ async function searchProcess() {
       const recvTag = ld.recvQty > 0
         ? `<div class="pf-recv" title="${TT('ยอดที่รับเข้า WIP IN 1.5','received into WIP IN 1.5')}${ld.recvTs?' · '+String(ld.recvTs).slice(0,10):''}">📥 ${nn(ld.recvQty)}${ld.recvOnly?' · '+TT('รอผลิต','waiting'):''}</div>`
         : '';
+      const saleTag = _lotSaleTag(ld.valveNo, ld.lot);      // ★ v3.89 (ผู้ใช้ 19/10 ข้อ 1) Lot นี้ขายแผนไหน
       const fillBtn = fillAll
         ? `<button type="button" class="pf-fillall" onclick="event.stopPropagation();spFillAll(${ri})" title="${TT('งานเข้า QC แล้ว — เติมทุกช่องที่ว่างในครั้งเดียว','Reached QC — fill every empty cell at once')}">🔑 ${TT('เติมให้ครบ','Fill all')}</button>`
         : '';
-      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}${recvTag}${fillBtn}</td>${tds}${remarkTd}</tr>`;
+      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot">${escapeHtml(ld.lot)}${recvTag}${saleTag}${fillBtn}</td>${tds}${remarkTd}</tr>`;
     }).join('');
     const _recvOnlyN = lotData.filter(l => l.recvOnly).length;
     const tableHtml = lotData.length
@@ -26594,6 +26711,8 @@ function mpDefaults() {
     usePins: true, incOrder: true, orderBackDays: 14, alertDays: 14, histDays: 90,   // ★ v3.77
     seqDays: 7,     // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
     v3Days: 3, v3RunDays: 1,     // ★ v3.83 ส่ง VSM3 1 รอบ = กี่วันทำงาน (ยังไม่ส่ง / ล็อตอยู่ที่ VSM3 แล้ว)
+    zoneStick: 40,               // ★ v3.89 ย้าย Zone เมื่อจำเป็น: ยอมรอเครื่องใน Zone เดิมได้ถึงกี่ชม. (0 = ไม่สน Zone)
+    batchDays: 14,               // ★ v3.89 ล็อตทยอยผลิต: ขั้นก่อนหน้าที่ยังมีคนลงยอดในกี่วัน = ยังทำอยู่ (ไม่ข้าม)
     finDays: PLAN_FIN_DAYS };    // ★ v3.84 Lot ที่เสร็จก่อนวันขายเกินกี่วัน = ขายรอบก่อนไปแล้ว (ดู planLotAlloc)
 }
 function mpSettings() {
@@ -26745,18 +26864,29 @@ function mpContext(S) {
 function mpJobs(S, ctx) {
   const b = getWipBuckets();
   const recsByJob = {}, kpiByJob = {};
+  /* ★ v3.89 วันล่าสุดที่ลงยอดแต่ละ Process (ดูว่าขั้นนั้นยังทำอยู่ไหม) + เครื่องล่าสุดของล็อต (ล็อตอยู่ Zone ไหนตอนนี้) */
+  const lastByJob = {}, mcByJob = {};
+  const seen = (k, f, d, m, sh) => {
+    if (!d) return;
+    const o = lastByJob[k] = lastByJob[k] || {}; if (!o[f] || d > o[f]) o[f] = d;
+    const mm = m && ctx.mById.get(String(m).trim().toUpperCase());
+    if (mm) { const key = d + (sh === 'night' ? '1' : '0'); const c = mcByJob[k]; if (!c || key >= c.key) mcByJob[k] = { key, zone: mm.zone, m: mm.id }; }
+  };
   for (const r of filterVsmPeer(_wipProdSrc())) {
     const v = String(r.valve_no || r.valveNo || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
     const f = mpFam(r.current_process || r.currentProcess); if (!f) continue;
     const o = recsByJob[k] = recsByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.quantity) || 0);
+    seen(k, f, String(r.shift_date || r.timestamp || '').slice(0, 10), r.machine_id || r.machineId, r.shift_type);
   }
   for (const r of filterVsmPeer(_wipKpiSrc())) {
     const v = String(r.valve_no || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
     const f = mpFam(r.last_process); if (!f) continue;
     const o = kpiByJob[k] = kpiByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.opr) || 0);
+    seen(k, f, String(r.shift_date || r.record_date || '').slice(0, 10), r.machine_id, r.shift_type);
   }
+  const batchCut = _mpAddDays(S.start, -Math.max(0, +S.batchDays || 0));
   const raw = [];
   if (S.incWip) for (const it of (b.wip.items || [])) {
     raw.push({ kind: 'wip', valve: it.valve, lot: it.lot, customer: it.customer, qty: +it.qty || 0,
@@ -26804,6 +26934,29 @@ function mpJobs(S, ctx) {
       if (need <= planTol(j.total)) need = 0;
       st.need = need;
     }
+    /* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 4) แผนเริ่มที่ "Process ปัจจุบัน" ของล็อต = ขั้นไกลสุดที่มียอดผลิตแล้ว (ตัวเดียวกับที่หน้าติดตามงาน/ตารางแผนบอก)
+       ขั้นก่อนหน้า = ผ่านแล้ว ไม่วางแผน (ยอดค้างเล็ก ๆ ในขั้นเก่า = ของเสีย/ลงยอดไม่ครบ ไม่ใช่งานที่ต้องกลับไปทำ)
+       เดิม: ทุกขั้นที่ยอดยังไม่ครบถูกวางใหม่หมด → VV4704A0 Lot 2608S090064 ไปถึง SFG แล้ว แต่แผนเริ่มที่ SSG (9 ขั้น 3 Zone)
+       ยกเว้น "ล็อตทยอยผลิต": ขั้นก่อนหน้าที่ยังเหลือของมากกว่าที่ผ่านขั้นปัจจุบันไปแล้ว และยังมีคนลงยอดใน S.batchDays วัน
+       = ยังทำอยู่จริง → วางตั้งแต่ขั้นนั้น (เช่น VV7295M0 Lot 2609S100164 รับเข้า 12,000 ทำไปก่อน 1,302 ถึง FG แล้ว · อีก 10,698 รอ SSG) */
+    if (j.kind === 'wip') {
+      const tol = planTol(j.total);
+      let front = -1;
+      j.steps.forEach((s, i) => { if (s.done > tol) front = i; });
+      if (front > 0) {
+        const fDone = j.steps[front].done, ld = lastByJob[j.k] || {};
+        let from = front;
+        for (let i = 0; i < front; i++) {
+          const s = j.steps[i];
+          if (s.need > tol && s.need > fDone && (ld[s.fam] || '') >= batchCut) { from = i; break; }
+        }
+        for (let i = 0; i < from; i++) { const s = j.steps[i]; if (s.need > 0) { s.passed = s.need; s.need = 0; } }
+        j.front = front; j.from = from;
+        j.passedN = j.steps.slice(0, from).filter(s => s.passed > 0).length;
+      }
+    }
+    const lm = mcByJob[j.k];
+    if (lm) { j.curZone = lm.zone; j.curMc = lm.m; }      // ★ v3.89 ล็อตอยู่ Zone ไหนตอนนี้ (เครื่องล่าสุดที่ลงยอด)
     _mpMarkV3(j);
     const lastInt = j.steps.map(s => s.internal && s.need > 0).lastIndexOf(true);
     _mpKeepV3(j, lastInt);
@@ -26827,7 +26980,7 @@ function mpJobs(S, ctx) {
     if (j.noflow) continue;
     for (const x of (A.byLot.get(j.k) || [])) {
       if ((x.st !== 'wip' && x.st !== 'in') || x.date < minDue) continue;
-      (j.plans = j.plans || []).push({ date: x.date, qty: x.qty });
+      (j.plans = j.plans || []).push({ date: x.date, qty: x.qty, named: !!x.named });
       if (!j.due || x.date < j.due) j.due = x.date;
     }
   }
@@ -26857,7 +27010,8 @@ function mpJobs(S, ctx) {
       const vk = vKey(r.valve), v = mpValve(vk);
       const j = { kind: 'order', valve: r.valve, lot: '', customer: r.cust, qty: r.missing, total: r.missing, recv: '', curProc: '',
         vk, k: 'ORDER::' + vk + '::' + r.due + '::' + (r.id || ''), due: r.due, plans: [{ date: r.due, qty: r.missing }],
-        order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk) };
+        order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk),
+        planLot: planLotNorm(p && p.lot) };     // ★ v3.89 Lot ที่แผนขายระบุ (ยังไม่เข้า VSM4) — แสดงอย่างเดียว ไม่ใช่ Lot จริงของงาน
       j.sd = mpValveSd(vk); j.vtype = mpValveType(vk);
       const flow = v ? procsOf(v, MP_VSM) : [];
       j.steps = stepsOf(vk, flow);
@@ -27055,6 +27209,33 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
     if (job.wait) { waitIn.push(job); continue; }
     let ready = job.ready0 || 0;
     const sdE = mpSdEff(job.sd, S.sdFloor);
+    /* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 3) ผลิตให้จบใน Zone เดียวกันมากที่สุด — ย้าย Zone เฉพาะเมื่อจำเป็นจริง ๆ
+       เดิมเลือกเครื่องที่เสร็จเร็วสุดทีละขั้น → ล็อตเดียววิ่ง Z1 → Z3 → Z1 → Z3 → Z2 … (วัดจริง 19/10: 127 จาก 212 ล็อตย้าย Zone · 95 ล็อตย้อนกลับ Zone เดิม)
+       zPrev = Zone ที่ล็อตอยู่ตอนนี้ (เครื่องล่าสุดที่ลงยอด → แล้วเป็นเครื่องของขั้นก่อนหน้าในแผน)
+       zHome = Zone ที่ทำขั้นที่เหลือของล็อตได้มากที่สุด (ล็อตใหม่เริ่มที่นี่ · ออกไปทำขั้นที่ Zone นี้ไม่มีเครื่อง แล้วกลับมาที่นี่)
+       ต้นทุนเลือกเครื่อง = เวลาเสร็จ + ย้ายออกจาก zPrev (S.zoneStick ชม.) + ไม่ใช่ zHome (ครึ่งหนึ่ง) — ค่าปรับใช้ตัดสินใจ ไม่ใช่เวลาจริง
+       ⇒ Zone อื่นได้งานเมื่อ Zone เดิมไม่มีเครื่องที่ทำได้ หรือคิวใน Zone เดิมช้ากว่าเกิน S.zoneStick ชม. */
+    const ZS = Math.max(0, +S.zoneStick || 0);
+    let zPrev = job.curZone || '', zHome = '';
+    if (ZS > 0) {
+      const cov = new Map();
+      for (let si = 0; si <= job.lastInt; si++) {
+        const st = job.steps[si];
+        if (!(st.need > 0) || !st.internal || st.v3) continue;
+        const pp = pinnedBySt.get(st);
+        for (const z of (pp ? [pp.m.zone] : new Set(candsOf(job, st).cands.map(m => m.zone)))) cov.set(z, (cov.get(z) || 0) + 1);
+      }
+      let top = -1;
+      for (const [z, n] of cov) if (n > top || (n === top && z === zPrev)) { top = n; zHome = z; }
+    }
+    job.zHome = zHome;
+    /* "จำเป็นจริง ๆ" รวมถึง "จะไม่ทันวันขาย": เวลาเหลือก่อน FG ต้องเสร็จ < เวลาผลิตขั้นที่เหลือ + S.zoneStick → ค่าปรับเหลือ 1/4
+       (ไม่งั้นรอทีละนิดหลายขั้นใน Zone เดิมสะสมจนเลยวันขาย — วัดจริง 19/10: V77880A0 ช้า 5 วัน) */
+    const remH = [];
+    if (ZS > 0 && job.dueFg) { let t = 0; for (let si = job.lastInt; si >= 0; si--) { const st = job.steps[si]; if (st.need > 0) t += estDur(job, st); remH[si] = t; } }
+    const dueEndT = job.dueFg ? tOfDate(_mpAddDays(job.dueFg, 1)) : Infinity;
+    let zf = 1;
+    const zPen = m => ZS > 0 ? zf * (((zPrev && m.zone !== zPrev) ? ZS : 0) + ((zHome && m.zone !== zHome) ? ZS / 2 : 0)) : 0;
     for (let si = 0; si <= job.lastInt; si++) {
       const st = job.steps[si];
       if (st.need <= 0) continue;
@@ -27088,6 +27269,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         assigns.push(a); job.assign.push(a);
         st.start = a.s; st.end = a.e; st.machines = [pp.m.id];
         ready = a.e + lag;
+        zPrev = pp.m.zone;
         continue;
       }
       const { cands, rej } = candsOf(job, st);
@@ -27111,13 +27293,14 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         if (!unplan.includes(job)) unplan.push(job);
         break;
       }
+      zf = (remH.length && ready + (remH[si] || 0) > dueEndT - ZS) ? 0.25 : 1;   // ★ v3.89 ใกล้ไม่ทันวันขาย = ย้าย Zone ได้ง่ายขึ้น
       const evalM = (m, qty, excl) => {
         if (excl && excl.has(m.id)) return null;
         const k = costOf(m, job, st, qty);
         const slot = mpFindSlot(tl.get(m.id), ready, k.base, setupH, sdE, m.lastSd, +S.sdStick || 0);
-        return slot ? { m, ...k, ...slot, aff: ctx.hist.aff.has(m.id + '|' + job.vk) } : null;
+        return slot ? { m, ...k, ...slot, aff: ctx.hist.aff.has(m.id + '|' + job.vk), zp: zPen(m) } : null;
       };
-      const cmp = (a, b) => (a.cost - b.cost) || ((b.aff ? 1 : 0) - (a.aff ? 1 : 0)) || (a.setup - b.setup) || a.m.id.localeCompare(b.m.id);
+      const cmp = (a, b) => ((a.cost + a.zp) - (b.cost + b.zp)) || ((b.aff ? 1 : 0) - (a.aff ? 1 : 0)) || (a.setup - b.setup) || a.m.id.localeCompare(b.m.id);
       const put = (ev, qty, k, n) => {
         const iv = tl.get(ev.m.id);
         iv.splice(ev.idx, 0, { s: ev.s, e: ev.e, sd: sdE });
@@ -27130,18 +27313,21 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
       const evs = cands.map(m => evalM(m, st.need)).filter(Boolean).sort(cmp);
       const best = evs[0];
       const placed = [];
-      if (best.base > (+S.splitH || 1e9) && cands.length > 1 && st.need >= 200) {
-        const n = Math.min(cands.length, Math.max(1, +S.maxSplit || 1), Math.ceil(best.base / (+S.splitH)));
+      // ★ v3.89 แบ่งล็อตลงหลายเครื่อง = เฉพาะเครื่องใน Zone เดียวกับเครื่องที่เลือก (ไม่แบ่งข้าม Zone)
+      const sc = ZS > 0 ? cands.filter(m => m.zone === best.m.zone) : cands;
+      if (best.base > (+S.splitH || 1e9) && sc.length > 1 && st.need >= 200) {
+        const n = Math.min(sc.length, Math.max(1, +S.maxSplit || 1), Math.ceil(best.base / (+S.splitH)));
         const used = new Set(); let left = st.need;
         for (let k = 0; k < n; k++) {
           const q = k === n - 1 ? left : Math.round(st.need / n); left -= q;
-          const ev = cands.map(m => evalM(m, q, used)).filter(Boolean).sort(cmp)[0];
+          const ev = sc.map(m => evalM(m, q, used)).filter(Boolean).sort(cmp)[0];
           used.add(ev.m.id); placed.push(put(ev, q, k, n));
         }
       } else placed.push(put(best, st.need, 0, 1));
       st.start = Math.min(...placed.map(a => a.s)); st.end = Math.max(...placed.map(a => a.e));
       st.machines = placed.map(a => a.m.id);
       ready = st.end + lag;
+      zPrev = best.m.zone;
     }
     // ★ v3.83 หลังขั้น VSM4 สุดท้าย: ส่ง VSM3 / แผนกอื่น → FG ที่ทำที่ VSM3 เสร็จเมื่อไร (ใช้ตัดสินทันวันขาย)
     if (!job.blocked) { const fgT = mpTailWalk(job, job.lastInt + 1, ready, S, H, extLag); if (fgT != null) job.fgT = fgT; }
@@ -27520,9 +27706,11 @@ async function openMachinePlanner() {
   $('mpvQ').addEventListener('input', e => { clearTimeout(qT); const v = e.target.value; qT = setTimeout(() => { if (_mpv) { _mpv.q = v; _mpvRenderZone(); _mpvZoneToHit(); _mpvToList(); } }, 150); });
   _mpvRenderMonths(); _mpvSkeleton();
   try {
-    if (API) await Promise.all([ensureAllJobsLoaded().catch(() => false), mcCapsLoad().catch(() => null), mpManLoad().catch(() => null)]);
+    // ★ v3.89 เปิดหน้า = ดึงยอดผลิตล่าสุดก่อนเสมอ (เฉพาะส่วนต่าง · เดิมใช้ของที่โหลดไว้ไม่เกิน 10 นาที → ยอดที่เพิ่งลงยังไม่เข้าแผน)
+    if (API) await Promise.all([ensureAllJobsLoaded(true).catch(() => false), mcCapsLoad().catch(() => null), mpManLoad().catch(() => null)]);
     if (!_mpv || !_mpv.open) return;
     await mpvRecompute();
+    _mpvLiveStart();
   } catch (e) {
     console.error('[mpv]', e);
     const z = $('mpvZone'); if (z) z.innerHTML = `<div class="mpv-empty" style="color:var(--red)">❌ ${escapeHtml((e && e.message) || String(e))}</div>`;
@@ -27532,7 +27720,35 @@ async function openMachinePlanner() {
   }
   mpvLoadHistory();
 }
+/* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 4) "แผนเปลี่ยนตามการผลิตจริงที่พนักงานลงบันทึก" — หน้าแผนผลิตเปิดอยู่ = ดึงยอดผลิต/รับเข้าใหม่ทุก 5 นาที
+   (เฉพาะตอนจอเปิดดูอยู่ · ส่วนต่างเท่านั้น) มีของใหม่ → คำนวณแผนใหม่เอง — งานที่เพิ่งลงยอดขยับไป Process ถัดไปในแผนทันที
+   รอบอัตโนมัติของทั้งแอปยังเป็นทุก 2 ชม. เหมือนเดิม (AUTO_REFRESH_MS) */
+let _mpvLive = 0, _mpvAutoT = 0;
+function _mpvLiveStart() {
+  clearInterval(_mpvLive);
+  _mpvLive = setInterval(() => {
+    if (!_mpv || !_mpv.open) { clearInterval(_mpvLive); _mpvLive = 0; return; }
+    if (document.hidden || !API) return;
+    const sig = typeof _wipinSigNow === 'function' ? _wipinSigNow() : '';
+    Promise.all([ensureAllJobsLoaded(true).catch(() => false), typeof syncWipin === 'function' ? syncWipin().catch(() => {}) : null]).then(([ch]) => {
+      const inCh = typeof _wipinSigNow === 'function' && _wipinSigNow() !== sig;
+      if (ch) { try { refreshProducedSet(); renderWipBuckets(); renderWipInSummary(); } catch (e) {} }
+      if (ch || inCh) mpvDataChanged();
+    });
+  }, 5 * 60 * 1000);
+}
+/* มีข้อมูลผลิต/รับเข้าใหม่ขณะหน้าแผนเปิดอยู่ → คำนวณใหม่ (รอให้ป๊อปอัป/กระดานวางเองปิดก่อน · ไม่ทับตอนกำลังคำนวณ) */
+function mpvDataChanged() {
+  if (!_mpv || !_mpv.open || !_mpv.res) return;
+  clearTimeout(_mpvAutoT);
+  _mpvAutoT = setTimeout(() => {
+    const V = _mpv; if (!V || !V.open || !V.res) return;
+    if (V.busy || document.querySelector('#modalBg.open') || (typeof _mpb !== 'undefined' && _mpb && _mpb.open)) { mpvDataChanged(); return; }
+    mpvRecompute().then(() => toast('🔄 ' + TT('แผนผลิตอัปเดตตามยอดผลิตล่าสุดแล้ว', 'Plan updated from the latest production'), 'blue')).catch(_mpvErr);
+  }, 4000);
+}
 function closeMpPlan() {
+  clearInterval(_mpvLive); _mpvLive = 0; clearTimeout(_mpvAutoT);
   const ov = $('mpvOv'); if (ov) { ov.classList.remove('open'); ov.innerHTML = ''; }
   document.body.classList.remove('mpv-lock');
   if (_mpv) { _mpv.open = false; _mpv.res = null; _mpvSaveUI(); }
@@ -27702,7 +27918,7 @@ function _mpvRenderZone() {
   // ★ v3.82 ค้นหาหมายเลขเครื่องได้ด้วย (ตรงเครื่อง = เห็นคิวทั้งเครื่อง) · ไม่สนขีด/ช่องว่าง: G1108 = g 1108 = G-1108
   const qm = qn.replace(/[^A-Z0-9]/g, ''), mMemo = new Map();
   const mHit = m => { let v = mMemo.get(m.id); if (v === undefined) mMemo.set(m.id, v = !!qm && String(m.id).toUpperCase().replace(/[^A-Z0-9]/g, '').includes(qm)); return v; };
-  const hit = a => (!fSet || fSet.has(a.job)) && (!qn || mHit(a.m) || String(a.job.valve || '').toUpperCase().includes(qn) || String(a.job.lot || '').toUpperCase().includes(qn));
+  const hit = a => (!fSet || fSet.has(a.job)) && (!qn || mHit(a.m) || String(a.job.valve || '').toUpperCase().includes(qn) || String(a.job.lot || '').toUpperCase().includes(qn) || String(a.job.planLot || '').toUpperCase().includes(qn));
   const byM = new Map();
   res.assigns.forEach((a, i) => {
     if (!W.inWin(a)) return;
@@ -27794,17 +28010,19 @@ function _mpvRenderZone() {
 const _MPV_RT_LIM = 6;
 function _mpvRouteBox(res, W, qn) {
   const V = _mpv, cal = res.cal;
+  // ★ v3.89 + Order ที่ของยังไม่เข้า (ยังไม่วางลงเครื่อง) ของเบอร์ที่ค้นหา — เห็นว่างวดขายนี้ยังรอ Lot ไหนอยู่
   const jobs = (res.jobs || []).concat(res.v3jobs || []).filter(j =>
-    (String(j.valve || '').toUpperCase().includes(qn) || String(j.lot || '').toUpperCase().includes(qn))
-    && ((j.assign && j.assign.length) || (j.v3b || []).some(b => b.s != null)));
+    (String(j.valve || '').toUpperCase().includes(qn) || String(j.lot || '').toUpperCase().includes(qn) || String(j.planLot || '').toUpperCase().includes(qn))
+    && ((j.assign && j.assign.length) || (j.v3b || []).some(b => b.s != null) || j.kind === 'order'));
   if (!jobs.length || jobs.length > 40) return '';     // คำค้นกว้างเกิน (เช่น "VV") = ไม่ทำกล่อง — การ์ดเครื่องด้านล่างยังแสดงตามปกติ
-  const t0 = j => Math.min(...(j.assign || []).map(a => a.s), ...(j.v3b || []).filter(b => b.s != null).map(b => b.s));
-  jobs.sort((x, y) => String(x.valve).localeCompare(String(y.valve)) || (t0(x) - t0(y)));
+  const t0 = j => Math.min(1e9, ...(j.assign || []).map(a => a.s), ...(j.v3b || []).filter(b => b.s != null).map(b => b.s));
+  jobs.sort((x, y) => String(x.valve).localeCompare(String(y.valve)) || (t0(x) - t0(y)) || String(x.due || '9').localeCompare(String(y.due || '9')));
   const zOf = new Map(res.ctx.machines.map(m => [m.id, m.zone]));
   const more = V.moreM.has('route'), L = more ? jobs : jobs.slice(0, _MPV_RT_LIM);
   const zs = new Set(jobs.flatMap(j => (j.assign || []).map(a => zOf.get(a.m.id) || '')).filter(Boolean));
   const rows = L.map(j => `<div class="mpv-rl">
-      <div class="mpv-rlh"><b>${escapeHtml(j.valve)}</b>${_mpvLotS(j)}<span class="q">${nn(j.qty)} ${TT('ชิ้น', 'pcs')}</span></div>
+      <div class="mpv-rlh"><b>${escapeHtml(j.valve)}</b>${j.kind === 'order'
+        ? `<span class="l no">${j.planLot ? `<b>${escapeHtml(j.planLot)}</b>` : ''}${TT('รอของเข้า', 'not in yet')}</span>` : `<span class="l">${escapeHtml(j.lot || '-')}</span>`}${_mpvSaleS(j).replace('<small class="sl', '<span class="sl').replace(/<\/small>$/, '</span>')}<span class="q">${nn(j.qty)} ${TT('ชิ้น', 'pcs')}</span></div>
       <div class="mpv-rzs">${_mpvRouteZ(j, res, W, zOf)}</div></div>`).join('');
   const btn = jobs.length <= _MPV_RT_LIM ? ''
     : `<button type="button" class="mpv-more" data-act="more" data-mid="route" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อ', 'Collapse') : `▾ ${TT('ดูทุกล็อต', 'Show all lots')} (${TT('อีก', '+')} ${nn(jobs.length - _MPV_RT_LIM)})`}</button>`;
@@ -27814,6 +28032,11 @@ function _mpvRouteBox(res, W, qn) {
 }
 function _mpvRouteZ(j, res, W, zOf) {
   const cal = res.cal, out = [], dd = t => _mpDW(cal.dateAt(t));
+  // ★ v3.89 Order ที่ของยังไม่เข้า + ยังไม่รู้วันเข้า = ยังไม่วางลงเครื่อง → ชิปเดียว "รอของเข้า · ต้องเข้าภายใน …"
+  if (j.kind === 'order' && !(j.assign || []).length)
+    return `<span class="mpv-rz wt" title="${escapeHtml(TT('ของยังไม่เข้า WIP IN 1.5 — ใส่วันคาดว่าเข้าได้ที่ 📊 วิเคราะห์ → ⚠️ ต้องปรับแผน', 'not received yet — set the expected date in Analysis → alerts'))}"><small>${j.planLot ? escapeHtml(j.planLot) : TT('ยังไม่มี Lot', 'no lot yet')}</small><b>📭 ${TT('รอของเข้า', 'waiting for stock')}</b><small>${j.mustBy && j.mustBy < todayISO()
+      ? `<span style="color:#B91C1C">⚠️ ${TT('ไม่ทันแล้ว (ต้องเข้าภายใน', 'too late (needed by')} ${_mpD(j.mustBy).slice(0, 5)})</span>`
+      : j.mustBy ? `${TT('ต้องเข้าภายใน', 'needed by')} ${_mpD(j.mustBy).slice(0, 5)}` : (j.expIn ? `${TT('คาดว่าเข้า', 'expected')} ${_mpD(j.expIn).slice(0, 5)}` : '')}</small></span>`;
   const bySi = new Map();
   for (const a of (j.assign || [])) { if (!bySi.has(a.si)) bySi.set(a.si, []); bySi.get(a.si).push(a); }
   let done = [];
@@ -27894,7 +28117,7 @@ function _mpvRow(a, i, n, res) {
   const sd = j.sd == null ? '-' : _mpNum(j.sd);
   const sdTxt = a.setup > 0
     ? `<span class="su" title="${TT('เปลี่ยน SD', 'SD change')} ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ${TT('ชม.', 'h')})">🔁 SD ${sd}</span>` : `<span>SD ${sd}</span>`;
-  const lot = j.kind === 'order' ? '📭 ' + TT('ยังไม่มีของ', 'no stock yet') : (j.lot || '-');
+  const lot = j.kind === 'order' ? `📭 ${j.planLot ? j.planLot + ' · ' : ''}${TT('ยังไม่มีของ', 'no stock yet')}` : (j.lot || '-');   // ★ v3.89 + Lot ที่แผนขายระบุ
   // ★ v3.83 ขั้นก่อน/ถัดไปทำที่ VSM3 → ป้ายบอกหน้างาน (รอของคืนจาก VSM3 / ทำเสร็จแล้วส่ง VSM3)
   const nb = d => { for (let k = a.si + d; k >= 0 && k < j.steps.length; k += d) if (j.steps[k].need > 0) return j.steps[k]; return null; };
   const pv = nb(-1), nx = nb(1);
@@ -27912,7 +28135,9 @@ function _mpvRow(a, i, n, res) {
 /* รายละเอียดที่ซ่อนไว้ — แตะแถวถึงเห็น */
 function _mpvRowDetail(a, res) {
   const j = a.job, cal = res.cal, out = [];
-  out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อต', 'split')} ${a.part}/${a.parts}` : ''}`);
+  out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || j.planLot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อต', 'split')} ${a.part}/${a.parts}` : ''}`);
+  out.push(_mpvSaleLine(j, res.S));        // ★ v3.89 ขายแผนไหน
+  const wh = _mpvWhereLine(j); if (wh) out.push(wh);
   out.push(`CT <b>${_mpNum(a.ct)}</b> ${TT('วิ', 's')} <span class="muted">(${escapeHtml(a.ctSrc)})</span> · ${TT('ประสิทธิภาพ', 'eff.')} <b>${Math.round(a.eff * 100)}%</b> <span class="muted">(${escapeHtml(a.effSrc)})</span> · ${Math.round((a.e - a.s) * 10) / 10} ${TT('ชม.', 'h')}`);
   if (a.setup > 0) out.push(`🔁 ${TT('เปลี่ยน SD', 'SD change')} ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ${TT('ชม. ตั้งเครื่อง', 'h setup')})`);
   const path = (j.assign || []).slice().sort((x, y) => x.s - y.s)
@@ -27947,7 +28172,38 @@ function _mpvQHtml(a) {
   const head = q ? nn(q) : `<span class="qw">${dx && dx.setup && dx.ph <= 1e-9 ? TT('ตั้งเครื่อง', 'setup') : TT('เริ่ม', 'start')}</span>`;
   return `${head}<small>${TT('จาก', 'of')} ${nn(a.qty)}</small>`;
 }
-const _mpvLotS = j => j.kind === 'order' ? `<span class="l no">${TT('รอของเข้า', 'not in yet')}</span>` : `<span class="l">${escapeHtml(j.lot || '-')}</span>`;
+/* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 1) ล็อตนี้ขายแผนไหน — ตัวจัดสรรเดียวกับตารางแผนขาย (planLotAlloc) · 🔒 = แผนขายระบุ Lot นี้เอง
+   ok = มีแผนขาย · over = วันขายผ่านไปแล้ว · none = ยังไม่มีแผนขายรองรับ (ทำต่อท้ายคิว) */
+function _mpvSale(j, S) {
+  const by = new Map();
+  for (const x of (j.plans || [])) {
+    const o = by.get(x.date) || { date: x.date, qty: 0, named: false };
+    o.qty += +x.qty || 0; o.named = o.named || !!x.named || (j.kind === 'order' && !!j.planLot); by.set(x.date, o);
+  }
+  const ds = [...by.values()].sort((a, b) => a.date.localeCompare(b.date));
+  if (!ds.length) return { cls: 'none', txt: TT('ไม่มีแผนขาย', 'no sale plan'), ds };
+  const one = o => `${o.named ? '🔒' : ''}${_mpD(o.date).slice(0, 5)}`;
+  return { cls: ds[0].date < ((S && S.start) || todayISO()) ? 'over' : 'ok', ds,
+    txt: `${TT('ขาย', 'sale')} ${ds.slice(0, 2).map(one).join(', ')}${ds.length > 2 ? ` +${ds.length - 2}` : ''}` };
+}
+/* รายละเอียด (แตะแถว): ขายแผนไหน ครบทุกงวด */
+function _mpvSaleLine(j, S) {
+  const s = _mpvSale(j, S);
+  if (!s.ds.length) return `🛒 <span class="sl none">${TT('ยังไม่มีแผนขายที่ใช้ Lot นี้ — ทำต่อท้ายคิว (หลังงานที่มีวันขาย)', 'no sales plan uses this lot — queued after lots with a sale date')}</span>`;
+  return `🛒 ${TT('ขาย', 'Sale')}: ${s.ds.map(o => `<b>${_mpD(o.date)}</b> ${nn(o.qty)} ${TT('ชิ้น', 'pcs')}${o.named ? ' 🔒' : ''}`).join(' · ')}${s.ds.some(o => o.named) ? ` <span class="muted">(🔒 ${TT('แผนขายระบุ Lot นี้', 'lot named in the sales plan')})</span>` : ''}`;
+}
+/* ★ v3.89 ล็อตอยู่ที่ไหนตอนนี้: Process ปัจจุบัน (ขั้นก่อนหน้าผ่านแล้ว) + Zone ของเครื่องล่าสุดที่ลงยอด */
+function _mpvWhereLine(j) {
+  const b = [];
+  const f = j.front != null && j.steps ? j.steps[j.front] : null;
+  if (f) b.push(`📍 ${TT('อยู่ที่', 'at')} <b>${escapeHtml(f.proc)}</b> (${nn(f.done)} ${TT('ชิ้น', 'pcs')})${j.passedN ? ` · ${TT('ขั้นก่อนหน้า', 'earlier')} ${j.passedN} ${TT('ขั้นถือว่าผ่านแล้ว', 'steps count as passed')}` : ''}${j.from < j.front ? ` · ${TT('ล็อตทยอยผลิต — ยังวางตั้งแต่', 'batch lot — planned from')} ${escapeHtml(j.steps[j.from].proc)}` : ''}`);
+  if (j.curZone) b.push(`🏭 ${TT('ลงยอดล่าสุดที่', 'last recorded on')} ${escapeHtml(j.curMc || '')} · ${escapeHtml(j.curZone)}`);
+  return b.join(' · ');
+}
+const _mpvSaleS = j => { const s = _mpvSale(j, _mpv && _mpv.S); return `<small class="sl ${s.cls}" title="${escapeHtml(s.ds.map(o => `${TT('ขาย', 'sale')} ${_mpD(o.date)} · ${nn(o.qty)} ${TT('ชิ้น', 'pcs')}${o.named ? ' · 🔒 ' + TT('แผนขายระบุ Lot นี้', 'lot named in sales plan') : ''}`).join('\n') || TT('ยังไม่มีแผนขายที่ใช้ Lot นี้', 'no sales plan uses this lot'))}">🛒 ${s.txt}</small>`; };
+const _mpvLotS = j => j.kind === 'order'
+  ? `<span class="l no">${j.planLot ? `<b>${escapeHtml(j.planLot)}</b>` : ''}${TT('รอของเข้า', 'not in yet')}${_mpvSaleS(j)}</span>`
+  : `<span class="l">${escapeHtml(j.lot || '-')}${_mpvSaleS(j)}</span>`;
 /* ★ v3.86 บรรทัดเล็กใต้ Valve No: [Process ·] SD · TYPE ของ Valve (ผู้ใช้ 17/10 "เพิ่ม SD กับ TYPE ของ Valve ทำเล็กๆ พอ") */
 const _mpvVmS = (j, proc) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}</small>`;
 const _mpvMoreS = (id, total, more) => total <= _MPV_LIM_S ? ''
@@ -27971,10 +28227,12 @@ function _mpvRowS(a, i, n, res, multi) {
 }
 function _mpvRowDetailS(a, i, res) {
   const j = a.job, cal = res.cal, sD = cal.dateAt(a.s + 1e-6), eD = cal.dateAt(a.e);
-  const out = [`<b>${escapeHtml(a.step.proc)}</b>`, `${TT('ทำ', 'run')} ${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}`, mpJobSt(j, res.S)[1]];
+  const out = [`<b>${escapeHtml(a.step.proc)}</b>`, `${TT('ทำ', 'run')} ${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}`];
+  if (j.due || j.kind === 'order') out.push(mpJobSt(j, res.S)[1]);      // ไม่มีแผนขาย = บอกในบรรทัด 🛒 ข้างล่างแล้ว
   if (a.pin && a.pin.mv && a.pin.mv.from && a.pin.mv.from !== a.m.id) out.push(`🔀 ${TT('ย้ายมาจาก', 'moved from')} ${escapeHtml(a.pin.mv.from)}`);
   const mv = j.kind === 'order' ? '' : `<button type="button" class="mpv-chip" data-act="move" data-ai="${i}">🔀 ${TT('ย้ายไปเครื่องอื่น', 'Move to another machine')}</button>`;
-  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div>${mv}</div>`;
+  const wh = _mpvWhereLine(j);    // ★ v3.89 ล็อตอยู่ที่ Process ไหน / Zone ไหน
+  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div><div style="flex-basis:100%">${_mpvSaleLine(j, res.S)}</div>${wh ? `<div style="flex-basis:100%">${wh}</div>` : ''}${mv}</div>`;
 }
 /* แท็บ 🔀 ส่ง VSM3 แบบเรียบ — กลุ่มตามวันส่ง · แถว = Valve No · Lot · จำนวน · แตะ = Process ที่ VSM3 / ส่ง → คืน / ทำอะไรต่อ */
 function _mpvV3BodyS(res, W, all, hits, filtering) {
@@ -28079,7 +28337,7 @@ function _mpvV3Key(x) { return `v3|${x.job.k}|${x.b.i0}`; }
 function _mpvV3Row(x, vi, n, res) {
   const j = x.job, b = x.b, cal = res.cal, S = res.S, open = _mpv.openRows.has(_mpvV3Key(x));
   const [sc, st] = mpJobSt(j, S);
-  const lot = j.kind === 'order' ? '📭 ' + TT('ยังไม่มีของ', 'no stock yet') : (j.lot || '-');
+  const lot = j.kind === 'order' ? `📭 ${j.planLot ? j.planLot + ' · ' : ''}${TT('ยังไม่มีของ', 'no stock yet')}` : (j.lot || '-');   // ★ v3.89 + Lot ที่แผนขายระบุ
   const nx = x.next;
   const nxt = !nx ? `🏁 ${TT('จบที่ VSM3', 'ends at VSM3')}`
     : nx.internal ? `↩️ ${TT('ต่อ', 'then')} <b>${escapeHtml(nx.proc)} ④</b>${nx.machines ? ' ' + escapeHtml(nx.machines.join('/')) : ''}${nx.start != null ? ' ' + _mpDW(cal.dateAt(nx.start + 1e-6)) : ''}`
@@ -28328,6 +28586,13 @@ function openMpvSettings() {
         .map(([v, l]) => `<option value="${v}" ${+S.seqDays === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
     <div class="hint">${TT(`วันขายในรอบเดียวกัน → <b>SD น้อย→มาก</b> → <b>TYPE</b> OP → OPFS → OPTW → OPFSTW → SW → SWFS → HW · SD &lt; ${S.sdFloor} คิดเป็น ${S.sdFloor} · รอบยาว = เปลี่ยนรุ่นน้อยลง แต่งานวันขายต้นรอบอาจรอนานขึ้น`,
       `Same sale cycle → <b>SD small→large</b> → <b>TYPE</b> OP → … → HW · SD &lt; ${S.sdFloor} counts as ${S.sdFloor} · longer cycle = fewer changeovers`)}</div>
+    <h4>🏭 ${TT('Zone · เริ่มจาก Process ปัจจุบัน', 'Zones · start at current process')}</h4>
+    <div class="fg-auto">
+      ${num('mp_zone', S.zoneStick != null ? S.zoneStick : 40, TT('ย้าย Zone เมื่อจำเป็น: ยอมรอเครื่องใน Zone เดิมได้ถึง (ชม.)', 'Change zone only if the same-zone queue is later by more than (h)'), 1, TT('20 ชม. ≈ 1 วันทำงาน · 0 = ไม่สน Zone (แบบเดิม)', '20 h ≈ 1 working day · 0 = ignore zones (old way)'))}
+      ${num('mp_batch', S.batchDays != null ? S.batchDays : 14, TT('ล็อตทยอยผลิต: ขั้นก่อนหน้ายังมีคนลงยอดภายใน (วัน) = ยังทำอยู่', 'Batch lots: earlier step recorded within (days) = still running'), 1)}
+    </div>
+    <div class="hint">${TT('ล็อตอยู่ Zone ไหน (เครื่องล่าสุดที่ลงยอด) ทำขั้นต่อไปใน Zone นั้นก่อน · ล็อตใหม่เริ่มที่ Zone ที่ทำขั้นที่เหลือได้มากที่สุด · แบ่งล็อตลงหลายเครื่องเฉพาะใน Zone เดียวกัน<br>แผนเริ่มที่ Process ปัจจุบันของล็อต (ขั้นไกลสุดที่มียอดผลิต) — ขั้นก่อนหน้าถือว่าผ่านแล้ว ยกเว้นล็อตทยอยผลิต (ขั้นก่อนหน้ายังเหลือของมากกว่าที่ผ่านไปแล้ว และยังมีคนลงยอดในช่วงวันข้างบน)',
+      'A lot stays in the zone it is in (last machine recorded) · new lots start in the zone that can do most remaining steps · splits stay in one zone<br>The plan starts at the lot\'s current process (furthest step with output) — earlier steps count as passed, except batch lots (more left behind than already passed and recorded recently)')}</div>
     <h4>🔀 ${TT('ส่ง VSM3 (Valve เดียวกัน บาง Process ทำที่ VSM3)', 'Sent to VSM3 (same valve, some processes at VSM3)')}</h4>
     <div class="fg-auto">
       ${num('mp_v3d', S.v3Days, TT('ส่ง → ได้คืน (วันทำงาน/รอบ)', 'Send → back (working days/trip)'), 0.5, TT('ขั้น VSM3 ที่ติดกัน = 1 รอบ · รวมเวลารอเข้า VSM3', 'consecutive VSM3 steps = 1 trip · includes waiting'))}
@@ -28426,6 +28691,7 @@ function mpReadForm() {
   S.histDays = Math.max(7, Math.min(365, Math.round(n('mp_hist', S.histDays))));
   S.alertDays = Math.max(1, Math.min(90, Math.round(n('mp_alert', S.alertDays))));
   S.v3Days = Math.max(0, Math.min(30, n('mp_v3d', S.v3Days))); S.v3RunDays = Math.max(0, Math.min(30, n('mp_v3r', S.v3RunDays)));   // ★ v3.83
+  S.zoneStick = Math.max(0, Math.min(400, n('mp_zone', S.zoneStick))); S.batchDays = Math.max(0, Math.min(90, Math.round(n('mp_batch', S.batchDays))));   // ★ v3.89
   S.extLagH = S.hours;
   return S;
 }
@@ -28541,7 +28807,7 @@ async function mpExportExcel(res) {
     : (j.lateDays > 0) ? [`⏰ ไม่ทัน +${j.lateDays} วัน`, 'FFFEE2E2', 'FFB91C1C']
     : ['✅ ทันวันขาย', 'FFDCFCE7', 'FF15803D'];
   const sdTxt = sd => sd == null ? '-' : _mpNum(sd);
-  const lotTxt = j => j.kind === 'order' ? `📭 ยังไม่มีของ (Order ${_mpD(j.due)})` : (j.lot || '-');
+  const lotTxt = j => j.kind === 'order' ? `📭 ${j.planLot ? j.planLot + ' ' : ''}ยังไม่มีของ (Order ${_mpD(j.due)})` : (j.lot || '-');   // ★ v3.89 + Lot ที่แผนขายระบุ
   const pinTxt = a => a.pin ? '📌 ' : '';
   const realJobs = res.jobs.filter(j => j.kind !== 'order'), orderJobs = res.orderJobs || [];
   const offList = ctx.machines.filter(m => m.offPerm).map(m => m.id);
@@ -28613,6 +28879,8 @@ async function mpExportExcel(res) {
       ['กฎ SD', `SD < ${S.sdFloor} คิดเป็น ${S.sdFloor} · ช่วงรวมปลายทั้งสองข้าง`], ['FG ต้องเสร็จก่อนวันขาย', S.postFgDays + ' วัน'],
       ['เครื่องที่ยังไม่กำหนดช่วง SD', S.noRange === 'block' ? 'ไม่ใช้' : 'ใช้ได้ทุก SD'], ['เบอร์ที่มีเครื่องเฉพาะ', S.dedicated ? 'ลงเครื่องเฉพาะเท่านั้น' : 'ลงเครื่องอื่นได้'],
       ['ขั้นที่ไม่มีเครื่องรับ SD', S.skipBlocked ? 'ข้ามแล้ววางขั้นที่เหลือต่อ (รอ 1 วัน)' : 'หยุดวางแผนล็อตนั้น'],
+      ['ย้าย Zone', +S.zoneStick > 0 ? `เมื่อจำเป็น — ยอมรอเครื่องใน Zone เดิมได้ถึง ${S.zoneStick} ชม. · แบ่งล็อตเฉพาะใน Zone เดียวกัน` : 'ไม่สน Zone (เครื่องที่เสร็จเร็วสุด)'],
+      ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้า = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน`],
       ['งานที่รวม', [S.incIn ? 'WIP IN 1.5' : '', S.incWip ? 'กำลังผลิต' : '', S.incOrder ? 'Order ที่ยังไม่มีของ (ตามวันคาดว่าเข้า)' : '', S.onlyPlan ? '(เฉพาะที่มีแผนขาย)' : ''].filter(Boolean).join(' + ')],
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
       ['แผนที่ Admin วางเอง', S.usePins === false ? 'ไม่ใช้' : `ใช้ (${(res.pins && res.pins.size) || 0} รายการ · 📌 ในชีท 1–3)`],
