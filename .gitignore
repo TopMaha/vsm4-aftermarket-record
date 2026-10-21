@@ -24,3 +24,7 @@ backups/
 
 # Separate project that happens to live in this folder
 Requisition System/
+
+# Deploy build (tools/build.mjs) — generated, never commit
+node_modules/
+_site/

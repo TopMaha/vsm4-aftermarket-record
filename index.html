@@ -72,16 +72,30 @@
       if (mm && mm.ver === 2 && mm.sync) { sync = mm.sync; mode = 'delta'; }
     } catch (e) {}
     var q = sync ? '&since=' + encodeURIComponent(sync) : '';
-    window.__PF = {
-      today: today, mode: mode,
-      init:    get('/api/init'),
-      kpiAll:  get('/api/kpi?from=2020-01-01&to=' + ALL_TO + '&limit=100000&slim=1' + q),
-      prodAll: get('/api/records?from=2020-01-01T00:00:00&to=' + ALL_TO + '&limit=100000' + q),
-    };
+    /* ⚡ v3.92 — ก้อนประวัติ prefetch เฉพาะ "ผู้ใช้ที่ Lock In ค้างไว้ + โหมดส่วนต่าง" (คำตอบเล็ก ไม่กี่ KB)
+       • ยังไม่ Lock In (หน้าใส่รหัส) = ยังไม่ต้องใช้ประวัติเลย → ไม่ดึง (เดิมลาก ~46 MB ทั้งที่ยังไม่ได้เข้าแอป)
+       • โหมดเต็ม (เครื่องใหม่/ล้าง cache) = ก้อนหลายสิบ MB → ถ้ายิงตรงนี้จะแย่งเน็ตกับไฟล์แอป (app.js)
+         จนหน้าจอขึ้นช้าหลายวินาทีบน 4G → ปล่อยให้แอปดึงเองหลังวาดหน้าแรกเสร็จ (startWipinSync)
+       • /api/init ก็เหมือนกัน: หน้า Lock In ให้แอปดึงเองหลังวาดเสร็จ (ใช้ตอนกดเข้าใช้งาน ไม่ต้องรีบ)
+         เดิม JSON 1.1 MB มาถึงก่อนจอแรกบนเน็ตเร็ว → แปลงบนเธรดหลักขวางการวาดหน้าแรก */
+    var user = !!localStorage.getItem('vsm4_user');
+    if (!user) return;
+    window.__PF = { today: today, mode: mode, init: get('/api/init') };
+    if (user && mode === 'delta') {
+      window.__PF.kpiAll  = get('/api/kpi?from=2020-01-01&to=' + ALL_TO + '&limit=100000&slim=1' + q);
+      window.__PF.prodAll = get('/api/records?from=2020-01-01T00:00:00&to=' + ALL_TO + '&limit=100000' + q);
+    }
   } catch (e) { /* prefetch พลาด = แอปทำงานปกติทุกอย่าง แค่ไม่ได้ head start */ }
 })();
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- ⚡ v3.92 — ฟอนต์ไม่บล็อกการวาดหน้าแรกแล้ว (เดิม stylesheet ของ Google บังคับรอ ~1 วิบน 4G ก่อนเห็นอะไรเลย)
+     • preconnect ล่วงหน้า + โหลด CSS แบบ media=print → สลับเป็น all เมื่อมาถึง
+     • display=optional: ฟอนต์มาไม่ทัน 0.1 วิ = ใช้ฟอนต์เครื่องไปทั้งรอบนั้น (ไม่สลับกลางทาง = ตัวหนังสือไม่กระโดด/CLS)
+       ไฟล์ฟอนต์ถูก Service Worker เก็บไว้ → เปิดครั้งถัดไปได้ Sarabun ทันที -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=optional" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=optional"></noscript>
 <!-- ⚡ v3.80 — ไลบรารี Excel (xlsx ~900 KB) และกล้องสแกน (html5-qrcode ~370 KB) ไม่โหลดตอนเปิดแอปแล้ว
      เดิม defer = ดาวน์โหลด+แปลงทุกครั้งที่เปิด (แย่งเน็ตกับข้อมูลจริงบน 4G + กิน CPU) ทั้งที่ใช้แค่ตอน export/สแกน
      ตอนนี้โหลดตอนกดใช้ครั้งแรกผ่าน loadLib() (ดูใกล้ withLoading) -->
@@ -1155,7 +1169,8 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 /* ⚡ v3.80 (CLS) ปุ่มบันทึกใต้ฟอร์มเครื่องจักร: โผล่พร้อมฟอร์ม (เดิมเฟรมแรกอยู่กลางจอ แล้วถูกดันลงไปท้ายฟอร์มทีเดียว) */
 #zone-machines:empty ~ *{display:none}
 .lock-card{background:#fff;border-radius:22px;padding:36px 28px;width:100%;max-width:420px;box-shadow:0 30px 80px rgba(0,0,0,.3);text-align:center;animation:lockIn .35s ease-out}
-@keyframes lockIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:none}}
+/* ⚡ v3.92 ไม่เริ่มที่ opacity:0 แล้ว — ตัวหนังสือที่โปร่งใสไม่นับเป็น "วาดแล้ว" (FCP/LCP รอจนจางเข้าเสร็จ) · เหลือแค่เลื่อนขึ้น */
+@keyframes lockIn{from{transform:translateY(20px) scale(.95)}to{transform:none}}
 .lock-logo{width:72px;height:72px;background:linear-gradient(135deg,#1E3A8A,#1A56DB);color:#fff;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 16px;box-shadow:0 8px 20px rgba(26,86,219,.4)}
 .lock-title{font-size:22px;font-weight:800;color:#0F172A;margin-bottom:4px}
 .lock-sub{font-size:13px;color:#64748B;margin-bottom:24px}
@@ -2704,6 +2719,23 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   #iotAllMapWrap{flex:0 0 auto;padding:0 10px 14px}
   #iotAllVp{height:62vh}
 }
+/* ⚡ v3.92 — ช่วงก่อนสคริปต์แอปพร้อม (ไฟล์ app.js ยังโหลด/รันไม่เสร็จ — สคริปต์จบแล้วติด html.app-ready)
+   • โครงร่าง (skeleton) วิบวับแทนช่องที่สคริปต์จะเติม → ไม่มีจอขาวว่าง และรู้ว่ากำลังโหลด
+     ใช้ :empty — สคริปต์เติมของจริงเมื่อไร โครงร่างหายเองทันที ไม่ต้องมีโค้ดสั่งลบ
+   • ปุ่มยังกดไม่ได้ (ฟังก์ชันยังไม่มี) → กดแล้วเงียบดีกว่าเด้ง error สีแดง */
+@keyframes skel{0%{background-position:100% 0}100%{background-position:0 0}}
+html:not(.app-ready) .hdr-actions,html:not(.app-ready) main,html:not(.app-ready) nav.bnav{pointer-events:none}
+html:not(.app-ready) #ztabs:empty,html:not(.app-ready) #zone-machines:empty,
+html:not(.app-ready) #kpiSummary:empty,html:not(.app-ready) #kpiPerZone:empty{
+  display:block;border-radius:12px;background:linear-gradient(90deg,#E6EDF8 25%,#F5F8FD 40%,#E6EDF8 60%) 0 0/300% 100%;
+  animation:skel 1.3s linear infinite}
+html:not(.app-ready) #ztabs:empty{height:44px;margin:8px 0}
+html:not(.app-ready) #kpiSummary:empty{height:150px;margin:10px 0}
+html:not(.app-ready) #kpiPerZone:empty{height:220px;margin:10px 0}
+html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% 100px no-repeat,linear-gradient(#000 0 0) center/100% 100px no-repeat,linear-gradient(#000 0 0) bottom/100% 100px no-repeat;
+          mask:linear-gradient(#000 0 0) top/100% 100px no-repeat,linear-gradient(#000 0 0) center/100% 100px no-repeat,linear-gradient(#000 0 0) bottom/100% 100px no-repeat}
+@media (prefers-reduced-motion:reduce){html:not(.app-ready) #ztabs:empty,html:not(.app-ready) #zone-machines:empty,html:not(.app-ready) #kpiSummary:empty,html:not(.app-ready) #kpiPerZone:empty{animation:none}}
 </style>
 </head>
 <body>
@@ -2723,7 +2755,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
     <div class="lock-input-wrap">
       <input type="text" class="lock-input" id="lockInput" placeholder="เช่น L-XXXX" autocomplete="off"
              autocapitalize="characters" spellcheck="false"
-             oninput="lockClearErr()" onkeydown="lockKey(event)">
+             oninput="window.lockClearErr&&lockClearErr()" onkeydown="window.lockKey&&lockKey(event)">
     </div>
     <div class="lock-hint">ตัวอย่างรูปแบบรหัส:
       <span class="lock-eg">S-XXX</span>
@@ -2731,7 +2763,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
       <span class="lock-eg">PSTXXX</span>
     </div>
     <div class="lock-err" id="lockErr"></div>
-    <button class="lock-btn" id="lockBtn" onclick="lockSubmit()">เข้าใช้งาน →</button>
+    <button class="lock-btn" id="lockBtn" onclick="window.lockSubmit&&lockSubmit()">เข้าใช้งาน →</button>
     <div class="lock-foot">พิมพ์รหัสพนักงานของคุณเพื่อเข้าใช้งาน</div>
   </div>
 </div>
@@ -2741,7 +2773,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.91</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.92</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2770,7 +2802,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
 /* ⚡ v3.80 (CLS) — ผู้ใช้ที่ Lock In ค้างไว้: โชว์แถวผู้ใช้ + ซ่อนหน้า Lock ตั้งแต่เฟรมแรก
    เดิมแถวนี้โผล่ตอนสคริปต์หลักรันเสร็จ → ทั้งหน้าเลื่อนลง 42px (วัดได้ CLS 0.89 ตอนเปิดครั้งแรก) + หน้า Lock กระพริบ
    init() ยังตรวจรหัสซ้ำตามเดิม — รหัสใช้ไม่ได้แล้ว showLock() จะเปิดหน้า Lock กลับมาเอง */
-try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip').style.display = 'flex'; document.getElementById('lockOverlay').classList.add('hide'); } } catch (e) {}
+try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip').style.display = 'flex'; document.getElementById('lockOverlay').classList.add('hide'); var _ht = localStorage.getItem('vsm4_hdr_title'); if (_ht) document.getElementById('hdrTitle').textContent = _ht; } } catch (e) {}
 </script>
 
 <main>
@@ -3523,7 +3555,8 @@ let localStorage;
               + 'งานทั้งหมดอยู่บนเซิร์ฟเวอร์ครบ และยังบันทึกได้ตามปกติ '
               + '(ถ้าเปิดในแอป LINE แนะนำให้กดมุมขวาบนแล้วเลือก "เปิดด้วย Safari/Chrome")';
     const show = () => { try { if (typeof toast === 'function') { toast(msg, 'orange'); return true; } } catch (_) {} return false; };
-    if (!show()) window.addEventListener('DOMContentLoaded', show);
+    // ⚡ v3.92 สคริปต์แอปอาจรันหลัง DOMContentLoaded ไปแล้ว (ไฟล์ assets/app.*.js โหลดหลังเฟรมแรก) → รอจบสคริปต์แทน
+    if (!show()) { if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', show); else setTimeout(show, 0); }
   }
   /* ห่อ localStorage จริง: setItem ที่เจอ "พื้นที่เต็ม" จะไม่ throw (ไม่เด้ง banner แดง)
      → ทิ้ง cache ก้อนใหญ่ที่โหลดใหม่ได้ก่อน แล้วลองใหม่ ถ้ายังไม่พอก็ยอมเงียบ ๆ
@@ -3564,7 +3597,8 @@ let localStorage;
   } catch (e) {
     localStorage = memStore;
     // แจ้งเตือนแบบไม่รบกวน (หลัง DOM พร้อม)
-    window.addEventListener('DOMContentLoaded', () => {
+    const _onReady = fn => (document.readyState === 'loading' ? window.addEventListener('DOMContentLoaded', fn) : setTimeout(fn, 0));   // ⚡ v3.92 ดูหมายเหตุใน warnFull
+    _onReady(() => {
       try { if (typeof toast === 'function') toast('โหมดเปิดไฟล์นี้ไม่รองรับการบันทึกถาวร — ใช้งานได้ปกติแต่ข้อมูลจะหายเมื่อรีเฟรช', 'orange'); } catch (_) {}
     });
   }
@@ -4571,7 +4605,7 @@ function* _filterVsmGen(arr) {
   const c = _fvCache.get(arr);
   if (c && c.v === v && c.ver === ver) return c.res;
   const res = []; let _n = 0;
-  for (const r of arr) { if ((++_n & 2047) === 0 && _sliceDue()) yield; if (vsmOf(r) === v) res.push(r); }
+  for (const r of arr) { if ((++_n & 255) === 0 && _sliceDue()) yield; if (vsmOf(r) === v) res.push(r); }
   if (ver === _fvVer && v === viewVsm()) _fvCache.set(arr, { v, ver, res });
   return res;
 }
@@ -4583,7 +4617,7 @@ function* _filterVsmPeerGen(arr) {
   const c = _fvpCache.get(arr);
   if (c && c.k === key && c.ver === ver) return c.res;
   const set = new Set(peers), res = []; let _n = 0;
-  for (const r of arr) { if ((++_n & 2047) === 0 && _sliceDue()) yield; if (set.has(vsmOf(r))) res.push(r); }
+  for (const r of arr) { if ((++_n & 255) === 0 && _sliceDue()) yield; if (set.has(vsmOf(r))) res.push(r); }
   if (ver === _fvVer && key === vsmPeers(viewVsm()).join('|')) _fvpCache.set(arr, { k: key, ver, res });
   return res;
 }
@@ -4850,6 +4884,22 @@ const MC_RENAME = [
 ];
 const _MC_RENAME_IDX = {};
 for (const r of MC_RENAME) _MC_RENAME_IDX[r.zone + '::' + r.from.toUpperCase()] = r.to;
+/* ⚡ v3.92 — กรองเร็วก่อนสร้าง key: เครื่องที่ถูกเปลี่ยนชื่อ/ย้ายโซนมีแค่ ~20 รหัส แต่ต้องไล่ทุกแถว (~150,000 แถว
+   ตอนข้อมูลก้อนใหม่เข้า) — เดิมทุกแถว trim+toUpperCase+ต่อสตริง 2 รอบ ≈ 0.5 วิบนมือถือในงานเดียว
+   รหัสดิบซ้ำกันไม่กี่ร้อยแบบ → จำผลต่อรหัสดิบไว้ (Map) · ผลลัพธ์ต้องเท่าเดิมทุกแถว:
+   bit 1 = อยู่ในรายการเปลี่ยนชื่อ · bit 2 = อยู่ในรายการย้ายโซน · bit 4 = ไม่ใช่สตริงที่ trim แล้ว (mcRenameId จะ trim ให้) */
+const _mcIdMemo = new Map();
+let _MC_RENAME_IDS = null, _MC_ZMOVE_IDS = null;
+function _mcIdHit(raw) {
+  let h = _mcIdMemo.get(raw);
+  if (h === undefined) {
+    if (!_MC_RENAME_IDS) { _MC_RENAME_IDS = new Set(MC_RENAME.map(r => r.from.toUpperCase())); _MC_ZMOVE_IDS = new Set(VSM2_ZONE_MOVE.map(r => r.id.toUpperCase())); }
+    const t = String(raw || '').trim(), u = t.toUpperCase();
+    h = (_MC_RENAME_IDS.has(u) ? 1 : 0) | (_MC_ZMOVE_IDS.has(u) ? 2 : 0) | ((typeof raw === 'string' && t === raw) ? 0 : 4);
+    _mcIdMemo.set(raw, h);
+  }
+  return h;
+}
 function mcRenameId(id, zone) {
   const i = String(id || '').trim();
   if (!i) return i;
@@ -4862,6 +4912,7 @@ function mcRenameRecs(arr) {
   for (const r of arr) {
     if (!r) continue;
     const cur = r.machine_id || r.machineId || '';
+    if (cur === '' || !(_mcIdHit(cur) & 5)) continue;   // ⚡ v3.92 ไม่อยู่ในรายการ + ไม่ต้อง trim = ไม่เปลี่ยนแน่นอน
     const nid = mcRenameId(cur, r.zone || r.zone_key || r.zoneKey);
     if (nid !== cur) {
       if (r.machine_id !== undefined || r.machineId === undefined) r.machine_id = nid;
@@ -4905,7 +4956,9 @@ function mcZoneFixRecs(arr) {
   for (const r of arr) {
     if (!r) continue;
     const cur = r.zone || r.zone_key || r.zoneKey || '';
-    const nz  = mcFixZone(cur, r.machine_id || r.machineId || '');
+    const _mid = r.machine_id || r.machineId || '';
+    if (!(_mcIdHit(_mid) & 2)) continue;                // ⚡ v3.92 รหัสเครื่องไม่อยู่ในรายการย้ายโซน = mcFixZone คืนค่าเดิมแน่นอน
+    const nz  = mcFixZone(cur, _mid);
     if (nz !== cur) {
       if (r.zone     !== undefined || (r.zone_key === undefined && r.zoneKey === undefined)) r.zone = nz;
       if (r.zone_key !== undefined) r.zone_key = nz;
@@ -4927,6 +4980,27 @@ function _mcNormOnce(arr) {
   const n = mcRenameRecs(arr) + mcZoneFixRecs(arr);   // ★ 2026-08-03: ย้ายโซน VSM2 ต้องทำ "หลัง" rename เสมอ
   _mcNormLen.set(arr, arr.length);
   return n;
+}
+/* ⚡ v3.92 — แบบแบ่งช่วง (ใช้ในฟังก์ชัน async เช่น reload): ไล่ทีละ 4,000 แถว แล้วคืนจอ 1 task
+   ผลเหมือน _mcNormOnce ทุกแถว (ทำต่อแถว rename → ย้ายโซน ตามลำดับเดิม) · อาร์เรย์โตระหว่างพัก = ปล่อยให้รอบ sync ทำต่อ
+   ก้อนประวัติทั้งหมด ~100,000 แถว เดิมเป็นงานเดียว ~0.3 วิบนมือถือ → ช่วงละ ≈ 8 ms */
+async function _mcNormOnceAsync(arr) {
+  if (!Array.isArray(arr) || _mcNormLen.get(arr) === arr.length) return 0;
+  const len = arr.length, STEP = 4000; let n = 0;
+  for (let i = 0; i < len; i += STEP) {
+    const part = arr.slice(i, i + STEP);
+    n += mcRenameRecs(part) + mcZoneFixRecs(part);
+    if (i + STEP < len) await _macroP();
+  }
+  if (arr.length === len) _mcNormLen.set(arr, len);
+  return n;
+}
+async function applyMcRenameAllAsync() {
+  let n = 0;
+  for (const a of [state.kpiRecords, state.prodRecords, (typeof _allKpi !== 'undefined' && _allKpi), (typeof _allProd !== 'undefined' && _allProd)]) n += await _mcNormOnceAsync(a);
+  const m = applyMcRenameAll();    // ส่วนที่เหลือ (ถ้ามี) + ย้าย mcproc — แบบเดิม
+  if (n && !m) { try { lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords); } catch (e) {} }   // = เงื่อนไขเดิม (n รวม > 0)
+  return m + n;
 }
 function applyMcRenameAll() {
   let n = 0;
@@ -5720,14 +5794,20 @@ async function _winRefreshKpi() {
 function _winReset() { _win.kpi = _win.prod = null; }
 
 /* รวม API records กับ record ที่ยังค้าง (_unsynced) ไว้ — กันถูกลบตอนดึง/replace จาก Cloud */
+/* ⚡ v3.92 ไม่มีแถวค้างเลย (ปกติ) = คืนชุดจาก Cloud ตรง ๆ — เดิมสร้าง Set ของ id ทุกแถว (~14,000) + ก๊อปอาร์เรย์ทุกครั้ง
+   ผลเท่าเดิม: ไม่มีแถว _unsynced → pending ว่าง → [...api] (สำเนาตื้นของชุดเดียวกัน) */
 function _keepPendingKpi(apiRecords) {
+  const pend = state.kpiRecords.filter(r => r._unsynced);
+  if (!pend.length) return apiRecords.slice();
   const ids = new Set(apiRecords.map(r => r.record_id || r.recordId));
-  const pending = state.kpiRecords.filter(r => r._unsynced && !ids.has(r.record_id));
+  const pending = pend.filter(r => !ids.has(r.record_id));
   return [...apiRecords, ...pending];
 }
 function _keepPendingProd(apiNorm) {
+  const pend = state.prodRecords.filter(r => r._unsynced);
+  if (!pend.length) return apiNorm.slice();
   const ids = new Set(apiNorm.map(r => r.record_id || r.recordId));
-  const pending = state.prodRecords.filter(r => r._unsynced && !ids.has(r.record_id || r.recordId));
+  const pending = pend.filter(r => !ids.has(r.record_id || r.recordId));
   return [...apiNorm, ...pending];
 }
 
@@ -5900,6 +5980,33 @@ function showBusy(msg, persistent) {
   if (!persistent) _busyFailsafe = setTimeout(() => { hideBusy(); toast('เครือข่ายช้า — ข้อมูลถูกเก็บใน Local แล้ว', 'orange'); }, 45000);
 }
 function busyMsg(t) { const m = $('busyMsg'); if (m) m.textContent = t; }
+/* ⚡ v3.92 Optimistic UI — แก้/ลบในหน้าประวัติ: จอเปลี่ยนทันที แล้วรอฐานข้อมูลยืนยันเบื้องหลัง (ป้ายลอย ไม่บังจอ)
+   ฐานข้อมูลไม่รับ → คืนค่าเดิมทุกช่องด้วยสำเนาที่ถ่ายไว้ก่อนแก้ (_snapRecs/_unsnapRecs) + แจ้งแดง
+   ⇒ ผลสุดท้ายเมื่อพลาด = เหมือนเดิมทุกอย่าง (ฐานข้อมูลและเครื่องยังเป็นค่าเดิม) แค่ไม่ต้องรอดูจอค้าง */
+// สำเนาลึก — โค้ดแก้ไขบางจุดแก้ของข้างใน (เช่น shifts[i].scrap) ตรง ๆ สำเนาตื้นจะคืนค่าไม่ครบ
+const _deepCopy = o => (typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
+function _snapRecs(list) { return (list || []).filter(Boolean).map(o => [o, _deepCopy(o)]); }
+function _unsnapRecs(snaps) {
+  for (const [o, s] of snaps) { for (const k of Object.keys(o)) if (!(k in s)) delete o[k]; Object.assign(o, s); }
+}
+// ลบแบบ optimistic: จำแถว + ตำแหน่งเดิมก่อนลบ → ลบไม่ผ่านใส่คืนที่เดิม และถอน tombstone ของทุก id ที่สั่งลบ
+function _recPos(arr, ids) {
+  const want = new Set((ids || []).filter(Boolean)), rows = [];
+  (arr || []).forEach((r, i) => { if (r && want.has(r.record_id)) rows.push([r, i]); });
+  return { ids: [...want], rows };
+}
+function _recUndel(kind, saved) {
+  if (!saved) return;
+  const isKpi = kind === 'kpi', tomb = isKpi ? _deletedKpiIds : _deletedProdIds;
+  for (const id of saved.ids) tomb.delete(id);
+  _saveTombstones();
+  let arr = isKpi ? state.kpiRecords : state.prodRecords;
+  const have = new Set(arr.map(r => r.record_id)), back = saved.rows.filter(([r]) => !have.has(r.record_id));
+  if (!back.length) return;
+  arr = arr.slice();
+  for (const [r, i] of back) arr.splice(Math.min(i, arr.length), 0, r);   // ไล่จากตำแหน่งน้อยไปมาก = กลับที่เดิม
+  if (isKpi) { state.kpiRecords = arr; lsSave(LS.KPI, arr); } else { state.prodRecords = arr; lsSave(LS.PROD_REC, arr); }
+}
 function hideBusy() { clearTimeout(_busyFailsafe); const o = $('busyOverlay'); if (o) o.style.display = 'none'; }
 
 /* ===== fnum — แปลงค่าในช่อง OPR/Target ที่อาจเป็น "สูตร" ให้เป็นตัวเลข
@@ -6045,7 +6152,11 @@ async function _apiRaw(path, opts = {}) {
   try {
     const res = await fetch(url, {
       method: opts.method || (opts.body ? 'POST' : 'GET'),
-      headers: { 'Content-Type': 'application/json' },
+      /* ⚡ v3.92 — ใส่ Content-Type เฉพาะคำขอที่มี body
+         GET + header นี้ = ไม่ใช่ "simple request" → เบราว์เซอร์ต้องยิง OPTIONS (preflight) ไปถาม Worker ก่อนทุกครั้ง
+         และ URL ที่มี ?since=<เวลา> ไม่ซ้ำเลย → cache preflight ไม่ได้ = เสีย 1 round trip (~150-300 ms บน 4G) ทุกคำขอ
+         (ตัวเรียก ต่อกะ/WIP IN ทำแบบนี้อยู่แล้ว · Worker ไม่ได้อ่าน header นี้ใน GET) */
+      headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
       body: opts.body ? JSON.stringify(opts.body) : undefined,
       signal: ctl ? ctl.signal : undefined,
     });
@@ -9249,7 +9360,11 @@ function updateVsmHeader() {
   // VSM3 = สาย Machining · QC = แผนกตรวจสอบ (ไม่ใช่ Aftermarket)
   const recKind = (vsmKey === 'vsm3') ? 'MACHINING' : (vsmKey === 'qc') ? 'INSPECTION' : 'AFTERMARKET';
   const ht = document.getElementById('hdrTitle');
-  if (ht) ht.textContent = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
+  /* ⚡ v3.92 เขียนเฉพาะเมื่อข้อความเปลี่ยน + จำไว้ให้สคริปต์เล็กใต้ header ใส่ชื่อนี้ตั้งแต่เฟรมแรก
+     (เดิมหัวแอปโชว์ "VSM AFTERMARKET" แล้วกระพริบเปลี่ยนเป็นชื่อสายตอนสคริปต์แอปพร้อม — นับเป็นการวาดใหม่ของ LCP ด้วย) */
+  const _ht = `⚙️ ${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`;
+  if (ht && ht.textContent !== _ht) ht.textContent = _ht;
+  try { if (localStorage.getItem('vsm4_hdr_title') !== _ht) localStorage.setItem('vsm4_hdr_title', _ht); } catch (e) {}
   try { document.title = `${VSM_LABEL[vsmKey] || 'VSM'} ${recKind} RECORD`; } catch (e) {}
   const su = document.getElementById('settingsUser');
   if (su) su.textContent = `${CURRENT_USER.id} — ${CURRENT_USER.name || ''} · ${VSM_LABEL[vsmKey] || vsmKey}`;
@@ -9277,6 +9392,7 @@ function lockSubmit() {
   hideLock();
   // re-render ให้เห็นเฉพาะ VSM ของผู้ใช้ที่เพิ่ง login ทันที
   if (typeof refreshVsmViews === 'function') refreshVsmViews();
+  _bootSyncAfterLogin();   // ⚡ v3.92 เปิดแอปมาที่หน้า Lock In → เริ่มซิงก์ก้อนใหญ่ตอนนี้ (ดู init)
   toast(`ยินดีต้อนรับ ${emp.name || emp.id} · ${VSM_LABEL[myVsm()]||''}`, 'green');
 }
 function lockFail(msg) {
@@ -9334,7 +9450,8 @@ async function init() {
   applyMcRenameAll();      // ★ ชื่อเครื่องใหม่ (G-2018→G-2010 @M4 · G-2070→G-270 @R2 · G-274→G-2074 @M3) กับข้อมูลใน localStorage
 
   // Lock In check
-  if (CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id)) {
+  const _unlocked = !!(CURRENT_USER && state.employees.some(e => e.id === CURRENT_USER.id));
+  if (_unlocked) {
     // backfill VSM ให้ user เดิมที่ login ค้างไว้ก่อนมีระบบ VSM
     if (!CURRENT_USER.vsm) {
       const me = empById(CURRENT_USER.id);
@@ -9359,12 +9476,32 @@ async function init() {
   // หน้าตั้งค่า render เฉพาะตอนเปิด (setPane) — เลี่ยงสร้างตารางวาล์ว/พนักงานหนักๆ ทุกครั้งที่โหลด
   if (document.querySelector('section.pane.active')?.id === 'pane-settings') renderSettings();
 
+  /* ⚡ v3.92 — หน้า Lock In (ยังไม่ใส่รหัส) ดึงแค่รายชื่อพนักงานล่าสุด (ใช้ตรวจรหัส)
+     ก้อนใหญ่ (30 วัน / ประวัติทั้งหมด / WIP IN) รอจนเข้าแอปจริงค่อยดึง → _bootSyncAfterLogin()
+     เดิมลากทุกก้อน (~70 MB ดิบ) ระหว่างที่คนยังพิมพ์รหัสอยู่ = พิมพ์หน่วง + หน้าแรกช้า */
+  if (API && !_unlocked) { _bootDeferred = true; _lockEmpRefresh(); renderSyncBar(); return; }
+  _bootSync();
+  // ★ req #6: เปิดแอปมาแล้วยังมีของค้างจากเมื่อวาน (เน็ตหลุดตอนบันทึก) ต้องเห็นแถบเตือนทันที
+  renderSyncBar();
+}
+function _bootSync() {
   // ถ้ามี API URL ก็ลอง sync เพิ่ม (ไม่บล็อก UI)
   if (API) { reload(); startAutoSync(); }
   else migratePdacTarget();   // โหมด local ไม่เรียก reload() → migrate เป้า PDAC ที่นี่
   startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (รอบเดียวกับ AUTO_REFRESH_MS) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
-  // ★ req #6: เปิดแอปมาแล้วยังมีของค้างจากเมื่อวาน (เน็ตหลุดตอนบันทึก) ต้องเห็นแถบเตือนทันที
-  renderSyncBar();
+}
+let _bootDeferred = false;
+function _bootSyncAfterLogin() { if (!_bootDeferred) return; _bootDeferred = false; _initReuseOnce = true; _bootSync(); }
+let _initReuseOnce = false;   // reload() รอบแรกหลัง Lock In ใช้ /api/init ที่หน้า Lock In เพิ่งดึงมา (≤ 2 นาที) ไม่ยิงซ้ำ
+// รายชื่อพนักงานจาก Cloud (เฉพาะส่วนที่หน้า Lock In ต้องใช้ — ตัวเต็มทำใน reload() หลังเข้าแอป)
+function _lockEmpRefresh() {
+  apiInit(0).then(res => {
+    if (!_bootDeferred || !res || !Array.isArray(res.employees) || !res.employees.length) return;
+    captureEmpVsmFromApi(res.employees);
+    state.employees = res.employees;
+    ensureSeedEmployees(); normalizeEmployeeVsm();
+    lsSave(LS.EMPLOYEES, state.employees);
+  }).catch(() => {});
 }
 
 /* ── Quick Win #2: cache /api/init (master data โหลดหนัก + เปลี่ยนน้อย) ──
@@ -9453,7 +9590,7 @@ async function reload() {
     { sub: TT('ข้อมูลหลัก (วาล์ว/เครื่อง/พนักงาน)','master data') });
   try {
     // 1) master data — รวม valve_ids  (Quick Win #2: ผ่าน apiInit เพื่อ coalesce + เก็บ cache)
-    const res = await apiInit(0);
+    const res = await apiInit(_initReuseOnce ? 120000 : 0); _initReuseOnce = false;
     // ★ 2026-07-30: รับเฉพาะชุดที่ "มีข้อมูลจริง" — เดิม `res.valves || state.valves` ยอมรับ [] ด้วย
     //   (array ว่างเป็น truthy) → ถ้า Worker คืน valves:[] ชั่วคราว Master Valve จะถูกล้างทั้งก้อน
     const _ok = a => Array.isArray(a) ? a.length > 0 : (a && typeof a === 'object' && Object.keys(a).length > 0);
@@ -9507,7 +9644,7 @@ async function reload() {
       if (p?.records) { state.prodRecords = _winApply('prod', state.prodRecords, p, !!pQ, fromDate, toDate); lsSave(LS.PROD_REC, state.prodRecords); }
       // ⚡ v3.81 แผนเหมือนเดิม = ไม่ต้องบันทึก (ไม่ล้าง cache ที่ผูกกับ _fvVer)
       if (pl?.plans && JSON.stringify(pl.plans) !== JSON.stringify(state.plans)) { state.plans = pl.plans; lsSave(LS.PLANS, state.plans); }
-      applyMcRenameAll();     // ★ ข้อมูลจาก Cloud ที่ยังใช้ชื่อเครื่องเดิม → normalize ทันที
+      await applyMcRenameAllAsync();   // ★ ข้อมูลจาก Cloud ที่ยังใช้ชื่อเครื่องเดิม → normalize ทันที (⚡ v3.92 แบ่งช่วง ไม่ค้างจอ)
     } catch (e) {}
 
     setConnBadge('online');
@@ -10781,7 +10918,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.91":"Production Record + KPI · v3.91",
+"ระบบบันทึกผลิต + KPI · v3.92":"Production Record + KPI · v3.92",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -13329,6 +13466,22 @@ function _mcJobSvg(x, y, w, h, job, id, idColor, fit) {
    MIDDLE = Zone 2 (Blue border) = Induction
    RIGHT = Zone 1 (Purple border) = Aftermarket
 */
+/* ⚡ v3.92 ความกว้างผัง (โหมดไม่เต็มจอ) = ความกว้างเนื้อในของ #iotCard (วัดเทียบแล้วตรงกันทุกขนาดจอ 412 / 1366 / 1920 px)
+   เดิมอ่าน #mcViewFloor.clientWidth หลัง _paintHome เขียนการ์ด KPI ไปแล้ว → การ์ด IOT อยู่นอกจอ (content-visibility)
+   = บังคับจัด layout ทั้งการ์ดกลางงานวาด (~60 ms บนมือถือ ทุกครั้งที่เปิด Dashboard)
+   ตอนนี้: ResizeObserver จดความกว้างไว้หลังเบราว์เซอร์จัดเอง (ไม่บังคับ) + _paintHome อ่านตอนต้นขณะ layout ยังสะอาด
+   0 = ยังไม่รู้/การ์ดซ่อน → ผู้เรียกกลับไปวัดแบบเดิม · โหมดเต็มจอไม่ใช้ค่านี้ (ผังกว้างไม่เท่าการ์ด) */
+let _fpCardWv = 0;
+function _fpCardInner(c) { const cs = getComputedStyle(c); return Math.max(0, c.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0)); }
+function _fpCardW() {
+  const c = $('iotCard'); if (!c) return 0;
+  if (!c._fpRO && window.ResizeObserver) {
+    c._fpRO = new ResizeObserver(() => { _fpCardWv = _iotIsFs() ? 0 : _fpCardInner(c); });
+    c._fpRO.observe(c);
+  }
+  if (!_fpCardWv && !_iotIsFs()) _fpCardWv = _fpCardInner(c);
+  return _fpCardWv;
+}
 function renderFloorPlan(activeMachines, oaeMap={}) {
   const wrap = $('mcViewFloor');
   if (!wrap) return;
@@ -13380,7 +13533,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   // ขนาดป้ายชุดเดียวใช้ทั้งผัง → ทุกกล่องหน้าตาเหมือนกัน (ดู _jobFitPlan)
   // k = viewBox 1 หน่วยกินพื้นที่จริงกี่พิกเซล — SVG กว้าง 100% ของกรอบ แล้วคูณด้วยระดับซูมปัจจุบัน
   //     (ผัง VSM1 กว้าง ~1000 หน่วยแต่กรอบกว้าง ~600px → k≈0.6 · ไม่ชดเชยตรงนี้ ตัวหนังสือจะเล็กจนอ่านไม่ออก)
-  const _fw=(wrap.clientWidth||wrap.getBoundingClientRect().width||W);
+  const _fw=((!_iotIsFs() && _fpCardW()) || wrap.clientWidth||wrap.getBoundingClientRect().width||W);   // ⚡ v3.92 ดู _fpCardW
   const _base=_fw/W;
   // v3.30.4: ผังบางสายพอย่อลงให้พอดีกรอบแล้ว กล่องจริงเหลือสูงแค่ ~20px — ใส่รหัสเครื่อง+เบอร์ให้อ่านออกไม่ได้เลย
   //   → ขยายซูมเริ่มต้นจนตัวเบอร์บนจอถึง ~9px (ขนาดที่อ่านออกจริง) แล้วเลื่อนดูในกรอบเอา
@@ -16268,8 +16421,11 @@ const _WIPIN_BACKFILL_RE = /ลงย้อนหลัง/;
 function _wipinIsBackfill(e){ return _WIPIN_BACKFILL_RE.test(String((e&&e.note)||'')); }
 // รายการที่ยังไม่ลบ + เฉพาะ VSM ที่กำลังดู (ใหม่ล่าสุดก่อน)
 function _wipinList(){
-  return Object.values(_wipin).filter(e=>e && !e.deleted && _wipinVsm(e)===viewVsm())
-    .sort((a,b)=> String(b.ts||'').localeCompare(String(a.ts||'')));
+  /* ⚡ v3.92 เรียงด้วยการเทียบสตริงตรง ๆ แทน localeCompare (ICU ช้า ~10 เท่า · ถูกเรียกหลายรอบต่อการคิด WIP 1 ครั้ง)
+     ts เป็นเวลา ISO ทั้งหมด → ลำดับเท่ากับ localeCompare ทุกคู่ */
+  const vv=viewVsm();
+  return Object.values(_wipin).filter(e=>e && !e.deleted && _wipinVsm(e)===vv)
+    .sort((a,b)=>{ const x=String(a.ts||''), y=String(b.ts||''); return y<x ? -1 : y>x ? 1 : 0; });
 }
 /* ★ 2026-08-02: รายการรับเข้าของ "สายพี่น้อง" (VSM3+VSM4) — ใช้เป็นตัวอ้างอิงยอด WIP เท่านั้น
    งานที่รับเข้าที่สายหนึ่งแต่ไปผลิตอีกสาย จะได้ไม่ตกไปใช้ fallback ยอดผลิต (ทำให้ WIP เพี้ยน)
@@ -16421,7 +16577,7 @@ async function refreshProducedSet(){
       const src=_allKpi;
       const res=await _runSliced((function*(){
         let _n=0; const J=new Set(), V=new Set();
-        for(const r of src){ if((++_n & 2047)===0 && _sliceDue()) yield; const v=r.valve_no; if(!v) continue; J.add(jobKey(v, r.lot||'')); V.add(vKey(v)); }
+        for(const r of src){ if((++_n & 255)===0 && _sliceDue()) yield; const v=r.valve_no; if(!v) continue; J.add(jobKey(v, r.lot||'')); V.add(vKey(v)); }
         return {J,V};
       })());
       jobs=res.J; valves=res.V; _producedSrc=src;
@@ -16675,6 +16831,10 @@ async function ensureAllJobsLoaded(force){
         const kRecs = (k.records || []).filter(r => !_deletedKpiIds.has(r.record_id));
         const pRecs = (p.records || []).map(_normProd).filter(r => !_deletedProdIds.has(r.record_id));
         mcRenameRecs(kRecs); mcRenameRecs(pRecs);
+        /* ⚡ v3.92 แถวใหม่ย้ายโซนด้วยเลย (ลำดับเดียวกับ _mcNormOnce: rename → ย้ายโซน) → ถ้าก้อนเดิมผ่าน normalize แล้ว
+           ก้อนที่ merge เสร็จก็ครบทุกแถว → จดไว้ ไม่ต้องไล่ ~100,000 แถวซ้ำทุกรอบรีเฟรช 10 นาที */
+        mcZoneFixRecs(kRecs); mcZoneFixRecs(pRecs);
+        const _kNormed = _mcNormLen.get(_allKpi) === _allKpi.length, _pNormed = _mcNormLen.get(_allProd) === _allProd.length;
         const kDel = k.deleted || [], pDel = p.deleted || [];
         const changed = kRecs.length + pRecs.length + kDel.length + pDel.length;
         const nK0 = _allKpi.length, nP0 = _allProd.length;
@@ -16684,6 +16844,8 @@ async function ensureAllJobsLoaded(force){
         if (pRecs.length || pDel.length) _allProd = _mergeDelta(_allProd, pRecs, pDel);
         if (_deletedKpiIds.size)  _allKpi  = _allKpi.filter(r => !_deletedKpiIds.has(r.record_id));
         if (_deletedProdIds.size) _allProd = _allProd.filter(r => !_deletedProdIds.has(r.record_id));
+        if (_kNormed) _mcNormLen.set(_allKpi, _allKpi.length);
+        if (_pNormed) _mcNormLen.set(_allProd, _allProd.length);
         _allSync = k.sync_time < p.sync_time ? k.sync_time : p.sync_time;   // ยึดอันเก่ากว่า = ไม่มีทางข้ามแถว
         _allAt = Date.now();
         _wbCache = null;
@@ -16711,10 +16873,14 @@ async function ensureAllJobsLoaded(force){
     _warnIfTruncated(k, p);          // ชนเพดานแถว = ยอดต่ำกว่าจริง ต้องเห็นทันที
     loadStep('alljobs', null, TT('กำลังประมวลผลข้อมูล…','processing data…'));
     await yieldUI();                 // ปล่อยให้จอวาดป้าย ก่อนคำนวณก้อนใหญ่ (normalize หมื่นแถว)
-    _allKpi  = _deletedKpiIds.size ? k.records.filter(r => !_deletedKpiIds.has(r.record_id)) : k.records;
-    _allProd = p.records.map(_normProd);
-    if (_deletedProdIds.size) _allProd = _allProd.filter(r => !_deletedProdIds.has(r.record_id));
-    mcRenameRecs(_allKpi); mcRenameRecs(_allProd);   // ★ ชื่อเครื่องใหม่ (M4/R2) — normalize ก่อนคิดทุกยอด
+    const nK = _deletedKpiIds.size ? k.records.filter(r => !_deletedKpiIds.has(r.record_id)) : k.records;
+    /* ⚡ v3.92 แปลงทีละ 4,000 แถวแล้วคืนจอ (เดิม map ทั้ง ~60,000 แถวรวดเดียว + GC ≈ 0.3 วิบนมือถือ) */
+    let nP = [];
+    for (let i = 0; i < p.records.length; i += 4000) { if (i) await _macroP(); nP = nP.concat(p.records.slice(i, i + 4000).map(_normProd)); }
+    if (_deletedProdIds.size) nP = nP.filter(r => !_deletedProdIds.has(r.record_id));
+    // ★ ชื่อเครื่องใหม่ (M4/R2) — normalize ก่อนคิดทุกยอด · ⚡ v3.92 แบ่งช่วง (rename → ย้ายโซน ต่อแถว เหมือน applyMcRenameAll)
+    await _mcNormOnceAsync(nK); await _mcNormOnceAsync(nP);
+    _allKpi = nK; _allProd = nP;
     _allAt = Date.now();
     _allFromCache = false;
     _wbCache = null;                 // ข้อมูลชุดใหม่ → บังคับคิด 3 ถังใหม่
@@ -16826,7 +16992,7 @@ function* _wipGen(){
   // ★ งานข้ามสาย: รวม record ของทั้ง VSM3+VSM4 เข้าล็อตเดียวกัน เพื่อให้รู้ "process ไกลสุดจริง"
   //   (เดิมแต่ละสายเห็นแค่ครึ่งเดียว → ทั้งสองสายคิดว่างานยังค้างที่ตัวเอง = นับซ้ำ 2 รอบ)
   for(const r of _pPeer){
-    if ((++_n & 2047) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
+    if ((++_n & 255) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
     const k=jobKey(vno,lot);
@@ -16846,7 +17012,7 @@ function* _wipGen(){
   // scrap ต่อ (valve::lot) จาก KPI/shift records — ชิ้นที่ "เสียแล้ว" ไม่นับเป็น WIP
   const scrapByJob={};
   for(const r of _kPeer){         // ★ scrap ของงานข้ามสาย ต้องหักรวมกันทั้งล็อต
-    if ((++_n & 2047) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
+    if ((++_n & 255) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
     const vno=(r.valve_no||r.valveNo||'').trim(), lot=(r.lot||'').trim();
     if(!vno) continue;
     const jk=jobKey(vno,lot);
@@ -16859,13 +17025,14 @@ function* _wipGen(){
   // wipInFirst = ใบแรกของแต่ละล็อต เก็บไว้ใช้ valve/lot ตัวจริง + วันที่รับเข้า (ตอนยังไม่มี prodRecord)
   const wipInByJob={}, wipInFirst={};
   for(const e of _wipinList()){
+    if ((++_n & 255) === 0 && _sliceDue()) yield;   // ⚡ v3.92 พักให้จอ (ลูปนี้เดิมไม่มีจุดพัก)
     const jk=jobKey(e.valve,e.lot);
     wipInByJob[jk]=(wipInByJob[jk]||0)+(Number(e.qty)||0);
     if(!wipInFirst[jk] || String(e.ts||'')<String(wipInFirst[jk].ts||'')) wipInFirst[jk]=e;
   }
   // ★ ตัวอ้างอิงข้ามสาย — งานรับเข้าที่ VSM4 แล้วไปผลิตต่อ VSM3 (หรือกลับกัน) ยังมีฐานยอดที่ถูกต้อง
   const wipInByJobPeer={};
-  if(_peer){ for(const e of _wipinListPeer()){ const jk=jobKey(e.valve,e.lot); wipInByJobPeer[jk]=(wipInByJobPeer[jk]||0)+(Number(e.qty)||0); } }
+  if(_peer){ for(const e of _wipinListPeer()){ if ((++_n & 255) === 0 && _sliceDue()) yield; const jk=jobKey(e.valve,e.lot); wipInByJobPeer[jk]=(wipInByJobPeer[jk]||0)+(Number(e.qty)||0); } }
 
   /* เจ้าของงาน WIP = สายที่ทำ "process ไกลสุด" ล่าสุด → งานหนึ่งล็อตโผล่เป็น WIP สายเดียวเท่านั้น
      (ถ้าไม่ล็อกเจ้าของ งานข้ามสายจะถูกนับเป็น WIP ทั้ง VSM3 และ VSM4 = ยอดเกินจริงเท่าตัว) */
@@ -17091,6 +17258,8 @@ const _nextTask=(()=>{
   ch.port1.onmessage=()=>{ const fn=q.shift(); if(fn) fn(); };
   return fn=>{ q.push(fn); ch.port2.postMessage(0); };
 })();
+/* ⚡ v3.92 จุดเช็คเวลาในลูปของ generator ถี่ขึ้น: ทุก 256 แถว (เดิม 2048) — มือถือช้า 2048 แถว ≈ 100–140 ms
+   = พักไม่ทันงบ 8 ms จนเป็น long task · performance.now() ทุก 256 แถวแทบไม่มีต้นทุน */
 function _runSliced(gen, budget=8){
   return new Promise((resolve,reject)=>{
     const step=()=>{
@@ -17136,6 +17305,9 @@ function _wipOutRangeRows(b, from, to){
 }
 /* ── เรนเดอร์การ์ด 3 ถัง (หน้าติดตามงาน) + แถบ IOT เต็มจอ ── */
 function renderWipBuckets(){
+  /* ⚡ v3.92 ยังไม่เคยคิดเลย (เปิดแอปใหม่) → คิดแบบแบ่งช่วงเบื้องหลัง แล้ว _wipViewsRefresh() วาดให้เอง
+     เดิมรอบแรกคิดรวดเดียว (getWipBuckets) ≈ 0.4 วิบนมือถือ ค้างจอตอนเปิดแอป/แตะหน้าติดตามงานครั้งแรก */
+  if(!_lastWipBuckets){ _wbKick(); return; }
   const b=getWipBucketsView();   // ⚡ v3.81 แสดงผล = ยอดล่าสุดที่มี + คิดใหม่เบื้องหลัง
   const set=(id,v)=>{ const el=$(id); if(el) el.textContent=nn(v); };
   set('wbIn', b.wipIn.total); set('wbWip', b.wip.total); set('wbOut', _wipOutCurMonth(b));
@@ -17444,6 +17616,7 @@ function showCustInMonth(grp){
 /* สรุปใต้ฟอร์ม "เข้ายอด WIP IN 1.5" (หน้าบันทึกข้อมูล) */
 function renderWipInSummary(){
   const el=$('wipInSummary'); if(!el) return;
+  if(!_lastWipBuckets){ _wbKick(); if(!el.textContent.trim()) el.textContent='⏳ '+TF('กำลังคำนวณยอด WIP IN…','Computing WIP IN…'); return; }   // ⚡ v3.92 ดู renderWipBuckets
   const b=getWipBucketsView();
   const pending=b.wipIn.items.filter(i=>!i.started);
   el.innerHTML=`${TF('รับเข้าที่ยังไม่เริ่มผลิต','Received, not yet started')} <b>${nn(pending.length)}</b> ${TT('รายการ','items')} · <b>${nn(b.wipIn.total)}</b> ${TT('ชิ้น','pcs')}`;
@@ -19171,6 +19344,15 @@ function _homeSig() {
   return s;
 }
 async function renderHome(opts) {
+  /* ⚡ v3.92 — หน้า Dashboard / ติดตามงาน ไม่ได้เปิดอยู่ = ไม่ต้องวาด
+     (ผังเครื่อง + KPI รายโซน + WIP + ตาราง Process ≈ 0.3–0.4 วิต่อรอบบนมือถือ — เดิมวาดตอนเปิดแอป 2–3 รอบ
+      ทั้งที่หน้าแรกคือหน้าบันทึก) · setPane('home'|'prod') เรียก renderHome() ให้เองทุกครั้งที่เปิด
+     (auto-refresh ก็เช็คหน้าที่เปิดอยู่แบบเดียวกัน) · เหลือวาดเฉพาะสรุป WIP IN 1.5 ที่อยู่บนหน้าบันทึก */
+  const _act = document.querySelector('section.pane.active')?.id;
+  if (_act !== 'pane-home' && _act !== 'pane-prod' && !document.querySelector('#iotCard.iot-fs')) {
+    if (_act === 'pane-kpi') { try { renderWipInSummary(); } catch (e) {} }
+    return;
+  }
   /* ★ 2026-08-03 — บอกสถานะทุกครั้งที่กำลังเตรียม/ดึงข้อมูล
      เดิม: _paintHome() คำนวณ 3 ถัง WIP + ตาราง Process จากข้อมูลหมื่นแถวแบบ sync
            แล้วต่อด้วยการดึง Cloud อีก 3 ก้อน — ทั้งหมดเงียบ ผู้ใช้เห็นจอค้าง */
@@ -19199,13 +19381,20 @@ async function renderHome(opts) {
     const dFrom = $('dashFrom')?.value || today;
     const dTo   = $('dashTo')?.value   || today;
     const shiftF = state.shiftFilter || 'all';
+    /* ⚡ v3.92 — ชุด 30 วันเพิ่งซิงก์ครบ (≤ 60 วิ) และช่วงของ Dashboard อยู่ในชุดนั้น = state สดอยู่แล้ว ไม่ต้องดึงซ้ำ
+       เปิดแอป: reload() ซิงก์ชุด 30 วันเสร็จแล้วเรียก renderHome() ทันที → เดิมยิง /api/kpi (วันนี้) 2 คำขอ URL เดียวกัน
+       + /api/records (วันนี้) อีก 1 ได้แต่แถวที่เพิ่งได้มา (~350 KB ดิบ + parse บนมือถือ) */
+    const _wk = _win.kpi, _wp = _win.prod, _fresh = w => !!(w && (Date.now() - (w.syncedAt || 0)) < 60000);
+    if (_fresh(_wk) && _fresh(_wp) && dFrom >= _wk.from && dFrom >= _wp.from && dTo <= today) return;
     const kp = new URLSearchParams({ from: dFrom, to: dTo, limit: '50000' });
     if (shiftF !== 'all') kp.set('shift', shiftF);
     // 2) ดึงเบื้องหลัง (ไม่บล็อก paint) — dashboard range + วันนี้ (records+kpi)
+    const kRangeP = api('/api/kpi?' + kp).catch(()=>null);
+    const kTodayQ = new URLSearchParams({ from: today, to: today, limit: '50000' });
     const [kRange, p, kToday] = await Promise.all([
-      api('/api/kpi?' + kp).catch(()=>null),
+      kRangeP,
       api(`/api/records?from=${today}T00:00:00&to=${today}`).catch(()=>null),
-      api(`/api/kpi?from=${today}&to=${today}&limit=50000`).catch(()=>null),
+      kp.toString() === kTodayQ.toString() ? kRangeP : api('/api/kpi?' + kTodayQ).catch(()=>null),   // ⚡ v3.92 URL เดียวกัน = ใช้คำตอบเดียว
     ]);
     // 3) merge เข้า state (ตัด tombstone + การันตี record_id — mergeRecords ตัวเดียวกับ auto-sync)
     // ⚡ v3.80 เฉพาะเมื่อมีแถวใหม่/ถูกแก้จริง — ไม่งั้นทุกครั้งที่สลับหน้า = ล้าง cache ยอด WIP แล้วคิดใหม่ทั้งก้อน
@@ -19228,6 +19417,7 @@ async function renderHome(opts) {
 }
 
 function _paintHome(localOnly) {
+  try { _fpCardW(); } catch (e) {}   // ⚡ v3.92 วัดความกว้างผังตอนนี้ (layout ยังสะอาด = ไม่มีต้นทุน) ก่อนเขียนการ์ดใด ๆ
   // อ่าน date range จาก UI (มีในแท็บ Dashboard KPI)
   const today = todayISO();
   const dFrom = $('dashFrom')?.value || today;
@@ -19585,7 +19775,7 @@ function mcHtml(zone, mi, m) {
       </div>
       <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
     </div>
-    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}${_shiftAddBtns(pid)}</div>
+    <div class="mc-body" id="${pid}_body" data-lazy="1"></div>
     <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
   </div>`;
 }
@@ -19613,7 +19803,7 @@ function lineHtml(zone, lineKey) {
       </div>
       <label class="sw"><input type="checkbox" id="${pid}_on" onchange="toggleMc('${pid}')"><span class="sw-sl"></span></label>
     </div>
-    <div class="mc-body" id="${pid}_body">${shiftHtml(pid, 0, m, opts)}${_shiftAddBtns(pid)}</div>
+    <div class="mc-body" id="${pid}_body" data-lazy="1"></div>
     <div class="mc-off-lbl" id="${pid}_off">ปิด — ไม่ผลิตในกะนี้</div>
   </div>`;
 }
@@ -19758,8 +19948,21 @@ function _unitInfo(pid) {
 
 let _unitShiftCount = {};   // pid → จำนวนช่วงเวลา (แทน zoneShiftCount เดิม)
 
+/* ⚡ v3.92 — ฟอร์มกรอกของเครื่อง (ช่วงเวลา/พนักงาน/Lot/Process) สร้างตอน "เปิดสวิตช์ครั้งแรก" เท่านั้น
+   เดิม renderZone สร้างฟอร์มเต็มให้ทุกเครื่องในโซน (ZONE1 = 29 เครื่อง · HTML 266 KB · 6,000+ element)
+   ทั้งที่เครื่องที่ปิดอยู่ซ่อนฟอร์มไว้ → เปิดแอปค้าง ~0.5 วิบนมือถือทุกครั้ง (งานก้อนใหญ่ที่สุดตอนบูต)
+   ทุกจุดที่อ่านฟอร์ม (บันทึก / ตรวจของค้าง / ตรวจกะ) ข้ามเครื่องที่สวิตช์ปิดอยู่แล้ว · เปิดได้ทางเดียวคือ toggleMc (รวม mcJump) */
+function _mcBodyEnsure(pid) {
+  const body = $(pid + '_body');
+  if (!body || !body.dataset.lazy) return body;
+  const u = _unitInfo(pid);
+  body.innerHTML = shiftHtml(pid, 0, u.m, u.opts) + _shiftAddBtns(pid);
+  delete body.dataset.lazy;
+  return body;
+}
 function toggleMc(pid) {
   const on   = $(pid + '_on').checked;
+  if (on) _mcBodyEnsure(pid);
   $(pid + '_body').classList.toggle('show', on);
   $(pid + '_off').style.display = on ? 'none' : 'block';
   if (on) { _formDirty = true; _updateFabState(); _prefillSlot0(pid); }
@@ -21086,18 +21289,21 @@ async function _saveKpiImpl() {
 
   // 3) ถ้ามี API ลอง sync ไป D1
   if (API) {
-    showBusy('กำลังบันทึกขึ้น Cloud…');
+    /* ⚡ v3.92 Optimistic UI — ข้อมูลลงเครื่อง + จอรีเซ็ตแล้วตั้งแต่ข้อ 1-2 → ไม่ต้องบังจอทั้งจอรอ Cloud อีก
+       (เดิม showBusy บังหน้าจอ 0.5-3 วิบน 4G ทุกครั้งที่บันทึก) เหลือแค่ป้ายลอย "กำลังส่งขึ้น Cloud" ใช้งานต่อได้เลย
+       ส่งไม่ผ่าน = ทางเดิมทุกอย่าง (หมาย _unsynced + ป๊อปอัปแจ้ง + auto re-sync) */
+    loadOn('kpisave', '☁️ ' + TT('กำลังส่งขึ้น Cloud…', 'Sending to Cloud…'));
     let kpiOk = false;
     try {
       const kres = await api('/api/kpi', { body: { records } });
       kpiOk = true;
       if (prodRecs.length) await api('/api/records/bulk', { body: { records: prodRecs } });
-      hideBusy();
+      loadOff('kpisave');
       setConnBadge('online');   // ขึ้น Cloud ได้จริง → badge = online
       // จำนวนที่ Worker "ยืนยันว่าเขียนลง D1 แล้วจริง" — ไม่ใช่แค่ส่งออกไป
       toast(`✅ Cloud ยืนยันบันทึกแล้ว ${kres?.count ?? records.length} record (${slotsRead} ช่วงเวลา)`, 'green');
     } catch (e) {
-      hideBusy();
+      loadOff('kpisave');
       // หมายเฉพาะชนิดที่ยังไม่ขึ้น Cloud → auto re-sync จะส่งให้เองเมื่อเน็ตกลับมา (กันส่งซ้ำ/ซ้อน)
       if (!kpiOk) records.forEach(r => r._unsynced = true);
       prodRecs.forEach(r => r._unsynced = true);
@@ -23127,18 +23333,22 @@ async function deleteKpiRecord(rid) {
     }
   };
   if (API) {
-    showBusy('กำลังลบจากฐานข้อมูล…');
+    // ⚡ v3.92 Optimistic — หายจากจอทันที · ฐานข้อมูลไม่รับ = ใส่คืนตำแหน่งเดิม + ถอน tombstone (_recPos/_recUndel)
+    const _kSave = _recPos(state.kpiRecords, [rid]), _pSave = _recPos(state.prodRecords, linked.map(r => r.record_id));
+    removeLocal(); _renderHistLocal();
+    loadOn('histsave', '🗑 ' + TT('กำลังลบจากฐานข้อมูล…', 'Deleting from database…'));
     try {
       // prod_ids: แถวที่ยังไม่ได้กดซ่อม คอลัมน์ kpi_record_id ใน D1 ยังว่าง → Worker หาไม่เจอ
       //   ต้องบอก id ตรง ๆ ไม่งั้นเครื่องนี้เห็นลบแล้ว แต่เครื่องอื่นยังเห็นยอดค้างใน D1
       const dres = await api('/api/kpi/delete', { body: { record_id: rid, prod_ids: linked.map(r => r.record_id).filter(Boolean) } });
-      hideBusy();
-      removeLocal();                    // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
+      loadOff('histsave');
       toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.prod_deleted ? ` · ยอดผลิตที่ผูกกัน ${dres.prod_deleted} รายการ` : ''}`, 'green');
       await loadHistory();              // reload ข้อมูลสดหลังลบสำเร็จ
     } catch (e) {
-      hideBusy();
-      toast('❌ ลบไม่สำเร็จ — ข้อมูลยังอยู่ทั้ง Local และฐานข้อมูล: ' + e.message, 'red');
+      loadOff('histsave');
+      _recUndel('kpi', _kSave); _recUndel('prod', _pSave);
+      _renderHistLocal();
+      toast('❌ ลบไม่สำเร็จ — คืนรายการแล้ว (ข้อมูลยังอยู่ทั้ง Local และฐานข้อมูล): ' + e.message, 'red');
     }
   } else {
     removeLocal(); _renderHistLocal();
@@ -23168,17 +23378,28 @@ async function deleteProdRecord(rid) {
     }
   };
   if (API) {
-    showBusy('กำลังลบจากฐานข้อมูล…');
+    /* ⚡ v3.92 Optimistic — หายจากจอทันที · KPI คู่ 1:1 เดาไว้ก่อนแบบเดียวกับโหมด offline (Worker เป็นคนตัดสินจริง)
+       ฐานข้อมูลตอบไม่ตรงที่เดา → ปรับตามคำตอบ · ไม่รับเลย = ใส่คืนตำแหน่งเดิม + ถอน tombstone */
+    const _guessKpi = !!(kid && sibs <= 1);
+    const _pSave = _recPos(state.prodRecords, [rid]), _kSave = _recPos(state.kpiRecords, kid ? [kid] : []);
+    removeLocal(_guessKpi); _renderHistLocal();
+    loadOn('histsave', '🗑 ' + TT('กำลังลบจากฐานข้อมูล…', 'Deleting from database…'));
     try {
       // cascade:true = ผู้ใช้กดลบจากหน้าประวัติและยืนยันแล้ว (Worker ไม่ลบ KPI ให้ถ้าไม่ส่งธงนี้)
       const dres = await api('/api/records/delete', { body: { record_id: rid, cascade: true } });
-      hideBusy();
-      removeLocal(!!dres?.kpi_deleted);  // ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ
-      toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${dres?.kpi_deleted ? ' · ลบ KPI ที่ผูกกันด้วย' : ''}`, 'green');
+      loadOff('histsave');
+      const _kDel = !!dres?.kpi_deleted;
+      if (_kDel && !_guessKpi && kid) {                     // Worker ลบ KPI ด้วย ทั้งที่เดาว่าไม่ลบ
+        state.kpiRecords = state.kpiRecords.filter(r => r.record_id !== kid);
+        lsSave(LS.KPI, state.kpiRecords); _deletedKpiIds.add(kid); _saveTombstones();
+      } else if (!_kDel && _guessKpi) _recUndel('kpi', _kSave);   // เดาว่าลบ แต่ Worker เก็บ KPI ไว้
+      toast(`✅ ฐานข้อมูลยืนยันการลบแล้ว${_kDel ? ' · ลบ KPI ที่ผูกกันด้วย' : ''}`, 'green');
       await loadHistory();
     } catch (e) {
-      hideBusy();
-      toast('❌ ลบไม่สำเร็จ — ข้อมูลยังอยู่ทั้ง Local และฐานข้อมูล: ' + e.message, 'red');
+      loadOff('histsave');
+      _recUndel('prod', _pSave); if (_guessKpi) _recUndel('kpi', _kSave);
+      _renderHistLocal();
+      toast('❌ ลบไม่สำเร็จ — คืนรายการแล้ว (ข้อมูลยังอยู่ทั้ง Local และฐานข้อมูล): ' + e.message, 'red');
     }
   } else {
     removeLocal(kid && sibs <= 1); _renderHistLocal();
@@ -23329,6 +23550,9 @@ async function saveKpiEdit() {
   }
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
   const r = state.kpiRecords[idx];
+  /* ⚡ v3.92 ถ่ายสำเนาไว้ "ก่อน" สร้าง patch — _shiftsArr(r) คืนอาร์เรย์ตัวจริงของ record (ถ้าไม่ใช่สตริง JSON)
+     แล้ว _shArr[0] = … ข้างล่างเขียนทับในที่ → ฐานข้อมูลไม่รับ ต้องคืนจากสำเนานี้ถึงจะครบทุกช่อง */
+  const _snapsEarly = _snapRecs([r, ...state.prodRecords.filter(p => p.kpi_record_id === rid)]);
   const newOpr    = fnum($('editKpiOpr').value);
   const newScrap  = +($('editKpiScrap').value  || 0);
   // FIX 8: read new fields Target, CT, time_start, time_end
@@ -23411,21 +23635,28 @@ async function saveKpiEdit() {
     }
   };
   if (API) {
-    showBusy('กำลังบันทึกการแก้ไขลงฐานข้อมูล…');
+    // prod_ids — เหตุผลเดียวกับตอนลบ: แถวที่ยังไม่ซ่อม คอลัมน์เชื่อมใน D1 ยังว่าง
+    //   ส่ง id ไปด้วย Worker จะแก้ให้ตรง id + เขียนคีย์เชื่อมให้ถาวรไปในตัว
+    const _linked = state.prodRecords.filter(r => r.kpi_record_id === rid);
+    const _pids = _linked.map(r => r.record_id).filter(Boolean);
+    // ⚡ v3.92 Optimistic — แก้ในเครื่อง + ปิดหน้าต่างทันที · ฐานข้อมูลไม่รับ = คืนค่าเดิม (ดู _snapRecs)
+    const _snaps = _snapsEarly;
+    applyLocal();
+    closeModal(); _renderHistLocal();
+    loadOn('histsave', '☁️ ' + TT('กำลังบันทึกการแก้ไขลงฐานข้อมูล…', 'Saving edit to database…'));
     try {
-      // prod_ids — เหตุผลเดียวกับตอนลบ: แถวที่ยังไม่ซ่อม คอลัมน์เชื่อมใน D1 ยังว่าง
-      //   ส่ง id ไปด้วย Worker จะแก้ให้ตรง id + เขียนคีย์เชื่อมให้ถาวรไปในตัว
-      const _pids = state.prodRecords.filter(r => r.kpi_record_id === rid).map(r => r.record_id).filter(Boolean);
       const res = await api('/api/kpi/update', { body: { ...patch, prod_ids: _pids } });
-      hideBusy();
       if (!res || !res.updated) throw new Error('ฐานข้อมูลไม่พบ record นี้');
-      applyLocal();                       // Worker ยืนยันแล้วเท่านั้นจึงแตะหน้าจอ
-      closeModal(); loadHistory();
+      loadOff('histsave');
+      loadHistory();
       toast('✅ ฐานข้อมูลยืนยันการแก้ไขแล้ว', 'green');
     } catch (e) {
-      hideBusy();
-      toast('❌ แก้ไขไม่สำเร็จ — ฐานข้อมูลยังเป็นค่าเดิม: ' + e.message, 'red');
-      // ไม่แตะ local/หน้าจอ — ผู้ใช้กดบันทึกซ้ำได้จาก modal เดิม
+      loadOff('histsave');
+      _unsnapRecs(_snaps);
+      lsSave(LS.KPI, state.kpiRecords);
+      if (_linked.length) lsSave(LS.PROD_REC, state.prodRecords);
+      _renderHistLocal();
+      toast('❌ แก้ไขไม่สำเร็จ — คืนค่าเดิมแล้ว (ฐานข้อมูลยังเป็นค่าเดิม): ' + e.message, 'red');
     }
   } else {
     applyLocal();
@@ -23568,17 +23799,26 @@ async function saveProdEdit() {
     if (typeof renderUnknownProcs === 'function') renderUnknownProcs();   // refresh รายการ process พิมพ์เอง ถ้าหน้าตั้งค่าเปิดอยู่
   };
   if (API) {
-    showBusy('กำลังบันทึกการแก้ไขลงฐานข้อมูล…');
+    // ⚡ v3.92 Optimistic — แก้ในเครื่อง + ปิดหน้าต่างทันที · ฐานข้อมูลไม่รับ = คืนค่าเดิม (ดู _snapRecs)
+    const _kid = String(state.prodRecords[idx].kpi_record_id || '').trim();
+    const _kRec = _kid ? state.kpiRecords.find(x => x.record_id === _kid) : null;
+    const _snaps = _snapRecs([state.prodRecords[idx], _kRec]);
+    applyLocal();
+    closeModal(); _renderHistLocal(); _refreshSpIfOpen();
+    loadOn('histsave', '☁️ ' + TT('กำลังบันทึกการแก้ไขลงฐานข้อมูล…', 'Saving edit to database…'));
     try {
       const res = await api('/api/records/update', { body: patch });
-      hideBusy();
       if (!res || !res.updated) throw new Error('ฐานข้อมูลไม่พบ record นี้');
-      applyLocal();                       // Worker ยืนยันแล้วเท่านั้นจึงแตะหน้าจอ
-      closeModal(); loadHistory(); _refreshSpIfOpen();
+      loadOff('histsave');
+      loadHistory();
       toast('✅ ฐานข้อมูลยืนยันการแก้ไขแล้ว', 'green');
     } catch (e) {
-      hideBusy();
-      toast('❌ แก้ไขไม่สำเร็จ — ฐานข้อมูลยังเป็นค่าเดิม: ' + e.message, 'red');
+      loadOff('histsave');
+      _unsnapRecs(_snaps);
+      lsSave(LS.PROD_REC, state.prodRecords);
+      if (_kRec) lsSave(LS.KPI, state.kpiRecords);
+      _renderHistLocal(); _refreshSpIfOpen();
+      toast('❌ แก้ไขไม่สำเร็จ — คืนค่าเดิมแล้ว (ฐานข้อมูลยังเป็นค่าเดิม): ' + e.message, 'red');
     }
   } else {
     applyLocal();
@@ -25481,8 +25721,12 @@ function syncMcProcFromCloud(targets) {
     const id = k.slice(MCPROC_PREFIX.length);
     sharedIds.add(id);
     const name = procFromCode(v);
-    if (name && _machineProc[id] !== name) { _machineProc[id] = name; changed = true; _procVocabDirty(); }
+    /* ⚡ v3.92 ล้างตาราง vocabulary "ครั้งเดียวหลังจบลูป" (เดิมล้างทุกเครื่องที่เปลี่ยน → สร้างใหม่ทั้งชุดทุกรอบ
+       เครื่องใหม่ / ล้าง cache = ทุกเครื่องเปลี่ยน → ~0.8 วิบนมือถือ) · ผลเท่าเดิม: name มาจาก vocabulary อยู่แล้ว
+       ใส่ลง _machineProc ไม่ทำให้ชุดชื่อ/ลำดับเปลี่ยน → ตาราง เลข→ชื่อ เหมือนเดิมทุกตัว */
+    if (name && _machineProc[id] !== name) { _machineProc[id] = name; changed = true; }
   }
+  if (changed) _procVocabDirty();
   // migrate: process ที่ตั้งไว้ในเครื่องนี้แต่ cloud ยังไม่มี → ดันขึ้นให้เครื่องอื่นเห็น
   const migrate = {};
   for (const [id, p] of Object.entries(_machineProc)) {
@@ -25723,7 +25967,7 @@ function* _postFgAllGen(recs) {
   const groups = {};
   // record ที่ไม่ได้ระบุเบอร์วาล์ว → รวมไว้ใต้ชื่อเดียวกับ "Output ของ Process" (เดิมทิ้งทั้งก้อน = ยอดผ่าน FG หายเงียบ)
   for (const r of (recs || [])) {
-    if ((++_n & 2047) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
+    if ((++_n & 255) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
     const vno = (r.valve_no || r.valveNo || '').trim() || NO_VALVE;
     const lot = (r.lot || '').trim();
     (groups[vKey(vno) + '::' + lotKey(lot)] = groups[vKey(vno) + '::' + lotKey(lot)] || []).push(r);
@@ -31069,6 +31313,7 @@ function _showUpdateBar() {
    GO
    ============================================================ */
 init();
+document.documentElement.classList.add('app-ready');   // ⚡ v3.92 วาดรอบแรกเสร็จ → ปลดโครงร่าง + เปิดให้กดได้ (ดู CSS html:not(.app-ready))
 </script>
 </body>
 </html>

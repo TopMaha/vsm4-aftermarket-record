@@ -1,0 +1,11 @@
+{
+  "name": "vsm4-aftermarket-record",
+  "private": true,
+  "description": "Deploy-time build only: index.html stays the single editable source. `npm run build` → _site/ (what GitHub Pages serves).",
+  "scripts": {
+    "build": "node tools/build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
