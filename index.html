@@ -322,6 +322,16 @@ input:checked+.sw-sl:before{transform:translateX(20px)}
 @media(max-width:520px){
   .ml-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 38px;grid-template-areas:"lot lot lot del" "opr tgt sc sc";row-gap:6px}
 }
+/* v3.90 — หลาย Lot ในช่วงเดียว (.ml-at): ช่อง Target ซ่อน · ระบบแบ่งเวลา + คำนวณ Target ให้ (แถบเขียวใต้แต่ละ Lot) */
+.ml-calc{grid-area:calc;display:none;font-size:11px;font-weight:700;color:#065F46;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:4px 7px;line-height:1.45}
+.ml-calc.ml-calc-wait{color:var(--muted);background:#F1F5F9;border-color:#E2E8F0}
+.ml-box.ml-at .ml-row{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 34px;grid-template-areas:"lot opr sc del" "calc calc calc calc"}
+.ml-box.ml-at .ml-tgt{display:none}
+.ml-box.ml-at .ml-calc{display:block}
+.ml-box.ml-at .ml-calc:empty{display:none}
+@media(max-width:520px){
+  .ml-box.ml-at .ml-row{grid-template-columns:minmax(0,1fr) minmax(0,.8fr) 38px;grid-template-areas:"lot lot del" "opr sc sc" "calc calc calc"}
+}
 .time-row{display:flex;align-items:center;gap:5px}
 .time-row select{flex:1;padding:7px;border:1.5px solid var(--blue-soft);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--text);outline:none}
 .time-sep{font-size:13px;font-weight:800;color:var(--muted)}
@@ -2722,7 +2732,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.89</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.90</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10523,7 +10533,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.89":"Production Record + KPI · v3.89",
+"ระบบบันทึกผลิต + KPI · v3.90":"Production Record + KPI · v3.90",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -19605,10 +19615,75 @@ function _slotSig(sid) {
 /* ── v3.71 — ตาราง Lot ในทุกช่วง (1 แถว = 1 Lot · วาล์ว/เวลา/พนักงาน/CT/Process ชุดเดียวของช่วง) ──
    ตอนบันทึกแตกเป็น 1 record ต่อ 1 Lot (โครงข้อมูลเดิม) ⇒ Production Tracker ยังผูกราย Lot ได้ตามเดิม
    · 1 แถว  = บันทึกเหมือนฟอร์มเดิมทุกอย่าง (Target ว่าง → ใช้ Target เครื่อง · WT เต็มช่วง)
-   · หลายแถว = WT ของช่วงแบ่งให้แต่ละ Lot ตามสัดส่วน OPR (ΣWT = WT ของช่วงพอดี → PPLH/DLE รวมไม่เพี้ยน)
-              Target: พนักงานกรอกเองทุก Lot · ไม่ใช้ Target เครื่องแทนช่องว่าง
-              (ถ้าใช้ Target เครื่องเต็ม ๆ ทุก Lot ΣTarget จะบวม N เท่า) → ว่าง = popup เด้ง "Target ยังไม่ลง" */
+   · หลายแถว = v3.90: ระบบแบ่ง "ช่วงเวลา" ให้แต่ละ Lot ตามสัดส่วน OPR + คำนวณ Target เอง (ช่อง Target ซ่อน) — ดู _mlSplit
+              (เดิม v3.71: ทุก Lot ได้เวลาเต็มช่วง · WT แบ่งตาม OPR · Target พนักงานกรอกเองทุก Lot) */
 const ML_MAX_ROWS = 20;
+/* ── v3.90 (ผู้ใช้ขอ 21/10) — Valve เดียวหลาย Lot ในช่วงเดียว: แบ่งเวลา + คำนวณ Target ให้แต่ละ Lot ──
+   เดิม: VF1349 08:00–20:00 · 3 Lot → ทั้ง 3 record ลงเวลา 08:00–20:00 (ดูเหมือนแต่ละ Lot ใช้ 12 ชม.)
+   ใหม่: ช่วงเวลาถูกแบ่งตามลำดับแถว Lot · ยาวตามสัดส่วน OPR (ผู้ใช้เลือก 21/10 แทนแบ่งเท่ากัน —
+         แบ่งเท่ากัน Lot ยอดมากเกิน Target · 160 จาก 275 ช่วงหลาย Lot ใน 30 วันล่าสุด เช่น G-229 ยอด 265/3,000/265)
+         3 Lot × 1,000 ใน 08:00–20:00 → 08:00–12:00 · 12:00–16:00 · 16:00–20:00
+     Target = 3600 ÷ CT × ชม.ของ Lot (ชม.เต็ม ไม่หักพัก — กติกาเดียวกับ _ctCap) → CT 10 × 4 ชม. = 1,440
+       แจกจาก "ทำได้ตาม CT ของทั้งช่วง" ตามสัดส่วน OPR (เศษปัดแบบ largest remainder) → ΣTarget = _ctCap ของช่วงพอดี
+       และ Target ของแต่ละ Lot ≥ OPR เสมอ ถ้ายอดรวมไม่เกินที่ทำได้ตาม CT (เกิน = เตือนระดับช่วงอยู่แล้ว)
+     WT = calcWT ของช่วงย่อย (หักพักเฉพาะที่อยู่ในช่วงของ Lot นั้น) → ΣWT = WT ของทั้งช่วง · หน้าแก้ไข KPI คิด WT จากเวลาของ record เองได้ตรง
+   เวลาปัดเป็นนาที · แต่ละ Lot ได้อย่างน้อย 1 นาที · เวลาว่าง/ผิด (เกิน 12 ชม. ฯลฯ) → [] (error เรื่องเวลาแจ้งระดับช่วง)
+   rows = แถวที่ลงยอดแล้ว (เรียงตามตาราง) · คืน [{ ts, te, min, hr, wt, target }] ลำดับเดียวกับ rows */
+function _mlSplit(ts, te, ct, rows) {
+  const n = rows.length;
+  if (!n || !ts || !te || _slotTimeErr(ts, te)) return [];
+  const tm = t => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
+  const sm = tm(ts); let em = tm(te); if (em < sm) em += 1440;
+  const T = em - sm;
+  const tot = rows.reduce((a, r) => a + (r.opr > 0 ? r.opr : 0), 0);
+  const w = rows.map(r => tot > 0 ? Math.max(r.opr, 0) / tot : 1 / n);
+  // จุดแบ่งเวลา (นาที) — สะสมตามสัดส่วน แล้วบังคับให้ทุก Lot ได้ ≥ 1 นาที (เมื่อช่วงยาวพอ)
+  const b = [sm]; let acc = 0;
+  for (let i = 0; i < n - 1; i++) { acc += w[i]; b.push(sm + Math.round(T * acc)); }
+  b.push(em);
+  if (T >= n) {
+    for (let i = 1; i < n; i++) b[i] = Math.max(b[i], b[i - 1] + 1);
+    for (let i = n - 1; i >= 1; i--) b[i] = Math.min(b[i], b[i + 1] - 1);
+  }
+  const fmt = m => { m = ((m % 1440) + 1440) % 1440; return `${P(Math.floor(m / 60))}:${P(m % 60)}`; };
+  // Target: แจก _ctCap ของทั้งช่วงตามสัดส่วน OPR (largest remainder → ผลรวมตรงพอดี)
+  const cap = _ctCap(ct, T / 60);
+  const raw = w.map(x => cap * x), tg = raw.map(Math.floor);
+  let left = cap - tg.reduce((a, x) => a + x, 0);
+  raw.map((x, i) => [x - tg[i], i]).sort((a, c) => c[0] - a[0] || a[1] - c[1]).forEach(([, i]) => { if (left > 0) { tg[i]++; left--; } });
+  return rows.map((r, i) => {
+    const a = fmt(b[i]), e = fmt(b[i + 1]);
+    const { hr, wt } = calcWT(a, e);
+    return { ts: a, te: e, min: b[i + 1] - b[i], hr, wt, target: cap ? Math.max(tg[i], 1) : 0 };
+  });
+}
+/* ระยะเวลาอ่านง่าย: 240 → "4 ชม." · 54 → "54 นาที" · 612 → "10 ชม. 12 นาที" */
+function _mlDur(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? `${h} ${TT('ชม.', 'h')}${m ? ` ${m} ${TT('นาที', 'min')}` : ''}` : `${m} ${TT('นาที', 'min')}`;
+}
+/* โหมดหลาย Lot ของช่วงนี้ (ลงยอดแล้ว > 1 แถว) = ช่อง Target ซ่อน · ระบบคำนวณให้ */
+function _mlAutoOn(sid) { return _mlRows(sid).filter(r => !r.untouched).length > 1; }
+/* วาดแถบ "🕐 เวลา · Target" ใต้แต่ละ Lot + สลับคลาส .ml-at ของกล่อง — เรียกจาก updShiftTotal (ทุกครั้งที่เวลา/CT/ยอดเปลี่ยน) */
+function _mlCalcUi(sid, ts, te, ct) {
+  const box = $(sid + '_ml'); if (!box) return null;
+  const rows = _mlRows(sid), live = rows.filter(r => !r.untouched), on = live.length > 1;
+  box.classList.toggle('ml-at', on);
+  const parts = on ? _mlSplit(ts, te, ct, live) : [];
+  const at = new Map(live.map((r, i) => [r.rid, parts[i]]));
+  for (const r of rows) {
+    const el = $(r.rid + '_calc'); if (!el) continue;
+    const p = on && at.get(r.rid);
+    const wait = on && live.some(x => x.rid === r.rid) && !(p && p.target);   // เวลา/CT ยังไม่ลงหรือผิด
+    el.classList.toggle('ml-calc-wait', !!wait);
+    const tgtWait = `🎯 Target ${TT('คำนวณให้เมื่อเวลา + CT ถูกต้อง', 'is calculated once time + CT are valid')}`;
+    el.textContent = p
+      ? `🕐 ${p.ts} – ${p.te} (${_mlDur(p.min)}) · ` + (p.target ? `🎯 Target ${nn(p.target)}` : tgtWait)
+      : (wait ? tgtWait : '');
+    el.title = (p && p.target) ? `Target = 3600 ÷ CT ${+ct} × ${+(p.min / 60).toFixed(2)} ${TT('ชม.', 'h')} ≈ ${nn(p.target)}` : '';
+  }
+  return on ? { n: live.length, parts, tgt: parts.reduce((a, p) => a + p.target, 0) } : null;
+}
 function _mlRowHtml(sid, k, no, tgtPh) {
   const rid = `${sid}_ml${k}`;
   const key = f => `onkeydown="_mlKey(event,'${sid}','${rid}','${f}')"`;
@@ -19625,6 +19700,7 @@ function _mlRowHtml(sid, k, no, tgtPh) {
     <div class="ml-f ml-sc"><label class="ml-lb" for="${rid}_sc">Scrap ${TT('ชิ้นเสีย','reject pcs')}</label>
       <input type="number" min="0" id="${rid}_sc" placeholder="0" enterkeyhint="next" oninput="_mlTouch('${sid}')" ${key('sc')}></div>
     <button type="button" class="ml-del" onclick="mlDelRow('${sid}','${rid}')" title="${TT('ลบ Lot นี้','Delete this lot')}" aria-label="${TT('ลบ Lot นี้','Delete this lot')}">✕</button>
+    <div class="ml-calc" id="${rid}_calc"></div>
   </div>`;
 }
 /* อ่านแถวในตาราง · untouched = แถวว่าง/แถวที่มีแค่เลขหน้า Lot ที่ระบบเติมให้ (ยังไม่ได้ลงยอด) → ไม่นับ */
@@ -19690,11 +19766,13 @@ function _mlKey(ev, sid, rid, f) {
   // ไปช่องถัดไปด้วยคีย์บอร์ด = ไม่มีคลิกนอกช่อง → ตัวปิด dropdown กลาง (document click) ไม่ทำงาน ต้องปิดเอง
   $(rid + '_lot_dd')?.classList.remove('open');
   if (f === 'lot') { $(rid + '_opr')?.focus(); return; }
-  if (f === 'opr') { $(rid + '_tgt')?.focus(); return; }
+  // v3.90: หลาย Lot = ช่อง Target ซ่อน (ระบบคำนวณ) → OPR แล้วไป Lot แถวถัดไปเลย
+  const auto = _mlAutoOn(sid);
+  if (f === 'opr' && !auto) { $(rid + '_tgt')?.focus(); return; }
   const rows = [...($(sid + '_mlrows')?.querySelectorAll('.ml-row') || [])];
   const next = rows[rows.findIndex(r => r.id === rid) + 1];
-  // แถวถัดไปมี Lot+OPR แล้ว (มาจากกล่องเลือก Lot) → ข้ามไปช่อง Target เลย เหลือกรอกแค่ Target
-  if (next && $(next.id + '_opr')?.value && !_mlRowEmpty(next)) { $(next.id + '_tgt')?.focus(); return; }
+  // แถวถัดไปมี Lot+OPR แล้ว (มาจากกล่องเลือก Lot) → ข้ามไปช่อง Target (หลาย Lot = ช่อง OPR ไว้ตรวจยอด)
+  if (next && $(next.id + '_opr')?.value && !_mlRowEmpty(next)) { $(next.id + (auto ? '_opr' : '_tgt'))?.focus(); return; }
   if (next) _mlFocusLot(next.id); else mlAddRow(sid, true);
 }
 /* สแกนบาร์โค้ด → เติม Lot ลงแถวว่างถัดไป (ไม่มี = เพิ่มแถว) · คืนข้อความ error หรือ ''
@@ -19803,7 +19881,7 @@ function openLotPicker(sid) {
   _lp = { sid, items: _lpCandidates(sid), sel: new Set(), q: '', showDone: false };
   const noProc = !_procSel(sid).length && $(sid + '_pchips');
   openModal(`📋 ${TT('เลือก Lot','Pick lots')} · ${valve}`, `
-    <div class="muted" style="font-size:11px;line-height:1.6">${TT('ติ๊ก Lot ที่ผลิตในช่วงนี้ → OPR เติมให้ตามยอดคงเหลือ (แก้ได้) · Target กรอกเองในตาราง','Tick the lots produced in this range → OPR is filled with the remaining qty (editable) · type Target in the table')}
+    <div class="muted" style="font-size:11px;line-height:1.6">${TT('ติ๊ก Lot ที่ผลิตในช่วงนี้ → OPR เติมให้ตามยอดคงเหลือ (แก้ได้) · หลาย Lot = ระบบแบ่งเวลา + คำนวณ Target ให้เอง','Tick the lots produced in this range → OPR is filled with the remaining qty (editable) · several lots = time and Target are calculated for you')}
       ${noProc ? `<br><b style="color:var(--orange)">⚠️ ${TT('ยังไม่ได้เลือก Process — ยอด "ลงแล้ว" คิดไม่ได้ (OPR = ยอดเต็ม Lot)','No process selected — qty already recorded unknown (OPR = full lot)')}</b>` : ''}</div>
     <input type="search" id="lpQ" placeholder="🔎 ${TT('ค้นเลข Lot เช่น 341','Search lot, e.g. 341')}" oninput="_lp.q=this.value;_lpRender()" autocomplete="off"
       style="width:100%;margin-top:8px;padding:10px 12px;border:1.5px solid var(--blue-soft);border-radius:10px;font-size:16px;font-family:inherit">
@@ -19870,8 +19948,12 @@ function _lpApply() {
   }
   _lp = null; closeModal();
   _mlRenum(sid); _mlTouch(sid);
-  if (firstRid) { const t = $(firstRid + '_tgt'); if (t) { try { t.focus(); } catch (e) {} } }
-  if (added) toast(`✓ ${TT('ใส่', 'Added')} ${added} Lot — ${TT('กรอก Target ต่อได้เลย (Enter = Lot ถัดไป)', 'now type the Targets (Enter = next lot)')}`, 'green');
+  // v3.90: หลาย Lot = Target ระบบคำนวณ (ช่องซ่อน) → โฟกัส OPR ไว้ตรวจยอด · Lot เดียว = กรอก Target ต่อเหมือนเดิม
+  const auto = _mlAutoOn(sid);
+  if (firstRid) { const t = $(firstRid + (auto ? '_opr' : '_tgt')); if (t) { try { t.focus(); } catch (e) {} } }
+  if (added) toast(`✓ ${TT('ใส่', 'Added')} ${added} Lot — ` + (auto
+    ? TT('ตรวจ OPR · เวลาและ Target ระบบคำนวณให้แต่ละ Lot', 'check OPR · time and Target are calculated per lot')
+    : TT('กรอก Target ต่อได้เลย (Enter = Lot ถัดไป)', 'now type the Targets (Enter = next lot)')), 'green');
 }
 function delShiftP(pid, si) {
   $(`${pid}_s${si}_block`)?.remove();
@@ -19911,6 +19993,7 @@ function _ctCapWarn(rg, tgtFallback) {
   if (made > cap) return { label: rg.label, field: '⏱️ OPR เทียบ CT',
     msg: `OPR ${nn(rg.opr)}${rg.scrap ? ` + Scrap ${nn(rg.scrap)}` : ''} ชิ้น มากกว่าที่เครื่องทำได้ตาม CT (${how}) — CT / เวลา / OPR ลงผิด?`,
     els: [ctEl, ...rows.map(r => r.rid + '_opr')] };
+  if (rg.auto) return null;                                   // v3.90 หลาย Lot: Target ระบบคำนวณจาก CT เอง (ΣTarget = ทำได้ตาม CT) → ไม่มีอะไรให้เทียบ
   if (rows.some(r => r.target > 0 && r.target < r.opr)) return null;   // Target < OPR = error อยู่แล้ว ไม่เตือนซ้ำ
   const tgt = many ? (rows.every(r => r.target > 0) ? rows.reduce((a, r) => a + r.target, 0) : 0)
                    : ((rows[0] && rows[0].target) || tgtFallback);
@@ -19969,9 +20052,13 @@ function updShiftTotal(pid) {
     const tot = $(sid + '_total'); if (!tot) return;
     const rows = _mlRows(sid).filter(r => !r.untouched);
     const sum = k => rows.reduce((a, r) => a + r[k], 0);
-    const cap = _slotTimeErr(ts, te) ? 0 : _ctCap(+($(sid + '_ct')?.value || 0), hr);
-    tot.textContent = (rows.length > 1
-      ? `📦 ${rows.length} Lot · OPR รวม: ${nn(sum('opr'))} · Target รวม: ${nn(sum('target'))} · WT: ${wt.toFixed(2)} ชม. (แบ่งให้แต่ละ Lot ตามจำนวนชิ้น)`
+    const ct = +($(sid + '_ct')?.value || 0);
+    const cap = _slotTimeErr(ts, te) ? 0 : _ctCap(ct, hr);
+    const ml = _mlCalcUi(sid, ts, te, ct);   // v3.90 หลาย Lot → แถบเวลา/Target ใต้แต่ละ Lot
+    tot.textContent = (ml
+      ? `📦 ${ml.n} Lot · OPR รวม: ${nn(sum('opr'))}` + (ml.tgt
+          ? ` · Target รวม: ${nn(ml.tgt)} · WT: ${wt.toFixed(2)} ชม. — ระบบแบ่งเวลาให้แต่ละ Lot ตามยอด OPR · Target = 3600 ÷ CT × ชม.ของ Lot`
+          : ' — ใส่เวลา + CT ให้ถูกต้อง แล้วระบบแบ่งเวลา + คำนวณ Target ให้แต่ละ Lot')
       : `OPR: ${nn(sum('opr'))} · WT: ${wt.toFixed(2)} ชม.`)
       + (cap ? ` · ตาม CT ทำได้ไม่เกิน ${nn(cap)} ชิ้น` : '');
   });
@@ -20216,8 +20303,8 @@ function _showSubmitSummary(records, prodDate) {
           <span>📅 วันที่: <b>${escapeHtml(rec.shift_date||prodDate)}</b></span>
           <span>กะ: <b>${rec.shift_type==='day'?'☀️ กลางวัน':'🌙 กลางคืน'}</b></span>
           <span>OPR: <b>${rec.opr} ชิ้น</b></span>
-          <span>Target: <b>${rec.target||'—'}</b></span>
-          <span>เวลา: <b>${s.ts||'—'} → ${s.te||'—'}</b></span>
+          <span>Target: <b>${rec.target ? nn(rec.target) : '—'}</b>${s.tgt_auto ? ' <small style="color:#059669;font-weight:700">(คำนวณ)</small>' : ''}</span>
+          <span>เวลา: <b>${s.ts||'—'} → ${s.te||'—'}</b>${s.tgt_auto ? ` <small style="color:#059669;font-weight:700">(Lot ${s.lot_row}/${s.lot_n})</small>` : ''}</span>
           <span>พนักงาน: <b>${escapeHtml(rec.emp_id||'—')}</b></span>
           ${rec.valve_no ? `<span>Valve: <b>${escapeHtml(rec.valve_no)}</b></span>` : ''}
           ${rec.lot ? `<span>Lot: <b>${escapeHtml(rec.lot)}</b></span>` : ''}
@@ -20491,17 +20578,21 @@ async function _saveKpiImpl() {
       if (mlRows.length > 1) {
         // v3.75 (ผู้ใช้ขอ 4/10): Lot เดิมลงซ้ำหลายแถวได้ — พนักงานขึ้น Lot สลับกันไปมา (เดิม = error "Lot ซ้ำในตาราง")
         //   แต่ละแถวยังเป็น record ของตัวเอง → ยอดรวมราย Lot (Production Tracker / WIP) รวมกันเองเหมือนลงหลายครั้ง
-        // 1 แถว = 1 slot (→ 1 record ต่อเครื่อง) · WT แบ่งตามสัดส่วน OPR · Target ของแถวเอง (ไม่ใช้ Target เครื่องแทนช่องว่าง)
-        mlRows.forEach(r => {
-          const share = opr > 0 ? r.opr / opr : 1 / mlRows.length;
-          slots.push({ si, sid, rid: r.rid, opr: r.opr, scrap: r.scrap, target: r.target, ct, ts, te, wt: wt * share, valve, lot: r.lot, proc, procs, crew,
-                       noTgtFallback: true, ml: { row: r.no, n: mlRows.length, share } });
+        // 1 แถว = 1 slot (→ 1 record ต่อเครื่อง)
+        // v3.90: เวลาเริ่ม–จบของ record = ช่วงย่อยของ Lot นั้น (แบ่งตามสัดส่วน OPR) · Target ระบบคำนวณ · WT ของช่วงย่อย — ดู _mlSplit
+        //   เวลาว่าง/ผิด → parts ว่าง: ใช้เวลาเต็มช่วงไปก่อน (popup แจ้ง error เรื่องเวลาอยู่แล้ว ยังไม่บันทึก)
+        const parts = _mlSplit(ts, te, ct, mlRows);
+        mlRows.forEach((r, i) => {
+          const p = parts[i];
+          slots.push({ si, sid, rid: r.rid, opr: r.opr, scrap: r.scrap, target: p ? p.target : 0, ct,
+                       ts: p ? p.ts : ts, te: p ? p.te : te, wt: p ? p.wt : wt / mlRows.length, valve, lot: r.lot, proc, procs, crew,
+                       noTgtFallback: true, tgtAuto: true, rts: ts, rte: te, ml: { row: r.no, n: mlRows.length } });
         });
       } else {
         // 1 Lot = บันทึกเหมือนฟอร์มเดิมทุกอย่าง (Target ว่าง → Target เครื่อง · WT เต็มช่วง)
         slots.push({ si, sid, rid: (mlRows[0] || allRows[0] || {}).rid || '', opr, scrap, target, ct, ts, te, wt, valve, lot, proc, procs, crew });
       }
-      ranges.push({ si, sid, label: _slotLabel, ts, te, ct, opr, scrap, rows: mlRows });
+      ranges.push({ si, sid, label: _slotLabel, ts, te, ct, opr, scrap, rows: mlRows, auto: mlRows.length > 1 });
     });
     // v3.73 — ตรวจระดับช่วง (เตือน · ยืนยันบันทึกต่อได้): ยอดเทียบ CT + เวลาทับกันในเครื่อง/สายเดียวกัน
     const _tgtFallback = unit.machines.length === 1 ? (+unit.machines[0].target || 0) : 0;   // สาย: Target เครื่องต่างกัน → ไม่เดา
@@ -20512,8 +20603,11 @@ async function _saveKpiImpl() {
     for (const slot of slots) {
       // shift_type + shift_date จากเวลาเริ่มของ slot
       let slotShiftType = mainShiftType, slotShiftDate = shiftDate;
-      if (slot.ts) {
-        const [h2, m2] = slot.ts.split(':').map(Number);
+      // v3.90: หลาย Lot → กะ/วันที่คิดจากเวลาเริ่มของ "ทั้งช่วง" (rts) ไม่ใช่ช่วงย่อยของ Lot
+      //   (Lot ท้ายกะดึกเริ่ม 02:00 ต้องอยู่วันเดียวกับ Lot แรกที่เริ่ม 20:00 · ช่วง 16:00–22:00 ทั้งช่วงเป็นกะกลางวัน)
+      const _slotT0 = slot.rts || slot.ts;
+      if (_slotT0) {
+        const [h2, m2] = _slotT0.split(':').map(Number);
         const { st: _st2, sd: _sd2 } = _resolveShift(prodDate, (h2 || 0) * 60 + (m2 || 0));
         slotShiftType = _st2; slotShiftDate = _sd2;
       }
@@ -20542,8 +20636,9 @@ async function _saveKpiImpl() {
         const pdacPass  = pdac >= PDAC_PASS ? 'PASS' : 'FAIL';
         const shiftEntry = { si: slot.si, opr:sOpr, scrap:sScrap, target:sTarget, ct:sCT, ts:sTs, te:sTe, wt:sWT,
           emp: empIdPrimary, valve: slot.valve, lot: slot.lot, proc: lastProc };
-        // โหมดหลาย Lot: จำว่า WT ของ record นี้คือกี่ส่วนของช่วงเวลา — หน้าแก้ไข KPI ใช้คำนวณ WT กลับให้ถูก
-        if (slot.ml) Object.assign(shiftEntry, { lot_row: slot.ml.row, lot_n: slot.ml.n, wt_share: Math.round(slot.ml.share * 1e6) / 1e6 });
+        // โหมดหลาย Lot (v3.90): ts/te ของ record = ช่วงย่อยของ Lot นี้แล้ว → ไม่มี wt_share (หน้าแก้ไข KPI คิด WT จาก ts/te ตรง ๆ)
+        //   จำช่วงเต็ม (rts/rte) + tgt_auto ไว้บอกในหน้าแก้ไขว่าเวลา/Target มาจากระบบแบ่งให้
+        if (slot.ml) Object.assign(shiftEntry, { lot_row: slot.ml.row, lot_n: slot.ml.n, rts: slot.rts, rte: slot.rte, tgt_auto: 1 });
         records.push({
           record_date: slotShiftDate, shift_date: slotShiftDate, shift_type: slotShiftType,
           zone: unit.z, zone_label: ZONE_LABEL[unit.z], machine_id: mObj.id,
@@ -20562,6 +20657,8 @@ async function _saveKpiImpl() {
           _sid: slot.sid, _si: slot.si,                  // ชั่วคราว: ให้ popup ตรวจสอบมีปุ่ม "ลบช่วงนี้" ได้ (ลบทิ้งก่อน persist)
           _lotRow: slot.ml ? slot.ml.row : 0,            // ชั่วคราว: แถว Lot ในโหมดหลาย Lot (แยกกลุ่ม error ใน popup)
           _rid: slot.rid || '',                          // ชั่วคราว: id แถว Lot → "กลับไปแก้ไข" เด้งไปที่ช่อง OPR/Target/Lot ของแถวนั้น
+          _rts: slot.rts || sTs, _rte: slot.rte || sTe,  // ชั่วคราว (v3.90): เวลาเต็มช่วงที่พนักงานเลือก — ตรวจเวลาว่าง/เกิน 12 ชม. ที่ช่วงนี้ ไม่ใช่ช่วงย่อยของ Lot
+          _tgtAuto: !!slot.tgtAuto,                      // ชั่วคราว (v3.90): Target ระบบคำนวณ → ไม่แจ้ง "Target ยังไม่ลง" (ช่องซ่อน · ขาดเพราะ CT/เวลา ซึ่งแจ้งแล้ว)
         });
       }
     }
@@ -20599,10 +20696,11 @@ async function _saveKpiImpl() {
 
     // ── ช่องของช่วง (ใช้ร่วมทุก Lot) — เรียงตามฟอร์มบน → ล่าง
     const sErrs = [];
-    if (!slotEntry.ts || !slotEntry.te)
-      sErrs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง — เลือกเวลาเริ่มและเวลาสิ้นสุด', els: [!slotEntry.ts && sid + '_ts', !slotEntry.te && sid + '_te'].filter(Boolean) });
+    const rTs = rec._rts || slotEntry.ts, rTe = rec._rte || slotEntry.te;   // v3.90 เวลาเต็มช่วง (หลาย Lot: slotEntry = ช่วงย่อยของ Lot)
+    if (!rTs || !rTe)
+      sErrs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: 'ยังไม่ลง — เลือกเวลาเริ่มและเวลาสิ้นสุด', els: [!rTs && sid + '_ts', !rTe && sid + '_te'].filter(Boolean) });
     else {
-      const tErr = _slotTimeErr(slotEntry.ts, slotEntry.te);   // v3.73 — เกิน 12 ชม. / เริ่ม = จบ
+      const tErr = _slotTimeErr(rTs, rTe);   // v3.73 — เกิน 12 ชม. / เริ่ม = จบ
       if (tErr) sErrs.push({ field: 'เวลา (เริ่ม → สิ้นสุด)', msg: tErr, els: [sid + '_ts', sid + '_te'] });
     }
     if (!rec.emp_id)
@@ -20620,10 +20718,14 @@ async function _saveKpiImpl() {
       lErrs.push({ field: '🧩 Lot (ข้อมูลงานที่ผลิต)', msg: `รูปแบบไม่ถูกต้อง "${rec.lot}" — ${LOT_FMT_MSG}`, els: [rid + '_lot'] });
     if (!rec.opr || rec.opr <= 0)
       lErrs.push({ field: 'OPR (ชิ้น)', msg: 'ยังไม่ลง', els: [rid + '_opr'] });
-    if (!rec.target || rec.target <= 0)
-      lErrs.push({ field: 'Target', msg: 'ยังไม่ลง', els: [rid + '_tgt'] });
-    else if (rec.target < rec.opr)
-      lErrs.push({ field: 'Target', msg: `ต้องมากกว่าหรือเท่ากับ OPR (${rec.opr} ชิ้น) — ปัจจุบัน ${rec.target}`, els: [rid + '_tgt'] });
+    // v3.90 หลาย Lot: Target ระบบคำนวณ (ช่องซ่อน) — ว่าง = CT/เวลายังไม่ลง (แจ้งที่ช่องนั้นแล้ว) ·
+    //   OPR เกิน Target = ยอดรวมเกินที่ทำได้ตาม CT → เตือนระดับช่วง (_ctCapWarn) ยืนยันบันทึกต่อได้
+    if (!rec._tgtAuto) {
+      if (!rec.target || rec.target <= 0)
+        lErrs.push({ field: 'Target', msg: 'ยังไม่ลง', els: [rid + '_tgt'] });
+      else if (rec.target < rec.opr)
+        lErrs.push({ field: 'Target', msg: `ต้องมากกว่าหรือเท่ากับ OPR (${rec.opr} ชิ้น) — ปัจจุบัน ${rec.target}`, els: [rid + '_tgt'] });
+    }
 
     _addErrs(key, grpLabel, rec, sErrs);
     _addErrs(lotRow ? `${key}__l${lotRow}` : key,
@@ -20684,7 +20786,7 @@ async function _saveKpiImpl() {
   for (const r of records) {
     const linkProcs = (r._linkProcs && r._linkProcs.length) ? r._linkProcs : [r.last_process];
     delete r._linkProcs;                                   // ฟิลด์ชั่วคราว — ห้ามหลุดไป state/Cloud
-    delete r._sid; delete r._si; delete r._lotRow; delete r._rid;   // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
+    delete r._sid; delete r._si; delete r._lotRow; delete r._rid; delete r._rts; delete r._rte; delete r._tgtAuto;   // ฟิลด์ชั่วคราวของ popup ตรวจสอบ — ลบก่อน persist
     if (!r.valve_no || !r.lot) continue;
     for (const p of linkProcs) prodRecs.push({
       // id ต้องไม่ซ้ำแม้สร้างหลายตัวใน ms เดียวกัน (Worker ใช้เป็น idempotency key — ซ้ำ = ทับกันหาย)
@@ -22919,6 +23021,7 @@ function editKpiRecord(rid) {
     </div>
     <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
     ${(+_sh0.wt_share > 0 && +_sh0.wt_share < 1) ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วงเดียว (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — WT ของ record นี้ = <b>${(+_sh0.wt_share * 100).toFixed(1)}%</b> ของเวลาเริ่ม–สิ้นสุด (แบ่งตามจำนวนชิ้น)</div>` : ''}
+    ${_sh0.tgt_auto ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วง <b>${escapeHtml(_sh0.rts || '?')} → ${escapeHtml(_sh0.rte || '?')}</b> (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — ระบบแบ่งเวลาให้ Lot นี้ตามยอด OPR · Target = 3600 ÷ CT × ชม.ของ Lot (แก้เวลา/CT ที่นี่ Target ไม่คำนวณใหม่ให้)</div>` : ''}
     ${/* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 3) — ช่องนี้ = "พนักงานที่เดินเครื่อง" (emp_id) ไม่ใช่ "คนที่ Lock in บันทึก" (operator)
          เดิมโชว์ operator ก่อน → เห็นชื่อคนที่ Lock in แทนชื่อที่แก้ไว้ในหน้าบันทึก และกดบันทึกแก้ไขแล้วเขียนทับ emp_id ด้วยชื่อนั้น */''}
     <div class="fr ac"><label>👤 พนักงาน (คนเดินเครื่อง)</label>
