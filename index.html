@@ -921,6 +921,15 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .pl-lot{font-weight:700;letter-spacing:.1px;font-variant-numeric:tabular-nums;text-overflow:ellipsis}
 .pl-lot::placeholder{color:#94A3B8;font-weight:600}
 .pl-lot.on{border-color:#7C3AED;background:#F5F3FF;color:#5B21B6}   /* ★ v3.89 ระบุ Lot แล้ว = ขายเฉพาะ Lot นี้ */
+.pl-lot.bad{border-color:#DC2626;background:#FEF2F2;color:#B91C1C}  /* ★ v3.90 Lot ที่ระบุเป็นของเบอร์อื่น */
+.pl-nolot{margin-bottom:10px;border:1.5px solid #DDD6FE;border-radius:11px;background:#F5F3FF;padding:8px 12px;font-size:12px;color:#5B21B6;line-height:1.5}
+.pl-nolot-r{display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap}
+.pl-nolot-r+.pl-nolot-r{margin-top:6px;padding-top:6px;border-top:1px dashed #DDD6FE}
+.pl-nolot-r.bad{color:#B91C1C}
+.pl-nolot-b{display:flex;gap:6px;flex-wrap:wrap}
+.pl-nolot-b .btn{padding:3px 10px;font-size:11.5px;white-space:nowrap}
+.plc{font-size:10px;font-weight:700;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plc-w .plc{white-space:normal;overflow:visible}   /* ตัวอย่างก่อนวาง: ข้อความตรวจ Lot ต้องอ่านครบ (มือถือ) */
 .pl-qty{font-weight:800;text-align:center;font-variant-numeric:tabular-nums;padding:5px 2px;
   -moz-appearance:textfield;appearance:textfield}
 /* ซ่อนลูกศร spinner ของ input[type=number] — กินที่จนตัวเลข 4 หลักโดนบัง */
@@ -2732,7 +2741,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.90</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.91</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3117,6 +3126,9 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
 
     <!-- ★ 2026-08-03 (req): งานที่รับเข้า WIP IN 1.5 แล้ว แต่ไม่มีแผนขายรองรับ (โชว์เฉพาะเมื่อเจอ) -->
     <div id="planNoPlan"></div>
+
+    <!-- ★ v3.90 (ผู้ใช้ 21/10) แผนขายที่ยังไม่ระบุ "Lot ที่จะขาย" / Lot ไม่ตรงกับ Valve (โชว์เฉพาะเมื่อเจอ) -->
+    <div id="planNoLot"></div>
 
     <!-- ★ 2026-08-05 (req) แถบเครื่องมือ "เลือกหลายรายการ" — โผล่เมื่อมีการติ๊กเลือก -->
     <div id="planBulk"></div>
@@ -7890,6 +7902,7 @@ function renderPlans() {
   try { mpUpdateBadge(); } catch (e) {}   // ★ v3.77 ป้าย ⚠️ บนปุ่ม 🏭 = Order ที่ต้องปรับแผน (ยังไม่มี WIP IN 1.5)
   renderPlanRollover();  // ★ แผงตรวจ "งานถูกย้ายไปขายเดือนถัดไป" (req #7)
   renderPlanNoPlan();    // ★ 2026-08-03 (req) แผงเตือน "รับเข้าแล้วแต่ไม่มีในแผน"
+  renderPlanNoLot();     // ★ v3.90 แผนที่ยังไม่ระบุ Lot ที่จะขาย / Lot ไม่ตรงกับ Valve
   _plFoldBtnSync();      // หลัง renderPlanCompare เสมอ — กราฟเทียบเพิ่งถูกสร้าง/ลบไปในบรรทัดบน
   // ชิปสถานะ: ไฮไลต์ตัวที่กำลังใช้กรองอยู่ (กดซ้ำ = ปลด)
   const _sf=_planColF.status;
@@ -8037,6 +8050,44 @@ function renderPlanCompare(visibleRows){
      ② ลง Valve/Lot ผิดตอนรับเข้า → ไปแก้ที่ป๊อปอัป WIP IN 1.5 (ปุ่ม ✏️)
      ③ แผนอยู่คนละสาย / แผนถูกยกเลิก → แผงบอกให้ตรง ๆ จะได้ไม่ไปนั่งหาผิดที่ */
 let _planNoPlanOpen=false;
+/* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 2–3) แผนขายที่ยังไม่ถึงวันขาย แต่ "ยังไม่ระบุ Lot ที่จะขาย" — ระบบเลือก Lot ให้เอง ซึ่งอาจไม่ใช่ Lot ที่จะขายจริง
+   ข้อมูลจริง 21/10: แผน 29–30/10 ที่วางเมื่อ 20/10 ทั้ง 116 แผนไม่มี Lot (วางตามหน้าต่างเดิมที่เขียนว่า "ไม่ต้องมี Lot")
+   → VV4704A0 30/10 ระบบเลือก 2608S090064 ที่อยู่ในไลน์ แทน 2609S100093 ที่จะขายจริง (ยังอยู่ VSM1)
+   + แผนที่ระบุ Lot แล้วแต่เป็น Lot ของเบอร์อื่น (Valve กับ Lot ไม่ตรงกัน) */
+function renderPlanNoLot(){
+  const box=$('planNoLot'); if(!box) return;
+  const today=todayISO();
+  const up=filterVsm(state.plans||[]).filter(p=>p.status!=='cancelled' && Number(p.quantity)>0 && _planDateISO(p.plan_date)>=today);
+  const noLot=up.filter(p=>!planLotNorm(p.lot));
+  let bad=[];
+  try{ bad=up.filter(p=>planLotNorm(p.lot) && planLotCheck(p.valve_no,p.lot).some(c=>c.st==='bad')); }catch(e){}
+  if(!noLot.length && !bad.length){ box.innerHTML=''; return; }
+  const onNo=_planColF.lot && _planColF.lot.size===1 && _planColF.lot.has('');
+  box.innerHTML=`<div class="pl-nolot">
+    ${noLot.length?`<div class="pl-nolot-r">
+      <span>🔒 <b>${nn(noLot.length)}</b> ${TT('แผนขายที่ยังไม่ถึงวันขาย <b>ยังไม่ระบุ Lot ที่จะขาย</b> — ระบบเลือก Lot ให้เอง (🤖 ในช่อง Lot) อาจไม่ตรงกับ Lot ที่จะขายจริง','upcoming sales plans <b>have no lot to sell</b> — the system picks one (🤖 in the Lot cell), which may not be the lot you sell')}</span>
+      <span class="pl-nolot-b">
+        <button type="button" class="btn btn-sm${onNo?' btn-blue':' btn-outline'}" onclick="planShowNoLot()">${onNo?'✓ ':''}🔎 ${TT('แผนที่ไม่มี Lot','plans without a lot')}</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="openPastePlan()">📋 ${TT('วางพร้อม Lot','paste with lots')}</button>
+      </span></div>`:''}
+    ${bad.length?`<div class="pl-nolot-r bad">
+      <span>⚠️ <b>${nn(bad.length)}</b> ${TT('แผนระบุ Lot ที่เป็นของเบอร์อื่น (Valve No กับ Lot ไม่ตรงกัน)','plans name a lot that belongs to another valve (Valve No and Lot don\'t match)')}: ${bad.slice(0,4).map(p=>`<b>${escapeHtml(p.valve_no||'')}</b> ${escapeHtml(planLotNorm(p.lot))}`).join(' · ')}${bad.length>4?` +${bad.length-4}`:''}</span>
+      <span class="pl-nolot-b"><button type="button" class="btn btn-sm btn-outline" onclick="planShowBadLot()">🔎 ${TT('ดูแผนที่ไม่ตรง','show mismatches')}</button></span></div>`:''}
+  </div>`;
+}
+function planShowNoLot(){
+  const on=_planColF.lot && _planColF.lot.size===1 && _planColF.lot.has('');
+  if(on) delete _planColF.lot; else _planColF.lot=new Set(['']);
+  _planPage=1; const sec=$('planTblSec'); if(sec) sec.open=true;
+  renderPlans();
+}
+function planShowBadLot(){
+  const today=todayISO();
+  const ks=filterVsm(state.plans||[]).filter(p=>p.status!=='cancelled' && _planDateISO(p.plan_date)>=today && planLotNorm(p.lot)
+    && planLotCheck(p.valve_no,p.lot).some(c=>c.st==='bad')).map(p=>planLotNorm(p.lot));
+  _planColF.lot=new Set(ks); _planPage=1; const sec=$('planTblSec'); if(sec) sec.open=true;
+  renderPlans();
+}
 function renderPlanNoPlan(){
   const box=$('planNoPlan'); if(!box) return;
   const list=planMissingIntake('');                       // ทุกเดือน — ของค้างมาจากเดือนก่อนก็ต้องเห็น
@@ -8124,6 +8175,8 @@ async function saveAddPlanFor(){
       offlineSaveDialog(`${TT('แผนขาย','Sales plan')} ${valve}${lot?' / '+lot:''} · ${nn(qty)} ${TT('ชิ้น','pcs')}`, (r.err&&r.err.message)||'network error');
     }
   } else toast(`เพิ่มแผน ${valve} แล้ว (local)`,'green');
+  const bad = lot ? planLotCheck(valve, lot).filter(c => c.st === 'bad') : [];   // ★ v3.90 Valve กับ Lot ไม่ตรงกัน
+  if (bad.length) toast(`⚠️ ${valve}: ${bad.map(planLotCheckTxt).join(' · ')}`, 'red');
   renderPlans();
   if(typeof renderWipBuckets==='function') renderWipBuckets();
   if(_iotPage===2 && typeof renderIotSales==='function') renderIotSales(true);
@@ -8440,11 +8493,20 @@ function planRowHtml(p) {
   // หมายเหตุ "ระบบกำหนดเอง" อยู่ที่หัวคอลัมน์ + tooltip แล้ว — ไม่ต้องซ้ำทุกแถวให้ตารางสูงขึ้นเปล่า ๆ
   const autoBadge = `<div title="${escapeHtml(stTitle)}">${stBadge}${cancelled ? '' : _planLotsHtml(auto && auto.alloc)}</div>`;
   const sel = '';
+  /* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 1) ช่อง Lot ว่าง = โชว์ Lot ที่ระบบเลือกให้ (🤖 สีจาง) — เห็นทันทีว่าแผนนี้ขาย Lot ไหน ไม่ต้องเดา
+     ระบุ Lot แล้วแต่เป็น Lot ของเบอร์อื่น = กรอบแดง (รายละเอียดใต้สถานะ) */
+  const lotSet = !!(p.lot || '').trim();
+  const autoLots = (!lotSet && !cancelled && auto && auto.alloc) ? [...new Set((auto.alloc.lots || []).map(l => l.lot).filter(Boolean))] : [];
+  const lotPh = autoLots.length ? '🤖 ' + autoLots.join(', ') : TT('อัตโนมัติ', 'auto');
+  const lotBad = lotSet && planLotCheck(p.valve_no, p.lot).some(c => c.st === 'bad');
+  const lotTip = autoLots.length
+    ? TT(`ระบบเลือกให้: ${autoLots.join(', ')} — ถ้าจะขาย Lot อื่น พิมพ์ Lot ที่นี่ (หลาย Lot คั่นด้วย ,)`, `Picked by the system: ${autoLots.join(', ')} — type a lot here to sell a different one (comma for several)`)
+    : TT('Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น (หลาย Lot คั่นด้วย ,) · ว่าง = ระบบเลือก Lot ให้ตามวันขาย','Lot to sell — set = this plan sells only that lot (comma for several) · blank = the system picks by sale date');
   return `<tr data-pid="${pid}" class="${picked?'sel':''}"${cancelled?' style="opacity:.55"':''}>
     <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
     <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
     <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:800;color:var(--blue);font-size:12.5px;width:100%;text-transform:uppercase"></td>
-    <td><input type="text" class="pl-in pl-lot${(p.lot||'').trim()?' on':''}" list="planLotDl" value="${escapeHtml(p.lot||'')}" onfocus="_planLotDlFill('${pid}')" onchange="updatePlanLot('${pid}',this.value)" placeholder="${TT('อัตโนมัติ','auto')}" title="${escapeHtml(TT('Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น (หลาย Lot คั่นด้วย ,) · ว่าง = ระบบเลือก Lot ให้ตามวันขาย','Lot to sell — set = this plan sells only that lot (comma for several) · blank = the system picks by sale date'))}" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></td>
+    <td><input type="text" class="pl-in pl-lot${lotSet?' on':''}${lotBad?' bad':''}" list="planLotDl" value="${escapeHtml(p.lot||'')}" onfocus="_planLotDlFill('${pid}')" onchange="updatePlanLot('${pid}',this.value)" placeholder="${escapeHtml(lotPh)}" title="${escapeHtml(lotTip)}" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></td>
     <td><input type="number" class="pl-in pl-qty" value="${p.quantity||''}" oninput="updatePlan('${pid}','quantity',this.value)" min="0" placeholder="0"></td>
     <td>${autoBadge}${sel}</td>
     <td><input type="text" class="pl-in pl-note" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${pid}','note',this.value)" placeholder="หมายเหตุ" title="${escapeHtml(p.note||'')}"></td>
@@ -8484,6 +8546,66 @@ function _lotSeenElsewhere(vk, lk) {
   _lseMemo.set(key, best);
   return best;
 }
+/* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 2–3) "Valve No กับ Lot ต้องตรงกัน" — Lot นี้เป็นของเบอร์ไหน
+   ดัชนีจากยอดผลิตทุกสาย + ใบรับเข้า WIP IN 1.5 ทุกสาย · lotKey → Map(vKey → { vsm → วันล่าสุด })
+   เก็บทั้งเลขเต็มและเลขหลัก (2609S100093/1-2 → 2609S100093 ด้วย) · คิดใหม่เมื่อข้อมูลเปลี่ยนเท่านั้น
+   ข้อมูลจริง 21/10: 80 จาก 1,647 Lot มีมากกว่า 1 เบอร์ (เช่น VF1349M0 / VF1349M1) → ไม่ตรง = เตือน ไม่บล็อก */
+let _lviIdx = null, _lviVer = '';
+function _lotValveIdx() {
+  let W = {}, full = 0;                       // _wipin / _allKpi ประกาศท้ายสคริปต์ — กันเรียกก่อนพร้อม
+  try { W = _wipin || {}; full = _allKpi ? 1 : 0; } catch (e) {}
+  const ver = _fvVer + '/' + ((typeof _wipinVer !== 'undefined') ? _wipinVer : 0) + '/' + full;
+  if (_lviIdx && _lviVer === ver) return _lviIdx;
+  const m = new Map();
+  const put = (lot, valve, d, vsm) => {
+    const vk = vKey(valve || ''); if (!vk) return;
+    for (const l of String(lot || '').split(/[,;]+|\s+(?=\d{3,6}[A-Z$])/i)) {
+      const lk = lotKey(l); if (!lk || lk.length < 6 || isExtraLot(l)) continue;
+      for (const k of new Set([lk, lk.split('/')[0]])) {
+        let o = m.get(k); if (!o) m.set(k, o = new Map());
+        let w = o.get(vk); if (!w) o.set(vk, w = {});
+        if (!w[vsm] || d > w[vsm]) w[vsm] = d;
+      }
+    }
+  };
+  for (const r of (_wipKpiSrc() || [])) put(r.lot, r.valve_no, String(r.shift_date || r.record_date || '').slice(0, 10), String(vsmOf(r) || '').toLowerCase());
+  for (const e of Object.values(W)) if (e && !e.deleted) put(e.lot, e.valve, String(e.ts || '').slice(0, 10), String(_wipinVsm(e) || '').toLowerCase());
+  _lviIdx = m; _lviVer = ver;
+  return m;
+}
+/* ★ v3.90 ตรวจ "Lot ที่จะขาย" เทียบ Valve No — 1 รายการต่อ Lot ที่ระบุ
+   ok   = เบอร์นี้ Lot นี้มีในสายที่ดูอยู่แล้ว (รับเข้า / ผลิตแล้ว)
+   away = เบอร์นี้ Lot นี้มีแต่ที่สายอื่น (เช่น ยังอยู่ VSM1 ยังไม่ส่งเข้า VSM4) — ถูกต้อง รอของเข้า
+   bad  = Lot นี้มีในระบบ แต่เป็นของเบอร์อื่น → Valve กับ Lot ไม่ตรงกัน
+   none = ยังไม่พบ Lot นี้ที่ไหนเลย (ยังไม่เริ่มผลิต หรือพิมพ์ผิด) */
+function planLotCheck(valve, lot) {
+  const keys = planLotKeys({ lot }); if (!keys.length) return [];
+  const vk = vKey(valve || ''), idx = _lotValveIdx(), peers = new Set(vsmPeers(viewVsm()));
+  const latest = w => Object.entries(w).sort((a, b) => String(b[1]).localeCompare(String(a[1])))[0] || ['', ''];
+  return keys.map(k => {
+    if (isExtraLot(k)) return { k, st: 'ok', vsm: '', d: '' };
+    const o = idx.get(k);
+    if (!o || !o.size) return { k, st: 'none' };
+    const w = o.get(vk);
+    if (w) {
+      const here = Object.entries(w).filter(([v]) => peers.has(v));
+      if (here.length) { const [v, d] = latest(Object.fromEntries(here)); return { k, st: 'ok', vsm: v.toUpperCase(), d }; }
+      const [v, d] = latest(w); return { k, st: 'away', vsm: v.toUpperCase(), d };
+    }
+    const owners = [...o.entries()].map(([v, x]) => [v, latest(x)[1]]).sort((a, b) => String(b[1]).localeCompare(String(a[1]))).map(x => x[0]);
+    return { k, st: 'bad', owners };
+  });
+}
+const _PLC_COL = { ok: '#15803d', away: '#6D28D9', bad: '#B91C1C', none: '#B45309' };
+function planLotCheckTxt(c) {
+  const dd = c.d ? ' ' + _fmtThDate(c.d).slice(0, 5) : '';
+  if (c.st === 'ok')   return `✓ ${c.k}${c.vsm ? ` · ${c.vsm}${dd}` : ''}`;
+  if (c.st === 'away') return `🚚 ${c.k} · ${TT('ยังอยู่', 'still at')} ${c.vsm}${dd} (${TT('ยังไม่เข้า', 'not in')} ${viewVsm().toUpperCase()})`;
+  if (c.st === 'bad')  return `⚠️ ${c.k} ${TT('เป็น Lot ของ', 'belongs to')} ${c.owners.slice(0, 2).join(', ')}${c.owners.length > 2 ? ' +' + (c.owners.length - 2) : ''} — ${TT('ไม่ตรงกับ Valve No', 'not this Valve No')}`;
+  return `❓ ${c.k} · ${TT('ยังไม่พบในระบบ (ยังไม่เริ่มผลิต / พิมพ์ผิด?)', 'not found yet (not started / typo?)')}`;
+}
+const planLotCheckHtml = (cs, only) => (cs || []).filter(c => !only || only.includes(c.st)).map(c =>
+  `<div class="plc" style="color:${_PLC_COL[c.st]}" title="${escapeHtml(planLotCheckTxt(c))}">${escapeHtml(planLotCheckTxt(c))}</div>`).join('');
 /* ★ v3.84 — ใต้ป้ายสถานะ: "ขาย Lot ไหน" (จากตัวจัดสรร planLotAlloc) + ขาดเท่าไร + Lot เก่าที่ไม่นับเพราะอะไร */
 function _planLotsHtml(A) {
   if (!A) return '';
@@ -8493,7 +8615,11 @@ function _planLotsHtml(A) {
   if (L.length > MAX) rows.push(`<div style="font-size:9.5px;color:var(--muted)">+${L.length - MAX} Lot</div>`);
   if (A.shortSig) rows.push(`<div style="font-size:9.5px;font-weight:800;color:#B91C1C" title="${escapeHtml(TT('ยังไม่มี Lot ไหนรองรับยอดนี้ — รอ WIP IN 1.5','No lot covers this qty yet — waiting for WIP IN 1.5'))}">📭 ${TT('ยังไม่มีของ','no stock')} ${nn(A.short)}</div>`);
   // ★ v3.89 Lot ที่ระบุแต่ยังไม่เข้า VSM นี้ — บอกว่าล่าสุดอยู่ที่ไหน (เช่น ยังอยู่ VSM1)
+  /* ★ v3.90 Lot ที่ระบุเป็นของเบอร์อื่น (Valve กับ Lot ไม่ตรงกัน) / ยังไม่มีที่ไหนเลย — บอกตรง ๆ แทน "ยังไม่รับเข้า" */
+  const chk = new Map(planLotCheck(A.p && A.p.valve_no, A.p && A.p.lot).map(c => [c.k, c]));
   for (const k of (A.lotMiss || []).slice(0, 2)) {
+    const c = chk.get(k);
+    if (c && (c.st === 'bad' || c.st === 'none')) { rows.push(`<div style="font-size:9.5px;font-weight:800;color:${_PLC_COL[c.st]};white-space:normal;line-height:1.35" title="${escapeHtml(planLotCheckTxt(c))}">${escapeHtml(planLotCheckTxt(c))}</div>`); continue; }
     const w = _lotSeenElsewhere(A.vk, k);
     rows.push(`<div style="font-size:9.5px;font-weight:700;color:#6D28D9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔒 ${escapeHtml(k)} · ${TT('ยังไม่รับเข้า','not received in')} ${escapeHtml(viewVsm().toUpperCase())}${w ? ` (${TT('ล่าสุด','last')} ${escapeHtml(w.vsm)} ${escapeHtml(_fmtThDate(w.d))})` : ''}</div>`);
   }
@@ -8557,6 +8683,8 @@ async function updatePlanLot(pid, v) {
   _planRefreshAllViews();                                   // สถานะ / Lot ที่จะขาย / บอร์ด IOT / แผนผลิตคิดใหม่ทันที
   const r = await _planSave(p);
   const A = lot ? planAllocOf(p) : null;
+  const bad = lot ? planLotCheck(p.valve_no, lot).filter(c => c.st === 'bad') : [];   // ★ v3.90 Valve กับ Lot ไม่ตรงกัน
+  if (bad.length) { toast(`⚠️ ${p.valve_no}: ${bad.map(planLotCheckTxt).join(' · ')}${_planSaveNote(r)}`, 'red'); return; }
   const miss = A && A.lotMiss && A.lotMiss.length ? ` · ⚠️ ${TT('ยังไม่มี Lot นี้ใน', 'lot not in')} ${viewVsm().toUpperCase()}` : '';
   toast((lot ? `🔒 ${p.valve_no} ${TT('ขายเฉพาะ Lot', 'sells only lot')} ${lot}${miss}` : `↺ ${p.valve_no} — ${TT('ระบบเลือก Lot ให้ตามวันขาย', 'lot picked by sale date')}`) + _planSaveNote(r),
     r.ok === false || miss ? 'orange' : 'green');
@@ -8634,8 +8762,12 @@ function openPastePlan() {
     <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:9px;padding:10px;font-size:12px;color:var(--blue-dark);margin-bottom:10px;line-height:1.7">
       <b>วิธีใช้:</b> Copy cells จาก Excel (Ctrl+C) แล้ว Ctrl+V ในกล่องด้านล่าง<br>
       <b>คอลัมน์ที่ระบบรู้จัก (ตามลำดับ):</b><br>
-      &nbsp;&nbsp;1. วันที่ขาย/Date &nbsp; 2. Valve No &nbsp; 3. Qty &nbsp; 4. สถานะ &nbsp; 5. หมายเหตุ<br>
-      <span class="muted" style="font-size:11px">★ แผนใช้แค่ Valve No · จำนวน · วันที่ขาย — ไม่ต้องมี Lot แล้ว (ถ้าไฟล์เดิมยังติดคอลัมน์ Lot มา ระบบข้ามให้เอง)</span><br>
+      &nbsp;&nbsp;1. วันที่ขาย/Date &nbsp; 2. Valve No &nbsp; 3. <b style="color:#5B21B6">Lot ที่จะขาย</b> &nbsp; 4. Qty &nbsp; 5. หมายเหตุ<br>
+      ${/* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 3) เดิมเขียนว่า "ไม่ต้องมี Lot แล้ว" — แผนต้องเก็บ Lot ที่จะขายไว้ ไม่งั้นระบบเลือก Lot เองแล้วไม่ตรงกับงานที่จะขายจริง */''}
+      <span style="display:block;font-size:11.5px;font-weight:700;color:#5B21B6;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:7px;padding:5px 8px;margin:4px 0;line-height:1.55">
+        🔒 ${TT('ใส่ Lot = แผนนี้ขายเฉพาะ Lot นั้น (Valve No + Lot ต้องตรงกับงานที่จะขาย) · ระบบตรวจให้ว่า Lot เป็นของเบอร์นั้นจริงไหม','A lot = this plan sells only that lot (Valve No + Lot must match the job to sell) · the system checks the lot really belongs to that valve')}<br>
+        <span style="font-weight:600;color:#6D28D9">${TT('ไม่มี Lot / ช่องว่าง = ระบบเลือก Lot ให้ตามวันขาย (อาจไม่ตรงกับที่จะขายจริง)','No lot / blank = the system picks a lot by sale date (may not be the one you sell)')}</span></span>
+      <span class="muted" style="font-size:11px">${TT('คอลัมน์ Lot อยู่ช่องไหนก็ได้ — ระบบดูจากหน้าตาเลข Lot (เช่น 2609S100093) · หลาย Lot ในช่องเดียวคั่นด้วย , · วางไฟล์เดิมซ้ำพร้อม Lot = เติม Lot ให้แผนเดิม ไม่เกิดแถวซ้ำ','The Lot column can be anywhere — found by its look (e.g. 2609S100093) · several lots in one cell: separate with , · pasting the same file again with lots fills the lots into the existing plans (no duplicates)')}</span><br>
       <span class="muted" style="font-size:11px">รองรับ: BE (พ.ศ.), Excel serial, DD/MM/YYYY, MM/DD/YYYY, ตัวเลข 1,000 (มี comma), ไทย "20 พ.ค. 2569"</span><br>
       <span class="muted" style="font-size:11px">ถ้ามี header row ระบบจะ auto-detect ลำดับ column ให้</span>
     </div>
@@ -8649,8 +8781,8 @@ function openPastePlan() {
       <span class="muted" style="font-size:10.5px">ถ้าวันที่เพี้ยน (เช่นไปกองวันเดียว) ลองสลับเป็น "เดือน/วัน/ปี"</span>
     </div>
     <textarea id="pasteArea" placeholder="ตัวอย่าง: copy ข้อมูล Excel แล้ว Ctrl+V ในกล่องนี้
-2026-05-20	VF1349M0	1,000	planned	เร่งด่วน
-2026-05-21	VF1350M0	500		" style="width:100%;min-height:160px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;white-space:pre" oninput="previewPaste()"></textarea>
+2026-10-30	VV4704A0	2609S100093	10,000	MSI
+2026-10-29	VF1349M0		1,000	SWE" style="width:100%;min-height:160px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;white-space:pre" oninput="previewPaste()"></textarea>
     <div id="pastePreview" class="mt-8"></div>
     <div class="row mt-8" style="gap:8px;justify-content:flex-end">
       <button class="btn btn-outline btn-sm" onclick="closeModal()">ยกเลิก</button>
@@ -8661,21 +8793,52 @@ function openPastePlan() {
 }
 
 let _planPasteDateFmt = 'auto';   // รูปแบบวันที่ตอนวางจาก Excel: auto | dmy | mdy
-let _planPasteLotSkipped = false; // ชุดที่วางมีคอลัมน์ Lot ติดมาไหม (ข้ามให้แล้ว) — ใช้บอกในตัวอย่าง
+let _planPasteHasLot = false;     // ★ v3.90 ชุดที่วางมีคอลัมน์ Lot ไหม (เดิม _planPasteLotSkipped)
+let _planPasteReplace = true;     // ★ v3.90 แทนที่แผนเดิมของ Valve + วันขายเดียวกันที่ชุดใหม่ระบุ Lot แล้ว
 function setPasteDateFmt(f){ _planPasteDateFmt = f; previewPaste(); }
 
-/* ข้อมูลที่วาง (ไม่มี header) ยังติดคอลัมน์ Lot ที่ช่อง 3 มาไหม
-   ดูจากข้อมูลจริง: ช่อง 3 อ่านเป็นตัวเลขไม่ได้ (หรือว่าง) + ช่อง 4 เป็นตัวเลข = ช่อง 3 คือ Lot ไม่ใช่ Qty */
-function _pasteHasLotCol(dataLines, splitLine) {
-  const isNum = v => String(v).trim() !== '' && isFinite(Number(String(v).replace(/[,\s]/g, '')));
-  let lotLike = 0, qtyLike = 0;
-  for (const ln of dataLines.slice(0, 20)) {
-    const c = splitLine(ln);
-    if (c.length < 4) continue;
-    if (!isNum(c[2]) && isNum(c[3])) lotLike++;
-    else if (isNum(c[2]))            qtyLike++;
+/* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 3) หน้าตาของค่าในแต่ละช่อง — ใช้หาคอลัมน์ Lot / Qty / สถานะ จากข้อมูลจริง
+   Lot จริง (WIP IN 1.5 ทั้งหมด 21/10): ตัวเลข 3–6 หลัก + ตัวอักษร 1–2 ตัว + ตัวเลข — 2609S100093 · 2609S100093/1-2 · 2605$050155
+   ไม่ชนกับ วันที่ (2026-10-30 · 30/10/2026 · 46172) · Valve (VV4704A0 ขึ้นต้นด้วยตัวอักษร) · จำนวน (10,000) · ลูกค้า (MSI) */
+const PASTE_LOT_RE = /^\d{3,6}\s?[A-Z$]{1,2}\s?\d{3,8}/i;
+const _pasteIsLot = v => { const s = String(v || '').trim(); return !!s && s.split(/[,;]+/).map(x => x.trim()).filter(Boolean).every(x => PASTE_LOT_RE.test(x) || isExtraLot(x)); };
+const _pasteIsNum = v => /^-?[\d,\s]*\d(\.\d+)?$/.test(String(v || '').trim());
+const _pasteIsStatus = v => /plan|วางแผน|progress|กำลัง|done|complete|เสร็จ|cancel|ยกเลิก/i.test(String(v || ''));
+
+/* ★ v3.90 ไม่มี header — จัดคอลัมน์จากหน้าตาข้อมูล (เดิม: รู้จัก Lot เฉพาะช่องที่ 3)
+   ① Lot = คอลัมน์ที่ค่าเกินครึ่งหน้าตาเป็นเลข Lot (อยู่ช่องไหนก็ได้)
+   ② ที่เหลือตามลำดับมาตรฐาน: วันที่ · Valve · Qty (= คอลัมน์ตัวเลขแรกถัดจาก Valve)
+   ③ ช่องระหว่าง Valve กับ Qty: ยังไม่เจอคอลัมน์ Lot → ช่องแรกคือ Lot (ไฟล์เดิม วันที่ · Valve · Lot · Qty ที่ Lot ว่าง/รูปแปลก) · ที่เหลือ = หมายเหตุ
+   ④ หลัง Qty: ช่องที่เป็นคำสถานะล้วน = สถานะ · อื่น ๆ (เช่น ลูกค้า SWE / MSI) = หมายเหตุ (หลายช่องต่อกันด้วย ·) */
+function _pasteAutoOrder(dataLines, splitLine) {
+  const R = dataLines.slice(0, 80).map(splitLine);
+  const nCol = R.reduce((m, r) => Math.max(m, r.length), 0);
+  const st = [];
+  for (let j = 0; j < nCol; j++) {
+    const vals = R.map(r => String(r[j] == null ? '' : r[j]).trim()).filter(Boolean);
+    st.push({ n: vals.length, lot: vals.filter(_pasteIsLot).length, num: vals.filter(_pasteIsNum).length, stt: vals.filter(_pasteIsStatus).length });
   }
-  return lotLike > 0 && lotLike > qtyLike;
+  const order = new Array(nCol).fill(null);
+  let lotCol = -1, best = 0;
+  for (let j = 0; j < nCol; j++) { const r = st[j].n ? st[j].lot / st[j].n : 0; if (r >= 0.5 && r > best) { best = r; lotCol = j; } }
+  if (lotCol >= 0) order[lotCol] = 'lot';
+  const rest = [...Array(nCol).keys()].filter(j => j !== lotCol);
+  if (rest[0] != null) order[rest[0]] = 'plan_date';
+  if (rest[1] != null) order[rest[1]] = 'valve_no';
+  let qi = rest.findIndex((j, i) => i >= 2 && st[j].n > 0 && st[j].num / st[j].n >= 0.5);
+  if (qi < 0) qi = 2;
+  if (rest[qi] != null) order[rest[qi]] = 'quantity';
+  for (let i = 2; i < qi && i < rest.length; i++) {
+    const j = rest[i];
+    if (lotCol < 0 && i === 2) { order[j] = 'lot'; lotCol = j; }
+    else if (st[j].n) order[j] = 'note';
+  }
+  let hasSt = false;
+  for (let i = qi + 1; i < rest.length; i++) {
+    const j = rest[i]; if (!st[j].n) continue;
+    if (!hasSt && st[j].stt === st[j].n) { order[j] = 'status'; hasSt = true; } else order[j] = 'note';
+  }
+  return order;
 }
 
 function parsePasteText(text) {
@@ -8699,14 +8862,21 @@ function parsePasteText(text) {
   const colMap = detectColumns(headers);
   const hasHeader = colMap !== null;
   const dataLines = hasHeader ? lines.slice(1) : lines;
-  /* ★ 2026-09-01 (req) แผนใหม่ไม่ต้องมี Lot — ลำดับมาตรฐาน = วันที่ · Valve · Qty · สถานะ · หมายเหตุ
-     แต่ไฟล์เก่าที่ยังติดคอลัมน์ Lot ไว้ช่องที่ 3 ต้องไม่ทำให้ Qty เลื่อนไปอ่านผิดช่อง → เจอแล้วข้ามให้ */
-  const legacyLot = !hasHeader && _pasteHasLotCol(dataLines, splitLine);
-  const defaultOrder = legacyLot
-    ? ['plan_date','valve_no','lot','quantity','status','note']    // ★ v3.89 Lot ที่ช่อง 3 = Lot ที่จะขาย (เก็บแล้ว ไม่ข้าม)
-    : ['plan_date','valve_no','quantity','status','note'];
-  const order = hasHeader ? colMap : defaultOrder;
-  _planPasteLotSkipped = hasHeader ? colMap.includes('lot') : legacyLot;
+  /* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 3) Lot = "Lot ที่จะขาย" เก็บลงแผนเสมอ — ลำดับมาตรฐาน วันที่ · Valve · Lot · Qty · หมายเหตุ
+     ไม่มี header → _pasteAutoOrder ดูหน้าตาข้อมูล (Lot อยู่ช่องไหนก็เจอ)
+     มี header → ตาม header · คอลัมน์ที่ header ไม่รู้จักแต่ค่าเป็นเลข Lot = Lot */
+  let order;
+  if (hasHeader) {
+    order = colMap.slice();
+    if (!order.includes('lot')) {
+      for (let j = 0; j < order.length; j++) {
+        if (order[j]) continue;
+        const vals = dataLines.slice(0, 80).map(l => splitLine(l)[j] || '').filter(v => v.trim());
+        if (vals.length && vals.filter(_pasteIsLot).length / vals.length >= 0.5) { order[j] = 'lot'; break; }
+      }
+    }
+  } else order = _pasteAutoOrder(dataLines, splitLine);
+  _planPasteHasLot = order.includes('lot');
 
   const rows = [];
   for (const ln of dataLines) {
@@ -8718,10 +8888,10 @@ function parsePasteText(text) {
       const v = cols[i] || '';
       if (field === 'plan_date')      obj.plan_date = parseDate(v, _planPasteDateFmt);
       else if (field === 'valve_no')  obj.valve_no = v.toUpperCase().trim();
-      else if (field === 'lot')       obj.lot = planLotNorm(v);   // ★ v3.89 Lot ที่จะขาย (ว่าง = ระบบเลือกให้)
+      else if (field === 'lot')       obj.lot = planLotNorm(v);   // Lot ที่จะขาย (ว่าง = ระบบเลือกให้)
       else if (field === 'quantity')  obj.quantity = Number(v.replace(/[,\s]/g,'').replace(/[^\d.-]/g,'')) || 0;
       else if (field === 'status')    obj.status = parseStatus(v);
-      else if (field === 'note')      obj.note = v.trim();
+      else if (field === 'note' && v.trim()) obj.note = obj.note ? obj.note + ' · ' + v.trim() : v.trim();   // หลายช่อง (เช่น ลูกค้า + หมายเหตุ) ต่อกัน
     });
     if (!obj.valve_no) continue;
     rows.push(obj);
@@ -8734,10 +8904,10 @@ function detectColumns(headers) {
   const mapping = {
     plan_date: /^(date|วัน|วันที่|วันที่ส่ง|ship|delivery|ขาย|due)/i,
     valve_no:  /^(valve|วาล์ว|รหัส|item|part|รุ่น|model)/i,
-    lot:       /^(lot|ล็อต|batch)/i,
+    lot:       /^(lot|ล็อต|batch)|เลข ?lot|lot ?no/i,                  // ★ v3.90 "Lot No" · "เลข Lot" · "Lot ที่จะขาย"
     quantity:  /^(qty|จำนวน|ชิ้น|amount|amt|pcs)/i,
     status:    /^(status|สถานะ|state)/i,
-    note:      /^(note|หมายเหตุ|remark|memo|description|desc)/i,
+    note:      /^(note|หมายเหตุ|remark|memo|description|desc|customer|cust|ลูกค้า)/i,   // ★ v3.90 ลูกค้า → หมายเหตุ (เหมือนที่วางกันอยู่: SWE / MSI)
   };
   let matched = 0;
   const order = headers.map(h => {
@@ -8818,6 +8988,54 @@ function parseStatus(s) {
   return 'planned';
 }
 
+/* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 3) รวม "แผนที่วาง" กับ "แผนเดิม" — ตัวอย่าง (previewPaste) กับตอนบันทึก (confirmPaste) ใช้ตัวเดียวกัน ผลตรงกันเสมอ
+   ① คีย์ตรงทุกอย่าง (เบอร์ + วันขาย + จำนวน + Lot) = แผนเดิม → อัปเดต
+   ② วางพร้อม Lot · แผนเดิมเบอร์/วันขาย/จำนวนเดียวกัน "ยังไม่ระบุ Lot" → เติม Lot ให้แผนเดิม (v3.89)
+   ③ วางไม่มี Lot · แผนเดิมเบอร์/วันขาย/จำนวนเดียวกัน "ระบุ Lot ไว้แล้ว" → ใช้แผนเดิม + คง Lot เดิม (เดิม: เกิดแถวซ้ำที่ไม่มี Lot)
+   ④ แผนเดิมของ Valve + วันขายเดียวกับแถวที่วางพร้อม Lot แต่ไม่ถูกจับคู่ใน ①–② (แบ่งหลาย Lot / ยอดเปลี่ยน / เปลี่ยน Lot)
+      = ของเก่า → แทนที่ (ลบ) เมื่อติ๊ก "แทนที่" (ค่าเริ่มต้น) — ไม่งั้นยอดขายซ้อน 2 ชุด
+   แผนเดิมที่ ❌ ยกเลิกไว้ ยังยกเลิกอยู่ · ช่องหมายเหตุที่วางมาว่าง = คงหมายเหตุเดิม */
+function _pastePlanMerge(rows) {
+  const byKey = new Map(), byBase = new Map();
+  const push = (m, k, p) => { let a = m.get(k); if (!a) m.set(k, a = []); a.push(p); };
+  for (const p of state.plans) { push(byKey, planKey(p), p); push(byBase, planKeyBase(p), p); }
+  const used = new Set(), seen = new Map(), acts = [];
+  const pick = (arr, f) => (arr || []).find(p => !used.has(p.plan_id) && (!f || f(p)));
+  const vd = p => `${(p.valve_no || '').trim().toUpperCase()}::${_planDateISO(p.plan_date)}`;
+  const lotVD = new Set();
+  for (const r0 of rows) {
+    const r = { ...r0 };
+    let how = 'new', ex = null;
+    if (seen.has(planKey(r))) how = 'dup';
+    else if ((ex = pick(byKey.get(planKey(r))))) how = 'upd';
+    else if (r.lot) { if ((ex = pick(byBase.get(planKeyBase(r)), p => !planLotNorm(p.lot)))) how = 'fill'; }
+    else if ((ex = pick(byBase.get(planKeyBase(r)), p => !!planLotNorm(p.lot)))) { how = 'keep'; r.lot = planLotNorm(ex.lot); }
+    let unchanged = false;
+    if (ex) {
+      used.add(ex.plan_id);
+      if (ex.status === 'cancelled' && r.status === 'planned') r.status = 'cancelled';
+      if (!r.note && ex.note) r.note = ex.note;
+      // วางไฟล์เดิมซ้ำ = แถวส่วนใหญ่ไม่มีอะไรเปลี่ยน → ไม่ต้องส่งขึ้น Cloud ซ้ำ (ส่งเฉพาะแถวที่เปลี่ยนจริง)
+      unchanged = Number(ex.quantity) === Number(r.quantity) && _planDateISO(ex.plan_date) === _planDateISO(r.plan_date)
+        && planLotNorm(ex.lot) === planLotNorm(r.lot) && (ex.note || '') === (r.note || '') && (ex.status || 'planned') === r.status;
+      if (unchanged && how === 'upd') how = 'same';
+    }
+    if (r0.lot) lotVD.add(vd(r));
+    const k = planKey(r), prev = seen.get(k);
+    seen.set(k, { ...r, plan_id: prev ? prev.plan_id : ex ? ex.plan_id : planNewId(), created_by: CURRENT_USER?.id || '', vsm: viewVsm(), __same: unchanged && !prev });
+    acts.push(how);
+  }
+  const old = lotVD.size ? filterVsm(state.plans).filter(p => !used.has(p.plan_id) && p.status !== 'cancelled' && lotVD.has(vd(p))) : [];
+  const cnt = { new: 0, upd: 0, same: 0, fill: 0, keep: 0, dup: 0 };
+  for (const a of acts) cnt[a]++;
+  const plans = [...seen.values()].filter(p => !p.__same).map(({ __same, ...p }) => p);   // เฉพาะแถวใหม่ / เปลี่ยนจริง
+  return { plans, acts, old, cnt };
+}
+const _PASTE_ACT = { new: ['ใหม่', 'new', '#15803d'], upd: ['อัปเดต', 'update', '#1d4ed8'], same: ['ไม่เปลี่ยน', 'unchanged', '#94A3B8'], fill: ['เติม Lot', 'lot added', '#6D28D9'],
+                     keep: ['คง Lot เดิม', 'kept lot', '#6D28D9'], dup: ['ซ้ำในไฟล์', 'dup in file', '#94A3B8'] };
+const _PLC_RANK = { ok: 0, away: 1, none: 2, bad: 3 };
+const _plcWorst = cs => (cs || []).reduce((w, c) => (!w || _PLC_RANK[c.st] > _PLC_RANK[w]) ? c.st : w, '');
+
 function previewPaste() {
   const text = $('pasteArea').value;
   const prev = $('pastePreview');
@@ -8848,27 +9066,63 @@ function previewPaste() {
   const badDates = rows.filter(r => !r.plan_date).length;
   const dateWarn = badDates ? `<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#B91C1C;font-weight:700;margin-bottom:6px">
       ⚠️ มี ${badDates} แถวที่อ่านวันที่ไม่ได้ — ลองเปลี่ยน "รูปแบบวันที่ในไฟล์" ด้านบน (เช่นเป็น เดือน/วัน/ปี)</div>` : '';
-  const lotNote = _planPasteLotSkipped ? `<div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#3730A3;font-weight:700;margin-bottom:6px">
-      ℹ️ ${TT('มีคอลัมน์ Lot — ใช้เป็น "Lot ที่จะขาย" (แผนที่มี Lot = ขายเฉพาะ Lot นั้น · ช่องว่าง = ระบบเลือกให้ตามวันขาย)','Has a Lot column — used as "lot to sell" (a plan with a lot sells only that lot · blank = picked by sale date)')}</div>` : '';
+  /* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 2–3) ตรวจ Valve No + Lot ทุกแถวก่อนบันทึก */
+  const M = _pastePlanMerge(rows);
+  const chk = rows.map(r => planLotCheck(r.valve_no, r.lot));
+  const worst = chk.map(_plcWorst);
+  const n = { ok: 0, away: 0, none: 0, bad: 0, blank: 0 };
+  rows.forEach((r, i) => { if (!r.lot) n.blank++; else n[worst[i] || 'ok']++; });
+  const chip = (c, txt, v) => v ? `<span style="display:inline-block;margin:2px 6px 0 0;padding:1px 7px;border-radius:10px;background:#fff;border:1px solid ${c};color:${c};font-size:10.5px;font-weight:800;white-space:nowrap">${txt} ${nn(v)}</span>` : '';
+  const lotNote = _planPasteHasLot
+    ? `<div style="background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#5B21B6;font-weight:700;margin-bottom:6px;line-height:1.5">
+        🔒 ${TT('มีคอลัมน์ Lot — เก็บเป็น "Lot ที่จะขาย" (แผนที่มี Lot = ขายเฉพาะ Lot นั้น · ช่องว่าง = ระบบเลือกให้ตามวันขาย)','Has a Lot column — saved as "lot to sell" (a plan with a lot sells only that lot · blank = picked by sale date)')}<br>
+        ${chip(_PLC_COL.ok, TT('✓ Lot ตรงกับ Valve','✓ lot matches valve'), n.ok)}${chip(_PLC_COL.away, TT('🚚 ยังอยู่สายอื่น','🚚 still at another line'), n.away)}${chip(_PLC_COL.none, TT('❓ ยังไม่พบในระบบ','❓ not found yet'), n.none)}${chip(_PLC_COL.bad, TT('⚠️ Lot เป็นของเบอร์อื่น','⚠️ lot of another valve'), n.bad)}${chip('#64748B', TT('ว่าง = ระบบเลือก','blank = auto'), n.blank)}
+        ${n.bad ? `<div style="color:#B91C1C;margin-top:4px">⚠️ ${TT(`${nn(n.bad)} แถว Valve No กับ Lot ไม่ตรงกัน (Lot เป็นของเบอร์อื่น) — ตรวจ Excel ก่อนบันทึก · แถวสีแดงด้านล่าง`, `${nn(n.bad)} rows: Valve No and Lot don't match (the lot belongs to another valve) — check the Excel file first · red rows below`)}</div>` : ''}
+      </div>`
+    : `<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#92400E;font-weight:700;margin-bottom:6px;line-height:1.5">
+        ⚠️ ${TT('ไม่มีคอลัมน์ Lot — ทุกแผนให้ระบบเลือก Lot เองตามวันขาย ซึ่งอาจไม่ตรงกับ Lot ที่จะขายจริง','No Lot column — the system picks a lot for every plan by sale date, which may not be the lot you sell')}<br>
+        <span style="font-weight:600">${TT('ใส่คอลัมน์ Lot ใน Excel (ช่องไหนก็ได้) แล้ววางใหม่ — แผนเดิมจะถูกเติม Lot ให้ ไม่เกิดแถวซ้ำ','Add a Lot column in Excel (any position) and paste again — existing plans get the lot filled in, no duplicates')}</span>
+        ${M.cnt.keep ? `<br><span style="color:#6D28D9">🔒 ${TT(`${nn(M.cnt.keep)} แผนเดิมระบุ Lot ไว้แล้ว — คง Lot เดิม`, `${nn(M.cnt.keep)} existing plans already have a lot — kept`)}</span>` : ''}
+      </div>`;
+  const C = M.cnt;
+  const actLine = `<div style="font-size:11.5px;font-weight:700;color:var(--muted);margin:2px 0 6px">${[
+      C.new ? `<span style="color:${_PASTE_ACT.new[2]}">➕ ${TT('เพิ่มใหม่','new')} ${nn(C.new)}</span>` : '',
+      C.fill ? `<span style="color:${_PASTE_ACT.fill[2]}">🔒 ${TT('เติม Lot ให้แผนเดิม','lot added to existing plan')} ${nn(C.fill)}</span>` : '',
+      C.upd ? `<span style="color:${_PASTE_ACT.upd[2]}">↻ ${TT('อัปเดตแผนเดิม','update existing')} ${nn(C.upd)}</span>` : '',
+      C.keep ? `<span style="color:${_PASTE_ACT.keep[2]}">🔒 ${TT('คง Lot เดิม','kept lot')} ${nn(C.keep)}</span>` : '',
+      C.same ? `<span style="color:${_PASTE_ACT.same[2]}">= ${TT('ไม่เปลี่ยน','unchanged')} ${nn(C.same)}</span>` : '',
+      C.dup ? `<span>${TT('ซ้ำในไฟล์ (ใช้แถวล่าสุด)','duplicated in file (last wins)')} ${nn(C.dup)}</span>` : ''].filter(Boolean).join(' · ')}</div>`;
+  const oldBox = M.old.length ? `<label style="display:block;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#9A3412;font-weight:700;margin-bottom:6px;line-height:1.5;cursor:pointer">
+      <input type="checkbox" ${_planPasteReplace ? 'checked' : ''} onchange="_planPasteReplace=this.checked" style="vertical-align:-2px;margin-right:4px">
+      ${TT(`แทนที่แผนเดิมของ Valve + วันขายเดียวกัน ${nn(M.old.length)} แผน (ชุดใหม่ระบุ Lot แล้ว · ยอด/Lot ไม่ตรงกับแผนเดิม)`, `Replace ${nn(M.old.length)} existing plans with the same Valve + sale date (new rows carry lots · qty/lot differ)`)}
+      <div style="font-weight:600;font-size:10.5px;color:#9A3412;margin-top:2px">${M.old.slice(0, 6).map(p => `${escapeHtml(p.valve_no || '')} ${escapeHtml(_fmtThDate(_planDateISO(p.plan_date)).slice(0, 5))} · ${nn(p.quantity)}${planLotNorm(p.lot) ? ' · ' + escapeHtml(planLotNorm(p.lot)) : ' · ' + TT('ไม่ระบุ Lot', 'no lot')}`).join(' &nbsp;|&nbsp; ')}${M.old.length > 6 ? ` … +${M.old.length - 6}` : ''}</div>
+      <div style="font-weight:600;font-size:10.5px;color:var(--muted)">${TT('ไม่ติ๊ก = เก็บแผนเดิมไว้ด้วย (ยอดขายจะซ้อน 2 ชุด)', 'Unticked = keep the old plans too (sales would be counted twice)')}</div>
+    </label>` : '';
+  // แถวที่มีปัญหาขึ้นก่อน (Lot ของเบอร์อื่น → ยังไม่พบ) ให้เห็นทันที
+  const idx = rows.map((r, i) => i).sort((a, b) => (_PLC_RANK[worst[b]] || 0) - (_PLC_RANK[worst[a]] || 0) || a - b);
+  const SHOW = Math.max(12, Math.min(40, n.bad + n.none));
+  const hasSt = rows.some(r => r.status !== 'planned');
   prev.innerHTML = `
-    ${dateWarn}${lotNote}
-    <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">
+    ${dateWarn}${lotNote}${oldBox}
+    <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:2px">
       ✓ พบ ${rows.length} รายการ <span class="muted" style="font-weight:400;font-size:11px">(separator: ${sepUsed})</span>
     </div>
-    <div class="tbl-wrap" style="max-height:180px">
+    ${actLine}
+    <div class="tbl-wrap plc-w" style="max-height:220px">
       <table style="font-size:11px">
-        <thead><tr><th>วันที่</th><th>Valve</th>${_planPasteLotSkipped ? '<th>Lot</th>' : ''}<th>Qty</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
-        <tbody>${rows.slice(0,12).map(r => `<tr>
-          <td>${r.plan_date ? escapeHtml(r.plan_date) : '<span style="color:var(--red);font-weight:700">⚠️ อ่านไม่ได้</span>'}</td>
+        <thead><tr><th>วันที่</th><th>Valve</th><th>${TT('Lot ที่จะขาย','Lot to sell')}</th><th>Qty</th>${hasSt ? '<th>สถานะ</th>' : ''}<th>หมายเหตุ</th><th></th></tr></thead>
+        <tbody>${idx.slice(0, SHOW).map(i => { const r = rows[i], a = _PASTE_ACT[M.acts[i]] || _PASTE_ACT.new, w = worst[i]; return `<tr${w === 'bad' ? ' style="background:#FEF2F2"' : ''}>
+          <td style="white-space:nowrap">${r.plan_date ? escapeHtml(_fmtThDate(r.plan_date)) : '<span style="color:var(--red);font-weight:700">⚠️ อ่านไม่ได้</span>'}</td>
           <td><b>${escapeHtml(r.valve_no)}</b></td>
-          ${_planPasteLotSkipped ? `<td>${escapeHtml(r.lot || '—')}</td>` : ''}
+          <td style="min-width:150px;max-width:220px">${r.lot ? `<b style="color:#5B21B6">${escapeHtml(r.lot)}</b>${planLotCheckHtml(chk[i].length > 1 ? chk[i] : chk[i].filter(c => c.st !== 'ok' || c.vsm))}` : `<span class="muted">${TT('ว่าง (ระบบเลือก)','blank (auto)')}</span>`}</td>
           <td class="center">${nn(r.quantity)}</td>
-          <td>${PLAN_STATUS[r.status]?.label || r.status}</td>
+          ${hasSt ? `<td>${PLAN_STATUS[r.status]?.label || r.status}</td>` : ''}
           <td>${escapeHtml(r.note||'')}</td>
-        </tr>`).join('')}</tbody>
+          <td style="white-space:nowrap;font-size:10px;font-weight:800;color:${a[2]}">${TT(a[0], a[1])}</td>
+        </tr>`; }).join('')}</tbody>
       </table>
     </div>
-    ${rows.length > 12 ? `<div class="muted mt-8" style="font-size:11px">…และอีก ${rows.length-12} รายการ</div>` : ''}
+    ${rows.length > SHOW ? `<div class="muted mt-8" style="font-size:11px">…และอีก ${rows.length-SHOW} รายการ</div>` : ''}
   `;
   $('pasteConfirmBtn').disabled = false;
   window._pasteRows = rows;
@@ -8877,27 +9131,15 @@ function previewPaste() {
 async function confirmPaste() {
   const rows = window._pasteRows || [];
   if (!rows.length) return;
-  // ทำ dedupe: วาล์ว+วันที่ส่ง+จำนวน ซ้ำ → ใช้ข้อมูลใหม่แทน (ทั้งซ้ำในชุดที่วาง และซ้ำกับของเดิม)
-  /* ★ v3.89 คีย์รวม Lot แล้ว (คนละ Lot = คนละรายการ) · แถวเดิมที่ "ยังไม่ระบุ Lot" + เบอร์/วันขาย/จำนวนเดียวกัน
-     = แถวเดียวกัน → เติม Lot ให้แถวเดิม (วางไฟล์เดิมซ้ำพร้อมคอลัมน์ Lot ไม่เกิดแถวซ้ำ) */
-  const existingByKey = {}, existingNoLot = {};
-  for (const p of state.plans) { existingByKey[planKey(p)] = p; if (!planLotNorm(p.lot)) existingNoLot[planKeyBase(p)] = p; }
-  const seen = {};            // key → plan (รายการล่าสุดชนะ)
-  const used = new Set();
-  for (const r of rows) {
-    const k = planKey(r);
-    let ex = existingByKey[k];
-    if (!ex && planLotNorm(r.lot)) { const b = existingNoLot[planKeyBase(r)]; if (b && !used.has(b.plan_id)) ex = b; }
-    const reuseId = seen[k]?.plan_id || ex?.plan_id || planNewId();
-    used.add(reuseId);
-    seen[k] = { ...r, plan_id: reuseId, created_by: CURRENT_USER?.id || '', vsm: viewVsm() };
-  }
-  const plans = Object.values(seen);
+  // ★ v3.90 ตัวรวมเดียวกับตัวอย่าง (_pastePlanMerge) — คีย์ = เบอร์ + วันขาย + จำนวน + Lot · เติม Lot ให้แผนเดิม · คง Lot เดิม · แทนที่ของเก่า
+  const M = _pastePlanMerge(rows);
+  const plans = M.plans;
+  const delIds = _planPasteReplace ? M.old.map(p => p.plan_id) : [];
   const reuseIds = new Set(plans.map(p => p.plan_id));
-  const replacedCount = state.plans.filter(p => reuseIds.has(p.plan_id)).length;
+  if (!plans.length && !delIds.length) { closeModal(); toast(`✓ ${TT('ไม่มีอะไรเปลี่ยน — แผนตรงกับไฟล์ทุกแถวแล้ว','Nothing changed — every row already matches')} (${nn(rows.length)})`, 'green'); return; }
   // 1) push ขึ้น D1 ก่อน (ถ้ามี API) — กัน race condition กับ auto-pull
   let _bulkFail = null;
-  if (API) {
+  if (API && plans.length) {
     try { await api('/api/plans/bulk', { body: { plans } }); }
     catch (e) {
       /* ★ req #6: เดิมแค่ toast แล้วจบ — แผนที่วางจาก Excel ไม่เคยขึ้น Cloud เลย
@@ -8906,13 +9148,19 @@ async function confirmPaste() {
       for (const p of plans) queueWrite('/api/plans', p, TT('แผนขาย','sales plan'), p.plan_id);
     }
   }
-  // 2) อัพเดต state local: เอาของเดิมที่ซ้ำออก แล้วใส่ข้อมูลใหม่
-  const kept = state.plans.filter(p => !reuseIds.has(p.plan_id));
+  // 2) อัพเดต state local: เอาของเดิมที่ซ้ำ/ถูกแทนที่ออก แล้วใส่ข้อมูลใหม่
+  const delSet = new Set(delIds);
+  const kept = state.plans.filter(p => !reuseIds.has(p.plan_id) && !delSet.has(p.plan_id));
   state.plans = [...plans, ...kept];
   lsSave(LS.PLANS, state.plans);
   closeModal();
-  renderPlans();
-  toast(`เพิ่ม ${plans.length} แผน${replacedCount ? ` · แทนที่ซ้ำ ${replacedCount}` : ''}${_bulkFail ? ' · ⚠️ ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่แล้ว)' : ''}`, _bulkFail ? 'orange' : 'green');
+  _planRefreshAllViews();                                   // สถานะ / Lot ที่จะขาย / บอร์ด IOT / แผนผลิตคิดใหม่ทันที
+  if (API) for (const id of delIds) await _planSave(id, true);   // ลบไม่สำเร็จ → เข้าคิวส่งใหม่ (req #6)
+  const C = M.cnt, nLot = rows.filter(r => planLotNorm(r.lot)).length;
+  toast([`💾 ${TT('บันทึก','saved')} ${nn(plans.length)} ${TT('แผน','plans')}`,
+         C.new ? `${TT('ใหม่','new')} ${C.new}` : '', C.fill ? `🔒 ${TT('เติม Lot','lot added')} ${C.fill}` : '', C.upd ? `${TT('อัปเดต','updated')} ${C.upd}` : '',
+         delIds.length ? `${TT('แทนที่แผนเดิม','replaced old')} ${delIds.length}` : '', C.same ? `${TT('ไม่เปลี่ยน','unchanged')} ${C.same}` : '',
+         `${TT('มี Lot','with lot')} ${nLot}/${rows.length}`].filter(Boolean).join(' · ') + (_bulkFail ? ' · ⚠️ ยังไม่ขึ้น Cloud (เข้าคิวส่งใหม่แล้ว)' : ''), _bulkFail ? 'orange' : 'green');
   if (_bulkFail) offlineSaveDialog(`${TT('แผนขายจาก Excel','Plans pasted from Excel')} ${nn(plans.length)} ${TT('รายการ','rows')}`, _bulkFail.message);
 }
 
@@ -10533,7 +10781,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.90":"Production Record + KPI · v3.90",
+"ระบบบันทึกผลิต + KPI · v3.91":"Production Record + KPI · v3.91",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
