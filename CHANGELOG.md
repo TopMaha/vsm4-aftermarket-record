@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.92 — 2026-10-22 — ⚡ ความเร็ว: deploy แบบ build (สคริปต์แยกไฟล์ + ย่อ) · จอแรกไม่ขาว (โครงร่าง) · บันทึก/แก้/ลบ แบบ optimistic · เปิดซ้ำจาก cache ใช้งานได้ใน ~0.9 วิ · ตัดงานหนักตอนเปิดแอป  ⏳ ยังไม่ deploy
+## v3.92 — 2026-10-22 — ⚡ ความเร็ว: deploy แบบ build (สคริปต์แยกไฟล์ + ย่อ) · จอแรกไม่ขาว (โครงร่าง) · บันทึก/แก้/ลบ แบบ optimistic · เปิดซ้ำจาก cache ใช้งานได้ใน ~0.9 วิ · ตัดงานหนักตอนเปิดแอป  ✅ deployed (Pages d95f14b · Worker ไม่เปลี่ยน)
 
 **ที่มา (ผู้ใช้ 21/10):** "ปรับปรุงความเร็ว เว็ปแอฟ" — เป้า LCP < 2 วิ · FCP < 1.5 วิ · TTFB < 500 ms · CLS < 0.1 · INP < 200 ms ·
 เปิดซ้ำแบบ PWA จาก cache ≤ 1 วิ · Lighthouse มือถือ ≥ 90 · skeleton · optimistic UI · SW stale-while-revalidate · รวม API · งานหนักไม่บล็อก > 50 ms
