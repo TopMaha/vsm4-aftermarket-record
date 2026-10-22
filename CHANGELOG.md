@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.94 — 2026-10-22 — 📐 SL ของวาล์ว ↔ SL ของเครื่อง: คัดเครื่อง SSG / SEMI / SRG / SFG ตาม SL + เลือกเครื่อง SL ใกล้ที่สุดก่อน · Master valve มี SL / HD / TL  ⏳ ยังไม่ deploy (ต้อง deploy Worker ด้วย)
+## v3.94 — 2026-10-22 — 📐 SL ของวาล์ว ↔ SL ของเครื่อง: คัดเครื่อง SSG / SEMI / SRG / SFG ตาม SL + เลือกเครื่อง SL ใกล้ที่สุดก่อน · Master valve มี SL / HD / TL  ✅ deployed (Pages 060007f · Worker f561b2e7)
 
 **ที่มา (ผู้ใช้ 22/10):** ① Master Valve เพิ่ม SL · HD · TL (SL ใช้กำหนดว่าเข้าเครื่องไหนได้ · HD/TL เก็บไว้ก่อน)
 ② Process SSG · SEMI · SFG · SFG*2 · SRG · SRG*2/3/5/6 · SSG*2/3/4/6 · SSG+RED → เข้าเฉพาะเครื่องที่ SL พอ (SL วาล์วมากกว่า SL เครื่อง = เข้าไม่ได้)
