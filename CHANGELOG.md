@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.95 — 2026-10-22 — 📏 วาง SD / TYPE / SL / HD / TL จาก Excel: รูปแบบ ValveNo | SD | Type | SL | HD | TL ก๊อปมาแค่แถวข้อมูลก็ได้ (ไม่ต้องมีแถวหัว)  ⏳ ยังไม่ deploy (Worker ไม่เปลี่ยน)
+## v3.95 — 2026-10-22 — 📏 วาง SD / TYPE / SL / HD / TL จาก Excel: รูปแบบ ValveNo | SD | Type | SL | HD | TL ก๊อปมาแค่แถวข้อมูลก็ได้ (ไม่ต้องมีแถวหัว)  ✅ deployed (Pages 8ff4455 · Worker ไม่เปลี่ยน)
 
 **ที่มา (ผู้ใช้ 22/10):** Admin จะก๊อปจาก Excel แบบนี้ `ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL` แล้ววาง (เช่น `V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42`)
 
