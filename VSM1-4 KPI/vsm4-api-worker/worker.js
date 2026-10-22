@@ -40,6 +40,7 @@
  *   POST /api/mccaps                 → upsert        body:{caps:[...], replace?:true, by?}
  *   POST /api/mccaps/delete          → ลบ            body:{machine_id}
  *   (valves มี sd + vtype เพิ่ม — เขียนเฉพาะเมื่อ body มีคีย์นั้น)
+ *   (★ 2026-10-22 valves มี sl / hd / tl · machine_caps มี sl — กติกาเดียวกัน: เขียนเฉพาะเมื่อ body มีคีย์นั้น)
  *   GET  /api/mpman                  → แผนที่ Admin วางเอง (pin) · วันคาดว่า WIP IN เข้า (exp) · เครื่องปิดถาวร (off)
  *   POST /api/mpman                  → upsert รายแถว  body:{items:[{id, kind, ...}], by?}
  *   POST /api/mpman/delete           → ลบ            body:{ids:[...]}
@@ -276,7 +277,7 @@ export default {
    แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
    เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
    เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
-const SCHEMA_VER = '2026-10-12-mpman';
+const SCHEMA_VER = '2026-10-22-sl';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
@@ -393,6 +394,16 @@ async function ensureSchema(env) {
        data       TEXT NOT NULL DEFAULT '{}',
        updated_at TEXT,
        updated_by TEXT)`,
+
+    /* ★ 2026-10-22 (v3.94) — SL / HD / TL ของวาล์ว + SL สูงสุดที่เครื่องรับได้
+       valves.sl = ใช้คัดเครื่องของ Process SSG / SEMI / SRG / SFG (SL วาล์ว > SL เครื่อง = เข้าไม่ได้)
+       valves.hd / valves.tl = เก็บไว้ก่อน (ยังไม่ใช้คำนวณ)
+       machine_caps.sl = SL สูงสุดของเครื่อง · NULL = ไม่ได้ตั้ง (client ใช้ค่าเริ่มต้น) · 0 = ไม่จำกัด
+       ❗เพิ่มคอลัมน์อย่างเดียว · client รุ่นเก่าที่ไม่ส่งคีย์ sl/hd/tl จะไม่ทับค่าที่มีอยู่ */
+    'ALTER TABLE valves ADD COLUMN sl REAL',
+    'ALTER TABLE valves ADD COLUMN hd REAL',
+    'ALTER TABLE valves ADD COLUMN tl REAL',
+    'ALTER TABLE machine_caps ADD COLUMN sl REAL',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
@@ -509,17 +520,26 @@ async function getInit(env) {
 /* ★ 2026-10-01 — คืน sd/vtype ด้วย (วางแผนเครื่องจักร)
    ❗มีทางถอย: ถ้า SELECT คอลัมน์ใหม่ไม่ผ่าน (migration ยังไม่ลง) ให้กลับไปใช้ชุดเดิม
      /api/init พึ่งฟังก์ชันนี้ — ถ้าพังตรงนี้ ทั้งแอปเปิดไม่ขึ้น ห้ามเสี่ยง */
+/* ★ 2026-10-22 + sl/hd/tl — ถอยได้ 2 ขั้น (ไม่มี sl → ชุด sd/vtype · ไม่มี sd → ชุดเดิม) */
+const _numOrNull = x => (x === null || x === undefined || x === '') ? null : Number(x);
 async function getValves(env) {
-  let results, hasSpec = true;
+  let results, hasSpec = true, hasSl = true;
   try {
     ({ results } = await env.DB.prepare(
-      'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype FROM valves ORDER BY valve_no'
+      'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype, sl, hd, tl FROM valves ORDER BY valve_no'
     ).all());
-  } catch (e) {
-    hasSpec = false;
-    ({ results } = await env.DB.prepare(
-      'SELECT valve_no, customer, description, processes, barcode_id FROM valves ORDER BY valve_no'
-    ).all());
+  } catch (e0) {
+    hasSl = false;
+    try {
+      ({ results } = await env.DB.prepare(
+        'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype FROM valves ORDER BY valve_no'
+      ).all());
+    } catch (e) {
+      hasSpec = false;
+      ({ results } = await env.DB.prepare(
+        'SELECT valve_no, customer, description, processes, barcode_id FROM valves ORDER BY valve_no'
+      ).all());
+    }
   }
   return (results || []).map(r => {
     const o = {
@@ -533,6 +553,7 @@ async function getValves(env) {
       o.sd    = (r.sd === null || r.sd === undefined || r.sd === '') ? null : Number(r.sd);
       o.vtype = r.vtype || '';
     }
+    if (hasSpec && hasSl) { o.sl = _numOrNull(r.sl); o.hd = _numOrNull(r.hd); o.tl = _numOrNull(r.tl); }
     return o;
   });
 }
@@ -540,19 +561,23 @@ async function getValves(env) {
 /* sd/vtype เขียนเฉพาะเมื่อ body "มีคีย์นั้นจริง" — client รุ่นเก่า (ไม่รู้จัก SD) ดัน valves ทั้งก้อน
    ผ่าน /api/valves/bulk เป็นประจำ (normalizeAllValves / Import) ถ้าเขียนทับทุกครั้ง SD จะถูกล้างเงียบ ๆ
    ส่ง sd:null มาตรง ๆ = ตั้งใจล้างค่า (Admin ลบ SD ออก) */
+/* ★ 2026-10-22 + sl/hd/tl (?11–?16) — กติกาเดียวกับ sd: มีคีย์ = เขียน (null = ล้าง) · ไม่มีคีย์ = คงค่าเดิม */
+const _hasKey = (v, k) => Object.prototype.hasOwnProperty.call(v, k);
+const _specNum = (v, k) => {
+  if (!_hasKey(v, k) || v[k] === null || v[k] === '' || v[k] === undefined) return null;
+  const n = Number(v[k]);
+  return Number.isFinite(n) ? n : null;
+};
 function _valveSpecArgs(v) {
-  const hasSd = Object.prototype.hasOwnProperty.call(v, 'sd');
-  const hasTy = Object.prototype.hasOwnProperty.call(v, 'vtype');
-  let sd = null;
-  if (hasSd && v.sd !== null && v.sd !== '' && v.sd !== undefined) {
-    const n = Number(v.sd);
-    sd = Number.isFinite(n) ? n : null;
-  }
-  return [hasSd ? 1 : 0, sd, hasTy ? 1 : 0, hasTy ? String(v.vtype || '').trim().toUpperCase() : ''];
+  const hasSd = _hasKey(v, 'sd');
+  const hasTy = _hasKey(v, 'vtype');
+  return [hasSd ? 1 : 0, _specNum(v, 'sd'), hasTy ? 1 : 0, hasTy ? String(v.vtype || '').trim().toUpperCase() : '',
+    _hasKey(v, 'sl') ? 1 : 0, _specNum(v, 'sl'), _hasKey(v, 'hd') ? 1 : 0, _specNum(v, 'hd'), _hasKey(v, 'tl') ? 1 : 0, _specNum(v, 'tl')];
 }
 const VALVE_UPSERT_SQL = `
-    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at, sd, vtype)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, CASE WHEN ?7 = 1 THEN ?8 ELSE NULL END, CASE WHEN ?9 = 1 THEN ?10 ELSE NULL END)
+    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at, sd, vtype, sl, hd, tl)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, CASE WHEN ?7 = 1 THEN ?8 ELSE NULL END, CASE WHEN ?9 = 1 THEN ?10 ELSE NULL END,
+            CASE WHEN ?11 = 1 THEN ?12 ELSE NULL END, CASE WHEN ?13 = 1 THEN ?14 ELSE NULL END, CASE WHEN ?15 = 1 THEN ?16 ELSE NULL END)
     ON CONFLICT(valve_no) DO UPDATE SET
       customer    = excluded.customer,
       description = excluded.description,
@@ -560,7 +585,10 @@ const VALVE_UPSERT_SQL = `
       barcode_id  = excluded.barcode_id,
       updated_at  = excluded.updated_at,
       sd          = CASE WHEN ?7 = 1 THEN ?8  ELSE valves.sd    END,
-      vtype       = CASE WHEN ?9 = 1 THEN ?10 ELSE valves.vtype END`;
+      vtype       = CASE WHEN ?9 = 1 THEN ?10 ELSE valves.vtype END,
+      sl          = CASE WHEN ?11 = 1 THEN ?12 ELSE valves.sl END,
+      hd          = CASE WHEN ?13 = 1 THEN ?14 ELSE valves.hd END,
+      tl          = CASE WHEN ?15 = 1 THEN ?16 ELSE valves.tl END`;
 
 async function upsertValve(env, body) {
   const valveNo  = String(body.valveNo || body.valve_no || '').trim();
@@ -578,6 +606,9 @@ async function upsertValve(env, body) {
   const out = { valveNo, customer, description: desc, processes: procs.split(',').filter(Boolean), barcode_id: bc };
   if (spec[0]) out.sd = spec[1];
   if (spec[2]) out.vtype = spec[3];
+  if (spec[4]) out.sl = spec[5];
+  if (spec[6]) out.hd = spec[7];
+  if (spec[8]) out.tl = spec[9];
   return { valve: out };
 }
 
@@ -608,7 +639,7 @@ async function bulkUpsertValves(env, body) {
 // ============================================================
 const MCCAP_COLS = 'machine_id, zone, procs, sd_ranges, only_valves, except_valves, ct, remark, label, active, updated_at, updated_by';
 function _capRow(r) {
-  return {
+  const o = {
     machine_id: r.machine_id, zone: r.zone || '',
     procs: r.procs || '', sd_ranges: r.sd_ranges || '',
     only_valves: r.only_valves || '', except_valves: r.except_valves || '',
@@ -617,9 +648,13 @@ function _capRow(r) {
     active: r.active === 0 ? 0 : 1,
     updated_at: r.updated_at || '', updated_by: r.updated_by || '',
   };
+  if (_hasKey(r, 'sl')) o.sl = _numOrNull(r.sl);   // ★ 2026-10-22 มีคีย์ sl = client รู้ว่า Worker รองรับ SL แล้ว
+  return o;
 }
 async function getMcCaps(env) {
-  const { results } = await env.DB.prepare(`SELECT ${MCCAP_COLS} FROM machine_caps ORDER BY machine_id`).all();
+  let results;
+  try { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS}, sl FROM machine_caps ORDER BY machine_id`).all()); }
+  catch (e) { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS} FROM machine_caps ORDER BY machine_id`).all()); }
   return (results || []).map(_capRow);
 }
 /* body: { caps:[...] } หรือ cap เดียว · replace:true = ล้างของเดิมทั้งตารางก่อน (ใช้ตอนนำเข้าทั้งชีท) */
@@ -628,21 +663,26 @@ async function upsertMcCaps(env, body) {
   const now  = new Date().toISOString();
   const by   = String(body.by || '').slice(0, 60);
   const txt  = (v, max) => (Array.isArray(v) ? v.join(',') : String(v == null ? '' : v)).slice(0, max || 4000);
+  /* ★ 2026-10-22 sl (?13 = ค่า · ?14 = body มีคีย์ sl) — client รุ่นเก่าที่ไม่รู้จัก SL ส่ง caps ทั้งแถวมาเป็นประจำ
+     ถ้าเขียนทับทุกครั้ง SL ที่ Admin ตั้งจะหายเงียบ ๆ → เขียนเฉพาะเมื่อมีคีย์ (null = ล้าง → client ใช้ค่าเริ่มต้น) */
   const stmt = env.DB.prepare(`
-    INSERT INTO machine_caps (${MCCAP_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO machine_caps (${MCCAP_COLS}, sl) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12, CASE WHEN ?14 = 1 THEN ?13 ELSE NULL END)
     ON CONFLICT(machine_id) DO UPDATE SET
       zone=excluded.zone, procs=excluded.procs, sd_ranges=excluded.sd_ranges,
       only_valves=excluded.only_valves, except_valves=excluded.except_valves,
       ct=excluded.ct, remark=excluded.remark, label=excluded.label, active=excluded.active,
-      updated_at=excluded.updated_at, updated_by=excluded.updated_by`);
+      updated_at=excluded.updated_at, updated_by=excluded.updated_by,
+      sl = CASE WHEN ?14 = 1 THEN ?13 ELSE machine_caps.sl END`);
   const batch = [];
   for (const c of list) {
     const id = String((c && (c.machine_id || c.id)) || '').trim().toUpperCase();
     if (!id) continue;
     const ct = (c.ct === null || c.ct === undefined || c.ct === '' || !Number.isFinite(Number(c.ct))) ? null : Number(c.ct);
+    const sl = _specNum(c, 'sl');
     batch.push(stmt.bind(id, txt(c.zone, 20), txt(c.procs, 400), txt(c.sd_ranges, 200),
       txt(c.only_valves), txt(c.except_valves), ct, txt(c.remark, 1000), txt(c.label, 60),
-      c.active === 0 || c.active === false ? 0 : 1, now, by || String(c.updated_by || '').slice(0, 60)));
+      c.active === 0 || c.active === false ? 0 : 1, now, by || String(c.updated_by || '').slice(0, 60),
+      sl != null && sl >= 0 ? sl : null, _hasKey(c, 'sl') ? 1 : 0));
   }
   if (body.replace === true) batch.unshift(env.DB.prepare('DELETE FROM machine_caps'));
   for (let i = 0; i < batch.length; i += 100) await env.DB.batch(batch.slice(i, i + 100));
