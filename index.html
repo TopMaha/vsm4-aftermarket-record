@@ -2773,7 +2773,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.92</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.93</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10918,7 +10918,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.92":"Production Record + KPI · v3.92",
+"ระบบบันทึกผลิต + KPI · v3.93":"Production Record + KPI · v3.93",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -21321,15 +21321,27 @@ async function _saveKpiImpl() {
 /* ============================================================
    AUTOCOMPLETE — valve / employee / process
    ============================================================ */
+/* 🐞 v3.93 — เดิมฝัง "โค้ดของ onPick" (onPick.toString()) ลงใน onclick="…" ตรง ๆ
+   ตั้งแต่ v3.92 สคริปต์ถูกย่อ (minify) → โค้ดใช้ "…" แทน '…' → อัญประกาศไปปิด onclick กลางคัน
+   → แตะรายการไหนก็ "Uncaught SyntaxError: Unexpected end of input" (ทุกช่อง autocomplete: พนักงาน/วาล์ว/Process/Lot/ค้นหา)
+   ตอนนี้เก็บ onPick + รายการไว้ในหน่วยความจำ แล้วให้ onclick เรียกด้วยเลขลำดับ → ไม่ขึ้นกับการย่อโค้ดอีก */
+const _acPicks = {};
 function acDropdown(inputId, items, onPick) {
   const dd = $(inputId + '_dd');
   if (!items.length) { dd.classList.remove('open'); return; }
-  dd.innerHTML = items.slice(0, 12).map((it, i) =>
-    `<div class="ac-item" onclick="(${onPick.toString()})(${JSON.stringify(it).replace(/"/g,'&quot;')},'${inputId}')">
+  const shown = items.slice(0, 12);
+  _acPicks[inputId] = { items: shown, onPick };
+  const idAttr = escapeHtml(JSON.stringify(String(inputId)));
+  dd.innerHTML = shown.map((it, i) =>
+    `<div class="ac-item" onclick="_acPick(${idAttr},${i})">
       <span class="ac-id">${escapeHtml(it.id || it.valveNo || it.proc || '')}</span>
       <span class="ac-nm">${escapeHtml(it.name || it.description || it.label || '')}</span>
     </div>`).join('');
   dd.classList.add('open');
+}
+function _acPick(inputId, i) {
+  const p = _acPicks[inputId], it = p && p.items[i];
+  if (it) p.onPick.call(null, it, inputId);
 }
 function acClose(id) { setTimeout(() => $(id + '_dd')?.classList.remove('open'), 200); }
 

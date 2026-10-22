@@ -51,6 +51,10 @@ let main = null;
 for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) if (!main || m[1].length > main[1].length) main = m;
 if (!main || main[1].length < 500000) fail('main inline <script> not found');
 const src = main[1];
+// v3.93: a function's source pasted into HTML (onclick="(${fn.toString()})(…)") breaks once minified — esbuild
+// rewrites '…' as "…", which closes the attribute early (every autocomplete died this way in v3.92)
+const fnSrcInHtml = src.match(/\(\$\{[^}]*\.toString\(\)\}\)\(/);
+if (fnSrcInHtml) fail('function source embedded in HTML (breaks after minify): ' + fnSrcInHtml[0]);
 const js = await esbuild.transform(src, { loader: 'js', minify: true, charset: 'utf8', legalComments: 'none', logLevel: 'silent' });
 for (const w of js.warnings) console.warn('  esbuild:', w.text);
 // top-level names must survive (called from inline handlers / other inline scripts / templates)
