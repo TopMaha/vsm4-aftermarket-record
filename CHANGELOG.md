@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v3.93 — 2026-10-22 — 🐞 แก้ด่วน: dropdown (autocomplete) ทุกช่องพัง — แตะแล้วขึ้นแถบแดง "Uncaught SyntaxError: Unexpected end of input" / มีโค้ดโผล่ในรายการ  ⏳ ยังไม่ deploy
+## v3.93 — 2026-10-22 — 🐞 แก้ด่วน: dropdown (autocomplete) ทุกช่องพัง — แตะแล้วขึ้นแถบแดง "Uncaught SyntaxError: Unexpected end of input" / มีโค้ดโผล่ในรายการ  ✅ deployed (Pages 97bd6a2 · Worker ไม่เปลี่ยน)
 
 **ที่มา (ผู้ใช้ 22/10 07:10–07:14):** ① หน้าติดตามงาน → ค้นหา Process จาก Valve No → พิมพ์ 1788 → แตะ VV1788A0 → แถบแดง `Uncaught SyntaxError: Unexpected end of input @ :1`
 ② ฟอร์มบันทึก → Valve No พิมพ์ 1349 → ในรายการมีโค้ด `…acLotSearch=="function"&&…'ZONE1_0_s0_v')">` โผล่ออกมา — "พวก drop down ทั้งหมดเลย"
