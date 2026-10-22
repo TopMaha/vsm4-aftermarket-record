@@ -2773,7 +2773,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.94</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.95</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10918,7 +10918,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.94":"Production Record + KPI · v3.94",
+"ระบบบันทึกผลิต + KPI · v3.95":"Production Record + KPI · v3.95",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -31336,7 +31336,8 @@ function openPasteSdModal() {
   openModal('📏 ' + TT('วาง SD / TYPE / SL / HD / TL ของวาล์วจาก Excel', 'Paste valve SD / TYPE / SL / HD / TL from Excel'), `
     <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px;line-height:1.7">
       <b>${TT('รูปแบบ', 'Format')}:</b> Valve No | TYPE | SD (${TT('สลับคอลัมน์ได้ — ระบบหาเอง', 'any column order')}) ${TT('เช่น', 'e.g.')} <code>V72225A0 ⇥ SWFS ⇥ 10</code><br>
-      📐 <b>SL / HD / TL</b>: ${TT('ก๊อป "หัวคอลัมน์" มาด้วย — ระบบจับคอลัมน์ตามชื่อหัว', 'copy the header row too — columns are matched by name')} ${TT('เช่น', 'e.g.')} <code>Valve No ⇥ SL ⇥ HD ⇥ TL</code> ${TT('แล้วตามด้วย', 'then')} <code>VF1234 ⇥ 100 ⇥ 30 ⇥ 95</code>
+      📐 <b>SL / HD / TL</b> — ${TT('รูปแบบมาตรฐาน', 'standard layout')}: <code>ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42</code>
+      · ${TT('ก๊อปพร้อมแถวหัวหรือไม่มีหัวก็ได้ · มีแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (จับตามชื่อหัว)', 'with or without the header row · with a header, columns can be in any order or partial (matched by name)')}
       · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
       ${TT('แก้เฉพาะ SD / TYPE / SL / HD / TL — ลูกค้าและ Process เดิมไม่ถูกแตะ', 'Only SD / TYPE / SL / HD / TL change — customer and Process are kept')}</div>
     <textarea id="psdBox" rows="10" placeholder="${TT('วางข้อมูลจาก Excel ที่นี่…', 'Paste here…')}" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
@@ -31363,26 +31364,44 @@ function _parsePasteSd(txt) {
       pos.forEach((c, i) => { for (const [k, re] of Object.entries(_PSD_HDR)) if (h[k] == null && re.test(c)) h[k] = i; });
       if (h.sd != null || h.ty != null || h.sl != null || h.hd != null || h.tl != null) { hdr = { ...h, tab }; continue; }
     }
-    if (hdr) {
-      const pos = hdr.tab && tab ? all : cells;
-      const vi = hdr.v != null && _psdIsValve(pos[hdr.v] || '') ? hdr.v : pos.findIndex(_psdIsValve);
-      if (vi < 0) { if (cells.some(x => /\d/.test(x))) bad.push(line); continue; }
+    // อ่านแถวตามตำแหน่งคอลัมน์ (cols = { v, sd, ty, sl, hd, tl } → ลำดับใน pos) · ช่องว่าง/ไม่มีคอลัมน์ = ไม่แก้ · ตัวเลขผิด = แถวอ่านไม่ได้
+    const readCols = (pos, cols, vi) => {
       const r = { valveNo: vKey(pos[vi]), sd: null, vtype: null };
       let ok = true;
       const num = (k, max) => {
-        const c = hdr[k] != null ? String(pos[hdr[k]] == null ? '' : pos[hdr[k]]).trim() : '';
-        if (c === '') return undefined;                       // ไม่มีคอลัมน์ / ช่องว่าง = ไม่แก้
+        const c = cols[k] != null ? String(pos[cols[k]] == null ? '' : pos[cols[k]]).trim() : '';
+        if (c === '') return undefined;
         const n = /^\d+(\.\d+)?$/.test(c) ? +c : NaN;
         if (!(n > 0 && n < max)) { ok = false; return undefined; }
         return n;
       };
       const sd = num('sd', 60); if (sd !== undefined) r.sd = sd;
       for (const k of VSPEC_NUMS) { const n = num(k, 5000); if (n !== undefined) r[k] = n; }
-      const ty = hdr.ty != null ? String(pos[hdr.ty] || '').trim() : '';
+      const ty = cols.ty != null ? String(pos[cols.ty] || '').trim() : '';
       if (ty && /^[A-Z]{2,8}$/i.test(ty)) r.vtype = ty.toUpperCase();
-      if (!ok) { bad.push(line); continue; }
-      rows.push(r);
+      return ok ? r : null;
+    };
+    if (hdr) {
+      const pos = hdr.tab && tab ? all : cells;
+      const vi = hdr.v != null && _psdIsValve(pos[hdr.v] || '') ? hdr.v : pos.findIndex(_psdIsValve);
+      if (vi < 0) { if (cells.some(x => /\d/.test(x))) bad.push(line); continue; }
+      const r = readCols(pos, hdr, vi);
+      if (r) rows.push(r); else bad.push(line);
       continue;
+    }
+    /* ★ v3.95 ไม่มีแถวหัว แต่เป็นรูปแบบมาตรฐานของ Admin: ValveNo | SD | Type | SL | HD | TL (ผู้ใช้ 22/10)
+       เดิมก๊อปมาแค่แถวข้อมูล = อ่านได้แค่ SD/TYPE · SL/HD/TL หายเงียบ ๆ
+       รู้ว่าเป็นรูปแบบนี้เมื่อ: หลัง Valve มีอย่างน้อย 3 ช่อง · ช่องถัดไปเป็นตัวเลข (SD) หรือว่าง · ช่องที่สองเป็น TYPE (OP/SW/HW…) หรือว่าง
+       ไม่เข้ารูปแบบ (เช่นแบบเดิม Valve | TYPE | SD) → อ่านแบบเดิม */
+    {
+      const pos = tab ? all : cells, vi = pos.findIndex(_psdIsValve);
+      const at = k => String(pos[vi + k] == null ? '' : pos[vi + k]).trim();
+      if (vi >= 0 && pos.length - vi >= 4 && (at(1) === '' || /^\d+(\.\d+)?$/.test(at(1))) && (at(2) === '' || mpTypeRank(at(2)) < 99)
+        && [3, 4, 5].some(k => at(k) !== '')) {
+        const r = readCols(pos, { sd: vi + 1, ty: vi + 2, sl: vi + 3, hd: vi + 4, tl: vi + 5 }, vi);
+        if (r) rows.push(r); else bad.push(line);
+        continue;
+      }
     }
     const vi = cells.findIndex(_psdIsValve);
     if (vi < 0) { if (cells.some(x => /\d/.test(x))) bad.push(line); continue; }
