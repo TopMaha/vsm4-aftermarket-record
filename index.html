@@ -1236,6 +1236,7 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .stat.click{cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative}
 .stat.click:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,86,219,.15)}
 .stat.click::after{content:'→';position:absolute;top:6px;right:8px;font-size:14px;font-weight:800;opacity:.5}
+.nw{white-space:nowrap}   /* กลุ่มคำไทยที่ห้ามตัดกลาง (ตัวตัดคำของเบราว์เซอร์ตัด "เดือน|นี้" ได้) */
 
 /* ===== BARCODE SCANNER ===== */
 .scan-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:4000;display:none;align-items:center;justify-content:center;padding:20px}
@@ -1357,6 +1358,10 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
   .pl-dates input[type=date]{flex:1;font-size:12px}
   .pc-bk{flex:0 0 50px}
   .pc-bv{min-width:46px;font-size:11.5px}
+  /* ── ⑥ การ์ดตัวเลขที่กดได้: ลูกศรมุมขวาบนทับตัวเลข 6 หลัก (816,395→)
+     → ลูกศรเล็กลงชิดมุม + ดันตัวเลขลงมาใต้ลูกศร (ต่อท้ายป้ายไม่ได้: ดัน "1.5" ตกบรรทัดบนจอ 375px) ── */
+  .stat.click{padding-top:15px}
+  .stat.click::after{top:2px;right:6px;font-size:12px;line-height:1}
 }
 @media(max-width:380px){
   /* จอเล็กมาก (เช่น 360px) — ชิปสถานะเรียงเป็น 2 คอลัมน์เต็ม ไม่บีบจนตัวเลขหด */
@@ -1437,6 +1442,21 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .hdr .lang-seg button.on{background:#fff;color:var(--blue-dark)}
 #iotLangSeg{display:none}
 .iot-fs #iotLangSeg{display:inline-flex}
+/* ── แถบปุ่มหัวการ์ดเครื่องจักร: ที่ไม่พอ = ขึ้นบรรทัดใหม่ ห้ามบีบปุ่ม
+   (เดิมบีบจน "🌐 รวม 4 VSM" / "📝 ต่อกะ" ตัดเป็น 2 บรรทัดล้นกรอบ 30px · เต็มจอบนมือถือกว้าง 549px > จอ 392px → หน้าเลื่อนซ้ายขวา) ── */
+.iot-tools{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.iot-tools > *{flex:0 0 auto}
+#iotAllBtn,#hoAddBtn{white-space:nowrap;justify-content:center}
+@media (max-width:560px){
+  /* มือถือ: 2 แถวเต็มกว้าง — แถว 1 = ย่อ/ขยาย + สลับหน้า · แถว 2 = รวม 4 VSM · ต่อกะ · เต็มจอ
+     สลับหน้าตั้งฐานไว้ "เต็มแถวลบที่ของปุ่มย่อ/ขยาย" → ปุ่มที่เหลือตกไปแถว 2 เสมอ */
+  .iot-tools{flex:1 1 100%;gap:6px}
+  .iot-tools > #iotPageSeg{flex:1 1 calc(100% - 120px)}
+  #iotPageSeg button{flex:1 1 0;justify-content:center}
+  .iot-tools > #iotAllBtn,.iot-tools > #hoAddBtn{flex:1 1 0}
+  /* เต็มจอ: นาฬิกา + ไทย|EN ได้แถวของตัวเอง (แถว 0) — นาฬิกาเรียงเวลา·วันที่แนวนอน */
+  .iot-fs .iot-tools > #iotClock{flex:1 1 calc(100% - 100px);flex-direction:row;align-items:baseline;justify-content:flex-start;gap:8px;padding:5px 12px}
+}
 /* ── นาฬิกาดิจิทัลเรียลไทม์ (เวลาไทย) — โชว์เฉพาะ IOT เต็มจอ · มุมขวาบนของ header ── */
 #iotClock{display:none}
 .iot-fs #iotClock{display:inline-flex;flex-direction:column;align-items:flex-end;justify-content:center;
@@ -1485,10 +1505,10 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .wipcard .wipcard-k{font-size:10.5px;font-weight:800;letter-spacing:.2px;opacity:.92;white-space:nowrap}
 .wipcard .wipcard-k small{font-weight:700;opacity:.75;font-size:9.5px}
 .wipcard .wipcard-vals{display:flex;align-items:flex-end;gap:14px}
-.wipcard .wv{display:flex;flex-direction:column;min-width:0}
+.wipcard .wv{display:flex;flex-direction:column;min-width:0;gap:4px}   /* gap 4px: เส้นประใต้ตัวเลข (กดได้) เคยทับสระบนของป้ายไทย 1.6px → ห่าง ~2.4px */
 .wipcard .wv b{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.3px;line-height:1.1;opacity:.92}
 .wipcard .wv.main b{font-size:18px;font-weight:900;opacity:1}
-.wipcard .wv small{font-size:9px;font-weight:700;opacity:.78;white-space:nowrap}
+.wipcard .wv small{font-size:9px;font-weight:700;opacity:.78;white-space:nowrap;line-height:1.5}   /* 1.5 = ที่ว่างให้สระบนไทย (ปัจจุบัน/ทั้ง) */
 /* ★ 2026-08-06 — ตัวเลขบนการ์ด WIP OUT กดได้รายช่อง (วันนี้ / เมื่อวาน / รวมทั้งเดือน)
    = ดูว่ายอดนั้นเป็นของลูกค้าไหน Valve No อะไร · เส้นประใต้ตัวเลข = สัญญาณว่ากดได้ */
 .wipcard .wv-click{cursor:pointer;border-radius:8px;padding:2px 6px;margin:-2px -6px;transition:background .12s}
@@ -2773,7 +2793,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.95</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.96</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -2839,7 +2859,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
   <div class="card" id="iotCard" style="margin-top:10px;padding-bottom:6px">
     <div id="iotHeadRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
       <div class="card-title" style="margin:0"><span class="ci">🏭</span><span id="iotTitleTxt">ตรวจสอบสถานะเครื่องจักร</span></div>
-      <div style="display:flex;gap:4px;align-items:center">
+      <div class="iot-tools">
         <!-- นาฬิกาดิจิทัลเรียลไทม์ (เวลาไทย) — โชว์เฉพาะ IOT เต็มจอ, มุมขวาบน -->
         <div id="iotClock" role="timer" aria-label="เวลาปัจจุบัน (ประเทศไทย)"><span id="iotClockTime">--:--:--</span><span id="iotClockDate"></span></div>
         <!-- สลับภาษา (ตัวสำรอง — โชว์เฉพาะตอนเต็มจอ เพราะปุ่มหลักที่ header ถูกการ์ดเต็มจอทับ) -->
@@ -2962,7 +2982,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
       <div class="stat click" style="background:var(--blue-light);border-color:var(--blue-soft)" onclick="showWipDetail('in')"><div class="v" style="color:var(--blue)" id="wbIn">0</div><div class="l">📥 WIP IN 1.5</div></div>
       <div class="stat orange click" onclick="showWipDetail('wip')"><div class="v" id="wbWip">0</div><div class="l" id="wbWipL">▶ WIP กำลังผลิต</div></div>
-      <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l">✓ WIP OUT เดือนนี้ (ผ่าน FG)</div></div>
+      <div class="stat green click" onclick="showWipDetail('out')"><div class="v" id="wbOut">0</div><div class="l" id="wbOutL">✓ WIP OUT <span class="nw">เดือนนี้</span> <span class="nw">(ผ่าน FG)</span></div></div>
     </div>
     <div id="wbAlerts"></div>
   </div>
@@ -10871,6 +10891,9 @@ function applyLangStatic(){
   const ttl=document.getElementById('iotTitleTxt'); if(ttl) ttl.textContent=TT('ตรวจสอบสถานะเครื่องจักร','Machine Status');
   const zb=document.querySelectorAll('.iot-zoom-ctrls button');
   if(zb.length===3){ zb[0].title=TT('ย่อ','Zoom out'); zb[1].title=TT('รีเซ็ต','Reset zoom'); zb[2].title=TT('ขยาย','Zoom in'); }
+  // ป้าย WIP OUT: แบ่งเป็นกลุ่มคำห้ามตัดกลาง (จอแคบเคยตัด "เดือน | นี้") — พจนานุกรมแปลทีละ text node จึงตั้งทั้งก้อนที่นี่
+  const wo=document.getElementById('wbOutL');
+  if(wo) wo.innerHTML='✓ WIP OUT <span class="nw">'+TT('เดือนนี้','this month')+'</span> <span class="nw">'+TT('(ผ่าน FG)','(passed FG)')+'</span>';
   const ab=document.getElementById('hoAddBtn');
   if(ab){ ab.innerHTML='📝 '+TT('ต่อกะ','Handover'); const t=TT('เพิ่มบันทึกต่อกะ','Add handover note'); ab.title=t; ab.setAttribute('aria-label',t); }
   const card=document.getElementById('iotCard');
@@ -10918,7 +10941,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.95":"Production Record + KPI · v3.95",
+"ระบบบันทึกผลิต + KPI · v3.96":"Production Record + KPI · v3.96",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
