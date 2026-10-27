@@ -472,6 +472,7 @@ export function create(host, opts = {}) {
   // ปุ่มขวาเรียงในพื้นที่ว่างระหว่างแถบบน–ล่าง · ไม่พอ = 2 คอลัมน์
   function layoutSide() {
     const t = topEl.offsetHeight + 14, b = botEl.offsetHeight + 14;
+    hudTop = t;
     sideEl.style.top = t + 'px'; sideEl.style.bottom = b + 'px';
     const n = sideEl.children.length, need = n * 42;
     sideEl.classList.toggle('two', size.h - t - b < need);
@@ -926,7 +927,7 @@ export function create(host, opts = {}) {
     }
   }
   // ป้ายโซนทับกันบนจอ (ซูมออก/จอแคบ) → ดันป้ายที่ซ้อนขึ้นด้านบน · ขนาดป้ายวัดครั้งเดียวต่อการเปลี่ยนเนื้อหา (ไม่บังคับ layout ทุกเฟรม)
-  let zMeasure = true, zoneRects = [];          // zoneRects = กรอบป้ายโซนบนจอ (ป้ายเครื่องห้ามทับ)
+  let zMeasure = true, zoneRects = [], hudTop = 0;   // zoneRects = กรอบป้ายโซนบนจอ (ป้ายเครื่องห้ามทับ) · hudTop = ขอบล่างแถบ HUD บน
   function declutterZones() {
     if (!lay || !lay.zones.size) { zoneRects = []; return; }
     const zs = [...lay.zones.values()].filter(q => q.el);
@@ -940,6 +941,7 @@ export function create(host, opts = {}) {
         const hit = placed.find(p => Math.abs(p.x - it.x) < (p.w + it.w) / 2 + 4 && top < p.bottom + 3 && top + it.h > p.top - 3);
         if (!hit) break;
         top = hit.top - it.h - 4;
+        if (top < hudTop) top = hit.bottom + 4;    // ดันขึ้นแล้วจะไปอยู่ใต้แถบ KPI/ตัวกรอง → ดันลงแทน
       }
       const off = Math.round(top - (it.y - it.h));
       it.q.el.style.marginTop = off ? off + 'px' : '';
