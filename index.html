@@ -2834,7 +2834,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.97</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.98</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10982,7 +10982,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.97":"Production Record + KPI · v3.97",
+"ระบบบันทึกผลิต + KPI · v3.98":"Production Record + KPI · v3.98",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -13772,15 +13772,18 @@ function iotToggleJobLbl(){
 
 /* ════════════════════════════════════════════════════════════════════
    ★ v3.97 (2026-10-27) ผังโรงงาน 3D — โหมด 3D ของการ์ดนี้ (ผู้ใช้ 27/10: ผัง 3D สไตล์ ERP · ข้อมูลชุดเดียวกับผัง 2D)
-   • feature flag: ลิงก์แอปต่อท้าย ?3d=1 = เปิดปุ่ม 2D | 3D บนแถบ legend (จำในเครื่องนี้) · ?3d=0 = ปิดกลับ
-     ไม่ได้เปิด = แอปทำงานเหมือนเดิมทุกอย่าง (ไม่โหลด Three.js ไม่สร้างอะไรเพิ่ม)
+   • ★ v3.98 (ผู้ใช้ 28/10: "ต้องอัพใส่ link เดิม") หน้าเว็บที่ deploy = ปุ่ม 2D | 3D ขึ้นทุกเครื่องในลิงก์เดิม · เริ่มที่ 2D
+     แตะ 3D ครั้งเดียว เครื่องจำไว้ · ยังเป็น 2D = ไม่โหลด Three.js ไม่สร้าง WebGL (เหมือนเดิม)
+     ลิงก์ต่อท้าย ?3d=1 = เปิดเป็น 3D ทันที · ?3d=0 = ซ่อนปุ่มในเครื่องนั้น
+     index.html ที่ยังไม่ build (เช่นหน้าที่ Worker เสิร์ฟ — ไม่มีไฟล์ 3D) = ต้องเปิดเองด้วย ?3d=1 เหมือน v3.97
    • ตัวผัง 3D = ไฟล์แยก floor3d/floor3d.js โหลดด้วย import() ตอนกรอบผังเข้าใกล้จอครั้งแรก
    • ข้อมูล = _iotData ชุดเดียวกับผัง 2D → _f3dPayload() แปลงเป็นชุดข้อมูลให้ผัง 3D (ไม่มีฟิลด์ใหม่ ไม่มีข้อมูลสมมติ)
      สิ่งเดียวที่ 3D คิดเพิ่ม = "รอข้อมูลจบกะ" (เครื่องที่ยังไม่มี record ขณะกะยังไม่จบ — ดู _f3dPendInfo)
    • ไม่มี WebGL 2 / โหลดไฟล์ไม่ได้ / หน่วยความจำกราฟิกหลุด → กลับผัง 2D อัตโนมัติ
    ════════════════════════════════════════════════════════════════════ */
 const F3D_VER = '__F3D_VER__';          // tools/build.mjs แทนด้วย hash ของ floor3d.js → URL เปลี่ยนทุกรุ่น (Service Worker เก็บตามรุ่น)
-const LS_F3D = 'vsm4_3d';               // '1' = เปิด feature (จาก ?3d=1)
+const F3D_BUILT = !F3D_VER.startsWith('__');   // build แล้ว (มีไฟล์ 3D รวม Three.js คู่กับหน้านี้)
+const LS_F3D = 'vsm4_3d';               // '1' = เปิด (?3d=1) · '0' = ซ่อนปุ่ม (?3d=0) · ไม่มีค่า = เปิดถ้า build แล้ว
 const LS_F3D_VIEW = 'vsm4_iot_view';    // '3d' | '2d' = มุมมองผังที่เลือกไว้
 const F3D_PEND_GRACE = 2 * 3600e3;      // จบกะแล้วไม่ถึง 2 ชม. ยังถือว่า "รอข้อมูลจบกะ" (พนักงานลงยอดหลังจบกะ)
 const LS_F3D_FPS = 'vsm4_3d_fps';       // '1' = โชว์ตัววัดความลื่นบนผัง 3D (?fps=1 · ?fps=0 = ปิด) — ใช้วัดบนมือถือจริง
@@ -13788,13 +13791,13 @@ const LS_F3D_FPS = 'vsm4_3d_fps';       // '1' = โชว์ตัววัด�
   try {
     const m = /[?&]3d=([01])(?:&|#|$)/.exec(location.search);
     if (m && m[1] === '1') { localStorage.setItem(LS_F3D, '1'); localStorage.setItem(LS_F3D_VIEW, '3d'); }
-    else if (m) { localStorage.removeItem(LS_F3D); localStorage.removeItem(LS_F3D_VIEW); }
+    else if (m) { localStorage.setItem(LS_F3D, '0'); localStorage.removeItem(LS_F3D_VIEW); }
     const f = /[?&]fps=([01])(?:&|#|$)/.exec(location.search);
     if (f && f[1] === '1') localStorage.setItem(LS_F3D_FPS, '1'); else if (f) localStorage.removeItem(LS_F3D_FPS);
   } catch (e) {}
 })();
 let _f3d = null, _f3dP = null, _f3dIO = null, _f3dHost = null, _f3dFail = '', _f3dGL = null, _f3dLast = null;
-function _f3dFlag() { try { return localStorage.getItem(LS_F3D) === '1'; } catch (e) { return false; } }
+function _f3dFlag() { try { const v = localStorage.getItem(LS_F3D); return v === '1' || (v !== '0' && F3D_BUILT); } catch (e) { return F3D_BUILT; } }
 function _f3dPref() { try { return localStorage.getItem(LS_F3D_VIEW) === '3d' ? '3d' : '2d'; } catch (e) { return '2d'; } }
 // WebGL 2 + import map (Three.js รุ่นนี้ไม่รองรับ WebGL 1 แล้ว) — เช็คครั้งเดียวแล้วคืน context ทันที
 function _f3dCanGL() {
@@ -13817,7 +13820,7 @@ function iotSetView(v) {
   if (_iotData) renderFloorPlan(_iotData.active, _iotData.oae);
 }
 function _f3dSegHtml(on3d) {
-  const gl = _f3dCanGL();
+  const gl = _f3dGL !== false;   // ★ v3.98 ปุ่มขึ้นทุกเครื่องแล้ว → ไม่ลองสร้าง WebGL แค่เพื่อวาดปุ่ม (รู้ผลตอนกด 3D ใน iotSetView)
   return `<span class="v3d-seg" role="group" aria-label="${TT('มุมมองผัง', 'Map view')}"><button type="button" class="${on3d ? '' : 'on'}" aria-pressed="${!on3d}" onclick="iotSetView('2d')">2D</button><button type="button" class="${on3d ? 'on' : ''}" aria-pressed="${on3d}" onclick="iotSetView('3d')"${gl ? '' : ` disabled title="${TT('อุปกรณ์นี้ไม่รองรับ WebGL 2', 'No WebGL 2 on this device')}"`}>3D</button></span>`;
 }
 function _f3dDispose() {
@@ -13853,7 +13856,7 @@ function _f3dMount(wrap) {
 let _f3dModP = null, _f3dModHref = '';
 function _f3dModule() {
   if (_f3dModP) return _f3dModP;
-  const bundled = !F3D_VER.startsWith('__');
+  const bundled = F3D_BUILT;
   if (!_f3dModHref) _f3dModHref = new URL('floor3d/floor3d.js?v=' + (bundled ? F3D_VER : Date.now()), document.baseURI).href;
   const T = 'https://cdn.jsdelivr.net/npm/three@0.186.1/';
   for (const u of bundled ? [_f3dModHref] : [_f3dModHref, T + 'build/three.module.min.js', T + 'build/three.core.min.js', T + 'examples/jsm/controls/MapControls.js',
