@@ -13843,21 +13843,39 @@ function _f3dMount(wrap) {
   if (_f3d) { _f3dPush(); return; }
   _f3dEnsure().then(ok => { if (ok) _f3dPush(); });
 }
+/* โหลดโมดูล 3D ครั้งเดียวต่อการเปิดแอป · modulepreload ทุกไฟล์พร้อมกัน — เดิม import ต่อกันเป็นทอด
+   (floor3d → three → three.core · MapControls → OrbitControls) = รอหลายรอบบน 4G · Service Worker เก็บไว้ทั้งหมดหลังโหลดครั้งแรก */
+let _f3dModP = null, _f3dModHref = '';
+function _f3dModule() {
+  if (_f3dModP) return _f3dModP;
+  if (!_f3dModHref) _f3dModHref = new URL('floor3d/floor3d.js?v=' + (F3D_VER.startsWith('__') ? Date.now() : F3D_VER), document.baseURI).href;
+  const T = 'https://cdn.jsdelivr.net/npm/three@0.186.1/';
+  for (const u of [_f3dModHref, T + 'build/three.module.min.js', T + 'build/three.core.min.js', T + 'examples/jsm/controls/MapControls.js',
+    T + 'examples/jsm/controls/OrbitControls.js', T + 'examples/jsm/renderers/CSS2DRenderer.js', T + 'examples/jsm/geometries/RoundedBoxGeometry.js']) {
+    if (document.querySelector(`link[rel="modulepreload"][href="${u}"]`)) continue;
+    const l = document.createElement('link'); l.rel = 'modulepreload'; l.href = u; document.head.appendChild(l);
+  }
+  return (_f3dModP = import(_f3dModHref).catch(e => { _f3dModP = null; throw e; }));
+}
 function _f3dPush() {
   if (!_f3d || !_iotData) return;
   _f3dLast = _f3dPayload(_iotData, { dTo: _iotData.dTo, shift: _iotData.shift, range: _iotData.rangeLabel });
   try { _f3d.update(_f3dLast); } catch (e) { console.warn('[3d]', e); _f3dFallback('fail'); }
 }
-// โหลดโมดูลตอนกรอบเข้าใกล้จอเท่านั้น (เปิด Dashboard แต่ไม่ได้เลื่อนลงมาที่ผัง = ไม่ดาวน์โหลด Three.js)
-//   URL เต็มจาก document.baseURI — import() ในสคริปต์ assets/app.<hash>.js จะนับ path จากไฟล์สคริปต์ ไม่ใช่จากหน้าแอป
+/* โหลดโค้ด + สร้างฉาก 3D ล่วงหน้าตอนเครื่องว่าง (ไม่รอให้เลื่อนถึงผัง) — หรือทันทีที่กรอบเข้าใกล้จอ แล้วแต่อย่างไหนมาก่อน
+   วัดบนมือถือจำลอง (CPU ช้า 4 เท่า + 4G ช้า): รอเลื่อนถึงก่อนค่อยโหลด/สร้าง = ผัง 3D ขึ้นช้ากว่า 2D ~1.5 วิ
+   ตัวผังวาดเฉพาะตอนเห็นบนจอเหมือนเดิม (IntersectionObserver ในโมดูล) · เลือก 3D ไว้เท่านั้นถึงโหลด (flag + ปุ่ม 3D) */
 function _f3dEnsure() {
   if (_f3d) return Promise.resolve(true);
   if (_f3dP) return _f3dP;
   const host = _f3dHost;
   _f3dP = new Promise(res => {
-    _f3dIO = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { _f3dIO.disconnect(); _f3dIO = null; res(); } }, { rootMargin: '300px' });
+    let done = false;
+    const go = () => { if (done) return; done = true; if (_f3dIO) { _f3dIO.disconnect(); _f3dIO = null; } res(); };
+    (window.requestIdleCallback || (f => setTimeout(f, 800)))(go, { timeout: 2500 });
+    _f3dIO = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) go(); }, { rootMargin: '300px' });
     _f3dIO.observe(host);
-  }).then(() => import(new URL('floor3d/floor3d.js?v=' + (F3D_VER.startsWith('__') ? Date.now() : F3D_VER), document.baseURI).href))
+  }).then(() => _f3dModule())
     .then(mod => {
       if (host !== _f3dHost || !_f3dWanted()) return false;      // ระหว่างโหลด ผู้ใช้กลับไป 2D แล้ว
       host.innerHTML = '';

@@ -80,6 +80,7 @@ const CSS = `
 .f3d-cv{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;outline:none;cursor:grab}
 .f3d-cv:active{cursor:grabbing}
 .f3d-lbl{position:absolute!important;inset:0;pointer-events:none;z-index:1}
+.f3d-lbl>div{will-change:transform}
 .f3d-ml{display:none;font:700 10px/1.15 'Courier New',monospace;color:#0F172A;background:rgba(255,255,255,.9);border:1px solid rgba(148,163,184,.75);border-radius:5px;padding:1px 4px 2px;white-space:nowrap;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .f3d.lv1 .f3d-ml{display:block}
 .f3d-ml .v{display:none;font-size:9.5px;font-weight:900;color:#1E3A8A}
@@ -109,9 +110,10 @@ const CSS = `
 .f3d-pin.dim{opacity:.3}
 @keyframes f3dBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .f3d-sos{width:0;height:0}
+.f3d-sos .ry{position:absolute;left:0;top:0;transform:scaleY(var(--sy,.6))}
 .f3d-sos .r{position:absolute;left:0;top:0;width:var(--d,40px);height:var(--d,40px);margin:calc(var(--d,40px)/-2) 0 0 calc(var(--d,40px)/-2);border-radius:50%;border:3px solid #EF4444;box-shadow:0 0 10px rgba(239,68,68,.6);animation:f3dPulse 1.6s ease-out infinite}
 .f3d-sos .r.r2{animation-delay:.8s}
-@keyframes f3dPulse{0%{opacity:.95;transform:scaleY(var(--sy,.6)) scale(.45)}100%{opacity:0;transform:scaleY(var(--sy,.6)) scale(1.3)}}
+@keyframes f3dPulse{0%{opacity:.95;transform:scale(.45)}100%{opacity:0;transform:scale(1.3)}}
 .f3d-lmp{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#fff 0,#FCA5A5 22%,rgba(239,68,68,.85) 42%,rgba(239,68,68,0) 70%);animation:f3dBlink 1s steps(2,jump-none) infinite}
 @keyframes f3dBlink{0%{opacity:1}100%{opacity:.08}}
 .f3d-top{position:absolute;left:8px;right:8px;top:8px;z-index:3;display:flex;flex-direction:column;gap:6px;pointer-events:none}
@@ -209,6 +211,14 @@ function mergeStatic(list) {
   const geo = mergeParts(list);
   const arr = geo.attributes.color.array, c = new THREE.Color();
   for (const p of list) { c.set(p.c); for (let i = p.start * 3, e = (p.start + p.count) * 3; i < e; i += 3) { arr[i] = c.r; arr[i + 1] = c.g; arr[i + 2] = c.b; } }
+  return freeAfterUpload(geo, ['position', 'normal', 'color']);
+}
+/* ส่งขึ้น GPU แล้วไม่ต้องเก็บสำเนาใน JS (ไม่ได้ raycast mesh — แตะเครื่องใช้กล่อง AABB เอง · bounding sphere คิดไว้ก่อนแล้ว)
+   ❗สีของเครื่อง (color ของ mesh เครื่อง) ห้ามปล่อย — ต้องเขียนใหม่ตอนสถานะเปลี่ยน */
+function freeArray() { this.array = null; }
+function freeAfterUpload(geo, names) {
+  for (const n of names) if (geo.attributes[n]) geo.attributes[n].onUpload(freeArray);
+  if (geo.index) geo.index.onUpload(freeArray);
   return geo;
 }
 function roundRectShape(w, h, r) {
@@ -308,6 +318,12 @@ function roleColors(st, sos, dim) {
 export function create(host, opts = {}) {
   injectCss();
   const lowEnd = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+  // มือถือ (นิ้วสัมผัส + จอเล็ก): ความละเอียดเริ่ม 1.5 เท่า (แทน 2) · เงา 1024 (หน่วยความจำกราฟิก 4 MB แทน 16 MB)
+  //   วัดบนมือถือจำลอง (CPU ช้า 4 เท่า + GPU รุ่นเล็ก): ลากผังที่ 2 เท่า ≈ 30 fps
+  const phone = matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 820;
+  const DPR_KEY = 'vsm4_3d_dpr', dprCap = Math.min(window.devicePixelRatio || 1, 2);
+  const dprBase = Math.min(dprCap, lowEnd ? 1.25 : phone ? 1.5 : 2);
+  let dpr = (() => { let v = 0; try { v = +localStorage.getItem(DPR_KEY); } catch (e) {} return v >= 1 && v <= 2 ? Math.min(v, dprCap) : dprBase; })();
   const root = el('div', 'f3d');
   root.innerHTML = `<canvas class="f3d-cv"></canvas><div class="f3d-lbl"></div><div class="f3d-fade"></div>
     <div class="f3d-top"><div class="f3d-row f3d-kpi"></div><div class="f3d-row"><div class="f3d-q"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false"><div class="f3d-sug"></div></div><div class="f3d-chips"></div></div></div>
@@ -325,7 +341,7 @@ export function create(host, opts = {}) {
 
   /* ── renderer / scene / camera ── */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowEnd ? 1.5 : 2));
+  renderer.setPixelRatio(dpr);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;               // ฉากนิ่ง → วาดเงาใหม่เฉพาะตอนฉากเปลี่ยน
@@ -346,7 +362,8 @@ export function create(host, opts = {}) {
   const hemi = new THREE.HemisphereLight(0xFFFFFF, 0x9DB0CC, 1.55);
   const sun = new THREE.DirectionalLight(0xFFFFFF, 2.5);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(lowEnd ? 1024 : 2048, lowEnd ? 1024 : 2048);
+  const smap = lowEnd || phone ? 1024 : 2048;
+  sun.shadow.mapSize.set(smap, smap);
   sun.shadow.radius = 3; sun.shadow.bias = -0.0006; sun.shadow.normalBias = .6;
   scene.add(hemi, sun, sun.target);
 
@@ -385,7 +402,8 @@ export function create(host, opts = {}) {
   const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s3 = new THREE.Vector3();
 
   /* ── render loop (วาดเฉพาะเมื่อจำเป็น) ── */
-  function kick() { if (!raf && live && sized && !disposed && !compiling) raf = requestAnimationFrame(frame); }
+  let building = false;                        // กำลังสร้างฉากเป็นช่วง ๆ (buildLayout) → ยังไม่วาด
+  function kick() { if (!raf && live && sized && !disposed && !compiling && !building) raf = requestAnimationFrame(frame); }
   // เปิดครั้งแรก: compile shader แบบไม่บล็อกหน้าจอ (KHR_parallel_shader_compile) ก่อนวาดเฟรมแรก — ระหว่างนี้ขึ้น "กำลังสร้างผัง 3D…"
   let compiling = false, compiled = false;
   function warmShaders() {
@@ -395,12 +413,41 @@ export function create(host, opts = {}) {
     renderer.compileAsync(scene, camera).catch(() => {}).finally(done);
     setTimeout(done, 4000);                       // กันไดรเวอร์บางรุ่นตอบช้า/ไม่ตอบ → วาดต่อเลย
   }
+  /* ความละเอียดปรับเอง: ระหว่างวาดต่อเนื่อง (ลาก/บิน/animation) วัดช่วงห่างเฟรม 45 เฟรม
+     ช้ากว่า ~38 fps → ลดทีละ 0.25 (ต่ำสุด 1) · เร็วมาก (< 9 ms = จอ 120 Hz มีที่เหลือ) → เพิ่มคืน · จำค่าไว้ในเครื่องนี้ */
+  let lastFT = 0, dprTry = null, cpuBound = false;
+  const fts = [];
+  const setDpr = v => { dpr = v; renderer.setPixelRatio(dpr); renderer.setSize(size.w, size.h, false); try { localStorage.setItem(DPR_KEY, String(dpr)); } catch (e) {} };
+  function trackFrame(now) {
+    if (lastFT && now - lastFT < 120) fts.push(now - lastFT);
+    lastFT = now;
+    if (fts.length < 45) return;
+    const s = fts.slice().sort((a, b) => a - b), med = s[s.length >> 1];
+    fts.length = 0;
+    // ลดความละเอียดไปรอบก่อน — เร็วขึ้นจริงไหม · ไม่ (ช้าที่ CPU ไม่ใช่การ์ดจอ: วัดบนมือถือจำลองลดถึง 1 เท่าแล้วยัง 33 ms)
+    //   → คืนความคมชัด + เลิกลดในรอบนี้ (ลดไปก็เบลอเปล่า ๆ)
+    if (dprTry) { if (med > dprTry.med * .85) { setDpr(dprTry.from); cpuBound = true; } dprTry = null; return; }
+    // ลื่น 60 fps แล้ว (< 15 ms) แต่ต่ำกว่าค่าตั้งต้นของเครื่อง = เคยลดเพราะช่วงเครื่องยุ่ง → คืนทีละขั้น
+    const up = (med < 15 && dpr < dprBase) || (med < 9 && dpr < dprCap);
+    if (med > 26 && dpr > 1 && !cpuBound) { dprTry = { from: dpr, med }; setDpr(Math.max(1, dpr - .25)); }
+    else if (up) setDpr(Math.min(dprCap, dpr + .25));
+  }
+  // หลังปล่อยนิ้ว: ตัดแรงเฉื่อยตอนที่ภาพขยับน้อยกว่า ~0.1 px/เฟรม (เดิมวาดต่ออีก 1–2 วิ จนค่าเล็กระดับ 1e-6 = เปลืองแบต)
+  const _pp = new THREE.Vector3(), _pt = new THREE.Vector3();
+  let _pz = 1, dragging = false;
+  controls.addEventListener('start', () => { dragging = true; });
+  controls.addEventListener('end', () => { dragging = false; });
   function frame(now) {
     raf = 0;
     if (disposed) return;
     let more = false;
     if (tw) more = stepTween(now);
-    else if (controls.update()) more = true;
+    else if (controls.update()) {
+      const mv = Math.max(camera.position.distanceTo(_pp), controls.target.distanceTo(_pt)) * camera.zoom * size.h / F;
+      if (!dragging && mv < .1 && Math.abs(camera.zoom - _pz) < _pz * 2e-4) resetDamping(); else more = true;
+    }
+    _pp.copy(camera.position); _pt.copy(controls.target); _pz = camera.zoom;
+    trackFrame(now);
     clampPan();
     if (colorAnim.size && stepColors(now)) more = true;
     if (people.some(q => q.s !== q.s1) && stepPeople(now)) more = true;
@@ -493,7 +540,11 @@ export function create(host, opts = {}) {
     machines = []; byId = new Map(); lines = []; lineById = new Map(); people = []; colorAnim.clear(); dirty.clear();
     lay = null;
   }
-  function buildLayout(p) {
+  /* สร้างฉากเป็นช่วง ๆ คืนจังหวะให้หน้าจอระหว่างช่วง (วัดบนมือถือจำลอง CPU ช้า 4 เท่า: เดิมก้อนเดียว 0.8–1.2 วิ = จอค้าง)
+     tok เปลี่ยน (สลับสายซ้อน/ปิด 3D) ระหว่างสร้าง = หยุดทันทีที่จุดพัก · คืน false = ถูกยกเลิก */
+  const yieldMain = () => new Promise(r => (window.scheduler && scheduler.yield ? scheduler.yield().then(r) : setTimeout(r, 0)));
+  async function buildLayout(p, tok) {
+    const alive = () => tok === relayTok && !disposed;
     clearLayout();
     layoutKey = p.layoutKey;
     const boxes = (p.boxes || []).filter(b => b.w >= 2 && b.h >= 2), lbs = p.lines || [];
@@ -558,9 +609,12 @@ export function create(host, opts = {}) {
       const fm = keep(new THREE.Mesh(mergeStatic(all), mats.flat)); fm.receiveShadow = true;
       for (const q of all) q.g.dispose();
     }
-    // เครื่องจักร
+    await yieldMain(); if (!alive()) return false;
+    // เครื่องจักร (พักทุก 12 เครื่อง)
     const mt = new THREE.Matrix4(), mr = new THREE.Matrix4();
-    for (const b of boxes) {
+    for (let bi = 0; bi < boxes.length; bi++) {
+      if (bi && bi % 12 === 0) { await yieldMain(); if (!alive()) return false; }
+      const b = boxes[bi];
       const [ax, az] = toW(b.x, b.y), cx = ax + b.w / 2, czz = az + b.h / 2, alongX = b.w >= b.h;
       const kind = kindOf(b.id), L = alongX ? b.w : b.h, Sh = alongX ? b.h : b.w;
       const mp = machineParts(L, Sh, kind);
@@ -574,6 +628,7 @@ export function create(host, opts = {}) {
       machines.push(m);
       if (!byId.has(b.id)) byId.set(b.id, m);
     }
+    await yieldMain(); if (!alive()) return false;
     // ป้ายไลน์สีเหลือง (VSM3)
     if (lbs.length) {
       const lp = [];
@@ -621,6 +676,8 @@ export function create(host, opts = {}) {
     const sc = sun.shadow.camera; sc.left = -span * .62; sc.right = span * .62; sc.top = span * .62; sc.bottom = -span * .62; sc.near = 1; sc.far = span * 3; sc.updateProjectionMatrix();
     lim.minX = lay.x0 - M; lim.maxX = lay.x1 + M; lim.minZ = lay.z0 - M; lim.maxZ = lay.z1 + M;
     shadowDirty = true; fitted = false; lv = -1; lzOn = null;
+    await yieldMain();
+    return alive();
   }
 
   // แถบว่างยาว ๆ แนวตั้ง/แนวนอน (ช่องว่างกว้าง ≥ 16px ยาว ≥ 30% ของผัง) = ทางเดิน
@@ -716,7 +773,7 @@ export function create(host, opts = {}) {
     const mk = { solid: mats.lit, solidLamp: mats.lamp, ghost: mats.ghost, ghostLamp: mats.ghostLamp };
     for (const k in L) {
       if (!L[k].length) continue;
-      const mesh = new THREE.Mesh(mergeParts(L[k]), mk[k]);
+      const mesh = new THREE.Mesh(freeAfterUpload(mergeParts(L[k]), ['position', 'normal']), mk[k]);
       if (k === 'solid') { mesh.castShadow = true; mesh.receiveShadow = true; }
       if (k === 'ghost' || k === 'ghostLamp') mesh.renderOrder = 2;
       for (const p of L[k]) p.mesh = mesh;
@@ -803,6 +860,7 @@ export function create(host, opts = {}) {
 
   /* ── ใส่ข้อมูลชุดใหม่ (วันที่/กะ/ภาษา/ย้อนดู) ── */
   function applyData(p, animate) {
+    if (building) return;                         // ฉากยังสร้างไม่ครบ (ป้ายโซน/เครื่องยังมาไม่หมด) — ชุดล่าสุดใส่ให้ตอนสร้างเสร็จ
     P = p; S = p.S || S;
     root.classList.toggle('jl', !!p.jobLbl);
     let clsChanged = !mm.solid && !mm.ghost;
@@ -849,7 +907,7 @@ export function create(host, opts = {}) {
       if (m.lblOn) paintLabel(m);                 // ป้ายที่โชว์อยู่ = เขียนใหม่ทันที · ที่เหลือเขียนตอนได้โชว์
       if (d.top) { const e = el('div', 'f3d-pin' + (dim ? ' dim' : ''), `<div class="pn"><b>${d.top}</b><i></i></div>`); addCss(e, m.cx, m.ymax + 3, m.cz, 1); }
       if (d.sos) {
-        const e = el('div', 'f3d-sos', '<div class="r"></div><div class="r r2"></div>'); e._m = m;
+        const e = el('div', 'f3d-sos', '<div class="ry"><div class="r"></div><div class="r r2"></div></div>'); e._m = m;
         addCss(e, m.cx, .6, m.cz); lay.sos.push(e);
         addCss(el('div', 'f3d-lmp'), m.lamp.x, m.lamp.y, m.lamp.z);
       }
@@ -944,7 +1002,7 @@ export function create(host, opts = {}) {
         if (top < hudTop) top = hit.bottom + 4;    // ดันขึ้นแล้วจะไปอยู่ใต้แถบ KPI/ตัวกรอง → ดันลงแทน
       }
       const off = Math.round(top - (it.y - it.h));
-      it.q.el.style.marginTop = off ? off + 'px' : '';
+      if (it.q.mt !== off) { it.q.mt = off; it.q.el.style.marginTop = off ? off + 'px' : ''; }
       placed.push({ x: it.x, w: it.w, top, bottom: top + it.h });
     }
     zoneRects = placed.map(p => [p.x - p.w / 2 - 2, p.top - 2, p.x + p.w / 2 + 2, p.bottom + 2]);
@@ -962,8 +1020,13 @@ export function create(host, opts = {}) {
     const lz = ppu >= .62;
     if (lz !== lzOn) { lzOn = lz; root.classList.toggle('lz', lz); zMeasure = true; }
     // วง SOS บนพื้น: เส้นผ่านศูนย์กลางตามขนาดเครื่องบนจอ · แบนตามมุมเงย
-    const sy = Math.max(.08, Math.cos(controls.getPolarAngle ? controls.getPolarAngle() : VIEW0.phi));
-    for (const e of lay.sos || []) { const m = e._m; e.style.setProperty('--d', Math.max(22, Math.max(m.w, m.d) * 1.25 * ppu).toFixed(0) + 'px'); e.style.setProperty('--sy', sy.toFixed(3)); }
+    // เขียน style เฉพาะตอนค่าเปลี่ยน (เดิมเขียนทุกเฟรม = ให้เบราว์เซอร์คำนวณ style ใหม่ทุกเฟรมตอนลาก)
+    const sy = Math.max(.08, Math.cos(controls.getPolarAngle ? controls.getPolarAngle() : VIEW0.phi)).toFixed(2);
+    for (const e of lay.sos || []) {
+      const m = e._m, dd = Math.max(22, Math.max(m.w, m.d) * 1.25 * ppu).toFixed(0) + 'px';
+      if (e._d !== dd) { e._d = dd; e.style.setProperty('--d', dd); }
+      if (e._sy !== sy) { e._sy = sy; e.style.setProperty('--sy', sy); }
+    }
   }
 
   /* ── แถบ KPI (ตัวเลขชุดเดียวกับการ์ดสรุป Dashboard) + นับขึ้นตอนโหลด ── */
@@ -1334,7 +1397,7 @@ export function create(host, opts = {}) {
   /* ภาพผังสำหรับรายงาน: ขนาดตายตัว 1600×1000 (ไม่ขึ้นกับขนาดจอมือถือ) · ทั้งผังในมุมกล้องปัจจุบัน
      = ภาพ WebGL + ป้ายโซน/หมุด/SOS/เลขเครื่อง/คำอธิบายสี (วาดลง canvas เอง — ป้าย DOM ไม่ติดมากับภาพ WebGL) */
   async function snapshot() {
-    if (!sized || !P || !lay) throw new Error('not ready');
+    if (!sized || !P || !lay || building) throw new Error('not ready');
     const meta = opts.pngMeta ? opts.pngMeta(P) : { title: '', sub: '' };
     const W = 1600, H = 1000, head = 74, foot = 40;
     const s = sphNow(), cam = camera.clone();
@@ -1413,19 +1476,24 @@ export function create(host, opts = {}) {
     if (p.layoutKey !== layoutKey || !lay) {
       if (tl) { tlPlay(false); tl = null; tlEl.classList.remove('on'); tlEl.innerHTML = ''; const b = $('[data-k="tl"]'); b && b.classList.remove('on'); }
       const had = !!lay, tok = ++relayTok;
-      const go = () => {
+      const go = async () => {
         if (tok !== relayTok || disposed) return;
         filter = 'all'; qIn.value = '';
-        buildLayout(Plive);
-        applyData(Plive, false);
+        building = true;
+        const ok = await buildLayout(Plive, tok);
+        if (!ok) return;                          // มีการสลับสายใหม่ทับ → งานชุดใหม่ทำต่อเอง
+        building = false;
+        applyData(Plive, false);                  // Plive = ชุดล่าสุด (ข้อมูลที่มาระหว่างสร้างฉากก็ได้ใช้)
         if (sized) { resetView(false); fitted = true; if (pendingFly) flyPending(); }
         warmShaders();
         if (had) setTimeout(() => fadeEl.classList.remove('on'), 60);
+        kick();
       };
       layoutKey = p.layoutKey;
       if (had) { fadeEl.classList.add('on'); setTimeout(go, 200); } else go();
       return;
     }
+    if (building) return;                         // กำลังสร้างฉาก → ข้อมูลเก็บใน Plive ไว้ใช้ตอนสร้างเสร็จ
     if (tl) return;                               // โหมดย้อนดู: คงภาพกะที่เลือกไว้ · ข้อมูลสดเก็บใน Plive ใช้ตอนกด "กลับ"
     applyData(p, o.animate !== false);
   }
@@ -1445,7 +1513,8 @@ export function create(host, opts = {}) {
     root.remove();
   }
   measure();
-  root._dbg = { THREE, renderer, scene, camera, sun, controls, mats, get machines() { return machines; } };   // ตรวจสอบจาก DevTools
+  root._dbg = { THREE, renderer, scene, camera, sun, controls, mats, get machines() { return machines; },      // ตรวจสอบจาก DevTools
+    get flags() { return { building, compiling, compiled, live, ioVis, sized, raf, fitted, dpr, lay: !!lay, layoutKey }; } };
   return {
     update, focus, focusZone, zoom, resetView: () => resetView(true), rotate90, topView, dispose, snapshot,
     setStrings(s) { S = s || S; sideTitles(); },
