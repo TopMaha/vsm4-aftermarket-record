@@ -2834,7 +2834,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.98</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.99</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10982,7 +10982,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.98":"Production Record + KPI · v3.98",
+"ระบบบันทึกผลิต + KPI · v3.99":"Production Record + KPI · v3.99",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -13756,7 +13756,7 @@ function _iotLegendHtml(fpv, nOn, tot, v3d) {
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#475569;background:#F1F5F9;border:1px solid #E2E8F0;padding:3px 9px;border-radius:999px">✋ ${TT('ลากพื้นที่ว่าง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space to pan · wheel to zoom')}</span>
       <span class="jb-tgls">
         <button type="button" class="jb-tgl${_iotJobLbl?' on':''}" onclick="iotToggleJobLbl()" aria-pressed="${_iotJobLbl}"
-          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>${_f3dFlag() ? _f3dSegHtml(v3d) : ''}
+          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>${v3d ? _f3dLblBtnHtml() : ''}${_f3dFlag() ? _f3dSegHtml(v3d) : ''}
       </span>
       <span style="font-size:10px;color:#6b7280;margin-left:auto">${TT('เปิด','Running')} <b>${nOn}</b> / ${TT('รวม','total')} <b>${tot}</b> ${TT('เครื่อง','machines')}</span>
     </div>`;
@@ -13787,6 +13787,7 @@ const LS_F3D = 'vsm4_3d';               // '1' = เปิด (?3d=1) · '0' = �
 const LS_F3D_VIEW = 'vsm4_iot_view';    // '3d' | '2d' = มุมมองผังที่เลือกไว้
 const F3D_PEND_GRACE = 2 * 3600e3;      // จบกะแล้วไม่ถึง 2 ชม. ยังถือว่า "รอข้อมูลจบกะ" (พนักงานลงยอดหลังจบกะ)
 const LS_F3D_FPS = 'vsm4_3d_fps';       // '1' = โชว์ตัววัดความลื่นบนผัง 3D (?fps=1 · ?fps=0 = ปิด) — ใช้วัดบนมือถือจริง
+const LS_F3D_LBL = 'vsm4_3d_lbl';       // '0' = ซ่อนป้ายชื่อบนผัง 3D (ปุ่ม 📛 ป้ายชื่อ · จำในเครื่องนี้)
 (function () {
   try {
     const m = /[?&]3d=([01])(?:&|#|$)/.exec(location.search);
@@ -13818,6 +13819,20 @@ function iotSetView(v) {
   if (v === '3d') _f3dFail = '';
   try { localStorage.setItem(LS_F3D_VIEW, v); } catch (e) {}
   if (_iotData) renderFloorPlan(_iotData.active, _iotData.oae);
+}
+/* ★ v3.99 📛 ป้ายชื่อ (ผู้ใช้ 28/10: ป้ายชื่อเครื่อง/โซนเยอะเกิน ขอปุ่มปิด) — เฉพาะตอนดูผัง 3D
+   ปิด = ซ่อนป้ายโซน + ป้ายไลน์ + เลขเครื่อง · หมุด TOP / SOS / เครื่องที่แตะเลือก ยังโชว์ */
+function _f3dLblOn() { try { return localStorage.getItem(LS_F3D_LBL) !== '0'; } catch (e) { return true; } }
+function _f3dLblBtnHtml() {
+  const on = _f3dLblOn();
+  return `<button type="button" class="jb-tgl${on ? ' on' : ''}" onclick="iotToggle3dLbl(this)" aria-pressed="${on}"
+    title="${TT('โชว์/ซ่อนป้ายชื่อโซนและเลขเครื่องบนผัง 3D (หมุด TOP · SOS ยังโชว์)', 'Show/hide zone and machine labels on the 3D map (TOP pins and SOS stay)')}">📛 ${TT('ป้ายชื่อ', 'Labels')}</button>`;
+}
+function iotToggle3dLbl(btn) {
+  const on = !_f3dLblOn();
+  try { if (on) localStorage.removeItem(LS_F3D_LBL); else localStorage.setItem(LS_F3D_LBL, '0'); } catch (e) {}
+  if (btn) { btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on); }
+  if (_f3d) _f3d.setLabels(on);
 }
 function _f3dSegHtml(on3d) {
   const gl = _f3dGL !== false;   // ★ v3.98 ปุ่มขึ้นทุกเครื่องแล้ว → ไม่ลองสร้าง WebGL แค่เพื่อวาดปุ่ม (รู้ผลตอนกด 3D ใน iotSetView)
@@ -13900,14 +13915,12 @@ function _f3dOpts() {
     S: _f3dStrings(),
     sheet: (id, pl) => _f3dSheet(id, pl),
     onAction: (act, id) => { if (act === 'rec') _f3dGoRecord(id); },
-    onRefresh: () => reload(),
     onFail: why => _f3dFallback(why),
     timeline: () => _f3dTimeline(),
     payloadAt: st => _f3dPayloadAt(st),
     onPng: (blob, pl) => _f3dSavePng(blob, pl),
     pngMeta: pl => ({ title: `🏭 ${TT('ผังเครื่องจักร', 'Machine map')} · ${VSM_LABEL[pl.vsm] || pl.vsm}`, sub: pl.range || '' }),
-    canLandscape: () => !!(screen.orientation && screen.orientation.lock) && matchMedia('(pointer:coarse)').matches,
-    landscape: () => _f3dLandscape(),
+    labels: _f3dLblOn(),
     fps: (() => { try { return localStorage.getItem(LS_F3D_FPS) === '1'; } catch (e) { return false; } })(),
   };
 }
@@ -13925,9 +13938,6 @@ function _f3dStrings() {
     pngFail: TT('บันทึกภาพไม่สำเร็จ', 'Could not save the image'), locale: 'en-GB',   // วันที่บนภาพ = ค.ศ. ตรงกับวันที่ในแอป
     copied: TT('คัดลอกแล้ว — วางส่งต่อได้เลย', 'Copied — paste it anywhere'), copyFail: TT('คัดลอกไม่ได้', 'Could not copy'),
     legend: { good: 'OAE ≥75%', warn: 'OAE <75%', off: TT('ปิดเครื่อง', 'Off'), pend: TT('รอข้อมูลจบกะ', 'Awaiting shift data'), top: TT('TOP ปัญหา', 'TOP issue'), sos: 'SOS' },
-    side: { zin: TT('ขยาย', 'Zoom in'), zout: TT('ย่อ', 'Zoom out'), rot: TT('หมุน 90°', 'Rotate 90°'), reset: TT('รีเซ็ตมุมมอง', 'Reset view'),
-      top: TT('มุมบน', 'Top view'), ref: TT('รีเฟรชข้อมูล', 'Refresh data'), tl: TT('ย้อนดูทีละกะ', 'Replay by shift'),
-      png: TT('บันทึกภาพผัง (PNG)', 'Save map image (PNG)'), land: TT('เต็มจอแนวนอน', 'Landscape fullscreen') },
     tl: { prev: TT('กะก่อนหน้า', 'Previous shift'), next: TT('กะถัดไป', 'Next shift'), play: TT('เล่น / หยุด', 'Play / pause'), slider: TT('เลือกกะ', 'Pick a shift') },
   };
 }
@@ -14000,23 +14010,7 @@ function _f3dPayload(d, o) {
     let opr = 0, tgt = 0; for (const r of zr) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
     Object.assign(zk[z], { oae: _oaeOf(zr), opr, tgt, ppl: _distinctHeadcount(zr) });
   }
-  // แถบ KPI = สูตรเดียวกับการ์ดสรุป "รวมทุก Zone" ของ Dashboard (zoneKpiCard) + เปิดกี่เครื่อง + คนเข้าผลิตรวม
-  const sum = k => recs.reduce((s, r) => s + (Number(r[k]) || 0), 0), avg = k => (recs.length ? sum(k) / recs.length : 0);
-  const t = state.targets || {}, has = recs.length > 0;
-  const cls = (v, tg, rev) => { const r = rev ? +tg / Math.max(+v, 1e-9) : +v / Math.max(+tg, 1e-9); return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad'; };
-  const oae = sum('target') > 0 ? sum('opr') / sum('target') : 0, pplh = sum('wt') > 0 ? sum('opr') / sum('wt') : 0;
-  const dle = avg('dle'), pd = calcZonePdac(recs, 'ALL'), scrap = avg('scrap_rate');
-  const kpi = [
-    { k: 'oae', l: 'OAE', v: has ? oae : null, f: 'pct', cap: 1, warnMark: oae > 1, cls: has ? (oae > 1 ? 'warn' : cls(oae, t.oae)) : '' },
-    { k: 'on', l: TT('เปิด', 'Running'), v: boxes.filter(b => d.active.has(b.id)).length, of: boxes.length, f: 'frac' },
-    { k: 'ppl', l: TT('👷 คนเข้าผลิต', '👷 Operators'), v: _distinctHeadcount(recs), f: 'int' },
-    { k: 'opr', l: 'OPR', v: sum('opr'), f: 'int' },
-    { k: 'tgt', l: 'Target', v: sum('target'), f: 'int' },
-    { k: 'dle', l: 'DLE', v: has && dle > 0 ? dle : null, f: 'pct', cls: has ? (dle <= 0 ? 'warn' : cls(dle, t.dle)) : '' },
-    { k: 'pplh', l: 'PPLH', v: has ? pplh : null, f: 'int', cls: has ? cls(pplh, t.pplh) : '' },
-    { k: 'pdac', l: 'PDAC', v: has ? pd.ratio : null, f: 'pct', cls: has ? cls(pd.ratio, t.pdac) : '', tip: pd.str },
-    { k: 'scrap', l: 'SCRAP', v: has ? scrap : null, f: 'pct', cls: has ? cls(scrap, t.scrap, true) : '' },
-  ];
+  // ★ v3.99 ไม่มีแถบ KPI บนผัง 3D แล้ว (ผู้ใช้ 28/10: เยอะเกิน — ตัวเลขชุดเดียวกันอยู่บนการ์ดสรุปของ Dashboard)
   return {
     layoutKey: fpv + '|' + boxes.map(b => b.z || zOf[b.id] || '').join(','), vsm: fpv, range: o.range || '',
     boxes: boxes.map(b => ({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, zone: b.z || zOf[b.id] || '' })),
@@ -14027,7 +14021,7 @@ function _f3dPayload(d, o) {
       const zl = ZONE_LABEL[z] || z, own = /^zone\s*\d+/i.exec(zl);
       return { key: z, label: own ? zl : `Zone ${i + 1} · ${zl}`, short: own ? own[0] : `Zone ${i + 1}`, color: ZC[i] || '#64748B' };
     }),
-    mc, zk, lineTop: fpv === 'vsm3' ? (d.topRank || {}) : {}, kpi, pend, jobLbl: !!_iotJobLbl,
+    mc, zk, lineTop: fpv === 'vsm3' ? (d.topRank || {}) : {}, pend, jobLbl: !!_iotJobLbl,
     byMc: d.byMc || {}, recs, S: _f3dStrings(),
   };
 }
@@ -14129,17 +14123,6 @@ function _f3dSavePng(blob, pl) {
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   toast(TT('บันทึกภาพผัง 3D แล้ว', 'Saved the 3D map image'), 'green');
-}
-// ↔ เต็มจอแนวนอน (Android: ล็อกจอได้เฉพาะตอนเต็มจอจริง · iOS ไม่รองรับ → บอกให้หมุนเอง)
-async function _f3dLandscape() {
-  const card = $('iotCard'); if (!card) return;
-  if (!_iotIsFs()) {
-    iotEnterFs(card);
-    await new Promise(r => { const t = setTimeout(r, 900); document.addEventListener('fullscreenchange', () => { clearTimeout(t); r(); }, { once: true }); });
-  }
-  if (!card.classList.contains('iot-map-open') && matchMedia('(max-width:820px)').matches) iotToggleMap();
-  try { await screen.orientation.lock('landscape'); }
-  catch (e) { toast(TT('หมุนโทรศัพท์เป็นแนวนอนได้เลย (เครื่องนี้ล็อกจอให้ไม่ได้)', 'Turn the phone sideways (this device cannot lock the screen)')); }
 }
 
 

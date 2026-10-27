@@ -118,12 +118,8 @@ const CSS = `
 @keyframes f3dBlink{0%{opacity:1}100%{opacity:.08}}
 .f3d-top{position:absolute;left:8px;right:8px;top:8px;z-index:3;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .f3d-row{display:flex;gap:6px;align-items:center;min-width:0}
-.f3d-kpi,.f3d-chips,.f3d-watch{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;pointer-events:auto;touch-action:pan-x;min-width:0}
-.f3d-kpi::-webkit-scrollbar,.f3d-chips::-webkit-scrollbar,.f3d-watch::-webkit-scrollbar{display:none}
-.f3d-k{flex:0 0 auto;background:rgba(255,255,255,.95);border:1px solid #DBEAFE;border-radius:10px;padding:3px 9px 4px;box-shadow:0 1px 4px rgba(30,58,138,.12);display:flex;flex-direction:column;min-width:56px}
-.f3d-k .l{font-size:9.5px;font-weight:800;color:#64748B;white-space:nowrap;line-height:1.2}
-.f3d-k .v{font-size:14px;font-weight:900;color:#1E3A8A;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.2}
-.f3d-k .v.good{color:#059669}.f3d-k .v.warn{color:#D97706}.f3d-k .v.bad{color:#DC2626}
+.f3d-chips,.f3d-watch{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;pointer-events:auto;touch-action:pan-x;min-width:0}
+.f3d-chips::-webkit-scrollbar,.f3d-watch::-webkit-scrollbar{display:none}
 .f3d-q{position:relative;flex:0 0 auto;pointer-events:auto}
 .f3d-q input{width:112px;height:30px;border-radius:9px;border:1.5px solid #BFDBFE;background:rgba(255,255,255,.97);padding:0 8px;font:700 12px 'Sarabun',system-ui,sans-serif;color:#0F172A;outline:none;text-transform:uppercase}
 .f3d-q input::placeholder{text-transform:none;color:#94A3B8;font-weight:600}
@@ -137,13 +133,9 @@ const CSS = `
 .f3d-c .n{font-size:10px;font-weight:900;color:#64748B}
 .f3d-c.on{background:#1A56DB;border-color:#1A56DB;color:#fff}.f3d-c.on .n{color:#DBEAFE}
 .f3d-c:disabled{opacity:.45;cursor:default}
-.f3d-side{position:absolute;right:8px;z-index:3;display:grid;grid-auto-flow:row;gap:6px;justify-content:end;align-content:center;pointer-events:none}
-.f3d-side.two{grid-template-columns:36px 36px;direction:rtl}
 .f3d-b{pointer-events:auto;width:36px;height:36px;border-radius:10px;border:1.5px solid #DBEAFE;background:rgba(255,255,255,.96);color:#1E3A8A;font:900 16px/1 'Sarabun',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(30,58,138,.16);cursor:pointer;padding:0;direction:ltr}
 .f3d-b:active{transform:scale(.94)}
 .f3d-b.on{background:#1A56DB;border-color:#1A56DB;color:#fff}
-.f3d-b.spin{animation:f3dSpin .9s linear infinite}
-@keyframes f3dSpin{to{transform:rotate(360deg)}}
 .f3d-bot{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .f3d-w{flex:0 0 auto;height:34px;border-radius:10px;background:rgba(255,255,255,.96);border:1.5px solid #E2E8F0;display:flex;align-items:center;gap:6px;padding:0 9px 0 5px;font:800 11.5px 'Sarabun',system-ui,sans-serif;color:#0F172A;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(30,58,138,.12)}
 .f3d-w .ic{min-width:21px;height:21px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font:900 11px/1 Arial,sans-serif;color:#fff;background:#DC2626;padding:0 3px}
@@ -333,15 +325,15 @@ export function create(host, opts = {}) {
   let lite = (() => { try { return localStorage.getItem(LITE_KEY) === '1'; } catch (e) { return false; } })();
   const root = el('div', 'f3d');
   root.innerHTML = `<canvas class="f3d-cv"></canvas><div class="f3d-lbl"></div><div class="f3d-fade"></div>
-    <div class="f3d-top"><div class="f3d-row f3d-kpi"></div><div class="f3d-row"><div class="f3d-q"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false"><div class="f3d-sug"></div></div><div class="f3d-chips"></div></div></div>
-    <div class="f3d-ban"></div><div class="f3d-side"></div>
+    <div class="f3d-top"><div class="f3d-row"><div class="f3d-q"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false"><div class="f3d-sug"></div></div><div class="f3d-chips"></div></div></div>
+    <div class="f3d-ban"></div>
     <div class="f3d-bot"><div class="f3d-tl"></div><div class="f3d-watch"></div></div>
     <div class="f3d-sheet" aria-hidden="true"><div class="f3d-sh-grip"></div><button type="button" class="f3d-sh-x" aria-label="close">✕</button><div class="f3d-sh-bd"></div></div>
     <div class="f3d-load"><span class="spinner"></span><span class="t"></span></div>`;
   host.appendChild(root);
   const $ = s => root.querySelector(s);
-  const canvas = $('.f3d-cv'), lblLayer = $('.f3d-lbl'), kpiEl = $('.f3d-kpi'), chipsEl = $('.f3d-chips'), qIn = $('.f3d-q input'), sugEl = $('.f3d-sug');
-  const sideEl = $('.f3d-side'), banEl = $('.f3d-ban'), tlEl = $('.f3d-tl'), watchEl = $('.f3d-watch'), sheetEl = $('.f3d-sheet'), sheetBd = $('.f3d-sh-bd');
+  const canvas = $('.f3d-cv'), lblLayer = $('.f3d-lbl'), chipsEl = $('.f3d-chips'), qIn = $('.f3d-q input'), sugEl = $('.f3d-sug');
+  const banEl = $('.f3d-ban'), tlEl = $('.f3d-tl'), watchEl = $('.f3d-watch'), sheetEl = $('.f3d-sheet'), sheetBd = $('.f3d-sh-bd');
   const topEl = $('.f3d-top'), botEl = $('.f3d-bot'), fadeEl = $('.f3d-fade');
   let S = opts.S || {};
   $('.f3d-load .t').textContent = S.building || 'Loading 3D…';
@@ -401,9 +393,10 @@ export function create(host, opts = {}) {
   let raf = 0, shadowDirty = true, tw = null, lv = -1, lzOn = null;
   const colorAnim = new Set();
   const dirty = new Map();                    // mesh → [min, max] ช่วงจุดยอดที่สีเปลี่ยน
-  const kpiPrev = new Map();
-  let kpiAnim = 0;
   let tl = null;                              // โหมดย้อนดูทีละกะ
+  // ★ v3.99 ป้ายชื่อ (ป้ายโซน + ป้ายไลน์ + เลขเครื่อง) ซ่อนได้จากปุ่ม 📛 ป้ายชื่อ ของการ์ด (ผู้ใช้ 28/10: ป้ายเยอะเกิน)
+  //   ซ่อนแล้วยังเห็น: หมุด TOP · SOS · ป้ายของเครื่องที่แตะเลือก
+  let showLbl = opts.labels !== false;
   let isoView = { theta: VIEW0.theta, phi: VIEW0.phi };
   const lim = { minX: -500, maxX: 500, minZ: -500, maxZ: 500 };
   const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
@@ -518,7 +511,7 @@ export function create(host, opts = {}) {
     if (shadowDirty) { renderer.shadowMap.needsUpdate = true; shadowDirty = false; }
     renderer.render(scene, camera);
     labels.render(scene, camera);
-    declutterZones();
+    declutterZones(more);
     if (!root.classList.contains('ready')) {
       root.classList.add('ready');
       firstFrameMs = performance.now() - (t0Visible || t0Create);
@@ -551,7 +544,7 @@ export function create(host, opts = {}) {
       const a = w / h;
       camera.left = -F * a / 2; camera.right = F * a / 2; camera.top = F / 2; camera.bottom = -F / 2;
       camera.updateProjectionMatrix();
-      layoutSide();
+      layoutHud();
     }
     if (lay && !fitted) { resetView(false); fitted = true; }
     if (pendingFly && lay) flyPending();
@@ -564,7 +557,7 @@ export function create(host, opts = {}) {
     ioVis = es[es.length - 1].isIntersecting;
     live = ioVis && !document.hidden;
     if (live && !t0Visible) t0Visible = performance.now();
-    if (live) { measure(); layoutSide(); kick(); }
+    if (live) { measure(); layoutHud(); kick(); }
   }, { rootMargin: '60px' });
   io.observe(root);
   function onVis() { live = ioVis && !document.hidden; if (live) { measure(); kick(); } }
@@ -572,27 +565,18 @@ export function create(host, opts = {}) {
   // GPU คืนหน่วยความจำ (แท็บค้างนาน/เครื่องแรมน้อย) → ให้แอปกลับ 2D · ตอนเราปิดเอง (dispose → forceContextLoss) ไม่นับ
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); if (!disposed && opts.onFail) opts.onFail('lost'); });
 
-  /* ── ชั้น HUD ── */
-  const sideBtns = [
-    ['zin', '+', () => zoom(1)], ['zout', '−', () => zoom(-1)], ['rot', '⟳', rotate90], ['reset', '⊙', () => resetView(true)],
-    ['top', '⬒', topView], ['ref', '🔄', refresh], ['tl', '🕘', toggleTimeline], ['png', '📷', savePng],
-  ];
-  if (opts.canLandscape && opts.canLandscape()) sideBtns.push(['land', '↔', () => opts.landscape && opts.landscape()]);
-  sideEl.innerHTML = sideBtns.map(([k, t]) => `<button type="button" class="f3d-b" data-k="${k}">${t}</button>`).join('');
-  sideEl.addEventListener('click', e => { const b = e.target.closest('.f3d-b'); if (!b) return; const f = sideBtns.find(x => x[0] === b.dataset.k); if (f) f[2](); });
-  function sideTitles() {
-    for (const b of sideEl.querySelectorAll('.f3d-b')) { const t = (S.side || {})[b.dataset.k] || ''; b.title = t; b.setAttribute('aria-label', t); }
+  /* ── ชั้น HUD ──
+     ★ v3.99 (ผู้ใช้ 28/10: "เยอะเกินไป") เอาแถบ KPI ด้านบน + ปุ่มด้านขวาออก
+       ซูม / รีเซ็ตมุมมอง = ปุ่ม − ⊙ + ของการ์ด (zoom / resetView) · หมุน / เอียง = นิ้ว 2 นิ้ว / เมาส์ขวา · รีเฟรช = ปุ่มบนหัวแอป
+       ย้อนดูทีละกะ (toggleTimeline) / บันทึกภาพ PNG (savePng · snapshot) ไม่มีปุ่มแล้ว — โค้ดยังอยู่ ถ้าจะใส่กลับในเมนู */
+  function hudTitles() {
     qIn.placeholder = S.search || '';
     $('.f3d-sh-x').setAttribute('aria-label', S.close || 'close');
   }
-  // ปุ่มขวาเรียงในพื้นที่ว่างระหว่างแถบบน–ล่าง · ไม่พอ = 2 คอลัมน์
-  function layoutSide() {
-    const t = topEl.offsetHeight + 14, b = botEl.offsetHeight + 14;
-    hudTop = t;
-    sideEl.style.top = t + 'px'; sideEl.style.bottom = b + 'px';
-    const n = sideEl.children.length, need = n * 42;
-    sideEl.classList.toggle('two', size.h - t - b < need);
-    banEl.style.top = t + 'px';
+  // แถบแจ้ง (รอข้อมูลจบกะ / ย้อนดู) อยู่ล่างกลาง เหนือแถบ "ต้องดู" — ด้านบนเป็นที่ของป้ายโซน (เดิมทับกัน)
+  function layoutHud() {
+    hudTop = topEl.offsetHeight + 14;
+    banEl.style.bottom = (botEl.offsetHeight + 14) + 'px';
   }
 
   /* ── สร้างฉากตาม layout ── */
@@ -946,11 +930,11 @@ export function create(host, opts = {}) {
     if (clsChanged) rebuildMachineMeshes();
     setPeople(animate);
     renderOverlays();
-    renderKpi(animate);
+    applyLblVis();
     renderChips();
     renderWatch();
     renderBanner();
-    sideTitles();
+    hudTitles();
     if (sheetOpen && selId) openSheet(selId, true);
     kick();
   }
@@ -1019,13 +1003,14 @@ export function create(host, opts = {}) {
     const t = controls.target, key = `${camera.zoom.toFixed(3)}|${t.x.toFixed(1)}|${t.z.toFixed(1)}|${camera.position.x.toFixed(0)}|${camera.position.z.toFixed(0)}|${size.w}x${size.h}`;
     if (!lblForce && key === lblKey) return;
     if (!lblForce && moving && now - lblT < 110) return;                  // ระหว่างลาก/ซูม: คิดใหม่ไม่ถี่กว่า ~9 ครั้ง/วินาที
-    lblKey = key; lblT = now; lblForce = false;
+    lblKey = key; lblT = now; lblForce = false; lblZSig = zSig;
     const W = size.w, H = size.h, jl = root.classList.contains('jl'), cand = [];
     const near = lay.md * camera.zoom * size.h / F >= 90;              // ซูมใกล้มาก (เครื่องกว้าง ≥ 90 px บนจอ)
     for (const m of machines) {
       if (!m.label) continue;
       const d = m.data || {};
       let pr = m.id === selId ? 0 : d.top ? 1 : d.sos ? 2 : d.st === 'warn' ? 3 : d.st === 'good' ? 4 : d.st === 'off' ? 5 : 6;
+      if (!showLbl && pr) continue;                                    // 📛 ซ่อนป้ายชื่อ: เหลือแค่เครื่องที่แตะเลือก
       if (filter !== 'all') { if (!matchFilter(d, m.id) && pr) continue; if (pr) pr = 2.5; }
       if (pr === 6 && !near) continue;                                  // ⏳ รอข้อมูล: ไม่มีตัวเลขให้ดู → ขึ้นป้ายเฉพาะซูมใกล้มาก / กรอง ⏳ / แตะเลือก
       _v.set(m.cx, m.ymax + 2, m.cz).project(camera);
@@ -1055,8 +1040,11 @@ export function create(host, opts = {}) {
   }
   // ป้ายโซนทับกันบนจอ (ซูมออก/จอแคบ) → ดันป้ายที่ซ้อนขึ้นด้านบน · ขนาดป้ายวัดครั้งเดียวต่อการเปลี่ยนเนื้อหา (ไม่บังคับ layout ทุกเฟรม)
   let zMeasure = true, zoneRects = [], hudTop = 0;   // zoneRects = กรอบป้ายโซนบนจอ (ป้ายเครื่องห้ามทับ) · hudTop = ขอบล่างแถบ HUD บน
-  function declutterZones() {
-    if (!lay || !lay.zones.size) { zoneRects = []; return; }
+  // ★ v3.99 ป้ายเครื่องคิดตำแหน่ง "ก่อน" วัดป้ายโซนในเฟรมเดียวกัน → เฟรมแรกหลังสร้างฉาก/เปิดป้าย ยังไม่รู้กรอบป้ายโซน = ป้ายเครื่องทับป้ายโซนค้างไว้
+  //   ถ้ากรอบป้ายโซนเปลี่ยนจากที่ป้ายเครื่องใช้ล่าสุด และกล้องนิ่งแล้ว → คิดป้ายเครื่องใหม่อีก 1 เฟรม (ระหว่างลากไม่บังคับ — คงจังหวะ ~9 ครั้ง/วิ เดิม)
+  let zSig = '', lblZSig = '';
+  function declutterZones(moving) {
+    if (!lay || !lay.zones.size || !showLbl) { zoneRects = []; zSig = ''; return; }
     const zs = [...lay.zones.values()].filter(q => q.el);
     if (zMeasure) { for (const q of zs) { q.ew = q.el.offsetWidth; q.eh = q.el.offsetHeight; } zMeasure = false; }
     const items = zs.map(q => { _v.copy(q.obj.position).project(camera); return { q, x: (_v.x + 1) / 2 * size.w, y: (1 - _v.y) / 2 * size.h, w: q.ew || 80, h: q.eh || 22 }; });
@@ -1075,6 +1063,14 @@ export function create(host, opts = {}) {
       placed.push({ x: it.x, w: it.w, top, bottom: top + it.h });
     }
     zoneRects = placed.map(p => [p.x - p.w / 2 - 2, p.top - 2, p.x + p.w / 2 + 2, p.bottom + 2]);
+    zSig = zoneRects.map(r => r.map(v => Math.round(v / 4)).join(',')).join('|');
+    if (!moving && lv >= 1 && zSig !== lblZSig) { lblForce = true; kick(); }
+  }
+  // 📛 ป้ายชื่อเปิด/ปิด: ป้ายโซน + ป้ายไลน์ (lay.css) ซ่อนด้วย visible = CSS2DRenderer ไม่ขยับป้ายที่ซ่อน · เลขเครื่องดูที่ declutterLabels
+  function applyLblVis() {
+    if (!lay) return;
+    for (const o of lay.css) o.visible = showLbl;
+    zMeasure = true; lblForce = true;
   }
   // ระดับป้ายตามซูม: 0 = ไม่มีป้าย · 1 = เลขเครื่อง · 2 = + เบอร์วาล์ว (เมื่อเปิด 🏷️ เบอร์ในกล่อง)
   function updateLevels() {
@@ -1096,36 +1092,6 @@ export function create(host, opts = {}) {
       if (e._d !== dd) { e._d = dd; e.style.setProperty('--d', dd); }
       if (e._sy !== sy) { e._sy = sy; e.style.setProperty('--sy', sy); }
     }
-  }
-
-  /* ── แถบ KPI (ตัวเลขชุดเดียวกับการ์ดสรุป Dashboard) + นับขึ้นตอนโหลด ── */
-  function renderKpi(animate) {
-    const list = P.kpi || [];
-    const sig = list.map(k => k.k).join(',');
-    if (kpiEl._sig !== sig) {
-      kpiEl._sig = sig;
-      kpiEl.innerHTML = list.map(k => `<div class="f3d-k" data-k="${k.k}"><span class="l"></span><span class="v"></span></div>`).join('');
-    }
-    const now = performance.now();
-    const items = list.map(k => {
-      const box = kpiEl.querySelector(`[data-k="${k.k}"]`);
-      box.querySelector('.l').textContent = k.l;
-      const v = box.querySelector('.v'); v.className = 'v' + (k.cls ? ' ' + k.cls : '');
-      v.title = k.tip || '';
-      const from = animate && kpiPrev.has(k.k) ? kpiPrev.get(k.k) : (animate ? 0 : k.v);
-      kpiPrev.set(k.k, k.v);
-      return { k, v, from };
-    });
-    cancelAnimationFrame(kpiAnim);
-    const tick = t => {
-      const e = easeOut(clamp((t - now) / 700, 0, 1));
-      for (const it of items) {
-        const x = it.k.v == null || it.from == null ? it.k.v : lerp(it.from, it.k.v, e);
-        it.v.textContent = fmtNum(x, it.k.f, it.k) + (e >= 1 && it.k.warnMark ? ' ⚠️' : '');
-      }
-      if (e < 1) kpiAnim = requestAnimationFrame(tick);
-    };
-    tick(animate ? now : now + 1e6);
   }
 
   /* ── ตัวกรองสถานะ + ค้นหาเลขเครื่อง ── */
@@ -1198,7 +1164,7 @@ export function create(host, opts = {}) {
     watchEl.style.display = all.length ? '' : 'none';
     watchEl.innerHTML = all.length ? `<div class="f3d-w hd">⚠ ${esc(S.watch || '')} ${all.length}</div>` + all.map(it =>
       `<button type="button" class="f3d-w ${it.cls}" data-id="${esc(it.id)}"><span class="ic">${it.ic}</span><span class="m">${esc(it.id)}</span>${it.x ? `<span class="x">${esc(it.x)}</span>` : ''}${it.sos ? '<span class="s">🆘</span>' : ''}</button>`).join('') : '';
-    requestAnimationFrame(layoutSide);
+    requestAnimationFrame(layoutHud);
   }
   watchEl.addEventListener('click', e => { const b = e.target.closest('.f3d-w[data-id]'); if (b) focus(b.dataset.id, { sheet: true }); });
 
@@ -1333,10 +1299,10 @@ export function create(host, opts = {}) {
       _v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(c);
       hx = Math.max(hx, Math.abs(_v.dot(right))); hy = Math.max(hy, Math.abs(_v.dot(up)));
     }
-    // จอแคบ (มือถือแนวตั้ง): ผังกว้างกว่าจอ → ให้ผังลอดใต้ปุ่มด้านขวาได้ + ล้นขอบเล็กน้อย (ลากดูต่อเอง) แทนการย่อจนเครื่องเล็กเกิน
+    // จอแคบ (มือถือแนวตั้ง): ผังกว้างกว่าจอ → ล้นขอบเล็กน้อย (ลากดูต่อเอง) แทนการย่อจนเครื่องเล็กเกิน
     const narrow = !dim && W < 480;
     const pt = dim ? dim.t : topEl.offsetHeight + 16 + (padExtra || 0), pb = dim ? dim.b : botEl.offsetHeight + 16;
-    const pl = dim ? dim.l : narrow ? 4 : 12, pr = dim ? dim.r : narrow ? 4 : 12 + (sideEl.offsetWidth || 40) + 6;
+    const pl = dim ? dim.l : narrow ? 4 : 12, pr = dim ? dim.r : narrow ? 4 : 12;
     const aw = Math.max(60, W - pl - pr), ah = Math.max(60, H - pt - pb);
     const z = Math.min((F * a / 2) * (aw / W) / hx, (F / 2) * (ah / H) / hy) * (narrow ? 1.12 : 1);
     const wpp = F / (z * H), dx = (pl + aw / 2) - W / 2, dy = (pt + ah / 2) - H / 2;
@@ -1354,7 +1320,6 @@ export function create(host, opts = {}) {
     const f = fitFor(planBox(), VIEW0.theta, VIEW0.phi, lay.zones.size ? 34 : 0);   // + ที่ว่างให้ป้ายโซนที่ลอยเหนือขอบผัง
     controls.minZoom = f.zoom * .55; controls.maxZoom = f.zoom * 14;
     isoView = { ...VIEW0 };
-    $('[data-k="top"]') && $('[data-k="top"]').classList.remove('on');
     if (anim) tweenTo({ target: f.target, zoom: f.zoom, theta: VIEW0.theta, phi: VIEW0.phi }, 700);
     else { resetDamping(); setView(f.target, VIEW0.theta, VIEW0.phi, f.zoom); controls.update(); kick(); }
   }
@@ -1388,19 +1353,13 @@ export function create(host, opts = {}) {
   }
   function rotate90() { const s = sphNow(); tweenTo({ target: controls.target, zoom: camera.zoom, theta: s.theta + Math.PI / 2, phi: s.phi }, 600); }
   function topView() {
-    const s = sphNow(), b = $('[data-k="top"]'), isTop = s.phi < .05;
+    const s = sphNow(), isTop = s.phi < .05;
     if (!isTop) isoView = { theta: s.theta, phi: s.phi };
     const v = isTop ? isoView : TOPV;
-    b && b.classList.toggle('on', !isTop);
     tweenTo({ target: controls.target, zoom: camera.zoom, theta: v.theta, phi: v.phi }, 650);
   }
 
-  /* ── รีเฟรชข้อมูล / ย้อนดูทีละกะ / บันทึกภาพ ── */
-  async function refresh() {
-    const b = $('[data-k="ref"]'); if (!opts.onRefresh || (b && b.classList.contains('spin'))) return;
-    b && b.classList.add('spin');
-    try { await opts.onRefresh(); } finally { b && b.classList.remove('spin'); }
-  }
+  /* ── ย้อนดูทีละกะ / บันทึกภาพ (ไม่มีปุ่มตั้งแต่ v3.99 — ดูหมายเหตุที่ชั้น HUD) ── */
   function toggleTimeline() { if (tl) closeTimeline(); else openTimeline(); }
   function openTimeline() {
     const info = opts.timeline ? opts.timeline() : null;
@@ -1413,9 +1372,8 @@ export function create(host, opts = {}) {
       <input type="range" min="0" max="${tl.steps.length - 1}" step="1" value="${tl.i}" aria-label="${esc(T.slider || '')}">
       <span class="t"></span><button type="button" class="f3d-b" data-t="x" aria-label="${esc(S.close || '')}">✕</button>`;
     tlEl.classList.add('on');
-    $('[data-k="tl"]').classList.add('on');
     tlGo(tl.i);
-    requestAnimationFrame(layoutSide);
+    requestAnimationFrame(layoutHud);
   }
   function tlGo(i) {
     if (!tl) return;
@@ -1448,13 +1406,14 @@ export function create(host, opts = {}) {
     if (!tl) return;
     tlPlay(false); tl = null;
     tlEl.classList.remove('on'); tlEl.innerHTML = '';
-    const b = $('[data-k="tl"]'); b && b.classList.remove('on');
     if (Plive) applyData(Plive, true);
-    requestAnimationFrame(layoutSide);
+    requestAnimationFrame(layoutHud);
   }
   function flash(msg) {
     if (!msg) return;
     const h = el('div', 'f3d-hint', esc(msg)); root.appendChild(h);
+    // แถบแจ้งโชว์อยู่ (ล่างกลาง) → ข้อความลอยเหนือแถบ ไม่ทับกัน
+    if (banEl.classList.contains('on')) h.style.bottom = Math.max(58, botEl.offsetHeight + 14 + banEl.offsetHeight + 8) + 'px';
     setTimeout(() => h.classList.add('out'), 2600); setTimeout(() => h.remove(), 3300);
   }
   async function savePng() {
@@ -1543,7 +1502,7 @@ export function create(host, opts = {}) {
     if (disposed || !p) return;
     Plive = p;
     if (p.layoutKey !== layoutKey || !lay) {
-      if (tl) { tlPlay(false); tl = null; tlEl.classList.remove('on'); tlEl.innerHTML = ''; const b = $('[data-k="tl"]'); b && b.classList.remove('on'); }
+      if (tl) { tlPlay(false); tl = null; tlEl.classList.remove('on'); tlEl.innerHTML = ''; }
       const had = !!lay, tok = ++relayTok;
       const go = async () => {
         if (tok !== relayTok || disposed) return;
@@ -1571,7 +1530,7 @@ export function create(host, opts = {}) {
   function dispose() {
     if (disposed) return;
     disposed = true;
-    cancelAnimationFrame(raf); cancelAnimationFrame(kpiAnim); clearTimeout(statsIdleT);
+    cancelAnimationFrame(raf); clearTimeout(statsIdleT);
     if (tl) clearInterval(tl.timer);
     io.disconnect(); ro.disconnect();
     document.removeEventListener('visibilitychange', onVis);
@@ -1589,7 +1548,8 @@ export function create(host, opts = {}) {
     get flags() { return { building, compiling, compiled, live, ioVis, sized, raf, fitted, dpr, lay: !!lay, layoutKey }; } };
   return {
     update, focus, focusZone, zoom, resetView: () => resetView(true), rotate90, topView, dispose, snapshot,
-    setStrings(s) { S = s || S; sideTitles(); },
+    setStrings(s) { S = s || S; hudTitles(); },
+    setLabels(on) { showLbl = !!on; applyLblVis(); kick(); },
     resize() { measure(); kick(); },
     get root() { return root; },
   };
