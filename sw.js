@@ -8,7 +8,9 @@
    • assets/app.<hash>.js (สร้างตอน deploy โดย tools/build.mjs) = ชื่อผูก hash ไม่มีวันเปลี่ยนเนื้อ → cache-first
        เก็บตั้งแต่ตอน install → Chrome ทำ code cache ของ V8 ไว้ให้ทันที (เปิดรอบหน้าไม่ต้องแปลงสคริปต์ใหม่)
        รุ่นเก่าที่หน้าใน cache ไม่ได้ใช้แล้ว ลบทิ้งตอนเก็บรุ่นใหม่
-   • ฟอนต์ Google + ไลบรารี Excel/กล้อง (URL ผูกเวอร์ชันตายตัว) = cache-first
+   • ฟอนต์ Google + ไลบรารี Excel/กล้อง/Three.js (URL ผูกเวอร์ชันตายตัว) = cache-first
+   • ★ v3.97 ผัง 3D: floor3d/floor3d.js?v=<hash ที่ build ประทับ> = cache-first ตามรุ่น (เก็บรุ่นล่าสุดรุ่นเดียว)
+       → เปิดโหมด 3D ครั้งแรกตอนมีเน็ตแล้ว ครั้งต่อไปเปิดได้แม้ออฟไลน์
    • อย่างอื่นทั้งหมด (API ของ Worker ฯลฯ) = ไม่แตะเลย ปล่อยผ่านตามปกติ
    ทางหนีไฟ: เปิด ...?nosw=1 → หน้าเว็บถอน SW + ล้าง cache นี้ให้ (ดูสคริปต์ใน index.html)
    ❗เปลี่ยนวิธีทำงานของไฟล์นี้ = ขยับ SHELL/RUNTIME version ด้วย (activate จะลบ cache รุ่นเก่า)
@@ -24,8 +26,10 @@ const isAppPage = url => url.origin === SCOPE.origin
 const isAsset = url => url.origin === SCOPE.origin && url.pathname.startsWith(SCOPE.pathname + 'assets/');
 const isStatic = url =>
   url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'
-  || (url.hostname === 'cdn.jsdelivr.net' && url.pathname.startsWith('/npm/xlsx@0.18.5/'))
+  || (url.hostname === 'cdn.jsdelivr.net' && (url.pathname.startsWith('/npm/xlsx@0.18.5/') || url.pathname.startsWith('/npm/three@0.186.1/')))
   || (url.hostname === 'unpkg.com' && url.pathname.startsWith('/html5-qrcode@2.3.8/'));
+// ผัง 3D รุ่นที่ build ประทับ hash แล้วเท่านั้น (สำเนาที่ยังไม่ build ใช้ ?v=<เวลา> → ไม่เก็บ ได้ไฟล์ล่าสุดเสมอ)
+const isF3d = url => url.origin === SCOPE.origin && url.pathname === SCOPE.pathname + 'floor3d/floor3d.js' && /^\?v=[0-9a-f]{10}$/.test(url.search);
 // assets ที่หน้า HTML เรียกใช้ (src="assets/…" / href="assets/…") → URL เต็ม
 const assetsOf = html => [...new Set([...html.matchAll(/(?:src|href)="(assets\/[^"?#]+)"/g)].map(m => new URL(m[1], SCOPE).href))];
 
@@ -47,6 +51,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (req.mode === 'navigate' && isAppPage(url)) { e.respondWith(appPage(e)); return; }
   if (isAsset(url)) { e.respondWith(assetFirst(req)); return; }
+  if (isF3d(url)) { e.respondWith(f3dFirst(req)); return; }
   if (isStatic(url)) { e.respondWith(cacheFirst(req)); return; }
 });
 
@@ -100,6 +105,20 @@ async function assetFirst(req) {
   if (hit) return hit;
   const res = await fetch(req);
   if (res && res.ok) cache.put(req.url.split('?')[0], res.clone()).catch(() => {});
+  return res;
+}
+async function f3dFirst(req) {
+  const cache = await caches.open(RUNTIME);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res && res.ok) {
+    const copy = res.clone();
+    (async () => {
+      for (const k of await cache.keys()) if (k.url !== req.url && isF3d(new URL(k.url))) await cache.delete(k);
+      await cache.put(req, copy);
+    })().catch(() => {});
+  }
   return res;
 }
 async function cacheFirst(req) {

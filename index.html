@@ -96,6 +96,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=optional" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=optional"></noscript>
+<!-- ★ v3.97 ผังโรงงาน 3D — Three.js ผูกเวอร์ชันตายตัว · import map เฉย ๆ ไม่ดาวน์โหลดอะไร (โหลดจริงตอนเปิดโหมด 3D เท่านั้น)
+     แพ็กเกจรุ่นนี้มีแต่ไฟล์ไม่ย่อ · ไฟล์ .min.js = jsDelivr ย่อให้ แต่ three.module.min.js ยัง import ./three.core.js ตัวเต็ม (1.46 MB)
+     → แถวที่ 2 ส่ง import นั้นไป three.core.min.js แทน (~415 KB) -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js","https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.js":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 <!-- ⚡ v3.80 — ไลบรารี Excel (xlsx ~900 KB) และกล้องสแกน (html5-qrcode ~370 KB) ไม่โหลดตอนเปิดแอปแล้ว
      เดิม defer = ดาวน์โหลด+แปลงทุกครั้งที่เปิด (แย่งเน็ตกับข้อมูลจริงบน 4G + กิน CPU) ทั้งที่ใช้แค่ตอน export/สแกน
      ตอนนี้โหลดตอนกดใช้ครั้งแรกผ่าน loadLib() (ดูใกล้ withLoading) -->
@@ -1555,6 +1559,43 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .jb-tgl:hover{border-color:#1A56DB;color:#1A56DB}
 .jb-tgl.on{background:#1A56DB;border-color:#1A56DB;color:#fff}
 .jb-tgl:focus-visible{outline:2.5px solid #93C5FD;outline-offset:1px}
+/* ══ ★ v3.97 ผังโรงงาน 3D (feature flag ?3d=1) — ปุ่มสลับ 2D | 3D + กรอบผัง 3D · HUD ในผังอยู่ใน floor3d/floor3d.js ══ */
+.v3d-seg{display:inline-flex;height:24px;border:1.5px solid #1A56DB;border-radius:999px;overflow:hidden;background:#fff;flex:0 0 auto}
+.v3d-seg button{border:0;background:transparent;padding:0 10px;font-family:inherit;font-size:10.5px;font-weight:900;line-height:1;color:#1A56DB;cursor:pointer}
+.v3d-seg button.on{background:#1A56DB;color:#fff}
+.v3d-seg button:disabled{color:#94A3B8;cursor:not-allowed}
+#f3dHost{position:relative;height:clamp(340px,66vh,640px);border-radius:10px;border:1px solid #CBD5E1;background:#D9E3F0;overflow:hidden}
+#f3dHost .f3d-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:800;color:#1E3A8A}
+.iot-fs #f3dHost{flex:1 1 auto;min-height:0;height:auto}
+@media (max-width:820px){.iot-fs #f3dHost{flex:none;height:calc(100dvh - 92px)}}
+.iot-v3d .iot-hint{display:none!important}
+.iot-v3d .oae-chip[data-zone]{cursor:pointer}
+.lg-pend{width:11px;height:11px;border:1.5px dashed #64748B;background:rgba(203,213,225,.55);border-radius:2px;display:inline-block}
+/* bottom sheet ของเครื่องบนผัง 3D (เนื้อหาจาก _f3dSheet) */
+.f3s-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:0 40px 2px 0}
+.f3s-id{font:900 20px/1.15 'Courier New',monospace;color:#0F172A}
+.f3s-sub{font-size:11.5px;font-weight:700;color:#64748B;margin-bottom:8px}
+.f3s-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.f3s-chip{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:#F1F5F9;color:#334155;border:1px solid #E2E8F0;white-space:nowrap}
+.f3s-chip.good{background:#DCFCE7;color:#14532D;border-color:#86EFAC}.f3s-chip.warn{background:#FFEDD5;color:#7C2D12;border-color:#FDBA74}
+.f3s-chip.off{background:#E5E7EB;color:#111827;border-color:#9CA3AF}.f3s-chip.pend{background:#fff;color:#475569;border:1.5px dashed #94A3B8}
+.f3s-chip.top,.f3s-chip.sos{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5}
+.f3s-g{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.f3s-g>div{background:#F8FAFC;border:1px solid #EEF2F7;border-radius:11px;padding:7px 4px;text-align:center;min-width:0}
+.f3s-g b{display:block;font-size:16px;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;line-height:1.15}
+.f3s-g b.good{color:#15803D}.f3s-g b.warn{color:#C2410C}
+.f3s-g span{font-size:10px;font-weight:800;color:#64748B}
+.f3s-sec{font-size:12px;font-weight:800;color:#334155;margin:2px 0 5px}
+.f3s-ppl{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.f3s-ppl span{font-size:12px;font-weight:700;background:#EBF4FF;color:#1E3A8A;border-radius:8px;padding:3px 8px}
+.f3s-none{font-size:12px;color:#94A3B8;font-weight:700;margin-bottom:10px}
+.f3s-jobs{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;table-layout:fixed}
+.f3s-jobs td{padding:4px 6px;border-bottom:1px solid #F1F5F9;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f3s-jobs td:first-child{font-family:'Courier New',monospace;font-weight:800;color:#0F172A}
+.f3s-jobs td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;width:70px}
+.f3s-help{font-size:12px;font-weight:700;border-radius:9px;padding:7px 10px;margin-bottom:10px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+.f3s-help.done{background:#F0FDF4;color:#14532D;border-color:#BBF7D0}
+.f3s-go{width:100%;min-height:44px;font-size:14px}
 /* ── ตัวแบ่งหน้า (pagination) ตารางรายละเอียด WIP — 15 รายการ/หน้า ── */
 .wip-pager{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .wip-pgbtn{min-width:38px;height:38px;padding:0 10px;border:1.5px solid #CBD5E1;background:#fff;border-radius:9px;
@@ -2793,7 +2834,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.96</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v3.97</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10941,7 +10982,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v3.96":"Production Record + KPI · v3.96",
+"ระบบบันทึกผลิต + KPI · v3.97":"Production Record + KPI · v3.97",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11500,36 +11541,8 @@ function i18nObserve(){
 function i18nStop(){ if(_i18nMo){ _i18nMo.disconnect(); _i18nMo = null; } }
 if(VSM_LANG==='en'){ i18nObserve(); i18nApply(document.body); }   // เปิดแอปมาเป็น EN ค้างไว้
 
-function renderMachineStatusChecker(recs) {
-  // IoT floor plan: ผังจริงครบทั้ง 4 สาย — VSM4 (grid) · VSM3 (Layout VSM3) · VSM1/VSM2 (IOT VSM1/IOT VSM2)
-  const fpv = _fpVsm();
-  const FP_HAS_PLAN = { vsm1:1, vsm2:1, vsm3:1, vsm4:1, qc:1 };   // สายที่มีผังจริงแล้ว (ถ้ามีสายใหม่ยังไม่มีผัง → ขึ้น "เพิ่มภายหลัง")
-  if (!FP_HAS_PLAN[fpv]) {
-    const fw = $('mcViewFloor');
-    if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
-    if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
-    if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
-    if ($('iotTop5')) $('iotTop5').innerHTML = '';   // กัน TOP ปัญหาของ VSM อื่นค้าง (ไม่มีผัง = ไม่มีข้อมูลช่วงนี้)
-    if ($('iotWipStrip')) renderIotWipStrip();
-    return;
-  }
-  const dFrom = $('dashFrom')?.value || todayISO();
-  const dTo   = $('dashTo')?.value   || dFrom;
-  const selShift = state.shiftFilter || 'all';
-  const shiftLabel = selShift==='all'?'🔄 '+TT('รวมทุกกะ','All shifts'): selShift==='day'?'☀️ '+TT('กะกลางวัน','Day shift'):'🌙 '+TT('กะกลางคืน','Night shift');
-  if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${dFrom===dTo?dFrom:dFrom+' → '+dTo}  ${shiftLabel}`;
-
-  // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
-  // ถ้าไม่ได้ส่งมา → กรองจาก state.kpiRecords ตาม "ช่วงวันที่" (ไม่ใช่วันเดียว) + กะ
-  let filtered = Array.isArray(recs) ? recs : filterVsm(state.kpiRecords).filter(r => {
-    const d = (r.shift_date || r.record_date || '').slice(0,10);
-    if (d < dFrom || d > dTo) return false;
-    if (selShift !== 'all' && r.shift_type !== selShift) return false;
-    return true;
-  });
-  // Admin เห็นทุก VSM → ตัดให้เหลือ VSM ของผังที่กำลังแสดง (สลับด้วยปุ่ม VSM 4|VSM 3)
-  if (canSeeAllVsm()) filtered = filtered.filter(r => vsmOf(r) === fpv);
-
+/* สถานะรายเครื่องของผัง (ใช้ร่วมกัน: ผัง 2D · ผัง 3D · ย้อนดูทีละกะของผัง 3D) — รับ record ที่กรองช่วงวัน/กะ/สายแล้ว */
+function _iotAgg(filtered, fpv) {
   // เครื่องที่มี record ในช่วง = "เปิดเครื่อง" (ไม่งั้นจะขึ้นดำ = ปิด)
   const activeMachines = new Set(filtered.map(r => r.machine_id));
 
@@ -11575,8 +11588,44 @@ function renderMachineStatusChecker(recs) {
       .sort((a, b) => a.oae - b.oae).slice(0, 5);
   }
   top5.forEach((t, i) => { topRank[t.id] = i + 1; });
+  return { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet };
+}
 
-  _iotData = { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}` };
+function renderMachineStatusChecker(recs) {
+  // IoT floor plan: ผังจริงครบทั้ง 4 สาย — VSM4 (grid) · VSM3 (Layout VSM3) · VSM1/VSM2 (IOT VSM1/IOT VSM2)
+  const fpv = _fpVsm();
+  const FP_HAS_PLAN = { vsm1:1, vsm2:1, vsm3:1, vsm4:1, qc:1 };   // สายที่มีผังจริงแล้ว (ถ้ามีสายใหม่ยังไม่มีผัง → ขึ้น "เพิ่มภายหลัง")
+  if (!FP_HAS_PLAN[fpv]) {
+    const fw = $('mcViewFloor');
+    if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
+    if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
+    if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
+    if ($('iotTop5')) $('iotTop5').innerHTML = '';   // กัน TOP ปัญหาของ VSM อื่นค้าง (ไม่มีผัง = ไม่มีข้อมูลช่วงนี้)
+    if ($('iotWipStrip')) renderIotWipStrip();
+    return;
+  }
+  const dFrom = $('dashFrom')?.value || todayISO();
+  const dTo   = $('dashTo')?.value   || dFrom;
+  const selShift = state.shiftFilter || 'all';
+  const shiftLabel = selShift==='all'?'🔄 '+TT('รวมทุกกะ','All shifts'): selShift==='day'?'☀️ '+TT('กะกลางวัน','Day shift'):'🌙 '+TT('กะกลางคืน','Night shift');
+  if ($('iotDateInfo')) $('iotDateInfo').textContent = `📅 ${dFrom===dTo?dFrom:dFrom+' → '+dTo}  ${shiftLabel}`;
+
+  // ใช้ข้อมูลชุดเดียวกับการ์ด Dashboard (ส่งมาทาง recs) → สถานะ IoT ตรงกับการ์ดเสมอ
+  // ถ้าไม่ได้ส่งมา → กรองจาก state.kpiRecords ตาม "ช่วงวันที่" (ไม่ใช่วันเดียว) + กะ
+  let filtered = Array.isArray(recs) ? recs : filterVsm(state.kpiRecords).filter(r => {
+    const d = (r.shift_date || r.record_date || '').slice(0,10);
+    if (d < dFrom || d > dTo) return false;
+    if (selShift !== 'all' && r.shift_type !== selShift) return false;
+    return true;
+  });
+  // Admin เห็นทุก VSM → ตัดให้เหลือ VSM ของผังที่กำลังแสดง (สลับด้วยปุ่ม VSM 4|VSM 3)
+  if (canSeeAllVsm()) filtered = filtered.filter(r => vsmOf(r) === fpv);
+
+  // ★ v3.97 สถานะรายเครื่อง (เปิด/OAE/TOP/SOS) ย้ายไป _iotAgg() — ผัง 3D + ย้อนดูทีละกะใช้ตัวเดียวกัน · ผลเหมือนเดิมทุกตัว
+  const { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet } = _iotAgg(filtered, fpv);
+
+  _iotData = { active: activeMachines, oae: oaeMap, byMc, top5, topRank, sos: sosSet, rangeLabel: `${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}`,
+               recs: filtered, dFrom, dTo, shift: selShift };
 
   renderIotOaeStrip(filtered);
   renderIotWipStrip();
@@ -11607,13 +11656,15 @@ function renderIotOaeStrip(filtered){
   html+=zones.map((z,i)=>{
     const v=_oaeOf(rows.filter(r=>r.zone===z));
     const zl=escapeHtml(ZONE_LABEL[z]||z);
-    return `<div class="oae-chip ${vcls(v)}">
+    return `<div class="oae-chip ${vcls(v)}" data-zone="${z}">
       <span class="oae-k"><span class="oae-dot" style="background:${ZDOT[i]||'#64748b'}"></span><span class="oae-kn">Zone ${i+1}</span><span class="oae-kf">Zone ${zl}</span></span>
       <span class="oae-v">${fmtV(v)}</span>
       <span class="oae-sub oae-zsub">${zl}</span>
     </div>`;
   }).join('');
   host.innerHTML=html;
+  // ★ v3.97 ผัง 3D: แตะชิป Zone = กล้องบินไปโซนนั้น (ผัง 2D ไม่มีผล)
+  if(!host._f3dZone){ host._f3dZone=1; host.addEventListener('click',e=>{ const c=e.target.closest('.oae-chip[data-zone]'); if(c&&_f3dOn()) _f3d.focusZone(c.dataset.zone); }); }
 }
 
 /* ── TOP ปัญหา (v3.8): 5 เครื่อง OAE ต่ำสุดของช่วงวันที่ที่เลือก — แผงรายการ + badge 1-5 บนผัง sync กัน ── */
@@ -11676,6 +11727,7 @@ function iotTop5Tap(id){
   setTimeout(()=>_iotFocusMc(id), 80);   // รอผังกาง/จัด layout ก่อนหนึ่งเฟรม
 }
 function _iotFocusMc(id){
+  if(_f3dOn()){ _f3d.focus(id); return; }          // ★ v3.97 ผัง 3D: กล้องบินไปหา + ไฮไลต์
   let g=null;
   const sel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
   try{ g=document.querySelector(`#iotSvg g[data-mc="${sel}"]`)||document.querySelector(`#iotSvg g[data-lb="${sel}"]`); }catch(e){}  // เครื่อง หรือ ป้ายไลน์ (VSM3)
@@ -13510,15 +13562,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   if (!wrap) return;
   const fpv = _fpVsm();
 
-  const MC = FP4_MC;   // VSM4 grid — ย้ายเป็น const FP4_MC ระดับบน (ใช้ร่วมกับผังรวม 4 VSM)
-
-  const CX=35, CY=15;
-  // แปลงเป็นกล่อง px ชุดเดียวกันทั้ง 2 ผัง — VSM4 จาก grid เดิม · VSM3 จากพิกัดเอกสาร Layout
-  const boxes = fpv==='vsm3' ? FP3_MC
-    : fpv==='vsm1' ? FP1_MC
-    : fpv==='vsm2' ? FP2_MC
-    : fpv==='qc'   ? FPQ_MC
-    : MC.map(m=>({id:m.id, x:m.c1*CX+2, y:m.r1*CY+2, w:(m.c2-m.c1)*CX-4, h:(m.r2-m.r1)*CY-4}));
+  const boxes = _fpBoxes(fpv);    // ★ v3.97 ย้ายไป _fpBoxes (ผัง 3D ใช้กล่องชุดเดียวกัน)
   const labels = fpv==='vsm3' ? FP3_LB : [];
   /* ★ 2026-08-13 — กรอบ Zone บนผัง: ใช้กับผังที่กล่องเครื่องบอกโซนมาด้วย field z (ตอนนี้ = QC)
      ผัง QC มี 2 กลุ่มพื้นที่อยู่คนละมุม → ถ้าไม่ตีกรอบจะดูไม่ออกว่ากลุ่มไหนเป็น Zone อะไร
@@ -13541,6 +13585,9 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   const W=maxX-minX+PAD*2, H=maxY-minY+PAD*2;
   const tot=boxes.length;
   const nOn=boxes.filter(m=>activeMachines.has(m.id)).length;
+  // ★ v3.97 โหมด 3D: แถบ legend เดิม + ผัง 3D แทน SVG (ไม่สร้าง SVG ที่ไม่ได้โชว์)
+  if (_f3dWanted()) { wrap.innerHTML = _iotLegendHtml(fpv, nOn, tot, true); _f3dMount(wrap); return; }
+  if (_f3d || _f3dHost) _f3dDispose();
 
   // v3.30: งานที่กำลังผลิตของแต่ละเครื่อง (คำนวณครั้งเดียวต่อการวาด) — ใช้ทั้งบนผังและกระดานงาน
   // v3.30.2: "เครื่องที่เดินอยู่" ต้องได้ชั้นข้อมูลเหมือนกันทุกตัว — ถ้า record ไม่ได้ระบุเบอร์วาล์ว
@@ -13669,6 +13716,18 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
 
   const svgHtml=`<svg id="iotSvg" viewBox="${VBX} ${VBY} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">${g.join('')}</svg>`;
 
+  wrap.innerHTML=`${_iotLegendHtml(fpv, nOn, tot, false)}
+    <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
+      <div id="iotScaleWrap" style="transform-origin:top left;transition:transform .2s">
+        ${svgHtml}
+      </div>
+    </div>`;
+  _applyIotZoom();
+}
+
+/* แถบ legend เหนือผัง — ผัง 2D และผัง 3D ใช้ชุดเดียวกัน (★ v3.97 แยกออกมาจาก renderFloorPlan)
+   v3d = กำลังโชว์ 3D → เพิ่มสัญลักษณ์ "รอข้อมูลจบกะ" · ปุ่ม 2D | 3D ขึ้นเฉพาะตอนเปิด feature flag */
+function _iotLegendHtml(fpv, nOn, tot, v3d) {
   // Admin: ปุ่มสลับผังทุก VSM (1/2/3/4) — ผู้ใช้ทั่วไปเห็นเฉพาะผัง VSM ตัวเอง (ไม่มีปุ่ม)
   // ผังจริงครบทั้ง 4 สายแล้ว (VSM1/2 = IOT VSM1/2 · VSM3 = Layout · VSM4 = grid)
   const vsmBtn = canSeeAllVsm() ? `
@@ -13676,7 +13735,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
         ${VSM_KEYS.map(v=>`<button type="button" onclick="iotSetVsm('${v}')" style="border:0;cursor:pointer;padding:3px 10px;font-size:10.5px;font-weight:800;${v===fpv?'background:#1A56DB;color:#fff':'background:#fff;color:#334155'}">${VSM_LABEL[v]}</button>`).join('')}
       </span>` : '';
 
-  wrap.innerHTML=`
+  return `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
       ${vsmBtn}
       <span style="display:inline-flex;align-items:center;gap:4px;color:#14532d">
@@ -13691,21 +13750,16 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
       <span style="display:inline-flex;align-items:center;gap:4px;color:#B91C1C">
         <span style="width:13px;height:13px;background:#DC2626;border:1.5px solid #fff;box-shadow:0 0 0 1px #DC2626;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8.5px;font-weight:900">1</span>${TT('TOP ปัญหา','TOP issue')}
       </span>
-      <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>
+      <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>${v3d ? `
+      <span style="display:inline-flex;align-items:center;gap:4px;color:#475569"><span class="lg-pend"></span>${TT('รอข้อมูลจบกะ','Awaiting shift data')}</span>` : ''}
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#475569;background:#F1F5F9;border:1px solid #E2E8F0;padding:3px 9px;border-radius:999px">✋ ${TT('ลากพื้นที่ว่าง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space to pan · wheel to zoom')}</span>
       <span class="jb-tgls">
         <button type="button" class="jb-tgl${_iotJobLbl?' on':''}" onclick="iotToggleJobLbl()" aria-pressed="${_iotJobLbl}"
-          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
+          title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่','Print the valve no. being produced inside every running machine box')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>${_f3dFlag() ? _f3dSegHtml(v3d) : ''}
       </span>
       <span style="font-size:10px;color:#6b7280;margin-left:auto">${TT('เปิด','Running')} <b>${nOn}</b> / ${TT('รวม','total')} <b>${tot}</b> ${TT('เครื่อง','machines')}</span>
-    </div>
-    <div id="iotViewport" style="overflow:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb">
-      <div id="iotScaleWrap" style="transform-origin:top left;transition:transform .2s">
-        ${svgHtml}
-      </div>
     </div>`;
-  _applyIotZoom();
 }
 
 /* ── v3.30 ปุ่มสลับป้ายในกล่อง — วาดผังใหม่ทันที (ไม่ยิง API ใหม่ ใช้ _iotData ที่มีอยู่) ── */
@@ -13714,6 +13768,349 @@ function iotToggleJobLbl(){
   try{ localStorage.setItem('vsm4_iot_joblbl',_iotJobLbl?'1':'0'); }catch(e){}
   if(_iotData) renderFloorPlan(_iotData.active,_iotData.oae);
   if(document.getElementById('iotAllOv')) _iotAllRenderMap(true);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ★ v3.97 (2026-10-27) ผังโรงงาน 3D — โหมด 3D ของการ์ดนี้ (ผู้ใช้ 27/10: ผัง 3D สไตล์ ERP · ข้อมูลชุดเดียวกับผัง 2D)
+   • feature flag: ลิงก์แอปต่อท้าย ?3d=1 = เปิดปุ่ม 2D | 3D บนแถบ legend (จำในเครื่องนี้) · ?3d=0 = ปิดกลับ
+     ไม่ได้เปิด = แอปทำงานเหมือนเดิมทุกอย่าง (ไม่โหลด Three.js ไม่สร้างอะไรเพิ่ม)
+   • ตัวผัง 3D = ไฟล์แยก floor3d/floor3d.js โหลดด้วย import() ตอนกรอบผังเข้าใกล้จอครั้งแรก
+   • ข้อมูล = _iotData ชุดเดียวกับผัง 2D → _f3dPayload() แปลงเป็นชุดข้อมูลให้ผัง 3D (ไม่มีฟิลด์ใหม่ ไม่มีข้อมูลสมมติ)
+     สิ่งเดียวที่ 3D คิดเพิ่ม = "รอข้อมูลจบกะ" (เครื่องที่ยังไม่มี record ขณะกะยังไม่จบ — ดู _f3dPendInfo)
+   • ไม่มี WebGL 2 / โหลดไฟล์ไม่ได้ / หน่วยความจำกราฟิกหลุด → กลับผัง 2D อัตโนมัติ
+   ════════════════════════════════════════════════════════════════════ */
+const F3D_VER = '__F3D_VER__';          // tools/build.mjs แทนด้วย hash ของ floor3d.js → URL เปลี่ยนทุกรุ่น (Service Worker เก็บตามรุ่น)
+const LS_F3D = 'vsm4_3d';               // '1' = เปิด feature (จาก ?3d=1)
+const LS_F3D_VIEW = 'vsm4_iot_view';    // '3d' | '2d' = มุมมองผังที่เลือกไว้
+const F3D_PEND_GRACE = 2 * 3600e3;      // จบกะแล้วไม่ถึง 2 ชม. ยังถือว่า "รอข้อมูลจบกะ" (พนักงานลงยอดหลังจบกะ)
+(function () {
+  const m = /[?&]3d=([01])(?:&|#|$)/.exec(location.search);
+  if (!m) return;
+  try {
+    if (m[1] === '1') { localStorage.setItem(LS_F3D, '1'); localStorage.setItem(LS_F3D_VIEW, '3d'); }
+    else { localStorage.removeItem(LS_F3D); localStorage.removeItem(LS_F3D_VIEW); }
+  } catch (e) {}
+})();
+let _f3d = null, _f3dP = null, _f3dIO = null, _f3dHost = null, _f3dFail = '', _f3dGL = null, _f3dLast = null;
+function _f3dFlag() { try { return localStorage.getItem(LS_F3D) === '1'; } catch (e) { return false; } }
+function _f3dPref() { try { return localStorage.getItem(LS_F3D_VIEW) === '3d' ? '3d' : '2d'; } catch (e) { return '2d'; } }
+// WebGL 2 + import map (Three.js รุ่นนี้ไม่รองรับ WebGL 1 แล้ว) — เช็คครั้งเดียวแล้วคืน context ทันที
+function _f3dCanGL() {
+  if (_f3dGL !== null) return _f3dGL;
+  try {
+    const im = !!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'));
+    const g = im && document.createElement('canvas').getContext('webgl2');
+    _f3dGL = !!g;
+    const lc = g && g.getExtension('WEBGL_lose_context'); if (lc) lc.loseContext();
+  } catch (e) { _f3dGL = false; }
+  return _f3dGL;
+}
+function _f3dWanted() { return _f3dFlag() && _f3dPref() === '3d' && !_f3dFail && _f3dCanGL(); }
+function _f3dOn() { return !!_f3d && _iotPage === 1 && _f3dWanted(); }
+function iotSetView(v) {
+  v = v === '3d' ? '3d' : '2d';
+  if (v === '3d' && !_f3dCanGL()) { toast(TT('อุปกรณ์นี้เปิดผัง 3D ไม่ได้ (ไม่รองรับ WebGL 2) — ใช้ผัง 2D', 'This device cannot show the 3D map (no WebGL 2) — using 2D'), 'orange'); v = '2d'; }
+  if (v === '3d') _f3dFail = '';
+  try { localStorage.setItem(LS_F3D_VIEW, v); } catch (e) {}
+  if (_iotData) renderFloorPlan(_iotData.active, _iotData.oae);
+}
+function _f3dSegHtml(on3d) {
+  const gl = _f3dCanGL();
+  return `<span class="v3d-seg" role="group" aria-label="${TT('มุมมองผัง', 'Map view')}"><button type="button" class="${on3d ? '' : 'on'}" aria-pressed="${!on3d}" onclick="iotSetView('2d')">2D</button><button type="button" class="${on3d ? 'on' : ''}" aria-pressed="${on3d}" onclick="iotSetView('3d')"${gl ? '' : ` disabled title="${TT('อุปกรณ์นี้ไม่รองรับ WebGL 2', 'No WebGL 2 on this device')}"`}>3D</button></span>`;
+}
+function _f3dDispose() {
+  if (_f3dIO) { _f3dIO.disconnect(); _f3dIO = null; }
+  _f3dP = null;
+  if (_f3d) { try { _f3d.dispose(); } catch (e) {} _f3d = null; }
+  if (_f3dHost) { _f3dHost.remove(); _f3dHost = null; }
+  const c = $('iotCard'); if (c) c.classList.remove('iot-v3d');
+}
+function _f3dFallback(why) {
+  _f3dFail = why || 'fail';
+  _f3dDispose();
+  toast(why === 'lost' ? TT('ผัง 3D หยุดทำงาน (หน่วยความจำกราฟิกไม่พอ) — กลับมาใช้ผัง 2D', 'The 3D map stopped (graphics memory) — back to 2D')
+    : TT('โหลดผัง 3D ไม่ได้ (เน็ต?) — ใช้ผัง 2D ไปก่อน · กด 3D เพื่อลองใหม่', 'Could not load the 3D map (network?) — using 2D · tap 3D to retry'), 'orange');
+  if (_iotData) renderFloorPlan(_iotData.active, _iotData.oae);
+}
+// วางกรอบผัง 3D ต่อจากแถบ legend — renderFloorPlan เขียน #mcViewFloor ใหม่ทุกครั้ง → ย้ายกรอบเดิมกลับเข้าไป (ฉากไม่ถูกสร้างใหม่)
+function _f3dMount(wrap) {
+  if (!_f3dHost) {
+    _f3dHost = document.createElement('div'); _f3dHost.id = 'f3dHost';
+    _f3dHost.innerHTML = `<div class="f3d-wait"><span class="spinner"></span>${TT('กำลังโหลดผัง 3D…', 'Loading the 3D map…')}</div>`;
+  }
+  wrap.appendChild(_f3dHost);
+  const c = $('iotCard'); if (c) c.classList.add('iot-v3d');
+  if (_f3d) { _f3dPush(); return; }
+  _f3dEnsure().then(ok => { if (ok) _f3dPush(); });
+}
+function _f3dPush() {
+  if (!_f3d || !_iotData) return;
+  _f3dLast = _f3dPayload(_iotData, { dTo: _iotData.dTo, shift: _iotData.shift, range: _iotData.rangeLabel });
+  try { _f3d.update(_f3dLast); } catch (e) { console.warn('[3d]', e); _f3dFallback('fail'); }
+}
+// โหลดโมดูลตอนกรอบเข้าใกล้จอเท่านั้น (เปิด Dashboard แต่ไม่ได้เลื่อนลงมาที่ผัง = ไม่ดาวน์โหลด Three.js)
+//   URL เต็มจาก document.baseURI — import() ในสคริปต์ assets/app.<hash>.js จะนับ path จากไฟล์สคริปต์ ไม่ใช่จากหน้าแอป
+function _f3dEnsure() {
+  if (_f3d) return Promise.resolve(true);
+  if (_f3dP) return _f3dP;
+  const host = _f3dHost;
+  _f3dP = new Promise(res => {
+    _f3dIO = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { _f3dIO.disconnect(); _f3dIO = null; res(); } }, { rootMargin: '300px' });
+    _f3dIO.observe(host);
+  }).then(() => import(new URL('floor3d/floor3d.js?v=' + (F3D_VER.startsWith('__') ? Date.now() : F3D_VER), document.baseURI).href))
+    .then(mod => {
+      if (host !== _f3dHost || !_f3dWanted()) return false;      // ระหว่างโหลด ผู้ใช้กลับไป 2D แล้ว
+      host.innerHTML = '';
+      _f3d = mod.create(host, _f3dOpts());
+      return true;
+    })
+    .catch(err => { console.warn('[3d]', err); if (host === _f3dHost) _f3dFallback('load'); return false; })
+    .finally(() => { if (host === _f3dHost) _f3dP = null; });
+  return _f3dP;
+}
+function _f3dOpts() {
+  return {
+    S: _f3dStrings(),
+    sheet: (id, pl) => _f3dSheet(id, pl),
+    onAction: (act, id) => { if (act === 'rec') _f3dGoRecord(id); },
+    onRefresh: () => reload(),
+    onFail: why => _f3dFallback(why),
+    timeline: () => _f3dTimeline(),
+    payloadAt: st => _f3dPayloadAt(st),
+    onPng: (blob, pl) => _f3dSavePng(blob, pl),
+    pngMeta: pl => ({ title: `🏭 ${TT('ผังเครื่องจักร', 'Machine map')} · ${VSM_LABEL[pl.vsm] || pl.vsm}`, sub: pl.range || '' }),
+    canLandscape: () => !!(screen.orientation && screen.orientation.lock) && matchMedia('(pointer:coarse)').matches,
+    landscape: () => _f3dLandscape(),
+  };
+}
+function _f3dStrings() {
+  return {
+    building: TT('กำลังสร้างผัง 3D…', 'Building the 3D map…'),
+    hint: TT('☝️ 1 นิ้ว = เลื่อน · ✌️ 2 นิ้ว = ซูม/หมุน · แตะเครื่อง = ดูข้อมูล', '☝️ 1 finger = pan · ✌️ 2 fingers = zoom/rotate · tap a machine'),
+    search: TT('🔍 เลขเครื่อง', '🔍 Machine'), noMatch: TT('ไม่พบเครื่อง', 'No machine found'), close: TT('ปิด', 'Close'),
+    on: TT('เปิด', 'On'), pendN: TT('รอข้อมูลจบกะ {n} เครื่อง', 'awaiting data: {n}'),
+    filters: { all: TT('ทั้งหมด', 'All'), top: TT('TOP ปัญหา', 'TOP issues'), warn: 'OAE <75%', off: TT('ปิดเครื่อง', 'Off'), sos: 'SOS', pend: TT('รอข้อมูล', 'Awaiting') },
+    watch: TT('ต้องดู', 'Watch'), offShort: TT('ปิด', 'off'), line: TT('ไลน์', 'line'),
+    pendAll: TT('รอข้อมูลจบกะ — กะนี้ยังไม่มีการบันทึก', 'Awaiting end-of-shift data — nothing recorded yet'),
+    noData: TT('ไม่มีการบันทึกในช่วงนี้', 'No records in this period'),
+    tlMode: TT('ย้อนดู', 'Replay'), back: TT('กลับ', 'Back'), tlNone: TT('ยังไม่มีข้อมูลย้อนหลังให้ดู', 'No history to replay'),
+    pngFail: TT('บันทึกภาพไม่สำเร็จ', 'Could not save the image'), locale: 'en-GB',   // วันที่บนภาพ = ค.ศ. ตรงกับวันที่ในแอป
+    legend: { good: 'OAE ≥75%', warn: 'OAE <75%', off: TT('ปิดเครื่อง', 'Off'), pend: TT('รอข้อมูลจบกะ', 'Awaiting shift data'), top: TT('TOP ปัญหา', 'TOP issue'), sos: 'SOS' },
+    side: { zin: TT('ขยาย', 'Zoom in'), zout: TT('ย่อ', 'Zoom out'), rot: TT('หมุน 90°', 'Rotate 90°'), reset: TT('รีเซ็ตมุมมอง', 'Reset view'),
+      top: TT('มุมบน', 'Top view'), ref: TT('รีเฟรชข้อมูล', 'Refresh data'), tl: TT('ย้อนดูทีละกะ', 'Replay by shift'),
+      png: TT('บันทึกภาพผัง (PNG)', 'Save map image (PNG)'), land: TT('เต็มจอแนวนอน', 'Landscape fullscreen') },
+    tl: { prev: TT('กะก่อนหน้า', 'Previous shift'), next: TT('กะถัดไป', 'Next shift'), play: TT('เล่น / หยุด', 'Play / pause'), slider: TT('เลือกกะ', 'Pick a shift') },
+  };
+}
+// กล่องเครื่องของผังแต่ละสาย (px ของผัง) — ใช้ร่วมกัน: ผัง 2D (renderFloorPlan) · ผัง 3D
+function _fpBoxes(fpv) {
+  const CX = 35, CY = 15;   // VSM4 grid (r/c) → px แบบเดียวกับที่ผัง 2D ใช้มาตลอด · สายอื่นเป็น px จากเอกสาร Layout อยู่แล้ว
+  return fpv === 'vsm3' ? FP3_MC
+    : fpv === 'vsm1' ? FP1_MC
+    : fpv === 'vsm2' ? FP2_MC
+    : fpv === 'qc' ? FPQ_MC
+    : FP4_MC.map(m => ({ id: m.id, x: m.c1 * CX + 2, y: m.r1 * CY + 2, w: (m.c2 - m.c1) * CX - 4, h: (m.r2 - m.r1) * CY - 4 }));
+}
+// คนที่เข้าผลิตของเครื่อง = รหัสไม่ซ้ำจาก record (แยกรหัสแบบเดียวกับ _distinctHeadcount ของการ์ด Dashboard)
+function _f3dPeople(recs, em) {
+  const seen = new Map();
+  for (const r of recs || []) {
+    const parts = String((r && (r.shift_ids || r.emp_id)) || '').split(/[,;]/);
+    const names = String((r && r.emp_name) || '').split(/\s*,\s*/);
+    parts.forEach((part, i) => {
+      const id = part.split('—')[0].trim().split(/\s+/)[0].trim().toUpperCase();
+      if (!id || seen.has(id)) return;
+      let nm = part.includes('—') ? part.split('—').slice(1).join('—').trim() : '';
+      if (!nm && parts.length === names.length) nm = names[i] || '';
+      seen.set(id, nm || em.get(id) || '');
+    });
+  }
+  return [...seen].map(([id, name]) => ({ id, name }));
+}
+/* "รอข้อมูลจบกะ" — ไม่มีฟิลด์นี้ในข้อมูล คิดจากเวลาของกะสุดท้ายในช่วงที่เลือก (กลางวัน 08:00–20:00 · กลางคืน 20:00–08:00 วันถัดไป)
+   open = กะนั้นยังไม่จบ หรือจบไม่ถึง 2 ชม. → เครื่องที่ยังไม่มี record = รอข้อมูล (ไม่ใช่ปิดเครื่อง)
+   all  = ทั้งสายไม่มี record เลยในช่วงนี้ → ทุกเครื่องโปร่งแสง (แยกไม่ออกว่าปิดจริงหรือยังไม่ได้ลง) */
+function _f3dPendInfo(dTo, shift, nRecs) {
+  const [y, mo, d] = String(dTo || '').split('-').map(Number);
+  let open = false;
+  if (y && mo && d) {
+    const end = shift === 'day' ? new Date(y, mo - 1, d, 20, 0, 0) : new Date(y, mo - 1, d + 1, 8, 0, 0);
+    open = Date.now() < end.getTime() + F3D_PEND_GRACE;
+  }
+  return { open, all: !nRecs };
+}
+function _f3dPayload(d, o) {
+  const fpv = o.fpv || _fpVsm(), boxes = _fpBoxes(fpv), recs = d.recs || [];
+  const zones = zonesForVsm(fpv), ZC = ['#7C3AED', '#1A56DB', '#D97706', '#0E9F6E'];   // สีโซนชุดเดียวกับจุดสีบนแถบ OAE
+  // โซนของเครื่อง: ผัง QC บอกโซนในกล่อง (ยึดกลุ่มบนผัง) · สายอื่นตามรายการเครื่องบน Cloud (Admin ย้ายโซนได้ — ไม่ใช้ seed)
+  const zOf = {};
+  for (const z of zones) for (const m of (state.machines[z] || [])) if (m && m.id && !(m.id in zOf)) zOf[m.id] = z;
+  for (const r of recs) if (r.machine_id && r.zone && !(r.machine_id in zOf)) zOf[r.machine_id] = r.zone;
+  const pend = _f3dPendInfo(o.dTo, o.shift, recs.length);
+  const em = new Map((state.employees || []).map(e => [String(e.id || '').toUpperCase(), e.name || '']));
+  const mc = {}, zk = {};
+  for (const z of zones) zk[z] = { n: 0, on: 0, pend: 0 };
+  for (const b of boxes) {
+    if (mc[b.id]) continue;
+    const rs = (d.byMc && d.byMc[b.id]) || [], on = d.active.has(b.id), oe = d.oae[b.id];
+    const oae = oe ? oe.sum / oe.n : 0;                                   // ค่าเดียวกับที่ผัง 2D ใช้ระบายสี
+    const st = on ? (oae >= 0.75 ? 'good' : 'warn') : (pend.all || pend.open ? 'pend' : 'off');
+    let opr = 0, tgt = 0; for (const r of rs) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
+    const jobs = _mcJobList(rs), lr = fpv === 'vsm3' ? rs.find(r => r.line_key) : null;
+    mc[b.id] = {
+      st, oae: on ? oae : null, opr, tgt, ppl: _f3dPeople(rs, em),
+      top: (d.topRank && d.topRank[b.id]) || 0, sos: !!(d.sos && d.sos.has(b.id)),
+      valve: jobs[0] ? jobs[0].valve : '', lot: jobs[0] ? jobs[0].lot : '', more: Math.max(0, jobs.length - 1),
+      ln: fpv === 'vsm3' ? ((lr ? lineLbId(lr.line_key) : VSM3_MC_LB[b.id]) || '') : '',
+    };
+    const z = zk[b.z || zOf[b.id]];
+    if (z) { z.n++; if (on) z.on++; if (st === 'pend') z.pend++; }
+  }
+  for (const z of zones) {
+    const zr = recs.filter(r => r.zone === z);
+    let opr = 0, tgt = 0; for (const r of zr) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
+    Object.assign(zk[z], { oae: _oaeOf(zr), opr, tgt, ppl: _distinctHeadcount(zr) });
+  }
+  // แถบ KPI = สูตรเดียวกับการ์ดสรุป "รวมทุก Zone" ของ Dashboard (zoneKpiCard) + เปิดกี่เครื่อง + คนเข้าผลิตรวม
+  const sum = k => recs.reduce((s, r) => s + (Number(r[k]) || 0), 0), avg = k => (recs.length ? sum(k) / recs.length : 0);
+  const t = state.targets || {}, has = recs.length > 0;
+  const cls = (v, tg, rev) => { const r = rev ? +tg / Math.max(+v, 1e-9) : +v / Math.max(+tg, 1e-9); return r >= 1 ? 'good' : r >= .85 ? 'warn' : 'bad'; };
+  const oae = sum('target') > 0 ? sum('opr') / sum('target') : 0, pplh = sum('wt') > 0 ? sum('opr') / sum('wt') : 0;
+  const dle = avg('dle'), pd = calcZonePdac(recs, 'ALL'), scrap = avg('scrap_rate');
+  const kpi = [
+    { k: 'oae', l: 'OAE', v: has ? oae : null, f: 'pct', cap: 1, warnMark: oae > 1, cls: has ? (oae > 1 ? 'warn' : cls(oae, t.oae)) : '' },
+    { k: 'on', l: TT('เปิด', 'Running'), v: boxes.filter(b => d.active.has(b.id)).length, of: boxes.length, f: 'frac' },
+    { k: 'ppl', l: TT('👷 คนเข้าผลิต', '👷 Operators'), v: _distinctHeadcount(recs), f: 'int' },
+    { k: 'opr', l: 'OPR', v: sum('opr'), f: 'int' },
+    { k: 'tgt', l: 'Target', v: sum('target'), f: 'int' },
+    { k: 'dle', l: 'DLE', v: has && dle > 0 ? dle : null, f: 'pct', cls: has ? (dle <= 0 ? 'warn' : cls(dle, t.dle)) : '' },
+    { k: 'pplh', l: 'PPLH', v: has ? pplh : null, f: 'int', cls: has ? cls(pplh, t.pplh) : '' },
+    { k: 'pdac', l: 'PDAC', v: has ? pd.ratio : null, f: 'pct', cls: has ? cls(pd.ratio, t.pdac) : '', tip: pd.str },
+    { k: 'scrap', l: 'SCRAP', v: has ? scrap : null, f: 'pct', cls: has ? cls(scrap, t.scrap, true) : '' },
+  ];
+  return {
+    layoutKey: fpv + '|' + boxes.map(b => b.z || zOf[b.id] || '').join(','), vsm: fpv, range: o.range || '',
+    boxes: boxes.map(b => ({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, zone: b.z || zOf[b.id] || '' })),
+    lines: fpv === 'vsm3' ? FP3_LB.map(l => ({ id: l.id, x: l.x, y: l.y, w: l.w, h: l.h, name: lbFullName(l.id) })) : [],
+    grid: fpv === 'vsm4' ? { x: 35, y: 30, ox: 0, oy: 0 } : null,
+    // ชื่อโซนที่มีคำว่า Zone อยู่แล้ว (VSM1/2: "Zone 2 VSM1") ไม่ต้องเติมลำดับซ้ำ · short = ป้ายย่อตอนซูมออก (จอมือถือ)
+    zones: zones.map((z, i) => {
+      const zl = ZONE_LABEL[z] || z, own = /^zone\s*\d+/i.exec(zl);
+      return { key: z, label: own ? zl : `Zone ${i + 1} · ${zl}`, short: own ? own[0] : `Zone ${i + 1}`, color: ZC[i] || '#64748B' };
+    }),
+    mc, zk, lineTop: fpv === 'vsm3' ? (d.topRank || {}) : {}, kpi, pend, jobLbl: !!_iotJobLbl,
+    byMc: d.byMc || {}, recs, S: _f3dStrings(),
+  };
+}
+// เนื้อหา bottom sheet เมื่อแตะเครื่อง (pl = ชุดข้อมูลที่ผัง 3D แสดงอยู่ — อาจเป็นกะที่ย้อนดู)
+function _f3dSheet(id, pl) {
+  pl = pl || _f3dLast; if (!pl) return '';
+  const d = pl.mc[id];
+  if (!d) return _f3dLineSheet(id, pl);
+  const box = pl.boxes.find(b => b.id === id) || {}, zn = pl.zones.find(z => z.key === box.zone);
+  const ST = { good: ['good', '🟢 OAE ≥75%'], warn: ['warn', '🟠 OAE <75%'], off: ['off', '⚫ ' + TT('ปิดเครื่อง', 'Off')], pend: ['pend', '⏳ ' + TT('รอข้อมูลจบกะ', 'Awaiting shift data')] }[d.st] || ['off', d.st];
+  const chips = [`<span class="f3s-chip ${ST[0]}">${ST[1]}</span>`];
+  if (d.top) chips.push(`<span class="f3s-chip top">🔥 TOP ${d.top}</span>`);
+  if (d.sos) chips.push('<span class="f3s-chip sos">🆘 SOS</span>');
+  const oaeTxt = d.oae == null ? '—' : (Math.min(d.oae, 9.99) * 100).toFixed(1) + '%', oc = d.oae == null ? '' : d.oae >= 0.75 ? 'good' : 'warn';
+  const ppl = d.ppl.length ? `<div class="f3s-ppl">${d.ppl.map(p => `<span>${escapeHtml(p.id)}${p.name ? ' · ' + escapeHtml(p.name) : ''}</span>`).join('')}</div>`
+    : `<div class="f3s-none">${TT('ไม่มีรายชื่อในข้อมูลที่บันทึก', 'No operator in the records')}</div>`;
+  const recs = (pl.byMc && pl.byMc[id]) || [];
+  const jobs = _mcJobList(recs).slice(0, 4);
+  const jt = jobs.length ? `<div class="f3s-sec">🏷️ ${TT('งานที่ผลิต', 'Jobs')} · Valve / Lot / OPR</div><table class="f3s-jobs"><tbody>${jobs.map(j => `<tr><td>${escapeHtml(j.valve || '—')}</td><td>${escapeHtml(j.lot || '—')}</td><td>${nn(j.opr)}</td></tr>`).join('')}</tbody></table>` : '';
+  const helps = recs.map(r => _recHelp(r)).filter(Boolean)
+    .sort((a, b) => ((a.status !== 'done' ? 0 : 1) - (b.status !== 'done' ? 0 : 1)) || String(b.at || '').localeCompare(String(a.at || ''))).slice(0, 2);
+  const hb = helps.map(h => `<div class="f3s-help${h.status === 'done' ? ' done' : ''}">${h.status === 'done' ? '✅' : '🆘'} ${escapeHtml(String(h.text || '').replace(/\s+/g, ' ').trim())}</div>`).join('');
+  return `<div class="f3s-h"><span class="f3s-id">${escapeHtml(id)}</span></div>
+    <div class="f3s-sub">${escapeHtml(VSM_LABEL[pl.vsm] || pl.vsm)}${zn ? ' · ' + escapeHtml(zn.label) : ''} · ${escapeHtml(pl.range || '')}</div>
+    <div class="f3s-chips">${chips.join('')}</div>
+    <div class="f3s-g"><div><b>${nn(d.opr)}</b><span>${TT('ยอดงาน (OPR)', 'Output (OPR)')}</span></div><div><b>${nn(d.tgt)}</b><span>Target</span></div><div><b class="${oc}">${oaeTxt}</b><span>OAE</span></div></div>
+    <div class="f3s-sec">👷 ${TT('คนที่เข้าผลิต', 'Operators')} (${d.ppl.length})</div>${ppl}${jt}${hb}
+    <button type="button" class="btn btn-blue f3s-go" data-f3d-act="rec" data-id="${escapeHtml(id)}">📥 ${TT('ไปหน้าบันทึก', 'Go to Record')}</button>`;
+}
+// ป้ายไลน์ VSM3 (TOP ปัญหาของ VSM3 จัดอันดับรายไลน์)
+function _f3dLineSheet(id, pl) {
+  const L = (pl.lines || []).find(l => l.id === id); if (!L) return '';
+  const rk = pl.lineTop && pl.lineTop[id];
+  const recs = (pl.recs || []).filter(r => (r.line_key ? lineLbId(r.line_key) : VSM3_MC_LB[r.machine_id]) === id);
+  let opr = 0, tgt = 0; for (const r of recs) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
+  const oae = _oaeOf(recs), mcs = Object.keys(pl.mc).filter(k => pl.mc[k].ln === id);
+  return `<div class="f3s-h"><span class="f3s-id">${escapeHtml(id)}</span></div>
+    <div class="f3s-sub">${escapeHtml(L.name || id)} · ${escapeHtml(pl.range || '')}</div>
+    ${rk ? `<div class="f3s-chips"><span class="f3s-chip top">🔥 TOP ${rk}</span></div>` : ''}
+    <div class="f3s-g"><div><b>${nn(opr)}</b><span>OPR</span></div><div><b>${nn(tgt)}</b><span>Target</span></div><div><b class="${oae == null ? '' : oae >= 0.75 ? 'good' : 'warn'}">${oae == null ? '—' : (Math.min(oae, 9.99) * 100).toFixed(1) + '%'}</b><span>OAE</span></div></div>
+    <div class="f3s-sec">${TT('เครื่องในไลน์', 'Machines in this line')} (${mcs.length})</div>
+    <div class="f3s-ppl">${mcs.map(k => `<span>${escapeHtml(k)}</span>`).join('')}</div>`;
+}
+// 📥 ไปหน้าบันทึก → โซนของเครื่อง + เปิดการ์ดเครื่องนั้น (แบบเดียวกับชิป "ล่าสุด" ของหน้าบันทึก)
+function _f3dGoRecord(id) {
+  const b = _f3dLast && _f3dLast.boxes.find(x => x.id === id), z = b ? b.zone : '';
+  if (_iotIsFs()) iotExitFs();
+  setPane('kpi');
+  requestAnimationFrame(() => {
+    const pane = $('pane-kpi'); if (!pane || !pane.classList.contains('active')) return;   // setPane เปิดกล่อง "มีข้อมูลค้าง" แทน
+    if (z && currentZones().includes(z) && state.zone !== z) {
+      if (_formDirty) { toast(TT(`${id} อยู่ ${ZONE_LABEL[z] || z} — บันทึกงานที่ค้างอยู่ก่อนแล้วค่อยสลับโซน`, `${id} is in ${ZONE_LABEL[z] || z} — save the open form first`), 'orange'); return; }
+      setZone(z);
+    }
+    requestAnimationFrame(() => {
+      const sel = window.CSS && CSS.escape ? CSS.escape(id) : id;
+      if (document.querySelector(`#zone-machines .mc[data-mcid="${sel}"]`)) mcJump(id);
+      else toast(TT(`เปิดหน้าบันทึกแล้ว — ไม่มีการ์ด ${id} ในโซนนี้`, `Record page opened — no ${id} card in this zone`));
+    });
+  });
+}
+// 🕘 ย้อนดูทีละกะ — ทุกกะในข้อมูลที่แอปโหลดไว้ (หน้าต่าง ~30 วัน) ของสายที่ดูอยู่ จนถึงกะปัจจุบัน
+function _f3dIsoAdd(iso, n) { const [y, m, d] = iso.split('-').map(Number); const t = new Date(y, m - 1, d + n); return `${t.getFullYear()}-${P(t.getMonth() + 1)}-${P(t.getDate())}`; }
+function _f3dTimeline() {
+  const fpv = _fpVsm();
+  let recs = filterVsm(state.kpiRecords || []);
+  if (canSeeAllVsm()) recs = recs.filter(r => vsmOf(r) === fpv);
+  let d0 = '';
+  for (const r of recs) { const d = (r.shift_date || r.record_date || '').slice(0, 10); if (d && (!d0 || d < d0)) d0 = d; }
+  if (!d0) return null;
+  const h = new Date().getHours(), today = todayISO();
+  const curD = h < 8 ? _f3dIsoAdd(today, -1) : today, curS = h >= 8 && h < 20 ? 'day' : 'night';   // วันผลิต 08:00 → 08:00
+  const steps = [];
+  for (let d = d0; d <= curD && steps.length < 800; d = _f3dIsoAdd(d, 1)) {
+    for (const s of ['day', 'night']) {
+      if (d === curD && s === 'night' && curS === 'day') break;
+      steps.push({ d, s, label: `${d.slice(8, 10)}/${d.slice(5, 7)} ${s === 'day' ? '☀️' : '🌙'}` });
+    }
+  }
+  const keep = steps.slice(-62), dd = _iotData || {};
+  let cur = keep.length - 1;
+  if (dd.dFrom && dd.dFrom === dd.dTo && dd.shift && dd.shift !== 'all') { const i = keep.findIndex(x => x.d === dd.dFrom && x.s === dd.shift); if (i >= 0) cur = i; }
+  else if (dd.dTo) { for (let i = keep.length - 1; i >= 0; i--) if (keep[i].d <= dd.dTo) { cur = i; break; } }
+  return { steps: keep, cur };
+}
+function _f3dPayloadAt(st) {
+  const fpv = _fpVsm();
+  let recs = filterVsm(state.kpiRecords || []).filter(r => (r.shift_date || r.record_date || '').slice(0, 10) === st.d && r.shift_type === st.s);
+  if (canSeeAllVsm()) recs = recs.filter(r => vsmOf(r) === fpv);
+  const sl = st.s === 'day' ? '☀️ ' + TT('กะกลางวัน', 'Day shift') : '🌙 ' + TT('กะกลางคืน', 'Night shift');
+  return _f3dPayload({ ..._iotAgg(recs, fpv), recs }, { fpv, dTo: st.d, shift: st.s, range: `${st.d} · ${sl}` });
+}
+// 📷 บันทึกภาพผัง 3D เป็น PNG (ใช้ทำรายงาน)
+function _f3dSavePng(blob, pl) {
+  const day = (pl && pl.range ? pl.range.slice(0, 10) : '') || todayISO();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `floor3d_${String(VSM_LABEL[pl && pl.vsm] || 'VSM').replace(/\s+/g, '')}_${day}.png`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast(TT('บันทึกภาพผัง 3D แล้ว', 'Saved the 3D map image'), 'green');
+}
+// ↔ เต็มจอแนวนอน (Android: ล็อกจอได้เฉพาะตอนเต็มจอจริง · iOS ไม่รองรับ → บอกให้หมุนเอง)
+async function _f3dLandscape() {
+  const card = $('iotCard'); if (!card) return;
+  if (!_iotIsFs()) {
+    iotEnterFs(card);
+    await new Promise(r => { const t = setTimeout(r, 900); document.addEventListener('fullscreenchange', () => { clearTimeout(t); r(); }, { once: true }); });
+  }
+  if (!card.classList.contains('iot-map-open') && matchMedia('(max-width:820px)').matches) iotToggleMap();
+  try { await screen.orientation.lock('landscape'); }
+  catch (e) { toast(TT('หมุนโทรศัพท์เป็นแนวนอนได้เลย (เครื่องนี้ล็อกจอให้ไม่ได้)', 'Turn the phone sideways (this device cannot lock the screen)')); }
 }
 
 
@@ -13760,6 +14157,7 @@ function iotZoomBtn(dir){
   // ★ 2026-08-03 — อยู่หน้า 2 (บอร์ดงานขาย) ไม่มีผังให้ซูม → ปุ่มชุดนี้ปรับขนาดตัวอักษรบอร์ดแทน
   //   (เดิมกดแล้วไม่มีอะไรเกิดขึ้นเลย = ปุ่มตาย ผู้ใช้กดแล้วงง)
   if(_iotPage===2||_iotPage===3){ islZoom(dir); return; }   // ★ v3.84 หน้า 3 (แผนรายเครื่อง) ใช้ขนาดตัวอักษรชุดเดียวกัน
+  if(_f3dOn()){ _f3d.zoom(dir); return; }                  // ★ v3.97 ผัง 3D: − ⊙ + คุมกล้อง 3D (⊙ = มุมมองเริ่มต้น)
   if(_iotIsFs()){                       // เต็มจอ = ซูมผังที่ยืดเต็มกรอบ (คนละตัวกับซูมตอนอยู่ในหน้า)
     _iotFsScale = dir===0 ? 1 : Math.min(IOT_FSZ_MAX,Math.max(1,+(_iotFsScale+dir*0.25).toFixed(2)));
     _applyIotZoom();

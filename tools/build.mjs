@@ -42,6 +42,18 @@ for (const f of tracked) {
   fs.copyFileSync(src, dst);
 }
 
+// 1b) v3.97 3D floor map: floor3d/floor3d.js is a separate ES module (imported only when the 3D view opens)
+//     → minified in place; its hash is stamped into the main script (F3D_VER) so the URL changes every version
+//       (?v=<hash> = the Service Worker can cache it forever, one version at a time)
+let f3dHash = '';
+const f3dOut = path.join(OUT, 'floor3d', 'floor3d.js');
+if (fs.existsSync(f3dOut)) {
+  const r = await esbuild.transform(fs.readFileSync(f3dOut, 'utf8'), { loader: 'js', format: 'esm', minify: true, charset: 'utf8', legalComments: 'none', logLevel: 'silent' });
+  for (const w of r.warnings) console.warn('  esbuild floor3d:', w.text);
+  fs.writeFileSync(f3dOut, r.code);
+  f3dHash = crypto.createHash('sha256').update(r.code).digest('hex').slice(0, 10);
+}
+
 // 2) index.html
 let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const before = Buffer.from(html);
@@ -50,7 +62,12 @@ const before = Buffer.from(html);
 let main = null;
 for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) if (!main || m[1].length > main[1].length) main = m;
 if (!main || main[1].length < 500000) fail('main inline <script> not found');
-const src = main[1];
+let src = main[1];
+if (f3dHash) {
+  const ph = "const F3D_VER = '__F3D_VER__';";
+  if (src.split(ph).length !== 2) fail('F3D_VER placeholder not found exactly once (floor3d/floor3d.js would never be cache-busted)');
+  src = src.replace(ph, `const F3D_VER = '${f3dHash}';`);
+}
 // v3.93: a function's source pasted into HTML (onclick="(${fn.toString()})(…)") breaks once minified — esbuild
 // rewrites '…' as "…", which closes the attribute early (every autocomplete died this way in v3.92)
 const fnSrcInHtml = src.match(/\(\$\{[^}]*\.toString\(\)\}\)\(/);
@@ -125,4 +142,5 @@ const after = Buffer.from(html), app = Buffer.from(js.code);
 console.log('index.html  before', sizes(before));
 console.log('index.html  after ', sizes(after));
 console.log(appName.padEnd(26), sizes(app), `(source ${kb(Buffer.byteLength(src))})`);
+if (f3dHash) console.log(`floor3d/floor3d.js?v=${f3dHash}`.padEnd(26), sizes(fs.readFileSync(f3dOut)));
 console.log('✓ _site ready —', tracked.length, 'tracked files scanned');
