@@ -43,15 +43,25 @@ for (const f of tracked) {
 }
 
 // 1b) v3.97 3D floor map: floor3d/floor3d.js is a separate ES module (imported only when the 3D view opens)
-//     → minified in place; its hash is stamped into the main script (F3D_VER) so the URL changes every version
-//       (?v=<hash> = the Service Worker can cache it forever, one version at a time)
+//     → bundled WITH Three.js (npm devDependency, tree-shaken) into ONE minified file served from our own domain
+//       (unbuilt index.html loads Three.js from jsDelivr via the import map — 7 files, 2 origins; on slow 4G that cost
+//        an extra connection + a chain of imports) · the npm version must equal the import-map version (checked here)
+//     → its hash is stamped into the main script (F3D_VER) so the URL changes every version
+//       (?v=<hash> = the Service Worker can cache it forever, one version at a time; F3D_VER set = "bundled" for the app)
 let f3dHash = '';
 const f3dOut = path.join(OUT, 'floor3d', 'floor3d.js');
 if (fs.existsSync(f3dOut)) {
-  const r = await esbuild.transform(fs.readFileSync(f3dOut, 'utf8'), { loader: 'js', format: 'esm', minify: true, charset: 'utf8', legalComments: 'none', logLevel: 'silent' });
+  const srcHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const mapVer = (srcHtml.match(/npm\/three@([\d.]+)\/build\/three\.module/) || [])[1];
+  const pkgVer = JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules', 'three', 'package.json'), 'utf8')).version;
+  if (!mapVer || mapVer !== pkgVer) fail(`three version mismatch: import map ${mapVer} vs npm ${pkgVer} (keep both the same)`);
+  const r = await esbuild.build({ entryPoints: [f3dOut], bundle: true, format: 'esm', minify: true, write: false, charset: 'utf8',
+    legalComments: 'eof', logLevel: 'silent', absWorkingDir: ROOT, nodePaths: [path.join(ROOT, 'node_modules')] });
   for (const w of r.warnings) console.warn('  esbuild floor3d:', w.text);
-  fs.writeFileSync(f3dOut, r.code);
-  f3dHash = crypto.createHash('sha256').update(r.code).digest('hex').slice(0, 10);
+  const code = r.outputFiles[0].text;
+  if (/from\s*["']three/.test(code)) fail('floor3d bundle still imports "three" (bundling failed)');
+  fs.writeFileSync(f3dOut, code);
+  f3dHash = crypto.createHash('sha256').update(code).digest('hex').slice(0, 10);
 }
 
 // 2) index.html

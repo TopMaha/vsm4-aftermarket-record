@@ -161,6 +161,10 @@ const CSS = `
 .f3d-tl input[type=range]{flex:1 1 auto;min-width:60px;accent-color:#1A56DB;height:28px}
 .f3d-tl .t{font-size:12px;font-weight:900;color:#1E3A8A;white-space:nowrap;min-width:76px;text-align:center;font-variant-numeric:tabular-nums}
 .f3d-tl .f3d-b{width:32px;height:32px;font-size:14px;box-shadow:none}
+.f3d-stats{position:absolute;left:8px;bottom:56px;z-index:4;max-width:calc(100% - 64px);background:rgba(15,23,42,.88);color:#E2E8F0;border-radius:10px;padding:6px 8px;font:600 10px/1.45 ui-monospace,Menlo,Consolas,monospace;pointer-events:auto;touch-action:manipulation}
+.f3d-stats pre{margin:0;white-space:pre-wrap;font:inherit}
+.f3d-stats .sb{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.f3d-stats button{border:0;border-radius:7px;background:#334155;color:#fff;font:800 11px 'Sarabun',system-ui,sans-serif;padding:4px 9px;cursor:pointer}
 .f3d-hint{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:4;background:rgba(15,23,42,.85);color:#fff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;transition:opacity .6s;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
 .f3d-hint.out{opacity:0}
 .f3d-sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;max-height:66%;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(15,23,42,.24);transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;pointer-events:auto}
@@ -324,6 +328,9 @@ export function create(host, opts = {}) {
   const DPR_KEY = 'vsm4_3d_dpr', dprCap = Math.min(window.devicePixelRatio || 1, 2);
   const dprBase = Math.min(dprCap, lowEnd ? 1.25 : phone ? 1.5 : 2);
   let dpr = (() => { let v = 0; try { v = +localStorage.getItem(DPR_KEY); } catch (e) {} return v >= 1 && v <= 2 ? Math.min(v, dprCap) : dprBase; })();
+  // ⚡ โหมดประหยัด (เครื่องอ่อนมาก): ไม่มีเงา + วัสดุเบา (Lambert) — เปิดเองเมื่อความละเอียดต่ำสุดแล้วยังช้า · จำค่าในเครื่อง
+  const LITE_KEY = 'vsm4_3d_lite';
+  let lite = (() => { try { return localStorage.getItem(LITE_KEY) === '1'; } catch (e) { return false; } })();
   const root = el('div', 'f3d');
   root.innerHTML = `<canvas class="f3d-cv"></canvas><div class="f3d-lbl"></div><div class="f3d-fade"></div>
     <div class="f3d-top"><div class="f3d-row f3d-kpi"></div><div class="f3d-row"><div class="f3d-q"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false"><div class="f3d-sug"></div></div><div class="f3d-chips"></div></div></div>
@@ -342,7 +349,7 @@ export function create(host, opts = {}) {
   /* ── renderer / scene / camera ── */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(dpr);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !lite;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;               // ฉากนิ่ง → วาดเงาใหม่เฉพาะตอนฉากเปลี่ยน
   renderer.setClearColor(COL.bg, 1);
@@ -361,14 +368,15 @@ export function create(host, opts = {}) {
   // แสง: ฟ้า (hemisphere) อ่อนลง + แดดเฉียงแรงขึ้น → ด้านข้างเครื่องมีมิติ + เงานุ่มบนพื้นเห็นชัด (ไม่มี tone mapping — สีสถานะตรงตามค่า)
   const hemi = new THREE.HemisphereLight(0xFFFFFF, 0x9DB0CC, 1.55);
   const sun = new THREE.DirectionalLight(0xFFFFFF, 2.5);
-  sun.castShadow = true;
+  sun.castShadow = !lite;
   const smap = lowEnd || phone ? 1024 : 2048;
   sun.shadow.mapSize.set(smap, smap);
   sun.shadow.radius = 3; sun.shadow.bias = -0.0006; sun.shadow.normalBias = .6;
   scene.add(hemi, sun, sun.target);
 
   const mats = {
-    lit: lowEnd ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .62, metalness: 0 }),
+    std: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .62, metalness: 0 }),
+    lam: new THREE.MeshLambertMaterial({ vertexColors: true }),
     lamp: new THREE.MeshBasicMaterial({ vertexColors: true }),
     ghost: new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: .3, depthWrite: false }),
     ghostLamp: new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .3, depthWrite: false }),
@@ -415,31 +423,84 @@ export function create(host, opts = {}) {
   }
   /* ความละเอียดปรับเอง: ระหว่างวาดต่อเนื่อง (ลาก/บิน/animation) วัดช่วงห่างเฟรม 45 เฟรม
      ช้ากว่า ~38 fps → ลดทีละ 0.25 (ต่ำสุด 1) · เร็วมาก (< 9 ms = จอ 120 Hz มีที่เหลือ) → เพิ่มคืน · จำค่าไว้ในเครื่องนี้ */
-  let lastFT = 0, dprTry = null, cpuBound = false;
+  let lastFT = 0, dprTry = null, liteTry = null, cpuBound = false;
   const fts = [];
   const setDpr = v => { dpr = v; renderer.setPixelRatio(dpr); renderer.setSize(size.w, size.h, false); try { localStorage.setItem(DPR_KEY, String(dpr)); } catch (e) {} };
+  function litMat() { return lite || lowEnd ? mats.lam : mats.std; }
+  // เปิด/ปิดโหมดประหยัด — เปลี่ยนเงา = shader ต้อง compile ใหม่ (ครั้งเดียว)
+  function setLite(on) {
+    if (lite === on) return;
+    lite = on;
+    renderer.shadowMap.enabled = !on; sun.castShadow = !on;
+    if (mm.solid) mm.solid.material = litMat();
+    for (const k in mats) mats[k].needsUpdate = true;
+    shadowDirty = true;
+    try { if (on) localStorage.setItem(LITE_KEY, '1'); else localStorage.removeItem(LITE_KEY); } catch (e) {}
+    if (statsEl) statsTick(performance.now(), true);
+    kick();
+  }
   function trackFrame(now) {
     if (lastFT && now - lastFT < 120) fts.push(now - lastFT);
     lastFT = now;
     if (fts.length < 45) return;
     const s = fts.slice().sort((a, b) => a - b), med = s[s.length >> 1];
     fts.length = 0;
-    // ลดความละเอียดไปรอบก่อน — เร็วขึ้นจริงไหม · ไม่ (ช้าที่ CPU ไม่ใช่การ์ดจอ: วัดบนมือถือจำลองลดถึง 1 เท่าแล้วยัง 33 ms)
-    //   → คืนความคมชัด + เลิกลดในรอบนี้ (ลดไปก็เบลอเปล่า ๆ)
+    // ลดความละเอียด/เปิดโหมดประหยัดไปรอบก่อน — เร็วขึ้นจริงไหม · ไม่ (ช้าที่ CPU ไม่ใช่การ์ดจอ: วัดบนมือถือจำลองลดถึง 1 เท่าแล้วยัง 33 ms)
+    //   → คืนคุณภาพ + เลิกลดในรอบนี้ (ลดไปก็เบลอ/ไม่มีเงาเปล่า ๆ)
     if (dprTry) { if (med > dprTry.med * .85) { setDpr(dprTry.from); cpuBound = true; } dprTry = null; return; }
+    if (liteTry) { if (med > liteTry.med * .85) { setLite(false); cpuBound = true; } liteTry = null; return; }
     // ลื่น 60 fps แล้ว (< 15 ms) แต่ต่ำกว่าค่าตั้งต้นของเครื่อง = เคยลดเพราะช่วงเครื่องยุ่ง → คืนทีละขั้น
     const up = (med < 15 && dpr < dprBase) || (med < 9 && dpr < dprCap);
-    if (med > 26 && dpr > 1 && !cpuBound) { dprTry = { from: dpr, med }; setDpr(Math.max(1, dpr - .25)); }
-    else if (up) setDpr(Math.min(dprCap, dpr + .25));
+    if (med > 26 && !cpuBound) {
+      if (dpr > 1) { dprTry = { from: dpr, med }; setDpr(Math.max(1, dpr - .25)); }
+      else if (!lite) { liteTry = { med }; setLite(true); }                       // ความละเอียดต่ำสุดแล้วยังช้า → โหมดประหยัด
+    } else if (up) setDpr(Math.min(dprCap, dpr + .25));
   }
   // หลังปล่อยนิ้ว: ตัดแรงเฉื่อยตอนที่ภาพขยับน้อยกว่า ~0.1 px/เฟรม (เดิมวาดต่ออีก 1–2 วิ จนค่าเล็กระดับ 1e-6 = เปลืองแบต)
   const _pp = new THREE.Vector3(), _pt = new THREE.Vector3();
   let _pz = 1, dragging = false;
   controls.addEventListener('start', () => { dragging = true; });
   controls.addEventListener('end', () => { dragging = false; });
+  /* 📊 ตัววัดความลื่นบนเครื่องจริง (?fps=1) — ให้คนในโรงงานกด 📋 คัดลอกตัวเลข + รุ่นเครื่องส่งกลับมาได้ */
+  const t0Create = performance.now();
+  let statsEl = null, statsLast = 0, statsIdleT = 0, statsPrevT = 0, firstFrameMs = 0, lastBuildMs = 0, gpuName = '';
+  const statsIv = [], statsCpu = [];
+  if (opts.fps) {
+    statsEl = el('div', 'f3d-stats', '<pre></pre><div class="sb"><button type="button" data-s="copy">📋 คัดลอก</button><button type="button" data-s="lite"></button></div>');
+    root.appendChild(statsEl);
+    statsEl.addEventListener('click', e => {
+      const b = e.target.closest('[data-s]'); if (!b) return;
+      if (b.dataset.s === 'lite') { cpuBound = false; liteTry = null; setLite(!lite); return; }
+      const t = statsEl.querySelector('pre').textContent + '\n' + navigator.userAgent + '\nscreen ' + screen.width + 'x' + screen.height + ' @' + (window.devicePixelRatio || 1);
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => flash(S.copied || 'Copied'), () => flash(S.copyFail || 'Copy failed'));
+    });
+    try { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); gpuName = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)); } catch (e) {}
+  }
+  function statsTick(now, force, fromIdle) {
+    if (!statsEl) return;
+    // ทุกเฟรมเลื่อนเวลา "นิ่ง" ออกไป → หยุดวาด 0.7 วิ = ขึ้นว่านิ่ง (อัปเดตตัวเลขแค่ทุก 0.5 วิ)
+    if (!fromIdle) { clearTimeout(statsIdleT); statsIdleT = setTimeout(() => statsTick(performance.now(), true, true), 700); }
+    if (!force && now - statsLast < 500) return;
+    statsLast = now;
+    const q = (a, p) => (a.length ? a[Math.min(a.length - 1, Math.floor(a.length * p))] : 0);
+    const iv = statsIv.slice().sort((a, b) => a - b), cpu = statsCpu.slice().sort((a, b) => a - b), med = q(iv, .5);
+    statsIv.length = 0; statsCpu.length = 0;
+    const c = renderer.domElement, gl = renderer.getContext(), samples = gl.getContextAttributes().antialias ? 4 : 1, ri = renderer.info.render;
+    let geo = 0;
+    scene.traverse(o => { const g = o.geometry; if (!g) return; for (const k in g.attributes) { const a = g.attributes[k]; geo += a.array ? a.array.byteLength : a.count * a.itemSize * 4; } if (g.index) geo += g.index.array ? g.index.array.byteLength : g.index.count * 4; });
+    const px = c.width * c.height, gpuMB = (px * 4 * 2 + px * samples * 8 + (lite ? 0 : smap * smap * 4) + geo) / 1048576;
+    statsEl.querySelector('pre').textContent =
+      (iv.length ? `fps ${Math.round(1000 / med)} · เฟรมกลาง ${med.toFixed(0)} ms · p95 ${q(iv, .95).toFixed(0)} ms · CPU ${q(cpu, .5).toFixed(1)} ms` : 'นิ่ง — ไม่วาดเลย (0 fps)') + '\n' +
+      `ความละเอียด ${dpr}x (${c.width}×${c.height}) · เงา ${lite ? 'ปิด' : smap} · ประหยัด ${lite ? 'เปิด' : 'ปิด'}${cpuBound ? ' · ช้าที่ CPU' : ''}\n` +
+      `${ri.calls} draw · ${(ri.triangles / 1000).toFixed(0)}k tri · GPU ~${gpuMB.toFixed(0)} MB · เห็นผังหลังเข้าจอ ${firstFrameMs ? (firstFrameMs / 1000).toFixed(2) + ' วิ' : '…'} · สร้างฉาก ${(lastBuildMs / 1000).toFixed(2)} วิ` +
+      (gpuName ? '\nGPU: ' + gpuName.slice(0, 70) : '');
+    statsEl.querySelector('[data-s="lite"]').textContent = lite ? '⚡ ปิดโหมดประหยัด' : '⚡ เปิดโหมดประหยัด';
+    if (fromIdle && iv.length) statsIdleT = setTimeout(() => statsTick(performance.now(), true, true), 700);   // ยังมีเฟรมค้างในรอบนี้ → อีกรอบถึงขึ้น "นิ่ง"
+  }
   function frame(now) {
     raf = 0;
     if (disposed) return;
+    const c0 = performance.now();
     let more = false;
     if (tw) more = stepTween(now);
     else if (controls.update()) {
@@ -460,7 +521,14 @@ export function create(host, opts = {}) {
     declutterZones();
     if (!root.classList.contains('ready')) {
       root.classList.add('ready');
+      firstFrameMs = performance.now() - (t0Visible || t0Create);
       if (!_hinted && S.hint) { _hinted = true; flash(S.hint); }
+    }
+    if (statsEl) {
+      statsCpu.push(performance.now() - c0);
+      if (statsPrevT && now - statsPrevT < 120) statsIv.push(now - statsPrevT);
+      statsPrevT = now;
+      statsTick(now);
     }
     if (more) kick();
   }
@@ -489,12 +557,13 @@ export function create(host, opts = {}) {
     if (pendingFly && lay) flyPending();
   }
   // วัดขนาด/วาดเฉพาะตอนมองเห็นจริง (การ์ดอยู่นอกจอ = content-visibility ข้ามไว้ อ่านขนาดตอนนั้น = บังคับจัด layout ทั้งการ์ด)
-  let ioVis = false;
+  let ioVis = false, t0Visible = 0;            // t0Visible = ครั้งแรกที่กรอบเข้าจอ (ฉากสร้างล่วงหน้าได้ — นับเวลา "เห็นผัง" จากตรงนี้)
   const ro = new ResizeObserver(() => { if (live) { measure(); kick(); } });
   ro.observe(root);
   const io = new IntersectionObserver(es => {
     ioVis = es[es.length - 1].isIntersecting;
     live = ioVis && !document.hidden;
+    if (live && !t0Visible) t0Visible = performance.now();
     if (live) { measure(); layoutSide(); kick(); }
   }, { rootMargin: '60px' });
   io.observe(root);
@@ -770,7 +839,7 @@ export function create(host, opts = {}) {
     for (const k in mm) if (mm[k]) { scene.remove(mm[k]); mm[k].geometry.dispose(); mm[k] = null; }
     const L = { solid: [], solidLamp: [], ghost: [], ghostLamp: [] };
     for (const m of machines) for (const p of m.parts) L[m.cls + (p.role === 'lamp' ? 'Lamp' : '')].push(p);
-    const mk = { solid: mats.lit, solidLamp: mats.lamp, ghost: mats.ghost, ghostLamp: mats.ghostLamp };
+    const mk = { solid: litMat(), solidLamp: mats.lamp, ghost: mats.ghost, ghostLamp: mats.ghostLamp };
     for (const k in L) {
       if (!L[k].length) continue;
       const mesh = new THREE.Mesh(freeAfterUpload(mergeParts(L[k]), ['position', 'normal']), mk[k]);
@@ -1480,10 +1549,12 @@ export function create(host, opts = {}) {
         if (tok !== relayTok || disposed) return;
         filter = 'all'; qIn.value = '';
         building = true;
+        const tb = performance.now();
         const ok = await buildLayout(Plive, tok);
         if (!ok) return;                          // มีการสลับสายใหม่ทับ → งานชุดใหม่ทำต่อเอง
         building = false;
         applyData(Plive, false);                  // Plive = ชุดล่าสุด (ข้อมูลที่มาระหว่างสร้างฉากก็ได้ใช้)
+        lastBuildMs = performance.now() - tb;
         if (sized) { resetView(false); fitted = true; if (pendingFly) flyPending(); }
         warmShaders();
         if (had) setTimeout(() => fadeEl.classList.remove('on'), 60);
@@ -1500,7 +1571,7 @@ export function create(host, opts = {}) {
   function dispose() {
     if (disposed) return;
     disposed = true;
-    cancelAnimationFrame(raf); cancelAnimationFrame(kpiAnim);
+    cancelAnimationFrame(raf); cancelAnimationFrame(kpiAnim); clearTimeout(statsIdleT);
     if (tl) clearInterval(tl.timer);
     io.disconnect(); ro.disconnect();
     document.removeEventListener('visibilitychange', onVis);
@@ -1513,7 +1584,8 @@ export function create(host, opts = {}) {
     root.remove();
   }
   measure();
-  root._dbg = { THREE, renderer, scene, camera, sun, controls, mats, get machines() { return machines; },      // ตรวจสอบจาก DevTools
+  // ตรวจสอบจาก DevTools — ❗ห้ามใส่ THREE (ทั้ง namespace) ตรงนี้: build รวม Three.js เป็นไฟล์เดียวจะตัดส่วนที่ไม่ใช้ทิ้งไม่ได้ (807 KB)
+  root._dbg = { renderer, scene, camera, sun, controls, mats, Vector3: THREE.Vector3, get machines() { return machines; },
     get flags() { return { building, compiling, compiled, live, ioVis, sized, raf, fitted, dpr, lay: !!lay, layoutKey }; } };
   return {
     update, focus, focusZone, zoom, resetView: () => resetView(true), rotate90, topView, dispose, snapshot,

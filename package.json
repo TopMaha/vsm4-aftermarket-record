@@ -6,6 +6,7 @@
     "build": "node tools/build.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "three": "0.186.1"
   }
 }

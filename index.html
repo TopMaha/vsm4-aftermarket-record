@@ -13783,12 +13783,14 @@ const F3D_VER = '__F3D_VER__';          // tools/build.mjs แทนด้วย
 const LS_F3D = 'vsm4_3d';               // '1' = เปิด feature (จาก ?3d=1)
 const LS_F3D_VIEW = 'vsm4_iot_view';    // '3d' | '2d' = มุมมองผังที่เลือกไว้
 const F3D_PEND_GRACE = 2 * 3600e3;      // จบกะแล้วไม่ถึง 2 ชม. ยังถือว่า "รอข้อมูลจบกะ" (พนักงานลงยอดหลังจบกะ)
+const LS_F3D_FPS = 'vsm4_3d_fps';       // '1' = โชว์ตัววัดความลื่นบนผัง 3D (?fps=1 · ?fps=0 = ปิด) — ใช้วัดบนมือถือจริง
 (function () {
-  const m = /[?&]3d=([01])(?:&|#|$)/.exec(location.search);
-  if (!m) return;
   try {
-    if (m[1] === '1') { localStorage.setItem(LS_F3D, '1'); localStorage.setItem(LS_F3D_VIEW, '3d'); }
-    else { localStorage.removeItem(LS_F3D); localStorage.removeItem(LS_F3D_VIEW); }
+    const m = /[?&]3d=([01])(?:&|#|$)/.exec(location.search);
+    if (m && m[1] === '1') { localStorage.setItem(LS_F3D, '1'); localStorage.setItem(LS_F3D_VIEW, '3d'); }
+    else if (m) { localStorage.removeItem(LS_F3D); localStorage.removeItem(LS_F3D_VIEW); }
+    const f = /[?&]fps=([01])(?:&|#|$)/.exec(location.search);
+    if (f && f[1] === '1') localStorage.setItem(LS_F3D_FPS, '1'); else if (f) localStorage.removeItem(LS_F3D_FPS);
   } catch (e) {}
 })();
 let _f3d = null, _f3dP = null, _f3dIO = null, _f3dHost = null, _f3dFail = '', _f3dGL = null, _f3dLast = null;
@@ -13843,14 +13845,18 @@ function _f3dMount(wrap) {
   if (_f3d) { _f3dPush(); return; }
   _f3dEnsure().then(ok => { if (ok) _f3dPush(); });
 }
-/* โหลดโมดูล 3D ครั้งเดียวต่อการเปิดแอป · modulepreload ทุกไฟล์พร้อมกัน — เดิม import ต่อกันเป็นทอด
-   (floor3d → three → three.core · MapControls → OrbitControls) = รอหลายรอบบน 4G · Service Worker เก็บไว้ทั้งหมดหลังโหลดครั้งแรก */
+/* โหลดโมดูล 3D ครั้งเดียวต่อการเปิดแอป
+   • หน้าเว็บที่ deploy (build ประทับ F3D_VER แล้ว) = ไฟล์เดียว รวม Three.js ไว้ข้างใน (tools/build.mjs) → preload ไฟล์เดียว
+   • index.html ที่ยังไม่ build = Three.js จาก jsDelivr ผ่าน import map → modulepreload ทุกไฟล์พร้อมกัน
+     (เดิม import ต่อกันเป็นทอด floor3d → three → three.core · MapControls → OrbitControls = รอหลายรอบบน 4G)
+   Service Worker เก็บไว้หลังโหลดครั้งแรก */
 let _f3dModP = null, _f3dModHref = '';
 function _f3dModule() {
   if (_f3dModP) return _f3dModP;
-  if (!_f3dModHref) _f3dModHref = new URL('floor3d/floor3d.js?v=' + (F3D_VER.startsWith('__') ? Date.now() : F3D_VER), document.baseURI).href;
+  const bundled = !F3D_VER.startsWith('__');
+  if (!_f3dModHref) _f3dModHref = new URL('floor3d/floor3d.js?v=' + (bundled ? F3D_VER : Date.now()), document.baseURI).href;
   const T = 'https://cdn.jsdelivr.net/npm/three@0.186.1/';
-  for (const u of [_f3dModHref, T + 'build/three.module.min.js', T + 'build/three.core.min.js', T + 'examples/jsm/controls/MapControls.js',
+  for (const u of bundled ? [_f3dModHref] : [_f3dModHref, T + 'build/three.module.min.js', T + 'build/three.core.min.js', T + 'examples/jsm/controls/MapControls.js',
     T + 'examples/jsm/controls/OrbitControls.js', T + 'examples/jsm/renderers/CSS2DRenderer.js', T + 'examples/jsm/geometries/RoundedBoxGeometry.js']) {
     if (document.querySelector(`link[rel="modulepreload"][href="${u}"]`)) continue;
     const l = document.createElement('link'); l.rel = 'modulepreload'; l.href = u; document.head.appendChild(l);
@@ -13899,6 +13905,7 @@ function _f3dOpts() {
     pngMeta: pl => ({ title: `🏭 ${TT('ผังเครื่องจักร', 'Machine map')} · ${VSM_LABEL[pl.vsm] || pl.vsm}`, sub: pl.range || '' }),
     canLandscape: () => !!(screen.orientation && screen.orientation.lock) && matchMedia('(pointer:coarse)').matches,
     landscape: () => _f3dLandscape(),
+    fps: (() => { try { return localStorage.getItem(LS_F3D_FPS) === '1'; } catch (e) { return false; } })(),
   };
 }
 function _f3dStrings() {
@@ -13913,6 +13920,7 @@ function _f3dStrings() {
     noData: TT('ไม่มีการบันทึกในช่วงนี้', 'No records in this period'),
     tlMode: TT('ย้อนดู', 'Replay'), back: TT('กลับ', 'Back'), tlNone: TT('ยังไม่มีข้อมูลย้อนหลังให้ดู', 'No history to replay'),
     pngFail: TT('บันทึกภาพไม่สำเร็จ', 'Could not save the image'), locale: 'en-GB',   // วันที่บนภาพ = ค.ศ. ตรงกับวันที่ในแอป
+    copied: TT('คัดลอกแล้ว — วางส่งต่อได้เลย', 'Copied — paste it anywhere'), copyFail: TT('คัดลอกไม่ได้', 'Could not copy'),
     legend: { good: 'OAE ≥75%', warn: 'OAE <75%', off: TT('ปิดเครื่อง', 'Off'), pend: TT('รอข้อมูลจบกะ', 'Awaiting shift data'), top: TT('TOP ปัญหา', 'TOP issue'), sos: 'SOS' },
     side: { zin: TT('ขยาย', 'Zoom in'), zout: TT('ย่อ', 'Zoom out'), rot: TT('หมุน 90°', 'Rotate 90°'), reset: TT('รีเซ็ตมุมมอง', 'Reset view'),
       top: TT('มุมบน', 'Top view'), ref: TT('รีเฟรชข้อมูล', 'Refresh data'), tl: TT('ย้อนดูทีละกะ', 'Replay by shift'),
