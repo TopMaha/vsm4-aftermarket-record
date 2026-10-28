@@ -2880,7 +2880,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.00</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.01</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10307,6 +10307,20 @@ function _pdacRatio(recs) {
   }
   return base > 0 ? opr / base : null;
 }
+/* DLE ของ record ชุดหนึ่ง — รวมก่อนหาร (เหมือน OAE/PPLH) ไม่เฉลี่ย dle ราย record
+   = Σ ชม.มาตรฐาน (OPR × CT × Man_STD ÷ 3600) ÷ Σ ชม.คนที่ใช้จริง (คน × WT)
+   เดิมเฉลี่ยราย record → ช่วงเดียวที่ลงหลาย Lot (1 record ต่อ Lot) ถูกนับซ้ำเท่าจำนวน Lot · record 12 นาทีหนักเท่าทั้งกะ
+   (Zone 2 · 28/10 กะกลางวัน: เฉลี่ย 306% → รวม 136% · ตัวที่ดึงขึ้น = H-217 3 Lot ลงเวลา 08:00–09:00) */
+function _dleAgg(recs) {
+  let std = 0, used = 0;
+  for (const r of (recs || [])) {
+    const wt = +r.wt || 0, ms = +r.man_std || 0, mu = +r.man_used || ms;
+    if (!(wt > 0) || !(mu > 0)) continue;              // ไม่มีเวลา/คน = คิด DLE ไม่ได้
+    used += mu * wt;
+    if (+r.ct > 0) std += (+r.opr || 0) * (+r.ct) * ms / 3600;
+  }
+  return used > 0 ? std / used : 0;
+}
 /* คีย์ 1 หน่วยตัดสิน = โซน × เครื่อง × วันผลิต × กะ
    (ต้องมีโซนด้วย — รหัสเครื่องซ้ำกันได้ระหว่างโซน/สาย ถ้าไม่ใส่ ตอนดู "รวมทุก Zone" จะยุบเป็นตัวเดียวกัน) */
 function _pdacUnitKey(r) {
@@ -10372,7 +10386,7 @@ function zoneKpiInner(krecs, dark=false, zoneKey='') {
   const boxBg = dark ? 'rgba(255,255,255,.13)' : 'var(--blue-light)';
   return `<div class="zkpi-grid">
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div><div class="zkpi-t">เป้า ${pct(t.oae)}</div></div>
-    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
+    <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">DLE</div><div class="zkpi-v ${_dleAgg(krecs)<=0?'warn':cls(_dleAgg(krecs), t.dle)}">${_dleAgg(krecs)>0?pct(_dleAgg(krecs)):'—'}</div><div class="zkpi-t">เป้า ${pct(t.dle)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div><div class="zkpi-t">เป้า ${nn(t.pplh)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${(()=>{const _p=calcZonePdac(krecs,zoneKey);return cls(_p.ratio,t.pdac)})()}">${(()=>{const _p=calcZonePdac(krecs,zoneKey);return pct(_p.ratio)+' <span style="font-size:9px;opacity:.8">('+_p.str+')</span>'})()}</div><div class="zkpi-t">เป้า ${pct(t.pdac)}</div></div>
     <div class="zkpi-box" style="background:${boxBg}"><div class="zkpi-l">SCRAP</div><div class="zkpi-v ${cls(avg('scrap_rate'), t.scrap, true)}">${pct(avg('scrap_rate'))}</div><div class="zkpi-t">≤ ${pct(t.scrap)}</div></div>
@@ -10402,7 +10416,7 @@ function zoneKpiCard(zoneKey, zoneLabel, krecs, summary=false) {
   // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
   const oae   = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
   const pplh  = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
-  const dle   = avg('dle');
+  const dle   = _dleAgg(krecs);
   const pdacInfo = calcZonePdac(krecs, summary ? 'ALL' : zoneKey);
   const pdac  = pdacInfo.ratio;
   const scrap = avg('scrap_rate');
@@ -10708,7 +10722,7 @@ function zoneLineCard(zone, lineKey, records) {
     </div>
     <div class="zkpi-grid">
       <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${_dleAgg(records)<=0?'warn':cls(_dleAgg(records), t.dle)}">${_dleAgg(records)>0?pct(_dleAgg(records)):'—'}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${cls(pdac.ratio, t.pdac)}">${pct(pdac.ratio)} <span style="font-size:9px;opacity:.7">(${pdac.str})</span></div></div>
@@ -10761,10 +10775,10 @@ async function showLineDetail(zone, lineKey) {
 
 function zoneMachineCard(mc, records) {
   const sum = (k) => records.reduce((s,r)=>s + (Number(r[k])||0), 0);
-  const avg = (k) => records.length ? sum(k)/records.length : 0;
-  // OAE/PPLH คิดแบบรวม (ไม่เฉลี่ยต่อ record)
+  // OAE/PPLH/DLE คิดแบบรวม (ไม่เฉลี่ยต่อ record)
   const oaeAgg  = sum('target') > 0 ? sum('opr')/sum('target') : 0; // ΣOPR ÷ ΣTarget
   const pplhAgg = sum('wt')     > 0 ? sum('opr')/sum('wt')     : 0; // ΣOPR ÷ ΣWT
+  const dleAgg  = _dleAgg(records);                                  // Σชม.มาตรฐาน ÷ Σชม.คน
   const t = state.targets;
   const cls = (v, tt, rev=false) => {
     const r = rev ? +tt/Math.max(+v,1e-9) : +v/Math.max(+tt,1e-9);
@@ -10789,15 +10803,21 @@ function zoneMachineCard(mc, records) {
       ${op?`<button class="btn btn-green btn-sm" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ แก้ไขแล้ว</button>`:`<span style="font-size:10px;color:var(--muted2)">ปิดโดย ${escapeHtml(h.done_by||'-')}</span>`}
     </div>`; }).join('')}
   </div>` : '';
+  // v4.01: record ที่ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง → เวลา/CT ลงผิด (DLE/OAE/PDAC พุ่ง) · บอกให้เห็นตรงนี้
+  const over = records.map(_recCtOver), overN = over.filter(x => x > CT_OVER_FLAG).length;
+  const overBanner = overN ? `<div style="margin:8px 0;border:1.5px solid #FCA5A5;background:#FEF2F2;border-radius:9px;padding:7px 10px;font-size:11.5px;font-weight:700;color:#B91C1C;line-height:1.5">
+    ⚠️ ${overN}/${records.length} record ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง (สูงสุด ${Math.max(...over).toFixed(1)} เท่า) — เวลาเริ่ม–สิ้นสุด หรือ CT น่าจะลงผิด · DLE / OAE / PDAC จึงสูงเกินจริง
+  </div>` : '';
   return `<div class="zkpi-card">
     <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
       ${openHelpN?`<span class="tag tag-red" style="margin-left:6px">🆘 ${openHelpN}</span>`:''}
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">${records.length} record</span>
     </div>
     ${helpBanner}
+    ${overBanner}
     <div class="zkpi-grid">
       <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${avg('dle')<=0?'warn':cls(avg('dle'), t.dle)}">${avg('dle')>0?pct(avg('dle')):'—'}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${dleAgg<=0||overN?'warn':cls(dleAgg, t.dle)}">${dleAgg>0?pct(dleAgg):'—'}${overN?' <span title="ยอดเกินที่เครื่องทำได้ตาม CT — ตรวจเวลา/CT" style="color:var(--orange);font-size:10px;font-weight:800">⚠️</span>':''}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${_pdacRatio(records)!=null?cls(_pdacRatio(records), PDAC_PASS):'warn'}">${(()=>{const v=_pdacRatio(records); return v==null?'—':`${v>=PDAC_PASS?'✓':'✗'} <span style="font-size:10px;opacity:.75">${pct(v)}</span>`;})()}</div></div>
@@ -10807,19 +10827,21 @@ function zoneMachineCard(mc, records) {
       <span>·</span>
       <span>Target: <b>${nn(sum('target'))}</b></span>
       <span>·</span>
-      <span>WT: <b>${avg('wt').toFixed(2)}</b> ชม.</span>
+      <span>WT รวม: <b>${sum('wt').toFixed(2)}</b> ชม.</span>
     </div>
     <div style="margin-top:8px">
-      <details>
+      <details${overN ? ' open' : ''}>
         <summary style="cursor:pointer;font-size:11px;color:var(--blue);font-weight:700">▶ ดูรายการ ${records.length} record</summary>
         <div style="margin-top:6px;max-height:200px;overflow-y:auto">
-          ${records.map(r => `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:11px;display:flex;flex-wrap:wrap;gap:6px">
+          ${records.map((r, i) => { const s = _shiftsArr(r)[0] || {}, a = s.rts || s.ts, b = s.rte || s.te; return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:11px;display:flex;flex-wrap:wrap;gap:6px">
             <span style="font-weight:800;color:var(--blue)">${escapeHtml(r.shift_date||r.record_date||'-')}</span>
             <span class="tag ${r.shift_type==='day'?'tag-orange':'tag-blue'}">${r.shift_type==='day'?'☀️':'🌙'}</span>
             <span>OPR <b>${nn(r.opr)}</b></span>
+            ${a && b ? `<span style="color:var(--muted)">🕐 ${escapeHtml(a)}–${escapeHtml(b)}${s.lot_n > 1 ? ` (${s.lot_n} Lot)` : ''}${+r.ct ? ` · CT ${+r.ct}` : ''}</span>` : ''}
+            ${over[i] > CT_OVER_FLAG ? `<span class="tag tag-red">⚠️ เกิน CT ${over[i].toFixed(1)} เท่า</span>` : ''}
             ${r.valve_no?`<span class="tag tag-green">${escapeHtml(r.valve_no)}${r.lot?` · L${escapeHtml(r.lot)}`:''}${r.last_process?` · ${escapeHtml(r.last_process)}`:''}</span>`:''}
             <span style="margin-left:auto;color:var(--muted)">${escapeHtml(r.operator||'')}</span>
-          </div>`).join('')}
+          </div>`; }).join('')}
         </div>
       </details>
     </div>
@@ -11029,7 +11051,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.00":"Production Record + KPI · v4.00",
+"ระบบบันทึกผลิต + KPI · v4.01":"Production Record + KPI · v4.01",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -15270,7 +15292,7 @@ function _iahVal(recs,metric,zoneKey){
   const avg=k=>recs.length?sum(k)/recs.length:0;
   switch(metric){
     case 'oae':  return sum('target')>0?sum('opr')/sum('target'):0;   // ΣOPR ÷ ΣTarget
-    case 'dle':  return avg('dle');
+    case 'dle':  return _dleAgg(recs);
     case 'pplh': return sum('wt')>0?sum('opr')/sum('wt'):0;            // ΣOPR ÷ ΣWT
     case 'pdac': return calcZonePdac(recs,zoneKey).ratio;             // (เครื่อง×กะ) ที่ผ่าน ÷ ทั้งหมดที่เปิด
     case 'scrap':return avg('scrap_rate');
@@ -20910,6 +20932,16 @@ function _slotTimeErr(ts, te) {
    ใช้ตรวจ Target/OPR ตอนบันทึก (_ctCapWarn) + โชว์ใต้ช่วงให้เห็นก่อนกรอก Target */
 const CT_CAP_MIN = 0.6;   // Target ต่ำกว่า 60% ของที่ทำได้ตาม CT = Target หรือ CT น่าจะผิด
 function _ctCap(ct, hr) { return (ct > 0 && hr > 0) ? Math.ceil(3600 / ct * hr - 1e-9) : 0; }
+/* v4.01 — ยอดของ record ที่บันทึกแล้ว เทียบที่เครื่องทำได้ตาม CT ในเวลาของ record (เท่า) · 0 = ไม่มี CT/เวลา
+   หลาย Lot แบบเก่า (wt_share) = เวลาเต็มช่วง × % ของ Lot นี้ · แบบ v3.90 = ช่วงย่อยของ Lot เอง
+   ใช้ติดป้าย ⚠️ ในการ์ดเครื่อง/หน้าแก้ไข — เคส H-217 28/10: 3 Lot 3,150 ชิ้น ลง 08:00–09:00 · CT 15 = 13 เท่า → DLE 1,312% */
+const CT_OVER_FLAG = 1.2;   // เกิน 20% = เวลา/CT น่าจะลงผิด (เผื่อเศษจากเวลาราย Lot ที่ปัดเป็นนาที · ตอนบันทึกเตือนตั้งแต่เกิน 0%)
+function _recCtOver(r) {
+  const s = _shiftsArr(r)[0] || {};
+  const share = (+s.wt_share > 0 && +s.wt_share < 1) ? +s.wt_share : 1;
+  const cap = _ctCap(+r.ct || +s.ct || 0, calcWT(s.ts || '', s.te || '').hr * share);
+  return cap > 0 ? ((+r.opr || 0) + (+r.scrap || 0)) / cap : 0;
+}
 /* ยอดของ 1 ช่วงเทียบที่ทำได้ตาม CT → warning หรือ null (ยืนยันบันทึกต่อได้)
    · OPR+Scrap > ทำได้ = เป็นไปไม่ได้ → CT / เวลา / OPR ผิด
    · Target > ทำได้ หรือ < 60% ของที่ทำได้ → Target หรือ CT ผิด
@@ -23938,6 +23970,7 @@ function editKpiRecord(rid) {
   const shiftS = r.time_start || _sh0.ts || '';
   const shiftE = r.time_end   || _sh0.te || '';
   const ctVal  = r.ct || _sh0.ct || 0;
+  const _share = (+_sh0.wt_share > 0 && +_sh0.wt_share < 1) ? +_sh0.wt_share : 0;   // record หลาย Lot แบบเก่า (v3.71 · ก่อน 21/10)
   openModal('✏️ แก้ไข KPI Record', `
     <input type="hidden" id="editKpiRid" value="${escapeHtml(rid)}">
     <div class="fg">
@@ -23961,10 +23994,10 @@ function editKpiRecord(rid) {
     </div>
     <div class="fg">
       <div class="fr"><label>OPR (ชิ้นผลิต) *</label>
-        <input type="text" inputmode="text" id="editKpiOpr" value="${r.opr||0}" onblur="evalFormula(this)">
+        <input type="text" inputmode="text" id="editKpiOpr" value="${r.opr||0}" oninput="_ekWtSync()" onblur="evalFormula(this);_ekWtSync()">
       </div>
       <div class="fr"><label>Scrap (ชิ้นเสีย)</label>
-        <input type="number" id="editKpiScrap" value="${r.scrap||0}" min="0">
+        <input type="number" id="editKpiScrap" value="${r.scrap||0}" min="0" oninput="_ekWtSync()">
       </div>
     </div>
     <div class="fg">
@@ -23972,19 +24005,28 @@ function editKpiRecord(rid) {
         <input type="text" inputmode="text" id="editKpiTarget" value="${r.target||0}" onblur="evalFormula(this)">
       </div>
       <div class="fr"><label>CT (sec)</label>
-        <input type="number" id="editKpiCT" value="${ctVal}" min="0" step="0.1">
+        <input type="number" id="editKpiCT" value="${ctVal}" min="0" step="0.1" oninput="_ekWtSync()">
       </div>
     </div>
     <div class="fg">
       <div class="fr"><label>เวลาเริ่ม</label>
-        <input type="time" id="editKpiTS" value="${escapeHtml(shiftS)}" oninput="this.classList.remove('err');$('editKpiTE')?.classList.remove('err')">
+        <input type="time" id="editKpiTS" value="${escapeHtml(shiftS)}" oninput="this.classList.remove('err');$('editKpiTE')?.classList.remove('err');_ekWtSync(true)">
       </div>
       <div class="fr"><label>เวลาสิ้นสุด</label>
-        <input type="time" id="editKpiTE" value="${escapeHtml(shiftE)}" oninput="this.classList.remove('err');$('editKpiTS')?.classList.remove('err')">
+        <input type="time" id="editKpiTE" value="${escapeHtml(shiftE)}" oninput="this.classList.remove('err');$('editKpiTS')?.classList.remove('err');_ekWtSync(true)">
       </div>
     </div>
-    <div class="muted" style="font-size:11px;margin:-2px 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
-    ${(+_sh0.wt_share > 0 && +_sh0.wt_share < 1) ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วงเดียว (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — WT ของ record นี้ = <b>${(+_sh0.wt_share * 100).toFixed(1)}%</b> ของเวลาเริ่ม–สิ้นสุด (แบ่งตามจำนวนชิ้น)</div>` : ''}
+    <div id="editKpiWtHint" data-share="${_share}" data-ms="${+r.man_std || 1}" data-mu="${+r.man_used || +r.man_std || 1}" data-wt0="${+r.wt || 0}"
+         data-ts0="${escapeHtml(shiftS)}" data-te0="${escapeHtml(shiftE)}" style="font-size:11.5px;font-weight:700;margin:-2px 0 6px;line-height:1.5;color:var(--blue-dark)"></div>
+    <div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--orange)">💡 DLE จะคำนวณได้ต้องมีทั้ง <b>CT</b> และ <b>เวลาเริ่ม–สิ้นสุด</b> — ถ้าขาดอย่างใดอย่างหนึ่ง DLE = 0%</div>
+    ${_share ? `<div style="font-size:11px;margin:0 0 6px;padding:7px 9px;border:1.5px dashed var(--blue-soft);border-radius:9px;background:var(--blue-light);color:var(--blue-dark)">
+      📦 บันทึกแบบหลาย Lot ในช่วงเดียว (แบบเก่า · Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — WT ของ record นี้ = <b>${(_share * 100).toFixed(1)}%</b> ของเวลาเริ่ม–สิ้นสุด (แบ่งตามจำนวนชิ้น)
+      <label style="display:flex;gap:6px;align-items:flex-start;margin:6px 0 0;font-weight:700;cursor:pointer">
+        <input type="checkbox" id="editKpiShare" checked style="margin-top:2px;flex:none" onchange="this.dataset.touched='1';_ekWtSync()">
+        <span>เวลาข้างบน = เวลาของ<b>ทั้งช่วง</b> (ใช้ร่วมกับ Lot อื่น) → WT = ${(_share * 100).toFixed(1)}% ของเวลานี้</span>
+      </label>
+      <div class="muted" style="font-size:10.5px;margin-top:3px">แก้เวลาเป็นของ <b>Lot นี้เอง</b> → ระบบเอาเครื่องหมายออกให้ (WT เต็มตามเวลาใหม่) · ถ้าแก้เวลาทั้งช่วงให้ทุก Lot → ติ๊กกลับ</div>
+    </div>` : ''}
     ${_sh0.tgt_auto ? `<div class="muted" style="font-size:11px;margin:0 0 6px;color:var(--blue)">📦 บันทึกแบบหลาย Lot ในช่วง <b>${escapeHtml(_sh0.rts || '?')} → ${escapeHtml(_sh0.rte || '?')}</b> (Lot แถว ${_sh0.lot_row || '?'}/${_sh0.lot_n || '?'}) — ระบบแบ่งเวลาให้ Lot นี้ตามยอด OPR · Target = 3600 ÷ CT × ชม.ของ Lot (แก้เวลา/CT ที่นี่ Target ไม่คำนวณใหม่ให้)</div>` : ''}
     ${/* ★ v3.84 (ผู้ใช้ 17/10 ข้อ 3) — ช่องนี้ = "พนักงานที่เดินเครื่อง" (emp_id) ไม่ใช่ "คนที่ Lock in บันทึก" (operator)
          เดิมโชว์ operator ก่อน → เห็นชื่อคนที่ Lock in แทนชื่อที่แก้ไว้ในหน้าบันทึก และกดบันทึกแก้ไขแล้วเขียนทับ emp_id ด้วยชื่อนั้น */''}
@@ -24013,6 +24055,31 @@ function editKpiRecord(rid) {
       <button class="btn btn-green" onclick="saveKpiEdit()">💾 บันทึกการแก้ไข</button>
     </div>
   `);
+  _ekWtSync();
+}
+/* v4.01 — หน้าแก้ไข KPI: WT / DLE ที่จะบันทึก (คิดสดตามช่องที่แก้ · สูตรเดียวกับ saveKpiEdit)
+   + ช่องติ๊ก "เวลาของทั้งช่วง" ของ record หลาย Lot แบบเก่า (wt_share): แก้เวลา = เอาเครื่องหมายออกให้เอง (ถ้ายังไม่ได้กดติ๊กเอง)
+   เคสจริง H-213 17/10: Lot 1/5 เวลา 08:00–20:00 ถูกแก้เป็น 08:00–10:00 แล้วยังคูณ 18.3% ซ้ำ → WT 0.37 ชม. · DLE 500% (จริง 92%)
+   — เจอ ~25 record ใน 3–21/10 (H-213 · H-219 · H-214 · H-222 · G-248 · G-217) */
+function _ekWtSync(timeEdited) {
+  const el = $('editKpiWtHint'); if (!el) return;
+  const ts = $('editKpiTS')?.value || '', te = $('editKpiTE')?.value || '';
+  const box = $('editKpiShare'), share = +el.dataset.share || 0;
+  if (box && timeEdited && !box.dataset.touched) box.checked = (ts === el.dataset.ts0 && te === el.dataset.te0);
+  const opr = fnum($('editKpiOpr')?.value), made = opr + (+($('editKpiScrap')?.value || 0));
+  const ct = +($('editKpiCT')?.value || 0), ms = +el.dataset.ms || 1, mu = +el.dataset.mu || ms;
+  const { hr, wt: wtFull } = calcWT(ts, te);
+  const calc = sh => {
+    const wt = (wtFull * sh) || +el.dataset.wt0 || 0;                  // เวลาว่าง/ผิด → saveKpiEdit ใช้ WT เดิม
+    const cap = _ctCap(ct, hr * sh);
+    return { wt, dle: (wt > 0 && ct > 0) ? opr * ct * ms / (mu * wt * 3600) : 0, over: cap > 0 ? made / cap : 0 };
+  };
+  const useShare = !!(box && box.checked && share);
+  const cur = calc(useShare ? share : 1);
+  const txt = v => `WT <b>${v.wt.toFixed(2)}</b> ชม. · DLE <b>${v.dle > 0 ? pct(v.dle) : '—'}</b>`;
+  el.innerHTML = `⏱️ ที่จะบันทึก: ${txt(cur)}`
+    + (cur.over > CT_OVER_FLAG ? ` <span style="color:var(--red)">· ⚠️ ยอดเกินที่ทำได้ตาม CT ${cur.over.toFixed(1)} เท่า — เวลา/CT ผิด?</span>` : '')
+    + (useShare ? `<div class="muted" style="font-weight:600;font-size:10.5px">ถ้าเป็นเวลาของ Lot นี้เอง: ${txt(calc(1))}</div>` : '');
 }
 
 async function saveKpiEdit() {
@@ -24057,13 +24124,19 @@ async function saveKpiEdit() {
   const newTE     = $('editKpiTE')?.value  || r.time_end   || (r.shifts?.[0]?.te) || '';
   // v3.71: record จากโหมดหลาย Lot ได้ WT แค่ "ส่วนของ Lot นี้" (wt_share) — คิดจากเวลาเริ่ม–จบเต็มช่วงแล้วต้องคูณกลับ
   //   ไม่งั้นแก้ record เดียวแล้ว WT กลายเป็นทั้งช่วง → PPLH/DLE รวมของกะเพี้ยน
-  const _wtShare  = (() => { const s = +(_shiftsArr(r)[0] || {}).wt_share; return (s > 0 && s < 1) ? s : 1; })();
+  // v4.01: คูณเฉพาะเมื่อติ๊ก "เวลาของทั้งช่วง" (editKpiShare) · เอาออก = เวลาของ Lot นี้เอง → WT เต็ม + ลบ wt_share (แก้ครั้งหน้าไม่คูณซ้ำ)
+  //   เดิมคูณทุกครั้ง → แก้เวลาเป็นช่วงของ Lot เองแล้ว WT หดซ้ำ (ดู _ekWtSync)
+  const _share0   = (() => { const s = +(_shiftsArr(r)[0] || {}).wt_share; return (s > 0 && s < 1) ? s : 1; })();
+  const _ownTime  = _share0 < 1 && !!$('editKpiShare') && !$('editKpiShare').checked;
+  const _wtShare  = _ownTime ? 1 : _share0;
   const newWT     = calcWT(newTS, newTE).wt * _wtShare;
   const tWT       = newWT || r.wt || 0;
   const manStd    = r.man_std || 1;
+  // v4.01: คนที่ใช้จริง (VSM3 ทีม = man_used) — สูตรเดียวกับตอนบันทึก (เดิมหารด้วย Man_STD → DLE ของทีมเปลี่ยนเองเมื่อกดแก้ · 26 record)
+  const manUsed   = +r.man_used || manStd;
   // FIX 10: guard division by zero in OAE, DLE
   const oae       = newTarget > 0 ? Math.min(newOpr / newTarget, 9.99) : 0;
-  const cap       = manStd * tWT * 3600;
+  const cap       = manUsed * tWT * 3600;
   const dle       = (cap > 0 && newCT > 0) ? (newOpr * newCT * manStd) / cap : 0;
   const pplh      = tWT > 0 ? newOpr / tWT : 0;
   const scrapRate = (newOpr + newScrap) > 0 ? newScrap / (newOpr + newScrap) : 0;
@@ -24078,6 +24151,7 @@ async function saveKpiEdit() {
                 ts: newTS, te: newTE, wt: tWT,
                 valve: $('editKpiValve').value.trim(), lot: $('editKpiLot').value.trim(),
                 proc: $('editKpiProc').value.trim() };
+  if (_ownTime) delete _shArr[0].wt_share;
   const patch = {
     record_id:    rid,
     shift_date:   newDate || r.shift_date,
