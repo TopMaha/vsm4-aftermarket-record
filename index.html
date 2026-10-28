@@ -2880,7 +2880,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.01</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.02</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10803,18 +10803,15 @@ function zoneMachineCard(mc, records) {
       ${op?`<button class="btn btn-green btn-sm" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ แก้ไขแล้ว</button>`:`<span style="font-size:10px;color:var(--muted2)">ปิดโดย ${escapeHtml(h.done_by||'-')}</span>`}
     </div>`; }).join('')}
   </div>` : '';
-  // v4.01: record ที่ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง → เวลา/CT ลงผิด (DLE/OAE/PDAC พุ่ง) · บอกให้เห็นตรงนี้
+  // v4.01: record ที่ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง → เวลา/CT ลงผิด (DLE/OAE/PDAC พุ่ง) · ⚠️ ที่ DLE + ป้ายในรายการ
+  //   v4.02 (ผู้ใช้ 29/10): ไม่มีแถบข้อความแดงบนการ์ดแล้ว
   const over = records.map(_recCtOver), overN = over.filter(x => x > CT_OVER_FLAG).length;
-  const overBanner = overN ? `<div style="margin:8px 0;border:1.5px solid #FCA5A5;background:#FEF2F2;border-radius:9px;padding:7px 10px;font-size:11.5px;font-weight:700;color:#B91C1C;line-height:1.5">
-    ⚠️ ${overN}/${records.length} record ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง (สูงสุด ${Math.max(...over).toFixed(1)} เท่า) — เวลาเริ่ม–สิ้นสุด หรือ CT น่าจะลงผิด · DLE / OAE / PDAC จึงสูงเกินจริง
-  </div>` : '';
   return `<div class="zkpi-card">
     <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
       ${openHelpN?`<span class="tag tag-red" style="margin-left:6px">🆘 ${openHelpN}</span>`:''}
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)">${records.length} record</span>
     </div>
     ${helpBanner}
-    ${overBanner}
     <div class="zkpi-grid">
       <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${dleAgg<=0||overN?'warn':cls(dleAgg, t.dle)}">${dleAgg>0?pct(dleAgg):'—'}${overN?' <span title="ยอดเกินที่เครื่องทำได้ตาม CT — ตรวจเวลา/CT" style="color:var(--orange);font-size:10px;font-weight:800">⚠️</span>':''}</div></div>
@@ -11051,7 +11048,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.01":"Production Record + KPI · v4.01",
+"ระบบบันทึกผลิต + KPI · v4.02":"Production Record + KPI · v4.02",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
