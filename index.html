@@ -899,6 +899,19 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mpv-rz.v3{--zc:#BE185D;--zl:#FDF2F8}
 .mpv-rz.lx b{font-size:11.5px;font-weight:700;color:#64748B}
 .mpv-rz.bad b{color:#B91C1C}
+/* ★ v4.05 ✅ ผลิตจบแล้ว — ล็อตที่ค้นหาแต่ไม่มีงานค้างในแผน: ทุก Process → เครื่องที่ลงยอดผลิตจริง (ชิปไม่ต้องแตะ) */
+.mpv-done{border-color:#86EFAC}
+.mpv-done .mpv-rbh{background:#F0FDF4;border-bottom-color:#BBF7D0}
+.mpv-done .mpv-rbh b{color:#166534}
+.mpv-dnh{width:100%;border:0;border-bottom:1px solid #BBF7D0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:44px;touch-action:manipulation}
+.mpv-dnh[aria-expanded="false"]{border-bottom:0}
+.mpv-dnh .ar{margin-left:auto;font-size:14px;font-weight:900;color:#166534}
+.mpv-dnh:focus-visible{outline:2px solid #15803D;outline-offset:-2px}
+.mpv-dst{font-size:12px;font-weight:800;line-height:1.5;padding:0 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.mpv-dst.ok{color:#15803D;background:#F0FDF4;border-color:#BBF7D0}
+.mpv-dst.v3{color:#BE185D;background:#FDF2F8;border-color:#FBCFE8}
+.mpv-dst.idle{color:#B45309;background:#FFFBEB;border-color:#FDE68A}
+.mpv-dnw{font-size:12px;color:#475569;line-height:1.5;margin:-2px 0 6px}
 /* ★ v4.00 ล็อตที่ไม่อยู่ในแผน — แถบเตือนบนหน้าแผน · กล่อง "ทำไมไม่เห็นในแผน" ตอนค้นหา · รายการในป๊อปอัป */
 .mpv-npbar{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 10px;padding:9px 14px;min-height:44px;border-radius:12px;border:1.5px solid #FCD34D;background:#FFFBEB;color:#92400E;font:inherit;font-size:13px;font-weight:700;text-align:left;line-height:1.45;cursor:pointer;touch-action:manipulation}
 .mpv-npbar.bad{border-color:#FCA5A5;background:#FEF2F2;color:#991B1B}
@@ -2880,7 +2893,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.04</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.05</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11045,7 +11058,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.04":"Production Record + KPI · v4.04",
+"ระบบบันทึกผลิต + KPI · v4.05":"Production Record + KPI · v4.05",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -29309,7 +29322,16 @@ function _mpvRenderZone() {
   const qLot = !!qn && !ctx.machines.some(mHit);
   const route = qLot ? _mpvRouteBox(res, W, qn) : '';
   const why = qLot ? _mpvWhyBox(res, W, qn) : '';   // ★ v4.00 ล็อตที่ตรงคำค้นแต่ไม่มีงานในช่วงนี้ → บอกเหตุผล
-  if (V.zone === 'VSM3') { tb.innerHTML = tabs; el.innerHTML = route + why + (simple ? _mpvV3BodyS : _mpvV3Body)(res, W, v3In, v3H, filtering); return; }
+  // ★ v4.05 ล็อตที่ผลิตจบแล้ว → เครื่องที่ใช้ผลิตจริง (มีงานค้างของคำค้นนี้ให้ดูอยู่แล้ว = พับกล่องไว้)
+  const dn = qLot ? _mpvDoneBox(res, qn, !!(route || why || V.zHits.ALL || V.zHits.VSM3)) : null;
+  const boxes = route + why + (dn ? dn.html : '');
+  // ★ v4.05 ค้นหาเจอแต่ล็อตที่ไม่มีงานค้าง → บอกว่าผลิตจบแล้ว (เดิม "ไม่มี … ในงานค้างของ VSM4" = พนักงานเข้าใจว่ายังไม่ผลิต)
+  const noneQ = () => (dn && !route && !why && !(V.zHits.ALL || V.zHits.VSM3))
+    ? `<div class="mpv-empty">${dn.broad ? `🔎 ${TT('<span class="nw">ไม่มีงานค้างในแผน</span> · <span class="nw">พบในประวัติผลิต', '<span class="nw">Nothing left to plan</span> · <span class="nw">in production history:')} ${nn(dn.n)} ${TT('ล็อต</span> — <span class="nw">พิมพ์ Valve / Lot ให้ครบ</span> <span class="nw">เพื่อดูเครื่องที่ใช้ผลิต</span>', 'lots</span> — <span class="nw">type the full valve / lot</span> <span class="nw">to see the machines</span>')}`
+      : dn.allOk ? `✅ ${TT('<span class="nw">ไม่มีงานค้างในแผน</span> — <span class="nw">ผลิตจบแล้ว</span> <span class="nw">ดูเครื่องที่ใช้ผลิตด้านบน</span>', 'Nothing left to plan — production finished, see the machines above')}`
+      : `📜 ${TT('<span class="nw">ไม่มีงานค้างในแผน</span> — <span class="nw">ดูประวัติผลิตด้านบน</span>', 'Nothing left to plan — see the production history above')}`} <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button></div>`
+    : '';
+  if (V.zone === 'VSM3') { tb.innerHTML = tabs; el.innerHTML = boxes + (simple ? _mpvV3BodyS : _mpvV3Body)(res, W, v3In, v3H, filtering); return; }
   const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
   /* คิวของ 1 Zone — sec = วาดเป็นส่วนหนึ่งของแท็บ "ทั้งหมด" (มีหัว Zone · Zone ที่ไม่มีอะไรให้ดู = ข้าม) */
   const zoneHtml = (z, sec) => {
@@ -29321,7 +29343,7 @@ function _mpvRenderZone() {
     if (!ms.length) {
       if (sec) return '';
       body = filtering
-        ? `<div class="mpv-empty">🔎 ${TT('ไม่พบงานที่ตรงกับตัวกรองใน', 'Nothing matches in')} ${escapeHtml(z)} — ${TT('ดูตัวเลขในแท็บ Zone อื่น หรือ', 'check the other zone tabs or')} <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button>${qLot && !route && !why && !(V.zHits.ALL || V.zHits.VSM3) ? _mpvNoFind(qn) : ''}</div>`
+        ? noneQ() || `<div class="mpv-empty">🔎 ${TT('ไม่พบงานที่ตรงกับตัวกรองใน', 'Nothing matches in')} ${escapeHtml(z)} — ${TT('ดูตัวเลขในแท็บ Zone อื่น หรือ', 'check the other zone tabs or')} <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button>${qLot && !route && !why && !dn && !(V.zHits.ALL || V.zHits.VSM3) ? _mpvNoFind(qn) : ''}</div>`
         : `<div class="mpv-empty">💤 ${TT('ไม่มีงานในแผนของ', 'No planned work in')} ${escapeHtml(z)} ${_mpvWinLbl(W)}</div>`;
     } else if (simple) {
       body = `<div class="mpv-grid">${ms.map(m => _mpvCardS(m, byM.get(m.id), res, filtering)).join('')}</div>`;
@@ -29352,11 +29374,11 @@ function _mpvRenderZone() {
   if (V.zone === 'ALL') {
     html = zones.map(z => zoneHtml(z, true)).join('');
     if (!html) html = filtering
-      ? `<div class="mpv-empty">🔎 ${TT('ไม่พบงานที่ตรงกับตัวกรองในทุก Zone', 'Nothing matches in any zone')} — <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button>${qLot && !route && !why ? _mpvNoFind(qn) : ''}</div>`
+      ? noneQ() || `<div class="mpv-empty">🔎 ${TT('ไม่พบงานที่ตรงกับตัวกรองในทุก Zone', 'Nothing matches in any zone')} — <button type="button" class="mpv-chip on" data-act="clearf">✕ ${TT('ล้างตัวกรอง', 'clear filter')}</button>${qLot && !route && !why && !dn ? _mpvNoFind(qn) : ''}</div>`
       : `<div class="mpv-empty">💤 ${TT('ไม่มีงานในแผน', 'No planned work')} ${_mpvWinLbl(W)}</div>`;
   } else html = zoneHtml(V.zone, false);
   tb.innerHTML = tabs;
-  el.innerHTML = route + why + html;
+  el.innerHTML = boxes + html;
 }
 /* ★ v3.88 🧭 เส้นทางผลิตของ Valve / Lot ที่ค้นหา — ทุกล็อตที่ตรง: แต่ละ Process ทำที่เครื่องไหน · Zone ไหน · วันไหน
    ดูทั้งแผน (ไม่ตัดตามเดือน/วันที่เลือก) · ดูวันเดียว = ขั้นที่ทำวันนั้นเน้นกรอบ · แตะเครื่อง = ไปที่การ์ดเครื่องนั้น */
@@ -29373,6 +29395,7 @@ function _mpvRouteBox(res, W, qn) {
   const zOf = new Map(res.ctx.machines.map(m => [m.id, m.zone]));
   const more = V.moreM.has('route'), L = more ? jobs : jobs.slice(0, _MPV_RT_LIM);
   const zs = new Set(jobs.flatMap(j => (j.assign || []).map(a => zOf.get(a.m.id) || '')).filter(Boolean));
+  const split = L.some(j => (j.assign || []).some(a => a.parts > 1));   // ★ v4.05 มีขั้นที่แบ่งล็อต → บอกความหมายของ "แบ่ง 1/2" ที่หัวกล่อง
   const rows = L.map(j => `<div class="mpv-rl">
       <div class="mpv-rlh"><b>${escapeHtml(j.valve)}</b>${j.kind === 'order'
         ? `<span class="l no">${j.planLot ? `<b>${escapeHtml(j.planLot)}</b>` : ''}${TT('รอของเข้า', 'not in yet')}</span>` : `<span class="l">${escapeHtml(j.lot || '-')}</span>`}${_mpvSaleS(j).replace('<small class="sl', '<span class="sl').replace(/<\/small>$/, '</span>')}<span class="q">${nn(j.qty)} ${TT('ชิ้น', 'pcs')}</span></div>
@@ -29380,7 +29403,7 @@ function _mpvRouteBox(res, W, qn) {
   const btn = jobs.length <= _MPV_RT_LIM ? ''
     : `<button type="button" class="mpv-more" data-act="more" data-mid="route" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อ', 'Collapse') : `▾ ${TT('ดูทุกล็อต', 'Show all lots')} (${TT('อีก', '+')} ${nn(jobs.length - _MPV_RT_LIM)})`}</button>`;
   return `<section class="mpv-rbox" aria-label="${TT('เส้นทางผลิต', 'Production route')}">
-    <div class="mpv-rbh"><b>🧭 ${TT('เส้นทางผลิต', 'Production route')}</b><small>${nn(jobs.length)} ${TT('ล็อต', 'lots')}${zs.size ? ` · ${TT('ผ่าน', 'across')} ${[...zs].sort().map(escapeHtml).join(' · ')}` : ''}${W.day != null ? ` · ${TT('กรอบหนา = ทำ', 'bold = runs')} ${escapeHtml(W.label)}` : ''} · ${TT('แตะเครื่อง = ไปที่การ์ด', 'tap a machine to jump')}</small></div>
+    <div class="mpv-rbh"><b>🧭 ${TT('เส้นทางผลิต', 'Production route')}</b><small>${nn(jobs.length)} ${TT('ล็อต', 'lots')}${zs.size ? ` · ${TT('ผ่าน', 'across')} ${[...zs].sort().map(escapeHtml).join(' · ')}` : ''}${W.day != null ? ` · ${TT('กรอบหนา = ทำ', 'bold = runs')} ${escapeHtml(W.label)}` : ''}${split ? ` · ${TT('แบ่ง 1/2 + 2/2 = ล็อตใหญ่ ทำพร้อมกัน 2 เครื่อง แบ่งจำนวนกัน', 'split 1/2 + 2/2 = a big lot run on 2 machines at once')}` : ''} · ${TT('แตะเครื่อง = ไปที่การ์ด', 'tap a machine to jump')}</small></div>
     ${rows}${btn}</section>`;
 }
 function _mpvRouteZ(j, res, W, zOf) {
@@ -29397,14 +29420,15 @@ function _mpvRouteZ(j, res, W, zOf) {
   (j.steps || []).forEach((s, i) => {
     if (!(s.need > 0)) { done.push(s.proc); return; }
     flush();
-    const A = (bySi.get(i) || []).slice().sort((x, y) => x.s - y.s);
+    const A = (bySi.get(i) || []).slice().sort((x, y) => (x.part - y.part) || (x.s - y.s));   // แบ่งล็อต = 1/2 ก่อน 2/2
     if (A.length) {
-      for (const a of A) {
+      // ★ v4.05 แบ่งล็อต: ป้าย "แบ่ง 1/2" (เดิม "1/2" เฉย ๆ ผู้ใช้ไม่รู้ความหมาย) · ชิปของขั้นเดียวกันคั่นด้วย + (ทำพร้อมกัน ไม่ใช่ทำต่อกัน ›)
+      out.push(A.map(a => {
         const z = zOf.get(a.m.id) || '', [zc, zl] = MP_ZCOL[z] || ['#475569', '#F8FAFC'];
         const sD = cal.dateAt(a.s + 1e-6), eD = cal.dateAt(a.e), now = W.day != null && W.inWin(a);
-        out.push(`<button type="button" class="mpv-rz${now ? ' now' : ''}" style="--zc:${zc};--zl:${zl}" data-act="rzgo" data-z="${escapeHtml(z)}" data-mc="${escapeHtml(a.m.id)}"
-          title="${escapeHtml(`${s.proc} · ${a.m.id} · ${z} · ${sD === eD ? _mpDW(sD) : _mpDW(sD) + ' → ' + _mpDW(eD)} · ${nn(a.qty)} ${TT('ชิ้น', 'pcs')}`)}"><small>${escapeHtml(s.proc)}${a.parts > 1 ? ` ${a.part}/${a.parts}` : ''}</small><b>${escapeHtml(a.m.id)}</b><small>${escapeHtml(z.replace(/^ZONE\s*/i, 'Z'))} · ${_mpD(sD).slice(0, 5)}${a.parts > 1 ? ' · ' + nn(a.qty) : ''}</small></button>`);
-      }
+        return `<button type="button" class="mpv-rz${now ? ' now' : ''}" style="--zc:${zc};--zl:${zl}" data-act="rzgo" data-z="${escapeHtml(z)}" data-mc="${escapeHtml(a.m.id)}"
+          title="${escapeHtml(`${s.proc} · ${a.m.id} · ${z} · ${sD === eD ? _mpDW(sD) : _mpDW(sD) + ' → ' + _mpDW(eD)} · ${nn(a.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อตทำพร้อมกัน', 'split across')} ${a.parts} ${TT('เครื่อง', 'machines')}` : ''}`)}"><small>${escapeHtml(s.proc)}${a.parts > 1 ? ` · ${TT('แบ่ง', 'split')} ${a.part}/${a.parts}` : ''}</small><b>${escapeHtml(a.m.id)}</b><small>${escapeHtml(z.replace(/^ZONE\s*/i, 'Z'))} · ${_mpD(sD).slice(0, 5)}${a.parts > 1 ? ' · ' + nn(a.qty) : ''}</small></button>`;
+      }).join('<i aria-hidden="true">+</i>'));
       return;
     }
     if (s.v3) {
@@ -29417,6 +29441,111 @@ function _mpvRouteZ(j, res, W, zOf) {
   });
   flush();
   return out.join('<i aria-hidden="true">›</i>');
+}
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.05 (ผู้ใช้ 29/10 ข้อ 2 + รูป VV1786A0) "แบบนี้คือผลิตจบแล้ว — ในแผนงานให้แสดงเครื่องที่ใช้ในการผลิต แล้วบอกว่าผลิตจบแล้ว
+     ไม่ใช่บอกว่าไม่มีใน VSM4 จะทำให้พนักงานเข้าใจว่ายังไม่ผลิต"
+   เดิม: แผนวางจากงานค้าง (ใบรับเข้า WIP IN 1.5 · กำลังผลิต · Order) → ล็อตที่จบแล้วไม่อยู่ในแผน
+         → ค้นหาในแผนได้แค่ "ไม่มี … ในงานค้างของ VSM4" (VV1786A0 2 ล็อต จบงาน 22/10 ทั้งที่ลงยอดครบทุกขั้น)
+   ตอนนี้: ล็อตที่ตรงคำค้น + เคยลงยอดผลิตที่ VSM4 + ไม่อยู่ในแผน / กล่อง ❓ เหตุผล → กล่อง ✅ ผลิตจบแล้ว
+     ทุก Process → เครื่องที่ลงยอดจริง · Zone · วันที่ (ยอดผลิตทั้งประวัติ ชุดเดียวกับหน้า 🔍 ค้นหา Process)
+     สถานะ: ✅ จบงาน (DONE) · ✅ ผ่าน FG · ✅ ทำครบทุกขั้นที่ VSM4 — ที่ยังไม่จบบอกตรง ๆ ไม่เรียกว่าจบ (🔀 ล่าสุดอยู่ที่ VSM3 · ⏸ ยังไม่จบ + เหตุผล)
+     วัดจริง 29/10 (3,186 ล็อตที่มียอดผลิต): อยู่ในแผน 349 · ไม่อยู่ในแผนแต่มีเหตุผล 55 · จบงาน 1,718 · ผ่าน FG 550
+       · ค้างนิ่ง (ไม่มีใบรับเข้า ไม่มีคนลงยอด > 14 วัน) 346 · เบอร์ไม่มีใน Master 69 · ข้ามสาย VSM3 ~70
+   ═══════════════════════════════════════════════════════════════════════ */
+let _mpDnIdx = null, _mpDnSig = '';
+/* ยอดผลิต (VSM3+VSM4 แบบเดียวกับหน้าค้นหา Process) จัดกลุ่มราย Valve::Lot — คิดครั้งเดียวต่อข้อมูลชุดหนึ่ง พิมพ์ค้นหาทีละตัวไม่ต้องไล่ 58,000 แถวใหม่ */
+function _mpvDoneIdx() {
+  const src = _wipProdSrc(), sig = src.length + '/' + _fvVer + '/' + viewVsm();
+  if (_mpDnIdx && _mpDnIdx.src === src && _mpDnSig === sig) return _mpDnIdx.m;
+  const m = new Map();
+  for (const r of filterVsmPeer(src)) {
+    const v = String(r.valve_no || r.valveNo || '').trim(); if (!v) continue;
+    const k = jobKey(v, r.lot || '');
+    let g = m.get(k);
+    if (!g) m.set(k, g = { k, valve: v, lot: String(r.lot || '').trim(), uv: v.toUpperCase(), ul: String(r.lot || '').toUpperCase(), recs: [] });
+    g.recs.push(r);
+  }
+  _mpDnIdx = { src, m }; _mpDnSig = sig;
+  return m;
+}
+const _MPV_DN_MAX = 40, _MPV_DN_VALVES = 5;
+/* คืน null = ไม่มีล็อตแบบนี้ · { html, n, allOk, broad } — broad = คำค้นกว้างเกิน (หลายเบอร์) ไม่ทำกล่อง แต่ห้ามบอกว่า "ไม่มี"
+   others = มีงานค้างของคำค้นนี้ให้ดูอยู่แล้ว (กล่อง 🧭 / ❓ / การ์ดเครื่อง) → กล่องนี้พับไว้ (แตะหัวกล่องเพื่อดู) ไม่ดันงานค้างลงไปไกล
+   ชิปเครื่องวาดเฉพาะแถวที่แสดง — เบอร์ที่ผลิตบ่อยมีเป็นร้อยล็อต (VV7295M0 119 ล็อต: วาดทุกแถว 33 ms ต่อการพิมพ์ 1 ครั้ง) */
+function _mpvDoneBox(res, qn, others) {
+  const V = _mpv, act = new Set();
+  for (const j of (res.jobs || []).concat(res.v3jobs || [])) if (j.kind !== 'order') act.add(j.k);
+  for (const x of mpNotPlanned(res)) act.add(x.k);
+  const G = [], vs = new Set();
+  for (const g of _mpvDoneIdx().values()) {
+    if (!(g.uv.includes(qn) || g.ul.includes(qn)) || act.has(g.k)) continue;
+    if (!g.recs.some(r => vsmOf(r) === MP_VSM)) continue;      // ทำแต่ที่ VSM3 = ไม่ใช่งานของแผนนี้
+    G.push(g); vs.add(vKey(g.valve));
+  }
+  if (!G.length) return null;
+  if (vs.size > _MPV_DN_VALVES) return { html: '', n: G.length, allOk: false, broad: true };   // เช่น "VV" / Lot ครึ่งเดียว
+  const zOf = new Map(res.ctx.machines.map(m => [m.id, m.zone])), skipK = res.skipK || new Map();
+  const R = [];
+  for (const g of G) {
+    const P = new Map(); let last = '', lastP = '', last3 = false;
+    for (const r of g.recs) {
+      const p = _procCanon(String(r.current_process || r.currentProcess || '').trim()); if (!p || p === '-') continue;
+      const q = Number(r.quantity) || 0, d = _spProdDate(r), v3 = vsmOf(r) !== MP_VSM, id = String(_spMachineOf(r) || '').trim().toUpperCase();
+      let o = P.get(p); if (!o) P.set(p, o = { p, q: 0, d: '', ms: new Map() });
+      o.q += q; if (d > o.d) o.d = d;
+      let x = o.ms.get(id); if (!x) o.ms.set(id, x = { id, q: 0, d0: d, d1: d, v3, zone: String(r.zone || '').toUpperCase().replace(/\s+/g, '') });
+      x.q += q; if (d && (!x.d0 || d < x.d0)) x.d0 = d; if (d > x.d1) x.d1 = d;
+      if (d >= last) { last = d; lastP = p; last3 = v3; }
+    }
+    const flow = procsOf(mpValve(g.valve), MP_VSM).map(p => _procCanon(String(p).trim()));
+    const rk = p => { const i = flow.indexOf(p); return i >= 0 ? i : 1000 + _procRank(p); };
+    const steps = [...P.values()].filter(o => o.q > 0).sort((a, b) => rk(a.p) - rk(b.p) || a.d.localeCompare(b.d));
+    if (!steps.length) continue;
+    const jp = getJobProc(g.valve, g.lot), fg = P.get('FG'), lastF = flow[flow.length - 1];
+    let st = 'ok', lbl, sd = last, why = '';
+    if (jp === 'DONE') { lbl = TT('✅ จบงาน', '✅ Finished'); sd = getJobProcDate(g.valve, g.lot) || last; }
+    else if (jp) { lbl = `✅ ${TT('ผ่าน FG → อยู่', 'past FG → at')} ${escapeHtml(jp)}`; sd = getJobProcDate(g.valve, g.lot) || (fg && fg.d) || last; }
+    else if (fg && fg.q > 0) { lbl = TT('✅ ผ่าน FG แล้ว', '✅ Past FG'); sd = fg.d; }
+    else if (skipK.get(g.k) === 'done' || (lastF && P.has(lastF))) lbl = TT('✅ ทำครบทุกขั้นที่ VSM4', '✅ All VSM4 steps done');
+    else {
+      st = last3 ? 'v3' : 'idle';
+      lbl = last3 ? '🔀 ' + TT('ล่าสุดอยู่ที่ VSM3', 'now at VSM3') : '⏸ ' + TT('ยังไม่จบ', 'not finished');
+      why = `<span class="nw">${TT('ลงยอดล่าสุด', 'last recorded')} <b>${escapeHtml(lastP)}</b> ${_mpD(last).slice(0, 5)}${last3 ? ' ' + TT('ที่ VSM3', 'at VSM3') + '</span>'
+        : '</span> · ' + (!isKnownValve(g.valve) ? TT('<span class="nw">เบอร์นี้ไม่มีใน Master valve</span> — <span class="nw">แผนไม่รู้ Process ของเบอร์นี้</span>', 'valve not in the master — the plan has no processes for it')
+          : TT('<span class="nw">ไม่มีใบรับเข้า WIP IN 1.5</span> <span class="nw">และไม่มีคนลงยอดต่อ</span> — <span class="nw">แผนไม่วางให้</span> (<span class="nw">ลงย้อนหลังที่ ⚙️ ตั้งค่า</span> → <span class="nw">ลืมลง WIP IN 1.5</span>)', 'no WIP IN slip and nothing recorded since — not planned (backfill in Settings → forgot WIP IN 1.5)'))}`;
+    }
+    const jq = jp ? getJobProcQty(g.valve, g.lot) : 0;
+    const qty = jq > 0 ? jq : fg && fg.q > 0 ? fg.q : steps[steps.length - 1].q;
+    // ชิปละ 1 เครื่อง (สีตาม Zone ปัจจุบันของเครื่อง · VSM3 สีชมพู) · หลายเครื่องในขั้นเดียว = คั่นด้วย + และบอกยอดของแต่ละเครื่อง
+    const chips = () => steps.map(o => {
+      const ms = [...o.ms.values()].sort((a, b) => a.d0.localeCompare(b.d0) || b.q - a.q);
+      return ms.map(x => {
+        const z = x.v3 ? 'VSM3' : zOf.get(x.id) || x.zone, [zc, zl] = x.v3 ? ['#BE185D', '#FDF2F8'] : MP_ZCOL[z] || ['#475569', '#F8FAFC'];
+        const sub = [z.replace(/^ZONE\s*/i, 'Z'), x.d1 ? _mpD(x.d1).slice(0, 5) : '', ms.length > 1 ? nn(x.q) : ''].filter(Boolean).join(' · ');
+        return `<span class="mpv-rz" style="--zc:${zc};--zl:${zl}" title="${escapeHtml(`${o.p} · ${x.id || '-'}${z ? ' · ' + z : ''} · ${x.d0 && x.d0 !== x.d1 ? _mpDW(x.d0) + ' → ' : ''}${_mpDW(x.d1)} · ${nn(x.q)} ${TT('ชิ้น', 'pcs')}`)}"><small>${escapeHtml(o.p)}</small><b>${escapeHtml(x.id || TT('ไม่ระบุเครื่อง', 'no machine'))}</b><small>${escapeHtml(sub)}</small></span>`;
+      }).join('<i aria-hidden="true">+</i>');
+    }).join('<i aria-hidden="true">›</i>');
+    R.push({ st, sd: sd || '', key: g.k, row: () => `<div class="mpv-rl">
+      <div class="mpv-rlh"><b>${escapeHtml(g.valve)}</b><span class="l">${escapeHtml(g.lot || '-')}</span><span class="mpv-dst ${st}">${lbl}${st === 'ok' && sd ? ' ' + _mpD(sd).slice(0, 5) : ''}</span><span class="q">${nn(qty)} ${TT('ชิ้น', 'pcs')}</span></div>
+      ${why ? `<div class="mpv-dnw">${why}</div>` : ''}<div class="mpv-rzs">${chips()}</div></div>` });
+  }
+  if (!R.length) return null;
+  R.sort((a, b) => b.sd.localeCompare(a.sd) || a.key.localeCompare(b.key));    // ล่าสุดก่อน
+  const okN = R.filter(x => x.st === 'ok').length, allOk = okN === R.length;
+  const open = !others || V.moreM.has('done'), more = V.moreM.has('doneAll');
+  const cap = R.slice(0, _MPV_DN_MAX), show = more ? cap : cap.slice(0, _MPV_RT_LIM);
+  const title = allOk ? `✅ ${TT('ผลิตจบแล้ว', 'Production finished')}` : `📜 ${TT('ผลิตแล้ว · ไม่มีงานค้างในแผน', 'Produced · nothing left to plan')}`;
+  const sub = `${nn(R.length)} ${TT('ล็อต', 'lots')}${allOk ? '' : ` · ✅ ${TT('จบแล้ว', 'finished')} ${nn(okN)}`} · ${others && !open ? TT('แตะเพื่อดูเครื่องที่ใช้ผลิต', 'tap to see the machines used') : TT('เครื่อง = ที่ลงยอดผลิตจริง', 'machines = where the output was recorded')}`;
+  const head = others
+    ? `<button type="button" class="mpv-rbh mpv-dnh" data-act="more" data-mid="done" aria-expanded="${open}"><b>${title}</b><small>${sub}</small><span class="ar" aria-hidden="true">${open ? '▴' : '▾'}</span></button>`
+    : `<div class="mpv-rbh"><b>${title}</b><small>${sub}</small></div>`;
+  const btn = !open || cap.length <= _MPV_RT_LIM ? ''
+    : `<button type="button" class="mpv-more" data-act="more" data-mid="doneAll" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อ', 'Collapse') : `▾ ${TT('ดูทุกล็อต', 'Show all lots')} (${TT('อีก', '+')} ${nn(cap.length - _MPV_RT_LIM)})`}</button>`;
+  const capNote = open && more && R.length > cap.length
+    ? `<div class="mpv-dnw" style="margin:0;padding:6px 14px">${TT('แสดง', 'Showing the')} ${nn(cap.length)} ${TT('ล็อตล่าสุด จากทั้งหมด', 'latest of')} ${nn(R.length)} — ${TT('ดูครบที่ 🔍 ค้นหา Process จาก Valve No', 'see them all in 🔍 Find Process by Valve No')}</div>` : '';
+  return { n: R.length, allOk, broad: false,
+    html: `<section class="mpv-rbox mpv-done" aria-label="${TT('ผลิตจบแล้ว — เครื่องที่ใช้ผลิต', 'Finished — machines used')}">${head}${open ? show.map(x => x.row()).join('') : ''}${capNote}${btn}</section>` };
 }
 /* แตะเครื่องในกล่องเส้นทาง → แท็บของ Zone นั้น (ถ้าดูทีละ Zone) แล้วเลื่อนไปที่การ์ดเครื่อง (คำค้นยังอยู่) */
 function _mpvGoMachine(z, id) {
@@ -29502,9 +29631,10 @@ function openMpNotPlanned() {
       'The plan is built from WIP IN slips + lots in production — the lots below could not be (fully) placed, for the reason of each group · fix it and reopen the plan')}</div>${secs || `<div class="muted" style="padding:10px 0">✅ ${TT('ทุกล็อตอยู่ในแผน', 'Every lot is planned')}</div>`}
     <button type="button" class="btn btn-outline btn-block" style="margin-top:14px" onclick="closeModal()">${TT('ปิด', 'Close')}</button>`, { wide: true });
 }
-/* ค้นหาแล้วไม่เจออะไรเลย (ไม่มีทั้งในแผน / ใบรับเข้า / กำลังผลิต / Order) — ส่วนใหญ่ = ใบเพิ่งลงจากเครื่องอื่น → ปุ่มดึงข้อมูลล่าสุด */
+/* ค้นหาแล้วไม่เจออะไรเลย (ไม่มีทั้งในแผน / ใบรับเข้า / กำลังผลิต / Order / ยอดผลิตที่ VSM4) — ส่วนใหญ่ = ใบเพิ่งลงจากมือถือ/คอมเครื่องอื่น → ปุ่มดึงข้อมูลล่าสุด
+   ★ v4.05 ล็อตที่ผลิตจบแล้วไม่มาถึงตรงนี้ (ขึ้นกล่อง ✅ ผลิตจบแล้วแทน) · คำเดิม "ที่เครื่องนี้มี" อ่านเป็นเครื่องจักรได้ → บอกว่าเป็นข้อมูลที่โหลดไว้ */
 function _mpvNoFind(qn) {
-  return `<div style="margin-top:8px">${TT('ไม่มี', 'No')} <b>${escapeHtml(qn)}</b> ${TT('ในงานค้างของ VSM4 ที่เครื่องนี้มี (ใบรับเข้า WIP IN 1.5 · กำลังผลิต · Order) — ถ้าเพิ่งรับเข้าจากเครื่องอื่น', 'in the VSM4 work this device has (WIP IN slips · in production · orders) — if it was just received elsewhere')}
+  return `<div style="margin-top:8px">${TT('ไม่พบ', 'No')} <b>${escapeHtml(qn)}</b> ${TT('ในข้อมูล VSM4 ที่โหลดไว้ — ไม่มีทั้งใบรับเข้า WIP IN 1.5 · งานกำลังผลิต · Order · ยอดผลิต — ถ้าเพิ่งลงจากมือถือ/คอมเครื่องอื่น', 'in the VSM4 data loaded here — no WIP IN slip, work in progress, order or production record — if it was just entered on another phone/PC')}
     <button type="button" class="mpv-chip" data-act="refresh">🔄 ${TT('ดึงข้อมูลล่าสุด', 'Fetch latest')}</button></div>`;
 }
 async function _mpvRefresh(btn) {
@@ -29858,7 +29988,8 @@ function _mpvRow(a, i, n, res) {
 /* รายละเอียดที่ซ่อนไว้ — แตะแถวถึงเห็น */
 function _mpvRowDetail(a, res) {
   const j = a.job, cal = res.cal, out = [];
-  out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || j.planLot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อต', 'split')} ${a.part}/${a.parts}` : ''}`);
+  out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || j.planLot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')}`);
+  const sp = _mpvSplitLine(a); if (sp) out.push(sp);     // ★ v4.05 แบ่งล็อต = ทำพร้อมกันกี่เครื่อง เครื่องละกี่ชิ้น
   out.push(_mpvSaleLine(j, res.S));        // ★ v3.89 ขายแผนไหน
   const wh = _mpvWhereLine(j); if (wh) out.push(wh);
   const vm = _mpvVmLine(a, res); if (vm) out.push(vm);     // ★ v4.00 เครื่องเดิมของเบอร์นี้
@@ -29958,7 +30089,15 @@ function _mpvRowDetailS(a, i, res) {
   const mv = j.kind === 'order' ? '' : `<button type="button" class="mpv-chip" data-act="move" data-ai="${i}">🔀 ${TT('ย้ายไปเครื่องอื่น', 'Move to another machine')}</button>`;
   const wh = _mpvWhereLine(j);    // ★ v3.89 ล็อตอยู่ที่ Process ไหน / Zone ไหน
   const vm = _mpvVmLine(a, res);  // ★ v4.00 เครื่องเดิมของเบอร์นี้
-  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div><div style="flex-basis:100%">${_mpvSaleLine(j, res.S)}</div>${wh ? `<div style="flex-basis:100%">${wh}</div>` : ''}${vm ? `<div style="flex-basis:100%">${vm}</div>` : ''}${mv}</div>`;
+  const sp = _mpvSplitLine(a);    // ★ v4.05 แบ่งล็อตทำพร้อมกันหลายเครื่อง
+  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div>${sp ? `<div style="flex-basis:100%">${sp}</div>` : ''}<div style="flex-basis:100%">${_mpvSaleLine(j, res.S)}</div>${wh ? `<div style="flex-basis:100%">${wh}</div>` : ''}${vm ? `<div style="flex-basis:100%">${vm}</div>` : ''}${mv}</div>`;
+}
+/* ★ v4.05 (ผู้ใช้ 29/10 ข้อ 1 "COT 1/2 · COT 2/2 คืออะไร เปิด 2 เครื่องในการผลิตหรอ") แบ่งล็อต = ขั้นนี้ของล็อตนี้ทำพร้อมกันหลายเครื่อง แบ่งจำนวนกัน
+   แผนแบ่งเองเมื่อเครื่องเดียวต้องใช้เกิน "แบ่งล็อตเมื่อเกิน" (⚙️ ตั้งค่า → 🛠️ ขั้นสูง · เริ่มต้น 20 ชม. · สูงสุด 3 เครื่อง · Zone เดียวกัน · ขั้นนั้น ≥ 200 ชิ้น) */
+function _mpvSplitLine(a) {
+  if (!(a.parts > 1)) return '';
+  const sib = (a.job.assign || []).filter(x => x.si === a.si).sort((x, y) => x.part - y.part);
+  return `✂️ ${TT('แบ่งล็อต', 'Split')} ${a.part}/${a.parts} — ${TT('ขั้นนี้ทำพร้อมกัน', 'this step runs at once on')} ${sib.length} ${TT('เครื่อง', 'machines')}: ${sib.map(x => x === a ? `<b>${escapeHtml(x.m.id)} ${nn(x.qty)}</b>` : `${escapeHtml(x.m.id)} ${nn(x.qty)}`).join(' + ')} ${TT('ชิ้น', 'pcs')}`;
 }
 /* ★ v4.00 เครื่องเดิมของ "เบอร์นี้ · Process นี้" — เครื่องที่แผนตามไป (ล็อตนี้ทำค้าง / ล็อตอื่นของเบอร์นี้ / ประวัติ) + ประวัติ 3 เครื่องล่าสุด
    เห็นได้ทันทีว่าแผนวางเครื่องเดิมไหม ถ้าไม่ = คิวเครื่องเดิมช้ากว่าเกินค่าที่ตั้งไว้ (⚙️ ตั้งค่า → Valve เดียวกัน → เครื่องเดียวกัน) */
