@@ -27,7 +27,9 @@ const COL = {
 };
 const F = 1000;                                   // ความสูง frustum ที่ zoom = 1 (หน่วยโลก)
 const R = 3000;                                   // ระยะกล้อง — ortho ไม่มีผลกับขนาด แค่กันตัด near/far
-const VIEW0 = { theta: 0.55, phi: 0.98 };         // มุมเริ่ม ≈ isometric (เงย ~34°) มองจากมุมล่างขวาของผัง 2D
+// มุมเริ่ม (+ ปุ่ม ⊙) = มองตรงจากด้านล่างของผัง 2D (ซ้าย-ขวาตรงกับผัง 2D) เอียง 40° จากแนวดิ่ง (เงย ~50°)
+//   ★ v4.04 ผู้ใช้ 29/10 ส่งรูปมุมนี้ "มองง่ายดี" — เดิม { theta: .55, phi: .98 } = เฉียงจากมุมล่างขวา (เงย ~34°)
+const VIEW0 = { theta: 0, phi: 0.7 };
 const TOPV = { theta: 0, phi: 0.0008 };           // มุมบน = หันเหมือนผัง 2D ทุกประการ
 const ZOOM_STEP = 1.45;
 let _hinted = false;                              // คำแนะนำวิธีใช้ (นิ้ว/แตะ) โชว์ครั้งเดียวต่อการเปิดแอป
@@ -390,6 +392,7 @@ export function create(host, opts = {}) {
   let people = [], pplMesh = null, headMesh = null;
   let filter = 'all', selId = '', sheetOpen = false;
   let size = { w: 0, h: 0 }, sized = false, live = false, fitted = false, disposed = false;
+  let camAuto = false;                        // กล้องยังอยู่มุมเริ่มที่จัดให้ (ยังไม่ลาก/ซูม/บินไปเครื่อง) → กรอบเปลี่ยนขนาดแล้วจัดใหม่ได้
   let raf = 0, shadowDirty = true, tw = null, lv = -1, lzOn = null;
   const colorAnim = new Set();
   const dirty = new Map();                    // mesh → [min, max] ช่วงจุดยอดที่สีเปลี่ยน
@@ -452,7 +455,7 @@ export function create(host, opts = {}) {
   // หลังปล่อยนิ้ว: ตัดแรงเฉื่อยตอนที่ภาพขยับน้อยกว่า ~0.1 px/เฟรม (เดิมวาดต่ออีก 1–2 วิ จนค่าเล็กระดับ 1e-6 = เปลืองแบต)
   const _pp = new THREE.Vector3(), _pt = new THREE.Vector3();
   let _pz = 1, dragging = false;
-  controls.addEventListener('start', () => { dragging = true; });
+  controls.addEventListener('start', () => { dragging = true; camAuto = false; });
   controls.addEventListener('end', () => { dragging = false; });
   /* 📊 ตัววัดความลื่นบนเครื่องจริง (?fps=1) — ให้คนในโรงงานกด 📋 คัดลอกตัวเลข + รุ่นเครื่องส่งกลับมาได้ */
   const t0Create = performance.now();
@@ -545,6 +548,8 @@ export function create(host, opts = {}) {
       camera.left = -F * a / 2; camera.right = F * a / 2; camera.top = F / 2; camera.bottom = -F / 2;
       camera.updateProjectionMatrix();
       layoutHud();
+      // ★ v4.04 ยังไม่ได้ขยับกล้องเอง → จัดมุมเริ่มให้พอดีกรอบใหม่ (เช่นกดเต็มจอบนทีวี · เดิมคงซูมเดิม = ผังล้นซ้าย-ขวา ต้องกด ⊙ เอง)
+      if (lay && fitted && camAuto) resetView(false);
     }
     if (lay && !fitted) { resetView(false); fitted = true; }
     if (pendingFly && lay) flyPending();
@@ -1273,6 +1278,7 @@ export function create(host, opts = {}) {
     if ('_scale' in controls) controls._scale = 1;
   }
   function tweenTo(to, ms) {
+    camAuto = false;                           // บิน/ซูม/หมุนตามที่สั่ง → ไม่ใช่มุมเริ่มแล้ว (resetView ตั้งกลับเอง)
     const s = sphNow();
     let dth = to.theta - s.theta; dth = ((dth + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
     resetDamping();
@@ -1300,7 +1306,7 @@ export function create(host, opts = {}) {
       hx = Math.max(hx, Math.abs(_v.dot(right))); hy = Math.max(hy, Math.abs(_v.dot(up)));
     }
     // จอแคบ (มือถือแนวตั้ง): ผังกว้างกว่าจอ → ล้นขอบเล็กน้อย (ลากดูต่อเอง) แทนการย่อจนเครื่องเล็กเกิน
-    const narrow = !dim && W < 480;
+    const narrow = !dim && isNarrow();
     const pt = dim ? dim.t : topEl.offsetHeight + 16 + (padExtra || 0), pb = dim ? dim.b : botEl.offsetHeight + 16;
     const pl = dim ? dim.l : narrow ? 4 : 12, pr = dim ? dim.r : narrow ? 4 : 12;
     const aw = Math.max(60, W - pl - pr), ah = Math.max(60, H - pt - pb);
@@ -1314,14 +1320,20 @@ export function create(host, opts = {}) {
     const c = Math.max(.15, Math.cos(phi)), k = t.y / c;
     return t.set(t.x - Math.sin(phi) * Math.sin(theta) * k, 0, t.z - Math.sin(phi) * Math.cos(theta) * k);
   }
-  function planBox() { return new THREE.Box3(new THREE.Vector3(lay.x0, 0, lay.z0), new THREE.Vector3(lay.x1, 24, lay.z1)); }
+  // กรอบมือถือแนวตั้ง (แคบ + สูงกว่ากว้าง) · ★ v4.04 เดิมดูแค่ความกว้าง < 480 → คอลัมน์ผังบนทีวีเต็มจอ (~450×395
+  //   ตอนลากเส้นแบ่งให้ฝั่งต่อกะกว้าง — ขนาดเดียวกับรูปที่ผู้ใช้ส่ง) ถูกนับเป็นมือถือ = ซูมเกิน ผังล้นซ้าย-ขวา
+  function isNarrow() { return size.w < 480 && size.h > size.w; }
+  function planBox(mx) { mx = mx || 0; return new THREE.Box3(new THREE.Vector3(lay.x0 - mx, 0, lay.z0), new THREE.Vector3(lay.x1 + mx, 24, lay.z1)); }
   function resetView(anim) {
     if (!lay || !sized) return;
-    const f = fitFor(planBox(), VIEW0.theta, VIEW0.phi, lay.zones.size ? 34 : 0);   // + ที่ว่างให้ป้ายโซนที่ลอยเหนือขอบผัง
+    // ★ v4.04 กรอบซ้าย-ขวา = พื้นทั้งแผ่น (รวมขอบ + ของวางมุม) เหมือนรูปที่ผู้ใช้ส่ง (ทีวีเต็มจอ ผังชนขอบซ้าย-ขวา)
+    //   จอกว้างที่ความสูงเป็นตัวจำกัด = ขนาดเครื่องเท่าเดิม · มือถือแนวตั้ง = พอดีเครื่องเหมือนเดิม (ไม่ย่อเครื่องลงอีก)
+    const f = fitFor(planBox(isNarrow() ? 0 : lay.M), VIEW0.theta, VIEW0.phi, lay.zones.size ? 34 : 0);   // + ที่ว่างให้ป้ายโซนที่ลอยเหนือขอบผัง
     controls.minZoom = f.zoom * .55; controls.maxZoom = f.zoom * 14;
     isoView = { ...VIEW0 };
     if (anim) tweenTo({ target: f.target, zoom: f.zoom, theta: VIEW0.theta, phi: VIEW0.phi }, 700);
-    else { resetDamping(); setView(f.target, VIEW0.theta, VIEW0.phi, f.zoom); controls.update(); kick(); }
+    else { tw = null; controls.enabled = true; resetDamping(); setView(f.target, VIEW0.theta, VIEW0.phi, f.zoom); controls.update(); kick(); }
+    camAuto = true;
   }
   function fitBox(box, anim) {
     const s = sphNow(), f = fitFor(box, s.theta, s.phi, 34);
