@@ -2880,7 +2880,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.02</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.03</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -10803,9 +10803,7 @@ function zoneMachineCard(mc, records) {
       ${op?`<button class="btn btn-green btn-sm" onclick="resolveHelp('${escapeHtml(r.record_id||'')}')">✅ แก้ไขแล้ว</button>`:`<span style="font-size:10px;color:var(--muted2)">ปิดโดย ${escapeHtml(h.done_by||'-')}</span>`}
     </div>`; }).join('')}
   </div>` : '';
-  // v4.01: record ที่ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาที่ลง → เวลา/CT ลงผิด (DLE/OAE/PDAC พุ่ง) · ⚠️ ที่ DLE + ป้ายในรายการ
-  //   v4.02 (ผู้ใช้ 29/10): ไม่มีแถบข้อความแดงบนการ์ดแล้ว
-  const over = records.map(_recCtOver), overN = over.filter(x => x > CT_OVER_FLAG).length;
+  // v4.02–4.03 (ผู้ใช้ 29/10): ไม่ติด ⚠️ "ยอดเกิน CT" ในการ์ดเครื่องแล้ว (แถบแดง · ⚠️ ข้าง DLE · ป้ายในรายการ) — เตือนเฉพาะในหน้าแก้ไข KPI
   return `<div class="zkpi-card">
     <div class="zkpi-h"><span class="zn">${escapeHtml(mc.id.slice(0,2))}</span>${escapeHtml(mc.id)}
       ${openHelpN?`<span class="tag tag-red" style="margin-left:6px">🆘 ${openHelpN}</span>`:''}
@@ -10814,7 +10812,7 @@ function zoneMachineCard(mc, records) {
     ${helpBanner}
     <div class="zkpi-grid">
       <div class="zkpi-box"><div class="zkpi-l">OAE</div><div class="zkpi-v ${oaeAgg>1?'warn':cls(oaeAgg, t.oae)}">${pctOae(oaeAgg)}</div></div>
-      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${dleAgg<=0||overN?'warn':cls(dleAgg, t.dle)}">${dleAgg>0?pct(dleAgg):'—'}${overN?' <span title="ยอดเกินที่เครื่องทำได้ตาม CT — ตรวจเวลา/CT" style="color:var(--orange);font-size:10px;font-weight:800">⚠️</span>':''}</div></div>
+      <div class="zkpi-box"><div class="zkpi-l">DLE</div><div class="zkpi-v ${dleAgg<=0?'warn':cls(dleAgg, t.dle)}">${dleAgg>0?pct(dleAgg):'—'}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PPLH</div><div class="zkpi-v ${cls(pplhAgg, t.pplh)}">${nn(pplhAgg)}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">OPR</div><div class="zkpi-v">${nn(sum('opr'))}</div></div>
       <div class="zkpi-box"><div class="zkpi-l">PDAC</div><div class="zkpi-v ${_pdacRatio(records)!=null?cls(_pdacRatio(records), PDAC_PASS):'warn'}">${(()=>{const v=_pdacRatio(records); return v==null?'—':`${v>=PDAC_PASS?'✓':'✗'} <span style="font-size:10px;opacity:.75">${pct(v)}</span>`;})()}</div></div>
@@ -10827,15 +10825,14 @@ function zoneMachineCard(mc, records) {
       <span>WT รวม: <b>${sum('wt').toFixed(2)}</b> ชม.</span>
     </div>
     <div style="margin-top:8px">
-      <details${overN ? ' open' : ''}>
+      <details>
         <summary style="cursor:pointer;font-size:11px;color:var(--blue);font-weight:700">▶ ดูรายการ ${records.length} record</summary>
         <div style="margin-top:6px;max-height:200px;overflow-y:auto">
-          ${records.map((r, i) => { const s = _shiftsArr(r)[0] || {}, a = s.rts || s.ts, b = s.rte || s.te; return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:11px;display:flex;flex-wrap:wrap;gap:6px">
+          ${records.map(r => { const s = _shiftsArr(r)[0] || {}, a = s.rts || s.ts, b = s.rte || s.te; return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:11px;display:flex;flex-wrap:wrap;gap:6px">
             <span style="font-weight:800;color:var(--blue)">${escapeHtml(r.shift_date||r.record_date||'-')}</span>
             <span class="tag ${r.shift_type==='day'?'tag-orange':'tag-blue'}">${r.shift_type==='day'?'☀️':'🌙'}</span>
             <span>OPR <b>${nn(r.opr)}</b></span>
             ${a && b ? `<span style="color:var(--muted)">🕐 ${escapeHtml(a)}–${escapeHtml(b)}${s.lot_n > 1 ? ` (${s.lot_n} Lot)` : ''}${+r.ct ? ` · CT ${+r.ct}` : ''}</span>` : ''}
-            ${over[i] > CT_OVER_FLAG ? `<span class="tag tag-red">⚠️ เกิน CT ${over[i].toFixed(1)} เท่า</span>` : ''}
             ${r.valve_no?`<span class="tag tag-green">${escapeHtml(r.valve_no)}${r.lot?` · L${escapeHtml(r.lot)}`:''}${r.last_process?` · ${escapeHtml(r.last_process)}`:''}</span>`:''}
             <span style="margin-left:auto;color:var(--muted)">${escapeHtml(r.operator||'')}</span>
           </div>`; }).join('')}
@@ -11048,7 +11045,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.02":"Production Record + KPI · v4.02",
+"ระบบบันทึกผลิต + KPI · v4.03":"Production Record + KPI · v4.03",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -20929,16 +20926,9 @@ function _slotTimeErr(ts, te) {
    ใช้ตรวจ Target/OPR ตอนบันทึก (_ctCapWarn) + โชว์ใต้ช่วงให้เห็นก่อนกรอก Target */
 const CT_CAP_MIN = 0.6;   // Target ต่ำกว่า 60% ของที่ทำได้ตาม CT = Target หรือ CT น่าจะผิด
 function _ctCap(ct, hr) { return (ct > 0 && hr > 0) ? Math.ceil(3600 / ct * hr - 1e-9) : 0; }
-/* v4.01 — ยอดของ record ที่บันทึกแล้ว เทียบที่เครื่องทำได้ตาม CT ในเวลาของ record (เท่า) · 0 = ไม่มี CT/เวลา
-   หลาย Lot แบบเก่า (wt_share) = เวลาเต็มช่วง × % ของ Lot นี้ · แบบ v3.90 = ช่วงย่อยของ Lot เอง
-   ใช้ติดป้าย ⚠️ ในการ์ดเครื่อง/หน้าแก้ไข — เคส H-217 28/10: 3 Lot 3,150 ชิ้น ลง 08:00–09:00 · CT 15 = 13 เท่า → DLE 1,312% */
+/* v4.01 — หน้าแก้ไข KPI: ยอดเกินที่เครื่องทำได้ตาม CT ในเวลาของ record กี่เท่าถึงขึ้น ⚠️ (_ekWtSync)
+   เคส H-217 28/10: 3 Lot 3,150 ชิ้น ลง 08:00–09:00 · CT 15 = 13 เท่า → DLE 1,312% · การ์ดเครื่องไม่ติดป้ายแล้ว (v4.03) */
 const CT_OVER_FLAG = 1.2;   // เกิน 20% = เวลา/CT น่าจะลงผิด (เผื่อเศษจากเวลาราย Lot ที่ปัดเป็นนาที · ตอนบันทึกเตือนตั้งแต่เกิน 0%)
-function _recCtOver(r) {
-  const s = _shiftsArr(r)[0] || {};
-  const share = (+s.wt_share > 0 && +s.wt_share < 1) ? +s.wt_share : 1;
-  const cap = _ctCap(+r.ct || +s.ct || 0, calcWT(s.ts || '', s.te || '').hr * share);
-  return cap > 0 ? ((+r.opr || 0) + (+r.scrap || 0)) / cap : 0;
-}
 /* ยอดของ 1 ช่วงเทียบที่ทำได้ตาม CT → warning หรือ null (ยืนยันบันทึกต่อได้)
    · OPR+Scrap > ทำได้ = เป็นไปไม่ได้ → CT / เวลา / OPR ผิด
    · Target > ทำได้ หรือ < 60% ของที่ทำได้ → Target หรือ CT ผิด
