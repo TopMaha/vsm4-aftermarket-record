@@ -2893,7 +2893,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.05</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.06</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7080,7 +7080,7 @@ function planLotAlloc(b) {
     const vk = vKey(it.valve); if (!byV.has(vk)) continue;
     const isDone = it.curProc === 'DONE';
     let q = Number(it.qty) || 0;
-    if (!q && isDone) q = getJobProcQty(it.valve, it.lot);
+    if (!q && isDone) q = jobFgQty(it.valve, it.lot);   // ★ v4.06 ผ่าน FG ทุกวัน (เดิม = ยอดตอนกดจบ)
     // date = วันที่ผ่าน FG จริง (ไม่ใช่วันที่ Admin กดจบ — กดย้อนหลังทีละมาก ๆ ได้)
     const f = String(it.date || it.moveDate || '').slice(0, 10);
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: isDone ? 'done' : 'fg', qty: q, fin: f, proc: isDone ? 'DONE' : (it.curProc || 'FG'), prog: 2, recv: f });
@@ -11058,7 +11058,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.05":"Production Record + KPI · v4.05",
+"ระบบบันทึกผลิต + KPI · v4.06":"Production Record + KPI · v4.06",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -20095,12 +20095,26 @@ function getCompletedRecords() {
     _date: (r.timestamp || '').slice(0,10),
   }));
   // งานที่จบผ่านระบบหลัง FG → เพิ่มเป็นรายการผลิตเสร็จ พร้อมวันที่จบ + ยอด OPR
-  const storeDone = computeDoneFromStore().map(dj => ({
-    valve_no: dj.valve, lot: dj.lot, quantity: dj.qty,
-    status: 'Completed', current_process: 'จบงาน (หลัง FG)',
-    operator: '', timestamp: dj.date ? dj.date + 'T00:00:00' : '',
-    _customer: dj.customer, _date: dj.date,
-  }));
+  // ★ v4.06 ยอด = ผ่าน FG ทุกครั้ง · ส่วนที่ผ่าน FG ถึงวันกดจบ = แถววันกดจบ (เหมือนเดิม)
+  //   ส่วนที่ผ่าน FG "หลังวันกดจบ" = แถวตามวันที่ผ่าน FG จริง → ยอดผลิตเสร็จรายเดือนไม่ไปกองที่เดือนที่กด
+  //   Lot ที่ไม่มีข้อมูลแล้ว (orphan — ยอดย้ายไปอยู่ Lot ใหม่) ไม่นับซ้ำ
+  const storeDone = [];
+  for (const dj of computeDoneFromStore()) {
+    if (dj.orphan) continue;
+    const row = (date, qty) => storeDone.push({
+      valve_no: dj.valve, lot: dj.lot, quantity: qty,
+      status: 'Completed', current_process: 'จบงาน (หลัง FG)',
+      operator: '', timestamp: date ? date + 'T00:00:00' : '',
+      _customer: dj.customer, _date: date,
+    });
+    let atDone = dj.qty;
+    if (dj.fgDay && dj.date) {
+      for (const d of Object.keys(dj.fgDay).sort()) {
+        if (d > dj.date && dj.fgDay[d] > 0) { atDone -= dj.fgDay[d]; row(d, dj.fgDay[d]); }
+      }
+    }
+    if (atDone > 0 || !(dj.qty > 0)) row(dj.date, atDone);
+  }
   return [...prodDone, ...storeDone];
 }
 
@@ -22436,12 +22450,16 @@ async function searchProcess() {
       // ช่องแรก (ซ้ายสุด) ที่ยังไม่มียอด = เหลือง (ขั้นถัดไป/ค้าง) · ถ้ามียอดครบทุกช่อง = ไม่มีเหลือง
       let nextIdx = -1;
       for (let i = 0; i < cols.length; i++) { if (!(effQ(cols[i]) > 0)) { nextIdx = i; break; } }
-      // จบงานแล้ว (ระบบหลัง FG = DONE) → ช่อง QC เขียวอัตโนมัติ ยอด = Process สุดท้ายในตาราง
-      //   (ช่องขวาสุดที่มียอด ไม่นับ QC เอง) เพื่อให้ช่อง QC ไม่ค้างเหลืองทั้งที่งานจบแล้ว
+      // จบงานแล้ว (ระบบหลัง FG = DONE) → ช่อง QC เขียวอัตโนมัติ เพื่อให้ช่อง QC ไม่ค้างเหลืองทั้งที่งานจบแล้ว
+      //   ★ v4.06 (ผู้ใช้ 31/10 + รูป VF1073A0) ยอด = ผ่าน FG รวมทุกวัน (ช่อง FG ของแถวนี้)
+      //     กด "จบงาน" ได้ครั้งเดียว แต่ล็อตผ่าน FG ได้หลายวัน — ที่ผ่าน FG หลังวันกดก็ไป QC ด้วย
+      //     เดิม = Process ขวาสุดที่มียอด → ได้ยอด Admin ที่เติมไว้ตอนกด (POL 1,062) ทั้งที่ FG 8,664
+      //   แถวที่ช่อง FG ว่าง / วาล์วที่ไม่มี FG ในสาย → Process ขวาสุดที่มียอด (ไม่นับ QC เอง) เหมือนเดิม
       const isDone = getJobProc(ld.valveNo, ld.lot) === 'DONE';
-      let lastProcQty = 0;
+      let lastProcQty = 0, qcFromFg = false;
       if (isDone) {
-        for (let i = cols.length - 1; i >= 0; i--) {
+        if (effQ('FG') > 0) { lastProcQty = effQ('FG'); qcFromFg = true; }
+        else for (let i = cols.length - 1; i >= 0; i--) {
           if (cols[i] === 'QC') continue;
           if (effQ(cols[i]) > 0) { lastProcQty = effQ(cols[i]); break; }
         }
@@ -22467,7 +22485,7 @@ async function searchProcess() {
         if (adm) return `<td class="pf-cell pf-adm pf-click" onclick="spAdmFill(${ri},${i})" title="${TT('เพิ่มโดย Admin — พนักงานลงยอดเมื่อไหร่ จะใช้ยอดพนักงานแทน','Added by Admin — replaced once an operator records it')}">${nn(adm.qty)}<span class="pf-adm-tag">🔑 Admin</span></td>`;
         if (c === 'QC' && isDone && lastProcQty > 0) {
           hasAutoQc = true;
-          return `<td class="pf-cell pf-auto" title="จบงานแล้ว — ยอดตาม Process สุดท้าย">✓ ${nn(lastProcQty)}</td>`;
+          return `<td class="pf-cell pf-auto" title="${qcFromFg ? TT('จบงานแล้ว — ยอดผ่าน FG รวมทุกวัน','Finished — FG total of every day') : 'จบงานแล้ว — ยอดตาม Process สุดท้าย'}">✓ ${nn(lastProcQty)}</td>`;
         }
         const fillCls  = canFill ? ' pf-add pf-click' : '';
         // ★ v4.00 ยังไม่ปลดล็อก Admin → แตะช่องว่างแล้วบอกว่าต้องปลดล็อกก่อน (เดิมแตะแล้วเงียบ เหมือนระบบค้าง)
@@ -22491,7 +22509,7 @@ async function searchProcess() {
       const ovp = getJobProc(ld.valveNo, ld.lot);
       if (ovp && ovp !== 'FG') {
         const done = ovp === 'DONE';
-        const oq = getJobProcQty(ld.valveNo, ld.lot);
+        const oq = effQ('FG') || jobFgQty(ld.valveNo, ld.lot);   // ★ v4.06 ผ่าน FG ทุกวัน = ตัวเดียวกับช่อง QC (เดิม = ยอดตอนกด)
         const od = getJobProcDate(ld.valveNo, ld.lot);
         postFgNotes.push(`<div class="pf-postfg"><b>${escapeHtml(ld.lot)}</b> ➡️ ${done ? '✅ จบงาน' : 'ส่งต่อหลัง FG'}: <span class="tag ${done ? 'tag-green' : 'tag-orange'}">${escapeHtml(ovp)}${procDept(ovp) ? ' · ' + procDept(ovp) : ''}</span>${oq ? ' · ' + nn(oq) + ' ชิ้น' : ''}${od ? ' · ' + new Date(od).toLocaleDateString('th-TH') : ''}</div>`);
       }
@@ -26551,6 +26569,7 @@ async function _pfTargetsPut(body) {
 }
 
 let _postFgRecs = null;   // ชุด record ที่ดึงแบบเต็ม (ปุ่ม "ดึงทั้งหมด") — null = ใช้ state.kpiRecords
+let _postFgRecsFull = false;   // ★ v4.06 _postFgRecs ที่ดึงเองครบทุกแถวไหม (ไม่ถูกตัดเพดาน) — ใช้ตัดสินว่ายอด FG ของงานครบแล้ว
 let _postFgList = [];
 // รวมทุกงานที่ "ถึง FG แล้ว" (รวมที่ขยับต่อ/จบแล้ว) — แหล่งความจริงของระบบหลัง FG · มองเห็นทุก VSM
 function computePostFgAll(recs) { return _runSync(_postFgAllGen(recs)); }
@@ -26630,7 +26649,9 @@ function computePostFgEligibleJobs(recs) { return computePostFgJobs(recs).filter
    • อีก 6 งานเก่าที่ไม่มี record เลย → ยกให้สายหลัก (DEFAULT_VSM) เพื่อให้ยังเห็นอยู่
      ไม่หายไปเฉย ๆ และไม่โผล่ซ้ำทุกสาย                                                    */
 let _jobOwnerCache = null, _jobOwnerVer = -1, _jobOwnerSrc = null;
-function _jobVsmOwner() {
+// ★ v4.06 ดัชนีต่องาน (valve::lot) จาก record ที่ FG ทั้งประวัติ ทุกสาย — ไล่รอบเดียวได้ทั้ง
+//   owner (สายเจ้าของงาน) · fg / fgDay (ยอด OPR ที่ FG รวม / รายวัน)
+function _jobIdx() {
   const src = _postFgRecs || _wipKpiSrc();
   if (_jobOwnerCache && _jobOwnerVer === _fvVer && _jobOwnerSrc === src) return _jobOwnerCache;
   const mcProc = {};
@@ -26639,23 +26660,70 @@ function _jobVsmOwner() {
   // แผนที่ลูกค้าต่อวาล์ว — สร้างครั้งเดียว (เดิมถ้าค้นทีละ record จะเป็น O(records × valves))
   const vCust = {};
   for (const v of (state.valves || [])) vCust[vKey(v.valveNo)] = custGroup(v.customer);
-  const owner = {}, best = {};
+  const owner = {}, best = {}, fg = {}, fgDay = {};
   for (const r of (src || [])) {
     if ((mcProc[r.machine_id] || 'SSG') !== 'FG') continue;
     const v = (r.valve_no || r.valveNo || '').trim();
     if (!v) continue;
     const jk = jobKey(v, r.lot || '');
+    const q = Number(r.opr) || 0;
+    const sd = r.shift_date || r.record_date || (r.timestamp || '').slice(0, 10) || '';   // สูตรวันเดียวกับ fgByDate ของ computePostFgAll
+    fg[jk] = (fg[jk] || 0) + q;
+    if (sd) { const m = fgDay[jk] || (fgDay[jk] = {}); m[sd] = (m[sd] || 0) + q; }
     const d = (r.shift_date || r.record_date || '') + (r.saved_at || '');
     // ★ 2026-08-02 (กฎจากผู้ใช้): งาน MSI / SWE ไม่ว่าจะขึ้นผลิตหรือจบที่ VSM ไหน
     //   ให้ถือเป็น "ยอดจบของ VSM4" เสมอ → ไม่ไปโผล่เป็นยอดจบของ VSM3
     if (isVsm4OwnedCust(vCust[vKey(v)])) { owner[jk] = 'vsm4'; best[jk] = d; continue; }
     if (!(jk in owner) || d > best[jk]) { owner[jk] = vsmOf(r); best[jk] = d; }
   }
-  _jobOwnerCache = owner; _jobOwnerVer = _fvVer; _jobOwnerSrc = src;
-  return owner;
+  const kpiFull = !!src && (src === _allKpi || (src === _postFgRecs && _postFgRecsFull));
+  _jobOwnerCache = { owner, fg, fgDay, kpiFull };
+  _jobOwnerVer = _fvVer; _jobOwnerSrc = src;
+  return _jobOwnerCache;
 }
-// งานที่ "จบแล้ว" — อ่านจาก targets store ล้วน (qty+วันที่เก็บไว้แล้ว) ไม่ต้องพึ่ง KPI ย้อนหลัง
-// → นับเข้า "ผลิตเสร็จ" ได้แม้ KPI ของงานนั้นอยู่นอกช่วง 30 วันที่โหลดมา
+function _jobVsmOwner() { return _jobIdx().owner; }
+/* งานนี้ยังมีข้อมูลอยู่ไหม (KPI ทั้งประวัติ หรือ ยอดผลิตทั้งประวัติ — งานที่ลงตรงหน้าบันทึก Production ไม่มี KPI)
+   ใช้หา Lot ที่ข้อมูลย้ายไปแล้ว (orphan) · ⚡ cache ตามตัวก้อนข้อมูล ไม่ใช่ _fvVer (ไม่ไล่ 130,000 แถวใหม่ทุกครั้งที่บันทึก)
+   KPI ใช้เซ็ต _producedJobs ที่คิดจากก้อนเดียวกันไว้แล้ว (WIP IN) ถ้ามี · ยังไม่มีชุดยอดผลิตทั้งประวัติ = ถือว่ามี (ไม่ตีเป็น orphan) */
+let _jobSeenK = null, _jobSeenKSrc = null, _jobSeenP = null, _jobSeenPSrc = null;
+function _jobHasData(jk) {
+  const src = _postFgRecs || _wipKpiSrc();
+  let K = (_producedSrc && _producedSrc === src) ? _producedJobs : null;
+  if (!K) {
+    if (_jobSeenKSrc !== src) {
+      _jobSeenK = new Set();
+      for (const r of (src || [])) { const v = (r.valve_no || r.valveNo || '').trim(); if (v) _jobSeenK.add(jobKey(v, r.lot || '')); }
+      _jobSeenKSrc = src;
+    }
+    K = _jobSeenK;
+  }
+  if (K.has(jk) || !_allProd) return true;
+  if (_jobSeenPSrc !== _allProd) {
+    _jobSeenP = new Set();
+    for (const r of _allProd) { const v = (r.valve_no || r.valveNo || '').trim(); if (v) _jobSeenP.add(jobKey(v, r.lot || '')); }
+    _jobSeenPSrc = _allProd;
+  }
+  return _jobSeenP.has(jk);
+}
+/* ★ v4.06 (ผู้ใช้ 31/10 + รูป VF1073A0) — ยอดของงานหลัง FG = OPR ที่ FG "ทุกครั้ง" ทุกวัน · ทุกกะ · ทุกสาย
+   เดิมใช้ jobprocq = ยอด FG ณ ตอนที่ Admin กดส่งต่อ/จบงาน (กดได้ครั้งเดียว) → ล็อตที่ผ่าน FG หลายวัน
+   ยอดที่ผ่าน FG หลังวันกดหายหมด: Lot 2608S090039 กดจบ 7/10 ตอน FG 2,182 · ผ่าน FG จริง 8,664 (4 วัน)
+   ข้อมูลจริง 31/10: 182 จาก 1,785 งานที่จบแล้ว ยอดต่ำกว่าที่ผ่าน FG จริง รวม 306,185 ชิ้น
+   jobprocq เหลือเป็นตัวสำรอง: ประวัติยังโหลดไม่ครบ (ห้ามต่ำกว่ายอดตอนกด) · งานที่ไม่มีเครื่อง FG (VSM1/2)
+   orphan = ประวัติครบแล้วแต่ไม่มีข้อมูลของ Lot นี้เลย (แก้เลข Lot ไปรวมกับ Lot อื่น / ลบไปแล้ว)
+     → ยอดอยู่ที่ Lot ใหม่แล้ว ไม่นับซ้ำ (VF1073A0: 2609S090039 3,362 ย้ายไปอยู่ใน 2608S090039) */
+function _jobFgOf(jk) {
+  const I = _jobIdx();
+  const snap = Number((state.targets || {})[JOBPROCQ_PREFIX + jk]) || 0;
+  const live = I.fg[jk] || 0;
+  if (!I.kpiFull)       return { qty: Math.max(live, snap), snap, day: null };
+  if (live > 0)         return { qty: live, snap, day: I.fgDay[jk] || null };
+  if (!_jobHasData(jk)) return { qty: 0, snap, day: null, orphan: true };
+  return { qty: snap, snap, day: null };
+}
+function jobFgQty(valve, lot) { return _jobFgOf(jobKey(valve, lot)).qty; }
+// งานที่ "จบแล้ว" — สถานะ + วันที่จาก targets store · ยอด = ผ่าน FG ทุกครั้ง (★ v4.06 _jobFgOf)
+// → ประวัติยังโหลดไม่ครบ ใช้ยอดที่เก็บไว้ตอนกด = นับเข้า "ผลิตเสร็จ" ได้แม้ KPI อยู่นอกช่วง 30 วันที่โหลดมา
 // ★ 2026-07-30: กรองให้เหลือเฉพาะสายที่กำลังดู (เดิมคืนงานของทุกสายรวมกัน → "ผลิตเสร็จ"
 //   และกล่องงานหลัง FG เห็นงานข้ามสาย) · สืบ VSM ไม่ได้ → คงไว้ ดีกว่าซ่อนข้อมูลหาย
 function computeDoneFromStore() {
@@ -26673,9 +26741,10 @@ function computeDoneFromStore() {
     const sep = jk.indexOf('::');
     const valve = sep >= 0 ? jk.slice(0, sep) : jk;
     const lot   = sep >= 0 ? jk.slice(sep + 2) : '';
+    const f = _jobFgOf(jk);                                 // ★ v4.06 ยอดผ่าน FG ทุกครั้ง (เดิม = ยอดตอนกดจบ)
     out.push({
       valve, lot,
-      qty:  Number(T[JOBPROCQ_PREFIX + jk]) || 0,
+      qty:  f.qty, snap: f.snap, fgDay: f.day, orphan: !!f.orphan,
       date: _ymdToIso(T[JOBPROCD_PREFIX + jk]),
       customer: vCust[valve] || 'Other',
     });
@@ -26707,7 +26776,7 @@ function renderPostFgJobs() {
   const allJobs   = computePostFgJobs(_postFgSrc());                    // เฉพาะสายที่กำลังดู
   const allActive = allJobs.filter(j => j.eligible);                    // เข้าข่ายจบได้ (หลัง FG เหลือแค่ P/T·T/T·QC·POL·BUFF)
   const allBlock  = allJobs.filter(j => !j.eligible);                   // ยังมี process ผลิตต่อหลัง FG → ยังจบไม่ได้
-  const allDone   = computeDoneFromStore().sort((a, b) => (b.date || '').localeCompare(a.date || ''));   // แยกสายให้แล้วในตัวฟังก์ชัน
+  const allDone   = computeDoneFromStore().sort((a, b) => (a.orphan - b.orphan) || (b.date || '').localeCompare(a.date || ''));   // แยกสายให้แล้วในตัวฟังก์ชัน · ★ v4.06 Lot ที่ไม่มีข้อมูลแล้วไว้ท้าย
   // ค้นหา valve หรือ lot (ค้นทั้งงานค้างและงานที่จบแล้ว) — สะดวกหาวาล์วที่จะกด process ถัดไป
   const q = _postFgQuery.trim().toLowerCase();
   const match = j => !q || (j.valve || '').toLowerCase().includes(q) || (j.lot || '').toLowerCase().includes(q);
@@ -26771,20 +26840,38 @@ function renderPostFgJobs() {
       </div>
     </details>` : '';
   // รายการ "จบแล้ว" — กดเอากลับได้ถ้ากดผิด
-  const doneHtml = _postFgDoneList.length ? `
-    <details style="margin-top:6px;border:1.5px solid var(--green-bd);border-radius:10px;overflow:hidden">
-      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:var(--green);background:var(--green-bg);list-style:none">
-        ✅ งานที่จบแล้ว (${_postFgDoneList.length}) — กดเพื่อดู/เอากลับ
-      </summary>
-      <div style="padding:8px 10px">
-        ${_postFgDoneList.map((d, i) => `
+  // ★ v4.06 ยอด = ผ่าน FG ทุกครั้ง (ทุกวัน) · บอกจำนวนวันที่ผ่าน FG ให้เห็นว่านับครบ
+  //   Lot ที่ไม่มีข้อมูลแล้ว (แก้เลข Lot/ลบ) → บอกไว้ ไม่นับยอด · ไม่มีปุ่มเอากลับ (ไม่มีข้อมูลให้กลับไปค้าง)
+  const nOrph = _postFgDoneList.filter(d => d.orphan).length;
+  const doneRow = (d, i) => {
+    if (d.orphan) return `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--green-bd);opacity:.8">
+            <div style="min-width:0">
+              <div style="font-weight:800;font-size:12.5px">${escapeHtml(d.valve)}</div>
+              <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${TT('ตอนกดจบ','at finish')} ${nn(d.snap)} ${TT('ชิ้น','pcs')} · ${TT('จบ','finished')} ${escapeHtml(d.date || '-')}</div>
+              <div style="font-size:10.5px;color:#B45309">⚠️ ${TT('ไม่มีข้อมูลผลิตของ Lot นี้แล้ว — แก้เลข Lot ไปรวมกับ Lot อื่น หรือลบไปแล้ว','No production data left for this lot — renamed into another lot or deleted')}</div>
+            </div>
+            <span class="tag" style="background:#FEF3C7;color:#92400E;white-space:nowrap">${TT('ไม่นับ','not counted')}</span>
+          </div>`;
+    const days = d.fgDay ? Object.keys(d.fgDay).sort() : [];
+    const fgNote = days.length > 1
+      ? `<div style="font-size:10.5px;color:var(--green)">${TT('ผ่าน FG','passed FG on')} ${days.length} ${TT('วัน · นับครบทุกวัน · ล่าสุด','days · all counted · latest')} ${escapeHtml(days[days.length - 1])}</div>` : '';
+    return `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--green-bd)">
             <div style="min-width:0">
               <div style="font-weight:800;font-size:12.5px">${escapeHtml(d.valve)}</div>
-              <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${nn(d.qty)} ชิ้น · จบ ${escapeHtml(d.date || '-')}</div>
+              <div style="font-size:10.5px;color:var(--muted)">Lot ${escapeHtml(d.lot || '-')} · ${nn(d.qty)} ชิ้น · จบ ${escapeHtml(d.date || '-')}</div>${fgNote}
             </div>
             <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="undoneJobAt(${i})">↩︎ เอากลับ (QC)</button>
-          </div>`).join('')}
+          </div>`;
+  };
+  const doneHtml = _postFgDoneList.length ? `
+    <details style="margin-top:6px;border:1.5px solid var(--green-bd);border-radius:10px;overflow:hidden">
+      <summary style="cursor:pointer;padding:9px 11px;font-weight:800;color:var(--green);background:var(--green-bg);list-style:none">
+        ✅ งานที่จบแล้ว (${_postFgDoneList.length - nOrph}) — กดเพื่อดู/เอากลับ${nOrph ? ` <span style="font-weight:700;color:#B45309">· ⚠️ ${TT('ไม่มีข้อมูลแล้ว','no data left')} ${nOrph}</span>` : ''}
+      </summary>
+      <div style="padding:8px 10px">
+        ${_postFgDoneList.map(doneRow).join('')}
       </div>
     </details>` : '';
   // คงโฟกัส + ตำแหน่งเคอร์เซอร์ของช่องค้นหาไว้หลัง re-render (ไม่งั้นพิมพ์แล้วหลุดโฟกัสทุกตัวอักษร)
@@ -26903,10 +26990,13 @@ async function refreshPostFgFromCloud(silent) {
     // โหลดชุดครบทุกช่วงไว้แล้ว (หน้าติดตามงาน) → ใช้ซ้ำ ไม่ต้องดึงก้อน ~10 MB อีกรอบ
     if (_allKpi) { _postFgRecs = _allKpi; }
     else {
-      const k = await api('/api/kpi?from=2020-01-01&to=' + todayISO() + '&limit=100000', { timeout:150000 }).catch(() => null);
+      // ★ v4.06 slim=1 + ALL_TO = URL เดียวกับก้อนประวัติทั้งหมด (cache ที่ edge ตัวเดียวกัน)
+      //   เดิมไม่ใส่ slim → Worker ตัดที่ 50,000 แถว (31/10 KPI มี 65,540 แถว) = งานก่อน ส.ค. หลุดจากกล่อง
+      const k = await api('/api/kpi?from=2020-01-01&to=' + ALL_TO + '&limit=100000&slim=1', { timeout:150000 }).catch(() => null);
       _postFgRecs = k?.records || state.kpiRecords || [];
+      _postFgRecsFull = !!(k?.records && !k.truncated);
     }
-  } catch (e) { _postFgRecs = state.kpiRecords || []; }
+  } catch (e) { _postFgRecs = state.kpiRecords || []; _postFgRecsFull = false; }
   finally { loadOff('postfg'); }
   if (!silent) hideBusy();
   await yieldUI();          // ปล่อยให้จอวาดก่อน แล้วค่อยลงมือวาดรายการก้อนใหญ่
@@ -29515,8 +29605,8 @@ function _mpvDoneBox(res, qn, others) {
         : '</span> · ' + (!isKnownValve(g.valve) ? TT('<span class="nw">เบอร์นี้ไม่มีใน Master valve</span> — <span class="nw">แผนไม่รู้ Process ของเบอร์นี้</span>', 'valve not in the master — the plan has no processes for it')
           : TT('<span class="nw">ไม่มีใบรับเข้า WIP IN 1.5</span> <span class="nw">และไม่มีคนลงยอดต่อ</span> — <span class="nw">แผนไม่วางให้</span> (<span class="nw">ลงย้อนหลังที่ ⚙️ ตั้งค่า</span> → <span class="nw">ลืมลง WIP IN 1.5</span>)', 'no WIP IN slip and nothing recorded since — not planned (backfill in Settings → forgot WIP IN 1.5)'))}`;
     }
-    const jq = jp ? getJobProcQty(g.valve, g.lot) : 0;
-    const qty = jq > 0 ? jq : fg && fg.q > 0 ? fg.q : steps[steps.length - 1].q;
+    // ★ v4.06 ยอด = ผ่าน FG รวมทุกวัน (ชิป FG ชุดเดียวกัน) · เดิมงานที่กดส่งต่อ/จบแล้ว = ยอด FG ตอนกดครั้งเดียว
+    const qty = fg && fg.q > 0 ? fg.q : (jp && jobFgQty(g.valve, g.lot)) || steps[steps.length - 1].q;
     // ชิปละ 1 เครื่อง (สีตาม Zone ปัจจุบันของเครื่อง · VSM3 สีชมพู) · หลายเครื่องในขั้นเดียว = คั่นด้วย + และบอกยอดของแต่ละเครื่อง
     const chips = () => steps.map(o => {
       const ms = [...o.ms.values()].sort((a, b) => a.d0.localeCompare(b.d0) || b.q - a.q);
