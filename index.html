@@ -500,6 +500,39 @@ tr.hv-detail.hv-done>td{opacity:.55}
   font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;color:#475569;padding:0}
 .mseq-btn:disabled{opacity:.35;cursor:default}
 .mseq-del:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
+/* ===== ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ปุ่มระหว่าง Output ของ Process กับ ค้นหา Process + ป๊อปอัปผล) ===== */
+.cv-launch{padding:12px 14px}
+.cv-btn{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;font-size:15px;font-weight:800;min-height:46px;border-radius:12px;box-shadow:0 4px 14px rgba(15,118,110,.22)}
+.cv-sub{font-size:11px;margin-top:6px;line-height:1.55}
+.cv-src,.cv-row{border:1.5px solid var(--blue-soft);border-radius:11px;padding:8px 10px;margin-top:6px;background:#fff}
+.cv-src{background:var(--blue-light);border-color:#93C5FD}
+.cv-row.best{border-color:#16A34A;background:#F0FDF4;box-shadow:0 0 0 2px rgba(22,163,74,.12)}
+.cv-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.cv-h b{font-size:14.5px;font-weight:900;color:var(--blue-dark);letter-spacing:.2px}
+.cv-ty{font-size:10.5px;font-weight:800;background:#E0E7FF;color:#3730A3;border-radius:6px;padding:1px 7px}
+.cv-cu{font-size:10.5px;font-weight:700;color:var(--muted)}
+.cv-best{font-size:10.5px;font-weight:900;background:#16A34A;color:#fff;border-radius:999px;padding:2px 8px}
+.cv-dims{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:5px;font-size:12px}
+.cv-d{white-space:nowrap;color:#334155}
+.cv-d b{font-weight:800;color:#0F172A}
+.cv-d i{font-style:normal;font-weight:800;color:#DC2626;margin-left:3px;font-size:11px}
+.cv-d i.eq{color:#16A34A}
+.cv-d.miss{color:#B45309;font-weight:700}
+.cv-d.x{color:var(--muted);font-size:11px}
+.cv-ord{display:flex;flex-direction:column;gap:2px;margin-top:5px;font-size:11.5px;color:#334155}
+.cv-ord .short{color:#C2410C}
+.cv-ord .ok{color:#15803D}
+.cv-ord .late{color:#DC2626}
+.cv-sec{display:flex;align-items:center;gap:6px;margin:14px 0 2px;font-size:13px;font-weight:900}
+.cv-sec span{font-size:11px;font-weight:800;border-radius:999px;padding:1px 8px;background:#E2E8F0;color:#334155}
+.cv-sec.has{color:#15803D}
+.cv-sec.none{color:#1D4ED8}
+.cv-empty{font-size:12px;color:var(--muted);padding:6px 2px}
+.cv-note{font-size:12px;margin-top:8px;padding:7px 10px;border-radius:9px;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;line-height:1.6}
+.cv-note.bad{background:#FEF2F2;border-color:#FECACA;color:#991B1B}
+.cv-part{margin-top:12px}
+.cv-part summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#B45309;padding:4px 0}
+.cv-part summary span{font-size:11px;border-radius:999px;padding:1px 8px;background:#FEF3C7}
 /* ===== ผลค้นหา Process จาก Valve — ตาราง: คอลัมน์=Process แถว=Lot ช่อง=ยอด OPR ===== */
 .pf-legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
 .pf-lg{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
@@ -2595,6 +2628,15 @@ tr.s-short .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
   cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap}
 #iotAllHead .ia-lbltgl:hover{background:rgba(255,255,255,.24)}
 #iotAllHead .ia-lbltgl.on{background:#fff;color:#0F172A;border-color:#fff}
+/* ★ v4.07 ผัง 3D ของหน้ารวม — ปุ่ม 2D | 3D (หัวสีเข้ม) · กรอบผัง 3D แทนที่ #iotAllVp ตอนเลือก 3D */
+#iotAllHead .ia-v3d{display:inline-flex;height:30px;border:1px solid rgba(255,255,255,.4);border-radius:7px;overflow:hidden;background:rgba(255,255,255,.12);margin-right:4px}
+#iotAllHead .ia-v3d button{border:0;background:transparent;padding:0 11px;font-family:inherit;font-size:12px;font-weight:900;line-height:1;color:#fff;cursor:pointer}
+#iotAllHead .ia-v3d button.on{background:#fff;color:#0F172A}
+#iotAllHead .ia-v3d button:disabled{opacity:.45;cursor:not-allowed}
+#iotAllOv:not(.ia-is3d) #iotAll3dLblBtn{display:none}
+#iotAllOv.ia-is3d #iotAllVp{display:none}
+#ia3dHost{flex:1 1 auto;min-height:0;position:relative;border:1px solid #cbd5e1;border-radius:10px;background:#D9E3F0;overflow:hidden}
+#ia3dHost .f3d-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:800;color:#1E3A8A}
 /* 2 คอลัมน์: [ตาราง KPI รายชั่วโมง (แทนการ์ดสรุปเดิม) | เส้นแบ่งลาก | ผังเครื่องจักร]
    เส้นแบ่งลากปรับ "ข้อมูล ⇄ ผัง" (--iotall-mapw = ความกว้างผังจากขวา) · ตารางยืดตามพื้นที่เหลือ */
 #iotAllBody{flex:1 1 auto;min-height:0;display:grid;
@@ -2838,6 +2880,7 @@ table.iaht tr.iaht-zero td.t .iaht-dv{display:none}
   .iah-card{min-height:400px}
   #iotAllMapWrap{flex:0 0 auto;padding:0 10px 14px}
   #iotAllVp{height:62vh}
+  #ia3dHost{flex:none;height:62vh}
 }
 /* ⚡ v3.92 — ช่วงก่อนสคริปต์แอปพร้อม (ไฟล์ app.js ยังโหลด/รันไม่เสร็จ — สคริปต์จบแล้วติด html.app-ready)
    • โครงร่าง (skeleton) วิบวับแทนช่องที่สคริปต์จะเติม → ไม่มีจอขาวว่าง และรู้ว่ากำลังโหลด
@@ -2893,7 +2936,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.06</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.07</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3124,6 +3167,12 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="procRangeNote" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px"></div>
     <div id="procFilterBar" style="margin-bottom:10px"></div>
     <div id="procGrid" class="pgrid"></div>
+  </div>
+
+  <!-- ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ผู้ใช้ 2/11: ปุ่มแทรกระหว่าง Output ของ Process กับ ค้นหา Process จาก Valve No) -->
+  <div class="card cv-launch">
+    <button type="button" class="btn btn-block cv-btn" onclick="openConvertModal()">🔧 เช็คงานที่พอดัดแปลงได้</button>
+    <div class="muted cv-sub">งานขาด / ต้อง Scrap → ใส่ Valve No แล้วระบบหาเบอร์ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย (SD · SL · HD) พร้อมเช็ค Order</div>
   </div>
 
   <!-- ค้นหา -->
@@ -3417,9 +3466,10 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       <input type="file" id="vImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importValves(event)">
       <button class="btn btn-outline btn-sm" onclick="exportValves()">⬇️ Export</button>
       <button class="btn btn-green btn-sm" onclick="openPasteValvesModal()">📋 วางจาก Excel</button>
-      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff" onclick="openPasteSdModal()" title="วาง Valve | TYPE | SD จาก Excel (ชีท Process) · SL / HD / TL = ก๊อปหัวคอลัมน์มาด้วย">📏 วาง SD / TYPE / SL</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff" onclick="openPasteSdModal()" title="วาง Valve | TYPE | SD จาก Excel (ชีท Process) · SL / HD / TL / FA / COT / Type COT = ก๊อปหัวคอลัมน์มาด้วย">📏 วาง SD / TYPE / SL</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteSdModal('ext')" title="วาง Valve | FA | COT | Type COT จาก Excel (มีหรือไม่มีแถวหัวก็ได้)">📋 วาง FA / COT / Type COT</button>
     </div>
-    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th title="FA (มุมหน้าวาล์ว · ใช้คัดเครื่องขั้น FG) · COT · Type COT">FA <span style="font-weight:600;opacity:.7">· COT · Type</span></th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
     <div id="vPagination"></div>
   </div>
 
@@ -3435,6 +3485,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       <input type="search" id="mcCapSearch" placeholder="🔎 ค้นหาเครื่อง / Process / ป้าย" oninput="renderMcCaps()" style="flex:1;min-width:150px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px;font-size:13px">
       <button class="btn btn-blue btn-sm" onclick="openMcCapModal()">➕ เพิ่มเครื่อง</button>
       <button class="btn btn-green btn-sm" onclick="openPasteMcCapsModal()">📋 วางจาก Excel</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteMcFaModal()" title="วาง Machine No | FA จาก Excel — FA ที่เครื่องรับได้ (ขั้น FG)">📐 วาง FA ของเครื่อง</button>
       <button class="btn btn-outline btn-sm" onclick="exportMcCaps()">⬇️ Export</button>
       <button class="btn btn-outline btn-sm" onclick="refreshMcCaps()">🔄 โหลดใหม่</button>
       <span id="mcCapState"></span>
@@ -11058,7 +11109,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.06":"Production Record + KPI · v4.06",
+"ระบบบันทึกผลิต + KPI · v4.07":"Production Record + KPI · v4.07",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11085,6 +11136,9 @@ const I18N_X = {
 "Output ของ Process":"Output by Process","ยอด OPR รวมตาม":"Total OPR by","process ที่ตั้งให้เครื่อง":"process assigned to each machine",
 "(เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)":"(e.g. N-202 = ROLL → N-202's OPR counts toward ROLL) — independent of what operators type · set a machine's process in ⚙️ Settings → Machines (tap chips to filter · tap a row for valves)",
 "ช่วงเวลาที่แสดง":"Period shown","ค้นหา Process จาก Valve No":"Find Process by Valve No",
+"🔧 เช็คงานที่พอดัดแปลงได้":"🔧 Check convertible work",
+"งานขาด / ต้อง Scrap → ใส่ Valve No แล้วระบบหาเบอร์ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย (SD · SL · HD) พร้อมเช็ค Order":"Short / scrapped work → enter the valve no. and the app finds valves of the same TYPE that are slightly smaller (SD · SL · HD) and checks for an Order",
+"📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง FA / COT / Type COT":"📋 Paste FA / COT / Type COT","📐 วาง FA ของเครื่อง":"📐 Paste machine FA",
 "เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
 "🔎 เลือก process ที่จะแสดง":"🔎 Choose processes to show","เลือกทั้งหมด":"Select all",
 "ไม่มีข้อมูล OPR":"No OPR data","ไม่มีวาล์ว":"No valves","วาล์วเบอร์":"Valve","รวม OPR":"Total OPR",
@@ -13909,6 +13963,7 @@ function iotToggle3dLbl(btn) {
   try { if (on) localStorage.removeItem(LS_F3D_LBL); else localStorage.setItem(LS_F3D_LBL, '0'); } catch (e) {}
   if (btn) { btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on); }
   if (_f3d) _f3d.setLabels(on);
+  if (_ia3d) _ia3d.setLabels(on);   // ★ v4.07 ผัง 3D ของหน้ารวม 4 VSM ใช้ค่าเดียวกัน
 }
 function _f3dSegHtml(on3d) {
   const gl = _f3dGL !== false;   // ★ v3.98 ปุ่มขึ้นทุกเครื่องแล้ว → ไม่ลองสร้าง WebGL แค่เพื่อวาดปุ่ม (รู้ผลตอนกด 3D ใน iotSetView)
@@ -14102,7 +14157,8 @@ function _f3dPayload(d, o) {
   };
 }
 // เนื้อหา bottom sheet เมื่อแตะเครื่อง (pl = ชุดข้อมูลที่ผัง 3D แสดงอยู่ — อาจเป็นกะที่ย้อนดู)
-function _f3dSheet(id, pl) {
+//   ★ v4.07 goBtn = ปุ่มท้ายแผ่นแทน "📥 ไปหน้าบันทึก" (ผัง 3D ของหน้ารวม 4 VSM เปิดป๊อปอัปรายละเอียดของหน้ารวมแทน)
+function _f3dSheet(id, pl, goBtn) {
   pl = pl || _f3dLast; if (!pl) return '';
   const d = pl.mc[id];
   if (!d) return _f3dLineSheet(id, pl);
@@ -14125,7 +14181,7 @@ function _f3dSheet(id, pl) {
     <div class="f3s-chips">${chips.join('')}</div>
     <div class="f3s-g"><div><b>${nn(d.opr)}</b><span>${TT('ยอดงาน (OPR)', 'Output (OPR)')}</span></div><div><b>${nn(d.tgt)}</b><span>Target</span></div><div><b class="${oc}">${oaeTxt}</b><span>OAE</span></div></div>
     <div class="f3s-sec">👷 ${TT('คนที่เข้าผลิต', 'Operators')} (${d.ppl.length})</div>${ppl}${jt}${hb}
-    <button type="button" class="btn btn-blue f3s-go" data-f3d-act="rec" data-id="${escapeHtml(id)}">📥 ${TT('ไปหน้าบันทึก', 'Go to Record')}</button>`;
+    ${goBtn != null ? goBtn : `<button type="button" class="btn btn-blue f3s-go" data-f3d-act="rec" data-id="${escapeHtml(id)}">📥 ${TT('ไปหน้าบันทึก', 'Go to Record')}</button>`}`;
 }
 // ป้ายไลน์ VSM3 (TOP ปัญหาของ VSM3 จัดอันดับรายไลน์)
 function _f3dLineSheet(id, pl) {
@@ -14762,6 +14818,7 @@ function _iotAllShow(){
       <span class="ia-title">🏭 ${TT('IOT รวมทุกสาย','All-line IOT')}<span style="font-size:10px;font-weight:800;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:999px">${VSM_KEYS.map(v=>(VSM_LABEL[v]||v).replace(/^VSM\s*/,'')).join('·')}</span></span>
       <span class="ia-info" id="iotAllInfo"></span>
       <span style="margin-left:auto;display:flex;gap:4px;align-items:center">
+        <span id="iotAllV3d">${_ia3dSegHtml()}</span>
         <button onclick="iotAllZoom(-1)" title="${TT('ย่อ','Zoom out')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;font-weight:700;line-height:1">−</button>
         <button onclick="iotAllZoom(0)" title="${TT('พอดีจอ','Fit')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:13px;cursor:pointer;font-weight:700">⊙</button>
         <button onclick="iotAllZoom(1)" title="${TT('ขยาย','Zoom in')}" style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;font-weight:700;line-height:1">+</button>
@@ -14778,6 +14835,8 @@ function _iotAllShow(){
           title="${TT('ยกผังของแต่ละสายมาวางเรียงเป็นบล็อก — แถวบน VSM1 · VSM2 · QC / แถวล่าง VSM3 · VSM4 (ผังข้างในแต่ละสายเหมือนเดิมเป๊ะ) · ปิด = ผังตามตำแหน่งจริงในโรงงาน','Lay each line’s own floor plan out as blocks — top row VSM1 · VSM2 · QC / bottom row VSM3 · VSM4 (each plan itself is untouched) · off = real factory positions')}">🧩 ${TT('จัดบล็อกใหม่','Tidy blocks')}</button>
         <button type="button" id="iotAllLblBtn" class="ia-lbltgl${_iotJobLbl?' on':''}" onclick="iotAllToggleLbl()" aria-pressed="${_iotJobLbl}"
           title="${TT('เขียน Valve No ที่กำลังผลิตลงในกล่องเครื่อง — ขึ้นเหมือนกันทุกเครื่องที่เดินอยู่ · ชี้ที่เครื่องเพื่อดู Valve/Lot เต็ม','Print the valve no. inside every running machine box · hover a machine for full Valve/Lot')}">🏷️ ${TT('เบอร์ในกล่อง','Valve in box')}</button>
+        <button type="button" id="iotAll3dLblBtn" class="ia-lbltgl${_f3dLblOn()?' on':''}" onclick="iotToggle3dLbl(this)" aria-pressed="${_f3dLblOn()}"
+          title="${TT('ผัง 3D: โชว์/ซ่อนป้ายชื่อสายและเลขเครื่อง (หมุด TOP · SOS ยังโชว์)','3D map: show/hide line and machine labels (TOP pins and SOS stay)')}">📛 ${TT('ป้ายชื่อ','Labels')}</button>
       </span>
     </div>
     <div id="iotAllBody">
@@ -14807,6 +14866,7 @@ function _iotAllShow(){
 }
 function iotAllClose(){
   const ov=document.getElementById('iotAllOv'); if(!ov) return;
+  _ia3dDispose();   // ★ v4.07 คืนหน่วยความจำกราฟิกของผัง 3D รวม
   if(_iaGhost){ _iaGhost=false; _iotAllUnlocked=false; _iaGhostRaw=[]; _iaGhostKey=''; _iaGhostShifted=null; _iaGhostOff=IA_GHOST_BACK_DAYS; }
   if(_iotAllTimer){ clearInterval(_iotAllTimer); _iotAllTimer=null; }
   document.removeEventListener('keydown',_iotAllKey,true);
@@ -14975,6 +15035,7 @@ function _iotAllRenderTop(){
 /* กดรายการ TOP → เลื่อน "ในกรอบผัง" ให้เห็นเครื่อง/ไลน์กลางจอ + กะพริบไฮไลต์
    (ไม่ใช้ scrollIntoView เพราะจะดันทั้งหน้าเลื่อนตาม — หน้านี้ล็อก overflow ไว้) */
 function iotAllTopTap(v,id){
+  if(_ia3d&&_ia3dWanted()){ _ia3d.focus(id); return; }   // ★ v4.07 ผัง 3D: บินไปหาเครื่อง/ไลน์ + ไฮไลต์
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
   const sel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
   let els=[];
@@ -15749,8 +15810,144 @@ function iotAllToggleTidy(){
   _iotAllScale=null;                 // สลับโหมด = ขนาดผังเปลี่ยน → fit ใหม่
   _iotAllRenderMap(false);
 }
+/* ════════════════════════════════════════════════════════════════════
+   ★ v4.07 (ผู้ใช้ 2/11 ข้อ 3) ผัง 3D ของ "IOT รวม 4 VSM" — ปุ่ม 2D | 3D ที่หัวหน้าต่าง
+   • โมดูล floor3d ตัวเดียวกับการ์ดราย VSM (โหลดไฟล์ครั้งเดียว · ฉากแยกกัน) · ข้อมูล = _iotAllD ชุดเดียวกับผังรวม 2D
+   • ตำแหน่งเครื่อง = ผังรวม 2D (🧩 จัดบล็อกใหม่ / ผังจริง) · โซนบนผัง 3D = สายผลิต (VSM1–4 · QC 2 โซน) สีเดียวกับกรอบ 2D
+   • สถานะ / OAE / TOP 1–3 / SOS / 🏷️ เบอร์ในกล่อง ตรงกับผังรวม 2D · แตะเครื่อง = แผ่นข้อมูล + 🔎 ป๊อปอัปรายละเอียดเดิมของหน้ารวม
+   • เริ่มที่ 2D · กด 3D แล้วเครื่องจำไว้ (vsm4_iotall_view) · ไม่มี WebGL 2 / โหลดไม่ได้ = กลับ 2D เอง
+   ════════════════════════════════════════════════════════════════════ */
+const LS_IA3D = 'vsm4_iotall_view';
+let _ia3d = null, _ia3dP = null, _ia3dHost = null, _ia3dFail = '', _ia3dLast = null;
+function _ia3dPref() { try { return localStorage.getItem(LS_IA3D) === '3d' ? '3d' : '2d'; } catch (e) { return '2d'; } }
+function _ia3dWanted() { return _f3dFlag() && _ia3dPref() === '3d' && !_ia3dFail && _f3dCanGL(); }
+function _ia3dSegHtml() {
+  if (!_f3dFlag()) return '';
+  const on = _ia3dWanted();
+  return `<span class="ia-v3d" role="group" aria-label="${TT('มุมมองผัง', 'Map view')}"><button type="button" class="${on ? '' : 'on'}" aria-pressed="${!on}" onclick="iotAllSetView('2d')">2D</button><button type="button" class="${on ? 'on' : ''}" aria-pressed="${on}" onclick="iotAllSetView('3d')"${_f3dGL === false ? ` disabled title="${TT('อุปกรณ์นี้ไม่รองรับ WebGL 2', 'No WebGL 2 on this device')}"` : ''}>3D</button></span>`;
+}
+function _ia3dSyncSeg() { const s = document.getElementById('iotAllV3d'); if (s) s.innerHTML = _ia3dSegHtml(); }
+function iotAllSetView(v) {
+  v = v === '3d' ? '3d' : '2d';
+  if (v === '3d' && !_f3dCanGL()) { toast(TT('อุปกรณ์นี้เปิดผัง 3D ไม่ได้ (ไม่รองรับ WebGL 2) — ใช้ผัง 2D', 'This device cannot show the 3D map (no WebGL 2) — using 2D'), 'orange'); v = '2d'; }
+  if (v === '3d') _ia3dFail = '';
+  try { localStorage.setItem(LS_IA3D, v); } catch (e) {}
+  _ia3dSyncSeg();
+  if (v === '2d') _iotAllScale = null;   // กลับ 2D = พอดีกรอบใหม่
+  _iotAllRenderMap(false);
+}
+function _ia3dDispose() {
+  _ia3dP = null;
+  if (_ia3d) { try { _ia3d.dispose(); } catch (e) {} _ia3d = null; }
+  if (_ia3dHost) { _ia3dHost.remove(); _ia3dHost = null; }
+  _ia3dLast = null;
+  const ov = document.getElementById('iotAllOv'); if (ov) ov.classList.remove('ia-is3d');
+}
+function _ia3dFallback(why) {
+  _ia3dFail = why || 'fail';
+  _ia3dDispose();
+  toast(why === 'lost' ? TT('ผัง 3D หยุดทำงาน (หน่วยความจำกราฟิกไม่พอ) — กลับมาใช้ผัง 2D', 'The 3D map stopped (graphics memory) — back to 2D')
+    : TT('โหลดผัง 3D ไม่ได้ (เน็ต?) — ใช้ผัง 2D ไปก่อน · กด 3D เพื่อลองใหม่', 'Could not load the 3D map (network?) — using 2D · tap 3D to retry'), 'orange');
+  _ia3dSyncSeg();
+  if (document.getElementById('iotAllOv')) { _iotAllScale = null; _iotAllRenderMap(false); }
+}
+function _ia3dEnsure() {
+  if (_ia3d) return Promise.resolve(true);
+  if (_ia3dP) return _ia3dP;
+  const host = _ia3dHost;
+  _ia3dP = _f3dModule().then(mod => {
+    if (host !== _ia3dHost || !_ia3dWanted() || !document.getElementById('iotAllOv')) return false;   // ระหว่างโหลด กลับ 2D / ปิดหน้าไปแล้ว
+    host.innerHTML = '';
+    _ia3d = mod.create(host, {
+      S: _f3dStrings(), labels: _f3dLblOn(),
+      sheet: (id, pl) => _ia3dSheet(id, pl),
+      onAction: (act, id) => { const v = _ia3dLast && _ia3dLast.vOf[id]; if (act === 'iadet' && v) iotAllMcTap(v, id); },
+      onFail: why => _ia3dFallback(why),
+    });
+    return true;
+  }).catch(err => { console.warn('[3d all]', err); if (host === _ia3dHost) _ia3dFallback('load'); return false; })
+    .finally(() => { if (host === _ia3dHost) _ia3dP = null; });
+  return _ia3dP;
+}
+function _ia3dPush() {
+  if (!_ia3d) return;
+  _ia3dLast = _ia3dPayload();
+  if (!_ia3dLast) return;
+  try { _ia3d.update(_ia3dLast); } catch (e) { console.warn('[3d all]', e); _ia3dFallback('fail'); }
+}
+/* ชุดข้อมูลให้ผัง 3D — รูปแบบเดียวกับ _f3dPayload ของการ์ดราย VSM (โมดูลไม่รู้ว่าเป็นหน้ารวม) + vOf (เครื่อง → สาย) */
+function _ia3dPayload() {
+  const D = _iotAllD; if (!D) return null;
+  const LAY = _iaTidyOn ? _iaBlockLayout() : null;
+  const boxes = LAY ? LAY.boxes : _iotAllBoxes(), lbs = LAY ? LAY.labels : FPA_LB;
+  const zkey = b => { const v = _iaBoxVsm(b); return b.z ? v + '#' + b.z : v; };
+  const keys = [...new Set(boxes.map(zkey))].sort((a, c) => (VSM_KEYS.indexOf(a.split('#')[0]) - VSM_KEYS.indexOf(c.split('#')[0])) || a.localeCompare(c));
+  const zones = keys.map(k => {
+    const [v, z] = k.split('#'), mt = _IA_VSM_META[v] || { line: '#64748B', label: v }, label = z ? (ZONE_LABEL[z] || z) : mt.label;
+    return { key: k, label, short: label, color: mt.line };
+  });
+  const pendV = {}; for (const v of VSM_KEYS) pendV[v] = _f3dPendInfo(D.dTo, D.shiftF, D.per[v].recs.length);
+  const em = new Map((state.employees || []).map(e => [String(e.id || '').toUpperCase(), e.name || '']));
+  const mc = {}, zk = {}, vOf = {}, byMc = {};
+  for (const k of keys) zk[k] = { n: 0, on: 0, pend: 0 };
+  for (const b of boxes) {
+    if (mc[b.id]) continue;
+    const v = _iaBoxVsm(b), P = D.per[v]; if (!P) continue;
+    const rs = P.byMc[b.id] || [], on = P.active.has(b.id), oae = P.oae[b.id] || 0, pd = pendV[v];
+    const st = on ? (oae >= 0.75 ? 'good' : 'warn') : (pd.all || pd.open ? 'pend' : 'off');   // สีเดียวกับผังรวม 2D (OAE ช่วงที่เลือก)
+    let opr = 0, tgt = 0; for (const r of rs) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
+    const jobs = _mcJobList(rs), lr = v === 'vsm3' ? rs.find(r => r.line_key) : null;
+    mc[b.id] = { st, oae: on ? oae : null, opr, tgt, ppl: _f3dPeople(rs, em), top: _iotAllTop.rank[_iaTopKey(v, b.id)] || 0, sos: P.sos.has(b.id),
+      valve: jobs[0] ? jobs[0].valve : '', lot: jobs[0] ? jobs[0].lot : '', more: Math.max(0, jobs.length - 1),
+      ln: v === 'vsm3' ? ((lr ? lineLbId(lr.line_key) : VSM3_MC_LB[b.id]) || '') : '' };
+    vOf[b.id] = v; if (rs.length) byMc[b.id] = rs;
+    const z = zk[zkey(b)]; if (z) { z.n++; if (on) z.on++; if (st === 'pend') z.pend++; }
+  }
+  for (const k of keys) {
+    const [v, z] = k.split('#'), P = D.per[v], zr = !P ? [] : z ? P.recs.filter(r => r.zone === z) : P.recs;
+    let opr = 0, tgt = 0; for (const r of zr) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
+    Object.assign(zk[k], { oae: _oaeOf(zr), opr, tgt, ppl: _distinctHeadcount(zr) });
+  }
+  const lineTop = {}; for (const l of lbs) { const rk = _iotAllTop.rank[_iaTopKey('vsm3', l.id)]; if (rk) lineTop[l.id] = rk; }
+  const nAll = VSM_KEYS.reduce((s, v) => s + D.per[v].recs.length, 0);
+  return {
+    layoutKey: 'all|' + (LAY ? 'tidy' : 'real'), vsm: 'all', range: D.rangeLabel,
+    boxes: boxes.map(b => ({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, zone: zkey(b) })),
+    lines: lbs.map(l => ({ id: l.id, x: l.x, y: l.y, w: l.w, h: l.h, name: lbFullName(l.id) })),
+    grid: null, zones, mc, zk, lineTop, vOf,
+    pend: { open: VSM_KEYS.some(v => pendV[v].open), all: !nAll }, jobLbl: !!_iotJobLbl,
+    byMc, recs: (D.per.vsm3 || { recs: [] }).recs, S: _f3dStrings(),
+  };
+}
+// แผ่นข้อมูลเมื่อแตะเครื่องบนผัง 3D รวม — เนื้อหาเดียวกับการ์ดราย VSM (สายของเครื่องนั้น) · ปุ่มท้าย = 🔎 ป๊อปอัปรายละเอียดของหน้ารวม
+function _ia3dSheet(id, pl) {
+  pl = pl || _ia3dLast; if (!pl) return '';
+  const v = pl.vOf && pl.vOf[id];
+  if (!v) return _f3dLineSheet(id, pl);   // ป้ายไลน์เหลือง VSM3
+  return _f3dSheet(id, { ...pl, vsm: v, zones: [] },
+    `<button type="button" class="btn btn-blue f3s-go" data-f3d-act="iadet" data-id="${escapeHtml(id)}">🔎 ${TT('รายละเอียดกะ / งาน', 'Shift / job details')}</button>`);
+}
+function _ia3dRenderMap() {
+  const wrap = document.getElementById('iotAllMapWrap'), ov = document.getElementById('iotAllOv'); if (!wrap || !ov) return;
+  ov.classList.add('ia-is3d');
+  if (!_ia3dHost) {
+    _ia3dHost = document.createElement('div'); _ia3dHost.id = 'ia3dHost';
+    _ia3dHost.innerHTML = `<div class="f3d-wait"><span class="spinner"></span>${TT('กำลังโหลดผัง 3D…', 'Loading the 3D map…')}</div>`;
+  }
+  if (_ia3dHost.parentNode !== wrap) wrap.appendChild(_ia3dHost);
+  if (_ia3d) _ia3dPush(); else _ia3dEnsure().then(ok => { if (ok) _ia3dPush(); });
+  const D = _iotAllD, info = document.getElementById('iotAllInfo');
+  if (info && D) {
+    const boxes = _iaTidyOn ? _iaBlockLayout().boxes : _iotAllBoxes();
+    let nOn = 0; for (const b of boxes) { const P = D.per[_iaBoxVsm(b)]; if (P && P.active.has(b.id)) nOn++; }
+    const tot = VSM_KEYS.reduce((s, v) => s + D.per[v].recs.length, 0);
+    info.textContent = `📅 ${D.rangeLabel} · ${tot} record · ${TT('เปิด','Running')} ${nOn}/${boxes.length} ${TT('เครื่อง','machines')}`;
+  }
+}
 function _iotAllRenderMap(keepScroll){
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
+  if(_ia3dWanted()){ _ia3dRenderMap(); return; }   // ★ v4.07 ผัง 3D
+  if(_ia3dHost||_ia3d) _ia3dDispose();
   const sl=keepScroll?vp.scrollLeft:0, st=keepScroll?vp.scrollTop:0;
   // จัดบล็อกใหม่ = ยกผังของแต่ละสายมาวางเรียง (VSM1·VSM2·QC / VSM3·VSM4) · null = ผังตามตำแหน่งจริงในโรงงาน
   const LAY=_iaTidyOn?_iaBlockLayout():null;
@@ -15917,6 +16114,7 @@ function iotAllToggleLbl(){
   _iotAllRenderMap(true);
 }
 function iotAllZoom(dir){
+  if(_ia3d&&_ia3dWanted()){ if(dir===0) _ia3d.resetView(); else _ia3d.zoom(dir); return; }   // ★ v4.07 ผัง 3D: − ⊙ + ชุดเดิม
   const vp=document.getElementById('iotAllVp'); if(!vp) return;
   if(dir===0) _iotAllScale=null;                                    // ⊙ = fit ใหม่
   else _iotAllScale=Math.min(3,Math.max(0.15,(_iotAllScale||1)+dir*0.15));
@@ -22259,6 +22457,160 @@ async function _saveSlotsImpl() {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   ★ v4.07 (ผู้ใช้ 2/11 ข้อ 1) 🔧 เช็คงานที่พอดัดแปลงได้ — แปลงงานเป็น Valve No อื่นที่ "ขนาดเล็กกว่าเล็กน้อย"
+   ที่มา: VF1345A0 (SD 9 · OP · SL 129.35 · HD 45) มีปัญหาคุณภาพ ต้อง Scrap จนงานขาด → เอาชิ้นงานไปเจียร์ลดขนาด
+     เป็นเบอร์อื่นที่มี Order แทน · พนักงานใส่ Valve No อย่างเดียว ระบบหาให้
+   กติกา (ตัวอย่างของผู้ใช้: ตัวที่ดีที่สุด = SD 9 · OP · SL 115 · HD 40):
+     ① TYPE ต้องเหมือนกัน (OP ≠ SWFS — โครงสร้างวาล์วคนละแบบ) · OPTWFS = OPFSTW
+     ② SD · SL · HD ของเบอร์ปลายทาง ≤ ของเดิมทุกค่า (เจียร์ลดได้อย่างเดียว · เท่ากัน = ไม่ต้องเจียร์ค่านั้น)
+     ③ เรียงตามลำดับที่ผู้ใช้เขียน "SD SL HD" = SD ใกล้สุดก่อน (ต่างกันไม่ถึง 0.05 มม. ถือว่าเท่ากัน — 8.99 กับ 9) → SL ใกล้สุด → HD ใกล้สุด
+        (เจียร์ SD ออกยากสุด — ข้อมูลจริง V27164A1 SD 8.99: ถ้าคิดรวม % ทั้ง 3 ค่า ตัวแรกจะเป็น SD 8 ทั้งที่มีเบอร์ SD 9 ที่มี Order)
+     ④ มี Order (แผนขายที่ยังไม่จบ — planLotAlloc ชุดเดียวกับหน้าแผน · วันขายไม่เก่ากว่า CV_ORDER_BACK วัน) = แปลงแล้วจบงานได้
+        ไม่มี Order = บอกไว้เผื่อ Order มาวันหลัง · วัดจริง 2/11: แผนที่ยังไม่จบ 84 ใบ — 22 ใบเป็นของ ก.ค. (ค้างมา 3 เดือน ไม่ใช่ Order ที่รอของแล้ว)
+   ข้อมูลไม่ครบ: ต้นทางไม่มี SL/HD = เทียบเท่าที่มี (บอกบนหัว) · ปลายทางขาดค่าที่ต้นทางมี = แยกกลุ่ม "เช็คขนาดเอง"
+   อ่านอย่างเดียว — ไม่บันทึก/ไม่แก้ข้อมูลใด ๆ
+   ════════════════════════════════════════════════════════════════════ */
+const CV_DIMS = [['sd', 'SD'], ['sl', 'SL'], ['hd', 'HD']];
+const CV_NONE_MAX = 30;      // กลุ่ม "ยังไม่มี Order" โชว์ใกล้สุดก่อน 30 เบอร์ (กดดูทั้งหมดได้)
+const CV_ORDER_BACK = 45;    // Order ที่วันขายเลยมาแล้วเกินกี่วัน = ไม่นับ (ค้างเก่า) · เลยมาไม่เกินนี้ = ยังนับ (ขึ้น "เลยกำหนด")
+const CV_SD_STEP = 0.05;     // SD ต่างกันไม่ถึงครึ่งขั้นนี้ = ถือว่าเท่ากันตอนเรียง (8.99 ≈ 9)
+function cvTypeKey(t) {
+  const s = String(t || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const base = ['OP', 'SW', 'HW'].find(b => s.startsWith(b));
+  if (!base) return s;
+  const rest = s.slice(2);
+  return base + (rest.includes('FS') ? 'FS' : '') + (rest.includes('TW') ? 'TW' : '') + rest.replace(/FS|TW/g, '');
+}
+function cvSpecOf(v) {
+  const sd = Number(v && v.sd);
+  return { sd: v && v.sd != null && v.sd !== '' && sd > 0 ? sd : null, sl: _vnum(v && v.sl), hd: _vnum(v && v.hd),
+    type: cvTypeKey(v && v.vtype), vtype: String((v && v.vtype) || '').toUpperCase() };
+}
+/* Order ที่ยังเปิดอยู่ต่อเบอร์ = แผนขายที่ยังไม่จบ/ไม่ยกเลิก (VSM ที่ดูอยู่) · เรียงวันขายใกล้สุดก่อน */
+function cvOpenOrders() {
+  const out = new Map();
+  let A = null; try { A = planLotAlloc(); } catch (e) { console.warn('[cv]', e); return out; }
+  const cut = _mpAddDays(todayISO(), -CV_ORDER_BACK);
+  for (const r of A.byPlan.values()) {
+    if (!r || !r.vk || r.st === 'done' || !r.due || r.due < cut) continue;
+    let a = out.get(r.vk); if (!a) out.set(r.vk, a = []);
+    a.push({ due: r.due, order: r.order, got: r.got, short: r.short, shortSig: r.shortSig });
+  }
+  for (const a of out.values()) a.sort((x, y) => String(x.due).localeCompare(String(y.due)));
+  return out;
+}
+function cvFind(valveNo) {
+  const vk = vKey(valveNo);
+  const src = valveByKey(vk);
+  if (!src) return { vk, err: 'nomaster' };
+  const s = cvSpecOf(src);
+  if (!s.type || s.sd == null) return { vk, src, s, err: 'nospec' };
+  const use = CV_DIMS.map(([k]) => k).filter(k => s[k] != null);   // ต้นทางมีค่าไหน เทียบค่านั้น
+  const orders = cvOpenOrders();
+  const EPS = 1e-6, out = [];
+  for (const v of state.valves || []) {
+    const ck = vKey(v.valveNo);
+    if (!ck || ck === vk || !valveInCurrentMaster(v.valveNo)) continue;
+    const c = cvSpecOf(v);
+    if (c.type !== s.type || c.sd == null) continue;
+    let ok = true;
+    const miss = [], d = {};
+    for (const k of use) {
+      if (c[k] == null) { miss.push(k); continue; }
+      if (c[k] > s[k] + EPS) { ok = false; break; }
+      d[k] = Math.max(0, s[k] - c[k]);
+    }
+    if (!ok) continue;
+    out.push({ v, vk: ck, c, d, miss, ord: orders.get(ck) || [] });
+  }
+  // SD → SL → HD (ค่าที่ไม่รู้ = ไว้ท้าย) · เท่ากันหมด = มี Order ก่อน แล้วเรียงเลข
+  const dv = (x, k) => x.d[k] == null ? Infinity : k === 'sd' ? Math.round(x.d[k] / CV_SD_STEP) : x.d[k];
+  out.sort((a, b) => (dv(a, 'sd') - dv(b, 'sd')) || (dv(a, 'sl') - dv(b, 'sl')) || (dv(a, 'hd') - dv(b, 'hd'))
+    || ((b.ord.length > 0) - (a.ord.length > 0)) || a.vk.localeCompare(b.vk));
+  const full = out.filter(x => !x.miss.length), part = out.filter(x => x.miss.length);
+  return { vk, src, s, use, has: full.filter(x => x.ord.length), none: full.filter(x => !x.ord.length),
+    part: part.filter(x => x.ord.length), partN: part.length, nOrd: orders.size };
+}
+let _cvLast = null;
+function openConvertModal(prefill) {
+  openModal('🔧 ' + TT('เช็คงานที่พอดัดแปลงได้', 'Check convertible work'), `
+    <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:9px 11px;border-radius:9px;line-height:1.65">
+      ${TT('ใส่ Valve No ที่งานขาด / ต้อง Scrap → ระบบหา Valve No ที่ <b>TYPE เดียวกัน</b> และ <b>SD · SL · HD ไม่เกินของเดิม</b> (เจียร์ลดได้) เรียงจากที่ต้องเจียร์น้อยสุด แล้วเช็คว่ามี Order ไหม',
+        'Enter the valve that is short / scrapped → finds valves with the <b>same TYPE</b> and <b>SD · SL · HD no larger</b> (can be ground down), least grinding first, and checks for an Order')}</div>
+    <div class="fg" style="gap:8px;align-items:flex-end">
+      <div class="fr ac" style="margin:0"><label>Valve No</label>
+        <input type="search" id="cvValve" value="${escapeHtml(prefill || '')}" placeholder="${TT('เช่น', 'e.g.')} VF1345A0" autocomplete="off" autocapitalize="characters" spellcheck="false"
+          oninput="_cvAc(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();cvRun();}">
+        <div class="ac-dd" id="cvValve_dd"></div></div>
+      <div class="fr" style="margin:0"><button type="button" class="btn btn-blue btn-block" onclick="cvRun()">🔍 ${TT('ค้นหา', 'Search')}</button></div>
+    </div>
+    <div id="cvRes" class="mt-8"></div>`, { wide: true });
+  setTimeout(() => { const el = $('cvValve'); if (!el) return; if (prefill) cvRun(); else el.focus(); }, 60);
+}
+function _cvAc(ev) {
+  const q = (ev.target.value || '').trim().toLowerCase();
+  if (!q) { $('cvValve_dd')?.classList.remove('open'); return; }
+  const list = [];
+  for (const v of state.valves || []) {
+    const no = String(v.valveNo || '').trim(); if (!no || !no.toLowerCase().includes(q)) continue;
+    const s = cvSpecOf(v);
+    list.push({ id: no, valveNo: no, description: [s.vtype || '-', s.sd != null ? 'SD ' + _mpNum(s.sd) : '', s.sl != null ? 'SL ' + _mpNum(s.sl) : '', s.hd != null ? 'HD ' + _mpNum(s.hd) : ''].filter(Boolean).join(' · ') });
+    if (list.length >= 12) break;
+  }
+  acDropdown('cvValve', list, function pickCv(it, inputId) {
+    document.getElementById(inputId).value = it.valveNo;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+    cvRun();
+  });
+}
+function cvRun(showAll) {
+  const inp = $('cvValve'), box = $('cvRes'); if (!inp || !box) return;
+  $('cvValve_dd')?.classList.remove('open');
+  const q = vKey(inp.value);
+  if (!q) { inp.focus(); return; }
+  inp.value = q;
+  const R = _cvLast = cvFind(q);
+  if (R.err === 'nomaster') { box.innerHTML = `<div class="cv-note bad">❓ ${TT(`ไม่พบ ${escapeHtml(q)} ใน Master valve — เช็คเลขอีกครั้ง หรือให้ Admin เพิ่มที่ ⚙️ ตั้งค่า`, `${escapeHtml(q)} is not in the valve master`)}</div>`; return; }
+  const s = R.s;
+  const specLine = (o, d) => CV_DIMS.map(([k, lb]) => {
+    if (o[k] == null) return R.use && R.use.includes(k) ? `<span class="cv-d miss">${lb} ❓</span>` : '';
+    const dk = d && d[k];
+    return `<span class="cv-d">${lb} <b>${_mpNum(o[k])}</b>${d ? (dk > 1e-9 ? `<i>−${_mpNum(dk)}</i>` : '<i class="eq">=</i>') : ''}</span>`;
+  }).join('');
+  const extra = v => [_vnum(v.fa) != null ? `FA ${mpFaTxt(+v.fa)}` : '', _vnum(v.tl) != null ? `TL ${_mpNum(+v.tl)}` : '', _vtxt(v.cot) ? `COT ${_vtxt(v.cot)}` : '', _vtxt(v.cot_type) ? `Type COT ${_vtxt(v.cot_type)}` : ''].filter(Boolean);
+  const srcHtml = `<div class="cv-src"><div class="cv-h"><span>🎯 ${TT('ต้นทาง', 'From')}</span><b>${escapeHtml(R.vk)}</b><span class="cv-ty">${escapeHtml(s.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(R.src.customer))}</span></div>
+    <div class="cv-dims">${specLine(s)}${extra(R.src).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+  if (R.err === 'nospec') {
+    box.innerHTML = srcHtml + `<div class="cv-note bad">⚠️ ${TT('เบอร์นี้ยังไม่มี SD / TYPE ใน Master valve — เทียบขนาดไม่ได้ · ให้ Admin เติมที่ ⚙️ ตั้งค่า → Master valve (📏 วาง SD / TYPE / SL)', 'This valve has no SD / TYPE in the valve master — cannot compare · ask an Admin to fill it in Settings → Master valve')}</div>`;
+    return;
+  }
+  const noDim = CV_DIMS.filter(([k]) => s[k] == null).map(([, lb]) => lb);
+  const ordHtml = x => {
+    if (!x.ord.length) return '';
+    const t = todayISO();
+    return `<div class="cv-ord">${x.ord.slice(0, 3).map(o => `<span>🛒 ${o.due ? _mpDW(o.due) : '-'}${o.due && o.due < t ? ` <b class="late">${TT('เลยกำหนด', 'overdue')}</b>` : ''} · ${nn(o.order)} ${TT('ชิ้น', 'pcs')} · ${o.shortSig ? `<b class="short">${TT('ยังขาด', 'short')} ${nn(o.short)}</b>` : `<b class="ok">${TT('มีของครบแล้ว', 'covered')}</b>`}</span>`).join('')}${x.ord.length > 3 ? `<span class="muted">+${x.ord.length - 3} Order</span>` : ''}</div>`;
+  };
+  const row = (x, best) => `<div class="cv-row${best ? ' best' : ''}">
+      <div class="cv-h">${best ? `<span class="cv-best">⭐ ${TT('ใกล้สุด', 'Closest')}</span>` : ''}<b>${escapeHtml(x.vk)}</b><span class="cv-ty">${escapeHtml(x.c.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(x.v.customer))}</span></div>
+      <div class="cv-dims">${specLine(x.c, x.d)}${extra(x.v).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div>${ordHtml(x)}</div>`;
+  const noneShown = showAll ? R.none : R.none.slice(0, CV_NONE_MAX);
+  box.innerHTML = srcHtml
+    + (noDim.length ? `<div class="cv-note">ℹ️ ${TT(`เบอร์ต้นทางยังไม่มี ${noDim.join(' / ')} ใน Master — เทียบได้เฉพาะ TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')}`, `The source has no ${noDim.join(' / ')} in the master — compared on TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')} only`)}</div>` : '')
+    + `<div class="cv-sec has">✅ ${TT('มี Order — แปลงแล้วจบงานได้', 'Has an Order — convert and close the job')} <span>${R.has.length}</span></div>`
+    + (R.has.length ? R.has.map((x, i) => row(x, i === 0)).join('') : `<div class="cv-empty">${TT('ไม่มีเบอร์ที่ขนาดพอแปลงได้และมี Order ตอนนี้', 'No convertible valve has an open Order right now')}${R.nOrd ? '' : ' · ' + TT('ยังไม่มีแผนขายที่เปิดอยู่ในระบบ', 'no open sales plan in the system')}</div>`)
+    + `<div class="cv-sec none">📋 ${TT('ยังไม่มี Order — เผื่อมี Order วันข้างหน้า', 'No Order yet — in case one comes later')} <span>${R.none.length}</span></div>`
+    + (R.none.length ? noneShown.map(x => row(x, false)).join('')
+        + (R.none.length > noneShown.length ? `<button type="button" class="btn btn-outline btn-sm btn-block" style="margin-top:6px" onclick="cvRun(true)">${TT('แสดงทั้งหมด', 'Show all')} ${R.none.length}</button>` : '')
+      : `<div class="cv-empty">${TT('ไม่มี', 'None')}</div>`)
+    + (R.part.length ? `<details class="cv-part"><summary>❓ ${TT('มี Order แต่ขนาดใน Master ยังไม่ครบ — เช็คขนาดเองก่อน', 'Has an Order but sizes are incomplete in the master — check by hand')} <span>${R.part.length}</span></summary>
+        ${R.part.map(x => row(x, false)).join('')}</details>` : '')
+    + `<div class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.6">${TT('เทียบจาก Master valve ของ', 'Compared within the valve master of')} ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}
+      · ${TT('เรียง SD ใกล้สุดก่อน → SL → HD', 'sorted by closest SD → SL → HD')} · ${TT('ตัวเลขสีแดง = ต้องเจียร์ออก', 'red = to grind off')}
+      · Order = ${TT(`แผนขายที่ยังไม่จบ (หน้า 📋 วางแผน) วันขายไม่เก่ากว่า ${CV_ORDER_BACK} วัน`, `open sales plans (📋 Plan tab), sale date within the last ${CV_ORDER_BACK} days or later`)}
+      ${R.partN > R.part.length ? `· ${TT(`อีก ${nn(R.partN - R.part.length)} เบอร์ TYPE / SD เข้าได้แต่ Master ยังไม่มี SL / HD (ไม่มี Order)`, `${nn(R.partN - R.part.length)} more match TYPE / SD but have no SL / HD in the master (no Order)`)}` : ''}</div>`;
+}
+
 // Autocomplete ของช่อง "ค้นหา Process จาก Valve No"
 //   • รวมวาล์วจาก Master + วาล์วที่ "มีข้อมูลผลิตจริง" → ขึ้น dropdown ได้แม้รายการวาล์วยังไม่โหลด
 //   • เลือกแล้วค้นหาให้ทันที · ถ้าไม่พบ/ยังไม่โหลด จะมีข้อความบอกแทนที่จะเงียบ
@@ -25311,13 +25663,14 @@ function renderValveList() {
         <td class="right">${(v.sd !== null && v.sd !== undefined && v.sd !== '') ? '<b>' + escapeHtml(String(v.sd)) + '</b>' : '<span class="muted" style="font-size:11px">—</span>'}</td>
         <td>${v.vtype ? '<span class="tag tag-green" style="font-size:10px">' + escapeHtml(v.vtype) + '</span>' : '<span class="muted" style="font-size:11px">—</span>'}</td>
         <td class="right" style="white-space:nowrap">${_vnum(v.sl) != null ? '<b>' + escapeHtml(String(v.sl)) + '</b>' : '<span class="muted" style="font-size:11px">—</span>'}${(_vnum(v.hd) != null || _vnum(v.tl) != null) ? `<span class="muted" style="font-size:10.5px"> · ${_vnum(v.hd) != null ? escapeHtml(String(v.hd)) : '—'} · ${_vnum(v.tl) != null ? escapeHtml(String(v.tl)) : '—'}</span>` : ''}</td>
+        <td style="font-size:11px;white-space:nowrap">${_vextHas(v) ? `${_vnum(v.fa) != null ? '<b>' + escapeHtml(mpFaTxt(+v.fa)) + '</b>' : '<span class="muted">—</span>'}${(_vtxt(v.cot) || _vtxt(v.cot_type)) ? `<span class="muted" style="font-size:10.5px"> · ${escapeHtml(_vtxt(v.cot) || '—')} · ${escapeHtml(_vtxt(v.cot_type) || '—')}</span>` : ''}` : '<span class="muted">—</span>'}</td>
         <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span>${(() => { const r = vsmProcRec(v.valveNo); const b = []; if (r && (r.p1 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM1</span>'); if (r && (r.p2 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM2</span>'); return b.length ? '<div style="margin-top:3px;display:flex;gap:4px">' + b.join('') + '</div>' : ''; })()}</td>
         <td class="center">${idCell}</td>
         <td><button class="btn btn-outline btn-sm" onclick="openValveModal('${escapeHtml(v.valveNo)}')">แก้</button>
             <button class="btn btn-sm" onclick="delValve('${escapeHtml(v.valveNo)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">ลบ</button></td>
       </tr>`;
     }).join('');
-  $('vTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="8" class="center muted">${q ? TT('ไม่พบวาล์วที่ค้นหา','No valve matches') : (grp==='shared' ? TT('ยังไม่มีข้อมูล','No data') : TT('ยังไม่มีวาล์วใน VSM นี้ — กด ➕ Valve เพื่อเพิ่ม','No valves for this VSM yet — tap ➕ Valve to add'))}</td></tr>`;
+  $('vTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="9" class="center muted">${q ? TT('ไม่พบวาล์วที่ค้นหา','No valve matches') : (grp==='shared' ? TT('ยังไม่มีข้อมูล','No data') : TT('ยังไม่มีวาล์วใน VSM นี้ — กด ➕ Valve เพื่อเพิ่ม','No valves for this VSM yet — tap ➕ Valve to add'))}</td></tr>`;
   if ($('vPagination')) $('vPagination').innerHTML = _listPagerHtml('valve', filtered.length, 'vGoPage');
 }
 
@@ -25792,6 +26145,13 @@ function openValveModal(valveNo) {
       <div class="fr"><label>TL</label><input type="number" id="m_tl" step="0.01" min="0" inputmode="decimal" value="${_vnum(v && v.tl) != null ? escapeHtml(String(v.tl)) : ''}"></div>
     </div>
     <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">SL = ${TT('ใช้เลือกเครื่อง SSG · SEMI · SRG · SFG (เครื่องรับได้ไม่เกิน SL ของเครื่อง)', 'picks SSG · SEMI · SRG · SFG machines (up to the machine SL)')} · HD / TL = ${TT('เก็บไว้ก่อน', 'stored for later')}</div>
+    <!-- ★ 2026-11-02 (v4.07) FA = มุมหน้าวาล์วที่เจียร์ (ใช้เลือกเครื่องขั้น FG) · COT / Type COT = เก็บไว้ก่อน -->
+    <div class="fg" style="gap:8px;grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="fr"><label>FA (°)</label><input type="text" id="m_fa" inputmode="decimal" value="${_vnum(v && v.fa) != null ? escapeHtml(_mpNum(+v.fa)) : ''}" placeholder="${TT('เช่น 45 · 45°30\'', 'e.g. 45 · 45°30\'')}" autocomplete="off"></div>
+      <div class="fr"><label>COT</label><input type="text" id="m_cot" maxlength="60" value="${escapeHtml(_vtxt(v && v.cot))}" autocomplete="off"></div>
+      <div class="fr"><label>Type COT</label><input type="text" id="m_cott" maxlength="60" value="${escapeHtml(_vtxt(v && v.cot_type))}" autocomplete="off"></div>
+    </div>
+    <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">FA = ${TT('มุมหน้าวาล์วที่เจียร์ — ใช้เลือกเครื่องขั้น FG (เครื่องที่ตั้ง FA ไว้ รับเฉพาะ FA ที่ตรง)', 'face angle — picks FG machines (a machine with FA set only takes matching valves)')} · COT / Type COT = ${TT('เก็บไว้ก่อน', 'stored for later')}</div>
     <div class="fr"><label>Process Master (ลำดับการผลิต)</label>
       <div id="m_proc_tabs" style="display:flex;gap:6px;margin-bottom:8px">
         <button type="button" class="btn btn-sm" id="m_tab_std" style="flex:1;background:var(--blue);color:#fff" onclick="mProcSwitchTab('std')">VSM 3/4</button>
@@ -25863,6 +26223,7 @@ function upsertValve(entry) {
     if (entry.sd === undefined && prev.sd !== undefined) entry.sd = prev.sd;
     if (entry.vtype === undefined && prev.vtype !== undefined) entry.vtype = prev.vtype;
     for (const k of VSPEC_NUMS) if (entry[k] === undefined && prev[k] !== undefined) entry[k] = prev[k];   // ★ v3.94 SL/HD/TL
+    for (const k of VSPEC_EXT) if (entry[k] === undefined && prev[k] !== undefined) entry[k] = prev[k];    // ★ v4.07 FA/COT/Type COT
   }
   state.valves = state.valves.filter(v => vKey(v.valveNo) !== key);
   state.valves.push(entry);
@@ -25891,6 +26252,14 @@ async function saveValve(orig) {
     if (!(n > 0 && n < 5000)) { toast(`${k.toUpperCase()} ${TT('ไม่ถูกต้อง (ใส่ตัวเลขมากกว่า 0)', 'is invalid (enter a number above 0)')}`, 'orange'); return; }
     entry[k] = n;
   }
+  // ★ v4.07 FA (องศา · 45 / 45.5 / 45°30') + COT / Type COT (ข้อความ) — ว่าง = ไม่มี · ไม่มีช่องในฟอร์ม = คงค่าเดิม
+  if ($('m_fa')) {
+    const fa = mpParseFa($('m_fa').value);
+    if (Number.isNaN(fa)) { toast(TT('FA ไม่ถูกต้อง (ใส่องศา เช่น 45 · 45.5 · 45°30\')', 'Bad FA (degrees, e.g. 45 · 45.5 · 45°30\')'), 'orange'); return; }
+    entry.fa = fa;
+  }
+  if ($('m_cot')) entry.cot = _vtxt($('m_cot').value);
+  if ($('m_cott')) entry.cot_type = _vtxt($('m_cott').value);
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
   _mpVIdx = null;                        // ★ v3.94 ดัชนีของตัววางแผนจำ object เดิมไว้ (จำนวนเบอร์ไม่เปลี่ยน = ไม่สร้างใหม่) → SD/SL ที่เพิ่งแก้ไม่เข้าแผน
   setVsmProc(valveNo, _mProcStore.v1, _mProcStore.v2);   // Process Master VSM1/VSM2 (เก็บ local แยกจาก valve)
@@ -25901,7 +26270,8 @@ async function saveValve(orig) {
   _vspecMark(entry);   // ★ v3.74 — ค้างไว้จนกว่า Cloud ยืนยันว่าเก็บ SD (★ v3.94 + SL/HD/TL) แล้ว
   const r = API ? await apiSave('/api/valves', entry, { label: 'Master Valve', key: vKey(entry.valveNo) }) : { ok: true };   // ★ req #6
   if (r.ok && r.res && r.res.valve && Object.prototype.hasOwnProperty.call(r.res.valve, 'sd')
-    && (Object.prototype.hasOwnProperty.call(r.res.valve, 'sl') || !VSPEC_NUMS.some(k => entry[k] != null))) _vspecClear([entry.valveNo]);
+    && (Object.prototype.hasOwnProperty.call(r.res.valve, 'sl') || !VSPEC_NUMS.some(k => entry[k] != null))
+    && (Object.prototype.hasOwnProperty.call(r.res.valve, 'fa') || !_vextHas(entry))) _vspecClear([entry.valveNo]);   // ★ v4.07 + FA/COT
   if (r.ok) toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
   else {
     toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud','Saved locally — not on Cloud yet'), 'orange');
@@ -25938,6 +26308,12 @@ async function importValves(ev) {
       ...((r.Type !== undefined || r.TYPE !== undefined || r.vtype !== undefined) ? { vtype: String(r.Type ?? r.TYPE ?? r.vtype ?? '').trim().toUpperCase() } : {}),
       // ★ v3.94 คอลัมน์ SL / HD / TL (มีค่า = นำเข้า · ช่องว่าง/ไม่มีคอลัมน์ = คงค่าเดิม — sheet_to_json ไม่ส่งคีย์ของช่องว่าง)
       ...Object.fromEntries(VSPEC_NUMS.map(k => [k, r[k.toUpperCase()] !== undefined ? r[k.toUpperCase()] : r[k]]).filter(([, x]) => x !== undefined).map(([k, x]) => [k, _vnum(x)])),
+      // ★ v4.07 คอลัมน์ FA / COT / Type COT (กติกาเดียวกัน: มีค่า = นำเข้า · ไม่มีคอลัมน์/ช่องว่าง = คงค่าเดิม · FA อ่านไม่ได้ = ข้าม)
+      ...(() => { const o = {}, fa = r.FA ?? r.fa, cot = r.COT ?? r.cot, ct = r['Type COT'] ?? r['TYPE COT'] ?? r['COT Type'] ?? r.cot_type;
+        if (fa !== undefined) { const n = mpParseFa(fa); if (!Number.isNaN(n)) o.fa = n; }
+        if (cot !== undefined) o.cot = _vtxt(cot);
+        if (ct !== undefined) o.cot_type = _vtxt(ct);
+        return o; })(),
     })).filter(v => v.valveNo);
     if (!valves.length) { toast('ไม่พบข้อมูล', 'orange'); return; }
     // merge into local — valveNo ซ้ำ (ไม่สนตัวพิมพ์) ใช้ข้อมูลใหม่แทนที่
@@ -25947,7 +26323,7 @@ async function importValves(ev) {
     renderValveList();
     // ★ req #6: ก้อน bulk ใหญ่เกินจะเข้าคิว → ถ้าส่งไม่ได้ต้องบอกให้ import ใหม่ ไม่ใช่เงียบ
     if (API) {
-      try { await api('/api/valves/bulk', { body: { valves: valves.map(v => ('sd' in v || 'vtype' in v || VSPEC_NUMS.some(k => k in v)) ? _mpValvePayload(v) : _mpValveNoSpec(v)) } }); toast(`Import ${valves.length} valves`, 'green'); }
+      try { await api('/api/valves/bulk', { body: { valves: valves.map(v => ('sd' in v || 'vtype' in v || VSPEC_NUMS.some(k => k in v) || VSPEC_EXT.some(k => k in v)) ? _mpValvePayload(v) : _mpValveNoSpec(v)) } }); toast(`Import ${valves.length} valves`, 'green'); }
       catch (e) {
         toast(`⚠️ Import ${valves.length} valves ${TT('ลงเครื่องแล้ว — ยังไม่ขึ้น Cloud','locally — not on Cloud')}`, 'orange');
         offlineSaveDialog(`Import Master Valve ${nn(valves.length)} ${TT('เบอร์','valves')} — ${TT('ก้อนใหญ่เกินกว่าจะเข้าคิว กรุณา Import ใหม่เมื่อเน็ตกลับมา','too large to queue — please import again once online')}`, e.message);
@@ -25964,6 +26340,7 @@ async function exportValves() {
     Processes: v.processes.join(','), Barcode: v.barcode_id || '',
     SD: (v.sd === null || v.sd === undefined) ? '' : v.sd, Type: v.vtype || '',
     SL: _vnum(v.sl) ?? '', HD: _vnum(v.hd) ?? '', TL: _vnum(v.tl) ?? '',   // ★ v3.94
+    FA: _vnum(v.fa) ?? '', COT: _vtxt(v.cot), 'Type COT': _vtxt(v.cot_type),   // ★ v4.07
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Valves');
@@ -27654,22 +28031,62 @@ function mpValveType(valveNo) { const v = mpValve(valveNo); return (v && v.vtype
 const VSPEC_NUMS = ['sl', 'hd', 'tl'];
 const _vnum = x => { if (x === null || x === undefined || x === '') return null; const n = Number(x); return isFinite(n) && n > 0 ? n : null; };
 function mpValveSl(valveNo) { const v = mpValve(valveNo); return v ? _vnum(v.sl) : null; }
+/* ★ v4.07 (ผู้ใช้ 2/11) FA = มุมหน้าวาล์วที่จะเจียร์ (องศา) — ใช้คัดเครื่องขั้น FG · COT / Type COT = ข้อความ เก็บไว้ก่อน (ยังไม่ใช้คำนวณ)
+   ชุดนี้ขึ้น Cloud ได้เมื่อ Worker คืนคีย์ fa มากับ valves (_vfaCloudOK) — กติกาเดียวกับ SL ของ v3.94 */
+const VSPEC_EXT = ['fa', 'cot', 'cot_type'];
+const _vtxt = x => String(x == null ? '' : x).replace(/\s+/g, ' ').trim().slice(0, 60);
+const _vext = (v, k) => k === 'fa' ? _vnum(v && v.fa) : _vtxt(v && v[k]);
+const _vextHas = v => !!v && VSPEC_EXT.some(k => k === 'fa' ? _vnum(v.fa) != null : !!_vtxt(v[k]));
+/* FA ที่พิมพ์/วาง: "45" · "45.5" · "45°" · "45°30'" (องศา + ลิปดา) → องศาทศนิยม · ว่าง = null · อ่านไม่ได้ = NaN */
+function mpParseFa(s) {
+  const t = String(s == null ? '' : s).trim().replace(/[º˚]/g, '°').replace(/[′’`]/g, "'").replace(/\s+/g, '');
+  if (!t) return null;
+  const m = /^(\d+(?:\.\d+)?)°?(?:(\d+(?:\.\d+)?)'?)?$/.exec(t);
+  if (!m || (m[2] != null && !/[°']/.test(t))) return NaN;
+  const n = +m[1] + (m[2] != null ? +m[2] / 60 : 0);
+  return n > 0 && n < 180 ? Math.round(n * 10000) / 10000 : NaN;
+}
+const mpFaTxt = n => (n == null || !isFinite(n)) ? '-' : _mpNum(n) + '°';
+function mpValveFa(valveNo) { const v = mpValve(valveNo); return v ? _vnum(v.fa) : null; }
+/* FA ที่เครื่องรับได้: "45" · "30, 45" · "44.5-45.5" · "45°" → [[a,b], ...] · ว่าง = [] (ไม่จำกัด) · มีส่วนที่อ่านไม่ได้ = null */
+function mpParseFaList(s) {
+  const t = String(s == null ? '' : s).replace(/[–—~]/g, '-').replace(/\s*-\s*/g, '-').trim();
+  if (!t) return [];
+  const out = [];
+  for (const part of t.split(/[\s,;\/|]+/).filter(Boolean)) {
+    const ab = part.split('-');
+    if (ab.length > 2) return null;
+    const a = mpParseFa(ab[0]), b = ab.length === 2 ? mpParseFa(ab[1]) : a;
+    if (!(a > 0) || !(b > 0)) return null;
+    out.push(a <= b ? [a, b] : [b, a]);
+  }
+  return out;
+}
+const mpFaListTxt = r => (r || []).map(([a, b]) => a === b ? mpFaTxt(a) : `${_mpNum(a)}–${mpFaTxt(b)}`).join(', ');
+const mpFaOk = (fa, ranges) => (ranges || []).some(([a, b]) => fa >= a - 1e-6 && fa <= b + 1e-6);
+const MP_FA_FAMS = new Set(['FG']);    // ขั้นที่ใช้กติกา FA (เจียร์หน้าวาล์ว)
+const mpFaFam = fam => MP_FA_FAMS.has(fam);
+let _vfaCloudOK = null;                // ★ v4.07 Worker คืน fa/cot/cot_type มากับ valves หรือยัง
 function _mpValvePayload(v) {
   const o = { valveNo: v.valveNo, customer: v.customer || 'Other', description: v.description || '',
     processes: v.processes || [], barcode_id: v.barcode_id || '',
     sd: (v.sd === undefined || v.sd === '' ) ? null : v.sd, vtype: v.vtype || '' };
   for (const k of VSPEC_NUMS) o[k] = _vnum(v[k]);
+  for (const k of VSPEC_EXT) o[k] = _vext(v, k);   // ★ v4.07
   return o;
 }
 /* payload ที่ "ไม่แตะ SD/TYPE/SL/HD/TL" — ใช้กับทางเดิม (วาง Process จาก Excel / Import) ที่ไม่ได้ตั้งใจแก้ SD
    กันเคสเครื่องที่ถือข้อมูลเก่าดันค่า SD เก่าขึ้นไปทับค่าที่ Admin เพิ่งแก้ */
-function _mpValveNoSpec(v) { const o = { ...v }; delete o.sd; delete o.vtype; for (const k of VSPEC_NUMS) delete o[k]; return o; }
+function _mpValveNoSpec(v) { const o = { ...v }; delete o.sd; delete o.vtype; for (const k of VSPEC_NUMS) delete o[k]; for (const k of VSPEC_EXT) delete o[k]; return o; }
 function _vspecMark(v) {
   const o = { sd: (v.sd == null || v.sd === '') ? null : +v.sd, vtype: v.vtype || '' };
   for (const k of VSPEC_NUMS) o[k] = _vnum(v[k]);
+  for (const k of VSPEC_EXT) o[k] = _vext(v, k);   // ★ v4.07
   _vspecPend[vKey(v.valveNo)] = o;
   _mpSave(LS_VSPEC_PEND, _vspecPend);
 }
+/* ค้างไว้ได้หรือยังต้องรอ: Cloud ยืนยันครบทุกชุดที่เบอร์นี้มีค่า (SD/TYPE · SL/HD/TL · FA/COT) */
+const _vspecCloudFull = v => _vspecCloudOK === true && (_vslCloudOK === true || !VSPEC_NUMS.some(k => _vnum(v[k]) != null)) && (_vfaCloudOK === true || !_vextHas(v));
 function _vspecClear(keys) { for (const k of keys) delete _vspecPend[vKey(k)]; _mpSave(LS_VSPEC_PEND, _vspecPend); }
 /* เรียกตอน reload() รับ valves จาก Cloud:
    • Worker ใหม่ (มีคีย์ sd) → Cloud คือความจริง + ดัน SD ที่แก้ค้างไว้ในเครื่อง (ยังไม่ยืนยัน) ขึ้นไป
@@ -27678,9 +28095,10 @@ function _mpMergeValveSpec(fresh, old) {
   if (!Array.isArray(fresh) || !fresh.length) return fresh;
   const cloudHas = fresh.some(v => v && Object.prototype.hasOwnProperty.call(v, 'sd'));
   const cloudSl = fresh.some(v => v && Object.prototype.hasOwnProperty.call(v, 'sl'));   // ★ v3.94
-  _vspecCloudOK = cloudHas; _vslCloudOK = cloudSl;
+  const cloudFa = fresh.some(v => v && Object.prototype.hasOwnProperty.call(v, 'fa'));   // ★ v4.07
+  _vspecCloudOK = cloudHas; _vslCloudOK = cloudSl; _vfaCloudOK = cloudFa;
   const byKey = new Map(fresh.map(v => [vKey(v.valveNo), v]));
-  if (!cloudHas || !cloudSl) {
+  if (!cloudHas || !cloudSl || !cloudFa) {
     for (const o of (old || [])) {
       const v = byKey.get(vKey(o.valveNo)); if (!v) continue;
       if (!cloudHas) {
@@ -27688,6 +28106,7 @@ function _mpMergeValveSpec(fresh, old) {
         if (o.vtype) v.vtype = o.vtype;
       }
       if (!cloudSl) for (const k of VSPEC_NUMS) if (_vnum(o[k]) != null) v[k] = o[k];   // Worker ยังไม่รู้จัก SL → คงค่าในเครื่อง
+      if (!cloudFa) for (const k of VSPEC_EXT) if (_vext(o, k)) v[k] = o[k];            // ★ v4.07 Worker ยังไม่รู้จัก FA/COT → คงค่าในเครื่อง
     }
   }
   const push = [];
@@ -27695,12 +28114,13 @@ function _mpMergeValveSpec(fresh, old) {
     const v = byKey.get(k); if (!v) continue;
     v.sd = sp.sd; v.vtype = sp.vtype;
     for (const n of VSPEC_NUMS) if (n in sp) v[n] = sp[n];
+    for (const n of VSPEC_EXT) if (n in sp) v[n] = sp[n];   // ★ v4.07
     push.push(v);
   }
   /* Worker ยังไม่รู้จัก SL → SD/TYPE ขึ้น Cloud ได้ตามเดิม แต่เบอร์ที่มี SL/HD/TL ค้างไว้ในเครื่อง (ไม่ล้าง pending)
-     จนกว่า Worker ใหม่จะขึ้น แล้วค่อยดันขึ้นรอบนั้น */
+     จนกว่า Worker ใหม่จะขึ้น แล้วค่อยดันขึ้นรอบนั้น · ★ v4.07 FA/COT/Type COT กติกาเดียวกัน */
   if (cloudHas && push.length && API) {
-    const done = push.filter(v => cloudSl || !VSPEC_NUMS.some(n => _vnum(v[n]) != null)).map(v => v.valveNo);
+    const done = push.filter(v => (cloudSl || !VSPEC_NUMS.some(n => _vnum(v[n]) != null)) && (cloudFa || !_vextHas(v))).map(v => v.valveNo);
     api('/api/valves/bulk', { body: { valves: push.map(_mpValvePayload) }, silent: true })
       .then(() => _vspecClear(done)).catch(() => {});
   }
@@ -27721,18 +28141,22 @@ function mpCapNorm(c) {
     updated_at: c.updated_at || '', updated_by: c.updated_by || '',
     // ★ v3.94 SL สูงสุดของเครื่อง · null = ยังไม่ได้ตั้ง (ใช้ MP_SL_DEFAULT) · 0 = ไม่จำกัด (ดู mpMcSl)
     sl: (c.sl === null || c.sl === undefined || c.sl === '' || !isFinite(Number(c.sl)) || Number(c.sl) < 0) ? null : Number(c.sl),
+    fa: txt(c.fa).slice(0, 120),   // ★ v4.07 FA ที่เครื่องรับได้ (ขั้น FG) เช่น "45" · "30, 45" · "44.5-45.5" · ว่าง = ไม่จำกัด
   };
   if (c._local) o._local = true;
   return o;
 }
-/* ★ v3.94 caps จาก Cloud → รายการในเครื่อง · Worker รุ่นเก่า (ไม่มีคีย์ sl) = คง SL ที่ตั้งไว้ในเครื่อง */
+/* ★ v3.94 caps จาก Cloud → รายการในเครื่อง · Worker รุ่นเก่า (ไม่มีคีย์ sl) = คง SL ที่ตั้งไว้ในเครื่อง · ★ v4.07 FA เหมือนกัน */
+let _mcFaCloud = null;   // ★ v4.07 Worker คืน fa มากับ machine caps หรือยัง
 function _mcCapsFromServer(caps) {
   const hasSl = caps.some(c => c && Object.prototype.hasOwnProperty.call(c, 'sl'));
-  _mcSlCloud = hasSl;
+  const hasFa = caps.some(c => c && Object.prototype.hasOwnProperty.call(c, 'fa'));
+  _mcSlCloud = hasSl; _mcFaCloud = hasFa;
   const prev = new Map(_mcCaps.map(c => [c.machine_id, c]));
   return new Map(caps.map(raw => {
     const c = mpCapNorm(raw), p = prev.get(c.machine_id);
     if (!hasSl && p && p.sl != null) c.sl = p.sl;
+    if (!hasFa && p && p.fa) c.fa = p.fa;
     return [c.machine_id, c];
   }));
 }
@@ -28172,6 +28596,7 @@ function mpContext(S) {
     if (S.histEff && he && he.n >= 5) { eff = Math.min(0.98, Math.max(0.5, he.med)); effSrc = TT('ประวัติ', 'history'); }
     const slx = mpMcSl(mc.id, cap);      // ★ v3.94 SL สูงสุดที่เครื่องรับได้ (null = ไม่จำกัด)
     machines.push({ id: mc.id, zone: mc.zone, cap, hasCap: !!cap, fams, procSrc: explicit.length ? 'Admin' : TT('อัตโนมัติ', 'auto'), sl: slx.sl, slSrc: slx.src,
+      fa: cap ? (mpParseFaList(cap.fa) || []) : [],   // ★ v4.07 FA ที่เครื่องรับได้ (ขั้น FG) · [] = ไม่จำกัด
       ranges: cap ? mpParseRanges(cap.sd_ranges) : [], only: cap ? mpList(cap.only_valves) : [], except: cap ? mpList(cap.except_valves) : [],
       label: cap ? cap.label : '', remark: cap ? cap.remark : '', ctOverride: (cap && cap.ct > 0) ? +cap.ct : null,
       offPerm: offSet.has(mc.id), capOff: !!(cap && cap.active === 0),
@@ -28245,6 +28670,9 @@ function mpContext(S) {
     if (m.except.some(p => mpPatMatch(job.vk, p))) return { ok: false, why: 'except' };
     if (m.only.length) { if (!m.only.some(p => mpPatMatch(job.vk, p))) return { ok: false, why: 'only' }; }
     else if (hasDed) return { ok: false, why: 'dedicated' };
+    /* ★ v4.07 ขั้น FG: เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง (ผู้ใช้ 2/11 "บางเครื่องค่า FA มีเฉพาะ จะเข้าไม่ได้")
+       ไม่ผ่อนให้เครื่องที่เคยผลิต (provenOn) — FA ที่ Admin ตั้งคือข้อจำกัดของเครื่องจริง · วาล์วไม่มี FA / เครื่องไม่ตั้ง FA = ไม่ตัด */
+    if (m.fa && m.fa.length && job.fa != null && mpFaFam(fam) && !mpFaOk(job.fa, m.fa)) return { ok: false, why: 'fa' };
     const no = why => provenOn(m, job.vk, fam) ? { ok: true, proven: true, over: why } : { ok: false, why };
     if (m.ranges.length) {
       if (job.sd == null) return no('nosd');
@@ -28325,6 +28753,7 @@ function mpJobs(S, ctx) {
     if (S.cust && custGroup(j.customer) !== S.cust) { skipped.cust++; skipK.set(j.k, 'cust'); continue; }
     const v = mpValve(j.vk);
     j.sd = mpValveSd(j.vk); j.vtype = mpValveType(j.vk); j.sl = mpValveSl(j.vk);   // ★ v3.94 SL
+    j.fa = mpValveFa(j.vk);                                                          // ★ v4.07 FA
     const flow = v ? procsOf(v, MP_VSM) : [];
     const doneP = recsByJob[j.k] || {}, doneK = kpiByJob[j.k] || {};
     j.steps = stepsOf(j.vk, flow);
@@ -28419,7 +28848,7 @@ function mpJobs(S, ctx) {
         vk, k: 'ORDER::' + vk + '::' + r.due + '::' + (r.id || ''), due: r.due, plans: [{ date: r.due, qty: r.missing }],
         order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk),
         planLot: planLotNorm(p && p.lot) };     // ★ v3.89 Lot ที่แผนขายระบุ (ยังไม่เข้า VSM4) — แสดงอย่างเดียว ไม่ใช่ Lot จริงของงาน
-      j.sd = mpValveSd(vk); j.vtype = mpValveType(vk); j.sl = mpValveSl(vk);
+      j.sd = mpValveSd(vk); j.vtype = mpValveType(vk); j.sl = mpValveSl(vk); j.fa = mpValveFa(vk);   // ★ v4.07 FA
       const flow = v ? procsOf(v, MP_VSM) : [];
       j.steps = stepsOf(vk, flow);
       for (const st of j.steps) { st.done = 0; st.effDone = 0; st.need = r.missing; }
@@ -28474,6 +28903,7 @@ const MP_WHY = {
   dedicated: 'เบอร์นี้มีเครื่องเฉพาะ', nosd: 'วาล์วไม่มี SD', sd: 'SD นอกช่วง', norange: 'เครื่องยังไม่กำหนดช่วง SD',
   v3: 'เบอร์นี้ Process นี้ทำที่ VSM3 (แก้ที่ 🔀 เส้นทาง)',   // ★ v3.83
   sl: 'SL วาล์วเกิน SL เครื่อง',                              // ★ v3.94
+  fa: 'FA วาล์วไม่ตรง FA เครื่อง',                            // ★ v4.07
 };
 /* ตัวจัดตาราง — v3.77 เพิ่ม "แผนที่ Admin วางเอง" (pins) + งานที่ของยังไม่เข้า (kind 'order')
    pins = Map  "<VALVE>::<LOT>@<FAM>" (ล็อตนั้น) / "<VALVE>::*@<FAM>" (ทั้งเบอร์ รวมของที่จะเข้าทีหลัง) → { m, rank }
@@ -30019,6 +30449,7 @@ function _mpvWhyBox(res, W, qn) {
 }
 /* ช่วง SD ที่เครื่องรับได้ (ใช้ทั้งการ์ดวิเคราะห์ และหัวการ์ดแผนงาน) */
 function _mpvSdrTxt(m) { return (m.ranges.length ? 'SD ' + mpRangesText(m.ranges) : m.only.length ? TT('ผลิตเฉพาะเบอร์', 'listed valves only') : TT('SD ไม่จำกัด', 'any SD')) + (m.sl != null ? ' · SL ' + _mpNum(m.sl) : '')
+  + (m.fa && m.fa.length ? ' · FA ' + mpFaListTxt(m.fa) : '')   // ★ v4.07
   + (m.capF != null && m.capF < 0.75 ? ` · ⏱ ${_mpNum(Math.round(m.hpd * 10) / 10)} ${TT('ชม./วัน', 'h/day')}` : ''); }   // ★ v3.94 + SL เครื่อง · ★ v4.00 เครื่องที่เดินน้อย = ชม.จริงต่อวัน
 function _mpvCard(m, o, W, res, filtering) {
   const V = _mpv, S = res.S, cal = res.cal, H = res.H;
@@ -30070,7 +30501,7 @@ function _mpvRow(a, i, n, res) {
     <span class="n">${n}</span>
     <span class="v">${a.pin && !a.pin.mv ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${v3tag}${_mpMvTag(a, res)}</span>
     <span class="q">${_mpvQHtml(a)}</span>
-    <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span>${a.m.sl != null ? `<span>SL ${j.sl == null ? '-' : _mpNum(j.sl)}</span>` : ''}<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
+    <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span>${a.m.sl != null ? `<span>SL ${j.sl == null ? '-' : _mpNum(j.sl)}</span>` : ''}${a.m.fa && a.m.fa.length ? `<span>FA ${mpFaTxt(j.fa)}</span>` : ''}<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
     <span class="mpv-st ${sc}">${st}</span>
     ${open ? _mpvRowDetail(a, res) : ''}
   </div>`;
@@ -30151,7 +30582,7 @@ const _mpvLotS = j => j.kind === 'order'
   : `<span class="l">${escapeHtml(j.lot || '-')}${_mpvSaleS(j)}</span>`;
 /* ★ v3.86 บรรทัดเล็กใต้ Valve No: [Process ·] SD · TYPE ของ Valve (ผู้ใช้ 17/10 "เพิ่ม SD กับ TYPE ของ Valve ทำเล็กๆ พอ") */
 /* ★ v3.94 (ผู้ใช้ 22/10 ข้อ 3) เครื่องที่ตั้ง SL → บอก SL ของ Valve ต่อท้ายด้วย (ไม่มี SL ใน Master = "SL -") */
-const _mpvVmS = (j, proc, m) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}${m && m.sl != null ? ` · SL ${j.sl == null ? '-' : _mpNum(j.sl)}` : ''}</small>`;
+const _mpvVmS = (j, proc, m) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}${m && m.sl != null ? ` · SL ${j.sl == null ? '-' : _mpNum(j.sl)}` : ''}${m && m.fa && m.fa.length ? ` · FA ${mpFaTxt(j.fa)}` : ''}</small>`;
 const _mpvMoreS = (id, total, more) => total <= _MPV_LIM_S ? ''
   : `<button type="button" class="mpv-more" data-act="more" data-mid="${escapeHtml(id)}" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อคิว', 'Collapse') : `▾ ${TT('ดูคิวทั้งหมด', 'Show all')} (${TT('อีก', '+')} ${nn(total - _MPV_LIM_S)})`}</button>`;
 function _mpvCardS(m, o, res, filtering) {
@@ -30638,6 +31069,9 @@ function openMpvIssues() {
   const noSd = [...new Set(res.jobs.filter(j => j.sd == null).map(j => j.valve))];
   // ★ v3.94 เบอร์ที่ยังต้องผ่าน SSG/SEMI/SRG/SFG แต่ไม่มี SL → ไม่ถูกคัดเครื่องตาม SL
   const noSl = [...new Set(res.jobs.filter(j => j.sl == null && (j.steps || []).some(s => s.need > 0 && s.internal && mpSlFam(s.fam))).map(j => j.valve))];
+  // ★ v4.07 มีเครื่อง FG ที่ตั้ง FA ไว้แล้ว → เบอร์ที่ยังต้องผ่าน FG แต่ไม่มี FA = ไม่ถูกคัดเครื่องตาม FA
+  const faOn = res.ctx.machines.some(m => m.fa && m.fa.length);
+  const noFa = faOn ? [...new Set(res.jobs.filter(j => j.fa == null && (j.steps || []).some(s => s.need > 0 && s.internal && mpFaFam(s.fam))).map(j => j.valve))] : [];
   const sec = (t, c, body) => `<div style="font-weight:900;font-size:13px;color:${c};margin:12px 0 4px">${t}</div>${body}`;
   const ul = x => `<ul style="margin:0 0 0 18px;font-size:12.5px;line-height:1.75">${x}</ul>`;
   const html = [
@@ -30650,6 +31084,8 @@ function openMpvIssues() {
       `<div style="font-size:12.5px;line-height:1.7">${noSd.slice(0, 60).map(escapeHtml).join(', ')}${noSd.length > 60 ? ' …' : ''}</div>`) : '',
     noSl.length ? sec('📐 ' + TT('เบอร์ในงานที่ต้องผ่าน SSG / SEMI / SRG / SFG แต่ยังไม่มี SL — ยังไม่ถูกคัดเครื่องตาม SL', 'Valves in work needing SSG / SEMI / SRG / SFG without SL — not filtered by SL yet') + ` — ${noSl.length}`, 'var(--blue-dark)',
       `<div style="font-size:12.5px;line-height:1.7">${noSl.slice(0, 60).map(escapeHtml).join(', ')}${noSl.length > 60 ? ' …' : ''}</div>`) : '',
+    noFa.length ? sec('📐 ' + TT('เบอร์ในงานที่ต้องผ่าน FG แต่ยังไม่มี FA — ยังไม่ถูกคัดเครื่องตาม FA', 'Valves in work needing FG without FA — not filtered by FA yet') + ` — ${noFa.length}`, 'var(--blue-dark)',
+      `<div style="font-size:12.5px;line-height:1.7">${noFa.slice(0, 60).map(escapeHtml).join(', ')}${noFa.length > 60 ? ' …' : ''}</div>`) : '',
     res.bottleneck.length ? sec('🚧 ' + TT('คอขวด — เครื่องที่คิวยาวที่สุด', 'Bottlenecks — longest queues'), '#B45309',
       ul(res.bottleneck.slice(0, 6).map(b => `<li><b>${escapeHtml(b.m.id)}</b> ${escapeHtml(b.m.zone)} · ${escapeHtml([...b.m.fams].join('/'))} → ${TT('คิวเสร็จ', 'queue ends')} ${_mpD(b.endDate)}</li>`).join(''))) : '',
   ].join('');
@@ -30877,6 +31313,7 @@ async function mpExportExcel(res) {
       ['ขั้นที่ไม่มีเครื่องรับ SD', S.skipBlocked ? 'ข้ามแล้ววางขั้นที่เหลือต่อ (รอ 1 วัน)' : 'หยุดวางแผนล็อตนั้น'],
       ['ย้าย Zone', +S.zoneStick > 0 ? `เมื่อจำเป็น — ยอมรอเครื่องใน Zone เดิมได้ถึง ${S.zoneStick} ชม. · แบ่งล็อตเฉพาะใน Zone เดียวกัน` : 'ไม่สน Zone (เครื่องที่เสร็จเร็วสุด)'],
       ['SL (SSG · SEMI · SRG · SFG)', `SL วาล์ว > SL เครื่อง = เข้าไม่ได้ · เลือกเครื่อง SL ใกล้ที่สุดก่อน${+S.slStick > 0 ? ` (ยอมรอได้ ${S.slStick} ชม. ต่อขั้น SL)` : ' (ปิด — ไม่สน SL ที่ใกล้ที่สุด)'} · เครื่องที่ตั้ง SL ${res.ctx.machines.filter(m => m.sl != null).length} เครื่อง`],   // ★ v3.94
+      ['FA (ขั้น FG)', `เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง · วาล์วไม่มี FA = ไม่ตัด · เครื่องที่ตั้ง FA ${res.ctx.machines.filter(m => m.fa && m.fa.length).length} เครื่อง`],   // ★ v4.07
       ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้า = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน`],
       ['งานที่รวม', [S.incIn ? 'WIP IN 1.5' : '', S.incWip ? 'กำลังผลิต' : '', S.incOrder ? 'Order ที่ยังไม่มีของ (ตามวันคาดว่าเข้า)' : '', S.onlyPlan ? '(เฉพาะที่มีแผนขาย)' : ''].filter(Boolean).join(' + ')],
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
@@ -31485,7 +31922,7 @@ function _mpbRows() {
     if (si < 0) continue;
     const st = j.steps[si];
     let r = by.get(j.vk);
-    if (!r) by.set(j.vk, r = { vk: j.vk, valve: j.valve, sd: j.sd, vtype: j.vtype, sl: j.sl, cust: custGroup(j.customer), due: '', items: [], need: 0, at: 0, up: 0, noin: 0, pinQ: 0 });
+    if (!r) by.set(j.vk, r = { vk: j.vk, valve: j.valve, sd: j.sd, vtype: j.vtype, sl: j.sl, fa: j.fa, cust: custGroup(j.customer), due: '', items: [], need: 0, at: 0, up: 0, noin: 0, pinQ: 0 });
     const state = j.kind === 'order' ? 'noin' : (j.firstStep === si ? 'at' : 'up');
     const pin = st.pin || (j.kind === 'order' ? B.pins.get(j.vk + '::*@' + fam) : null) || null;
     r.items.push({ j, si, st, state, pin, bad: st.pinBad || null, a: (j.assign || []).filter(x => x.step === st) });
@@ -31551,7 +31988,7 @@ function _mpbRenderList() {
       <div class="mpb-vh">
         <span class="mpb-grip" aria-hidden="true" title="${TT('ลากไปวางที่เครื่อง', 'Drag onto a machine')}">⠿</span>
         <b class="mpb-vno">${escapeHtml(r.valve)}</b>
-        <span class="mpb-c">SD ${r.sd == null ? '❓' : _mpNum(r.sd)}</span>${r.vtype ? `<span class="mpb-c">${escapeHtml(r.vtype)}</span>` : ''}${mpSlFam(B.fam) ? `<span class="mpb-c">SL ${r.sl == null ? '❓' : _mpNum(r.sl)}</span>` : ''}<span class="mpb-c cu">${escapeHtml(r.cust)}</span>
+        <span class="mpb-c">SD ${r.sd == null ? '❓' : _mpNum(r.sd)}</span>${r.vtype ? `<span class="mpb-c">${escapeHtml(r.vtype)}</span>` : ''}${mpSlFam(B.fam) ? `<span class="mpb-c">SL ${r.sl == null ? '❓' : _mpNum(r.sl)}</span>` : ''}${mpFaFam(B.fam) ? `<span class="mpb-c">FA ${r.fa == null ? '❓' : mpFaTxt(r.fa)}</span>` : ''}<span class="mpb-c cu">${escapeHtml(r.cust)}</span>
         <span class="mpb-due${r.late ? ' late' : ''}">${r.due ? `🎯 ${_mpDW(r.due)}` : TT('ไม่มีแผนขาย', 'no sale plan')}</span>
       </div>
       <div class="mpb-vq"><b>${nn(r.need)}</b> ${TT('ชิ้น', 'pcs')}
@@ -31619,7 +32056,7 @@ function _mpbRenderLanes() {
     return `<div class="mpb-lane${selOk ? (selOk.ok ? ' ok tap' : ' no') : ''}" data-lane="${escapeHtml(m.id)}">
       <div class="mpb-lh">
         <div class="mpb-lid"><b>${escapeHtml(m.id)}</b> <span class="muted">${escapeHtml(m.zone)}</span>
-          <span class="mpb-c">${m.ranges.length ? 'SD ' + escapeHtml(mpRangesText(m.ranges)) : m.only.length ? TT('เฉพาะเบอร์', 'listed only') : TT('ไม่จำกัด SD', 'any SD')}</span>${m.sl != null ? `<span class="mpb-c" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.label ? `<span class="mpb-c">${escapeHtml(m.label)}</span>` : ''}
+          <span class="mpb-c">${m.ranges.length ? 'SD ' + escapeHtml(mpRangesText(m.ranges)) : m.only.length ? TT('เฉพาะเบอร์', 'listed only') : TT('ไม่จำกัด SD', 'any SD')}</span>${m.sl != null ? `<span class="mpb-c" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.fa && m.fa.length ? `<span class="mpb-c" title="${TT('FA ที่เครื่องรับได้ (ขั้น FG)', 'FA this machine takes (FG)')}">FA ${escapeHtml(mpFaListTxt(m.fa))}</span>` : ''}${m.label ? `<span class="mpb-c">${escapeHtml(m.label)}</span>` : ''}
           ${[...m.fams].filter(f => f !== fam).length ? `<span class="mpb-c pf2" title="${TT('Process อื่นของเครื่องนี้', 'other processes')}">+${escapeHtml([...m.fams].filter(f => f !== fam).join(', '))}</span>` : ''}</div>
         <div class="mpb-ls2"><b>${L.length}</b> ${TT('งาน', 'jobs')} · <b>${Math.round(tot * 10) / 10}</b> ${TT('ชม.', 'h')}${pinH ? ` <span class="muted">(📌 ${Math.round(pinH * 10) / 10})</span>` : ''}
           · ${L.length ? `${TT('เต็มถึง', 'busy until')} <b>${_mpDW(cal.dateAt(end))}</b>` : `<span style="color:var(--green)">${TT('ว่าง', 'free')}</span>`}${late ? ` · <b class="mpb-red">⏰ ${late}</b>` : ''}</div>
@@ -31653,7 +32090,8 @@ function _mpbCheck(src, m) {
   const c = B.ctx.canDo(m, job, st.fam, B.ctx.dedicatedFor(job, st.fam));
   if (!c.ok) {
     const why = c.why === 'proc' ? `${TT('ไม่ทำ', 'no')} ${st.fam}` : c.why === 'sd' ? `SD ${job.sd == null ? '-' : _mpNum(job.sd)} ${TT('นอกช่วง', 'outside')} ${mpRangesText(m.ranges)}`
-      : c.why === 'sl' ? `SL ${_mpNum(job.sl)} > SL ${TT('เครื่อง', 'machine')} ${_mpNum(m.sl)}` : (MP_WHY[c.why] || c.why);   // ★ v3.94
+      : c.why === 'sl' ? `SL ${_mpNum(job.sl)} > SL ${TT('เครื่อง', 'machine')} ${_mpNum(m.sl)}`   // ★ v3.94
+      : c.why === 'fa' ? `FA ${mpFaTxt(job.fa)} ≠ FA ${TT('เครื่อง', 'machine')} ${mpFaListTxt(m.fa)}` : (MP_WHY[c.why] || c.why);   // ★ v4.07
     return { ok: false, why };
   }
   let h = 0;
@@ -32297,7 +32735,7 @@ function _mpiPaint(box) {
     const fams = [...m.fams].sort((a, b) => _mpbFamRank(a) - _mpbFamRank(b));
     return `<article class="mpi-m" style="--zc:${zc}" aria-label="${escapeHtml(m.id)}">
       <div class="mpi-mh"><span class="mpi-id">${escapeHtml(m.id)}</span>${fams.map(f => `<span class="mpv-pf" style="--pc:#${_mpPCol(f)}">${escapeHtml(f)}</span>`).join('')}
-        <span class="mpi-z">${escapeHtml(m.zone)}</span>${m.sl != null ? `<span class="mpi-z" style="color:#475569" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${now.length ? `<span class="mpi-ld ${ld > 95 ? 'hi' : ld > 70 ? 'md' : 'lo'}">${ld}%</span>` : ''}</div>
+        <span class="mpi-z">${escapeHtml(m.zone)}</span>${m.sl != null ? `<span class="mpi-z" style="color:#475569" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.fa && m.fa.length ? `<span class="mpi-z" style="color:#475569" title="${TT('FA ที่เครื่องรับได้ (ขั้น FG)', 'FA this machine takes (FG)')}">FA ${escapeHtml(mpFaListTxt(m.fa))}</span>` : ''}${now.length ? `<span class="mpi-ld ${ld > 95 ? 'hi' : ld > 70 ? 'md' : 'lo'}">${ld}%</span>` : ''}</div>
       <div class="mpi-sec">▶ ${isToday ? TT('วันผลิตนี้', 'This production day') : TT('วันทำงานถัดไป', 'Next working day')} ${_mpDW(d0)}</div>
       ${now.length ? now.map(i => jobRow(i, true)).join('') : `<div class="mpi-none">💤 ${TT('ไม่มีงานในแผนวันนี้', 'No planned work today')}</div>`}
       ${next.length ? `<div class="mpi-sec">⏭ ${TT('ถัดไป', 'Next')}</div>${next.map(i => jobRow(i, false)).join('')}` : ''}
@@ -32436,6 +32874,7 @@ function renderMcCaps() {
       <td style="font-size:11.5px">${procs}</td>
       <td>${rng.length ? `<b style="color:var(--blue-dark)">${escapeHtml(mpRangesText(rng))}</b>` : (mpList(c.only_valves).length ? `<span class="muted">${TT('ตามรายการเฉพาะ', 'by list')}</span>` : `<span class="tag tag-orange" style="font-size:9.5px">${TT('ไม่จำกัด', 'any')}</span>`)}</td>
       <td class="right">${(() => { const s = mpMcSl(c.machine_id, c); return s.sl != null ? `<b style="color:var(--blue-dark)">${_mpNum(s.sl)}</b>${s.src === 'default' ? ` <span class="muted" style="font-size:9.5px" title="${TT('ค่าเริ่มต้นที่ผู้ใช้กำหนด 22/10 — กดแก้เพื่อเปลี่ยน', 'default from 22/10 — edit to change')}">${TT('ตั้งต้น', 'default')}</span>` : ''}` : '<span class="muted">—</span>'; })()}</td>
+      <td style="white-space:nowrap">${(() => { const r = mpParseFaList(c.fa); return r && r.length ? `<b style="color:var(--blue-dark)">${escapeHtml(mpFaListTxt(r))}</b>` : c.fa ? `<span class="tag tag-red" style="font-size:9.5px" title="${TT('อ่าน FA ไม่ได้ — กดแก้', 'unreadable FA — edit')}">${escapeHtml(c.fa)}</span>` : '<span class="muted">—</span>'; })()}</td>
       <td style="font-size:11px">${short(c.only_valves, 3)}</td>
       <td style="font-size:11px">${short(c.except_valves, 3)}</td>
       <td class="right">${c.ct ? _mpNum(c.ct) : '<span class="muted">' + TT('ประวัติ', 'hist') + '</span>'}</td>
@@ -32447,9 +32886,9 @@ function renderMcCaps() {
   const missing = mcs.filter(m => !capBy.has(m.id) && !offSet.has(m.id));   // ★ v3.77 เครื่องปิดถาวรไม่ต้องกำหนดช่วง
   const offN = mcs.filter(m => offSet.has(m.id)).length;
   box.innerHTML = `
-    <div class="tbl-wrap" style="max-height:60vh"><table style="font-size:12px;min-width:860px"><thead><tr>
-      <th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>Process</th><th>${TT('ช่วง SD', 'SD range')}</th><th class="right" title="${TT('SL สูงสุดของวาล์วที่เข้าเครื่องได้ (SSG/SEMI/SRG/SFG)', 'max valve SL (SSG/SEMI/SRG/SFG)')}">SL</th><th>${TT('ผลิตเฉพาะ', 'Only')}</th><th>${TT('ยกเว้น', 'Except')}</th><th class="right">CT</th><th>${TT('หมายเหตุ', 'Remark')}</th><th>${TT('จัดการ', 'Actions')}</th>
-    </tr></thead><tbody>${rows || `<tr><td colspan="10" class="center muted" style="padding:14px">${q ? TT('ไม่พบ', 'No match') : TT('ยังไม่มีข้อมูล — กด 📋 วางจาก Excel (ชีท Machine) หรือ ➕ เพิ่มเครื่อง', 'No data yet — paste from Excel or add a machine')}</td></tr>`}</tbody></table></div>
+    <div class="tbl-wrap" style="max-height:60vh"><table style="font-size:12px;min-width:920px"><thead><tr>
+      <th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>Process</th><th>${TT('ช่วง SD', 'SD range')}</th><th class="right" title="${TT('SL สูงสุดของวาล์วที่เข้าเครื่องได้ (SSG/SEMI/SRG/SFG)', 'max valve SL (SSG/SEMI/SRG/SFG)')}">SL</th><th title="${TT('FA ที่เครื่องรับได้ (ขั้น FG) · ว่าง = ไม่จำกัด', 'FA this machine takes (FG) · blank = any')}">FA</th><th>${TT('ผลิตเฉพาะ', 'Only')}</th><th>${TT('ยกเว้น', 'Except')}</th><th class="right">CT</th><th>${TT('หมายเหตุ', 'Remark')}</th><th>${TT('จัดการ', 'Actions')}</th>
+    </tr></thead><tbody>${rows || `<tr><td colspan="11" class="center muted" style="padding:14px">${q ? TT('ไม่พบ', 'No match') : TT('ยังไม่มีข้อมูล — กด 📋 วางจาก Excel (ชีท Machine) หรือ ➕ เพิ่มเครื่อง', 'No data yet — paste from Excel or add a machine')}</td></tr>`}</tbody></table></div>
     <div class="muted" style="font-size:11.5px;margin-top:6px">${TT('รวม', 'Total')} <b>${_mcCaps.length}</b> ${TT('เครื่อง', 'machines')}${pend ? ` · 💾 ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud')} <b>${pend}</b>` : ''}
       · <a href="javascript:void 0" onclick="openMpOffModal()" style="font-weight:700">🚫 ${TT('เครื่องปิดถาวร', 'Permanently off')} ${offN} ${TT('เครื่อง', 'machines')} ✎</a></div>
     ${missing.length ? `<div style="margin-top:8px;font-size:11.5px;background:var(--orange-bg);border:1px solid var(--orange-bd);border-radius:9px;padding:7px 10px;line-height:1.8">
@@ -32473,6 +32912,8 @@ function openMcCapModal(id) {
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('ช่วงรวมปลายทั้งสองข้าง · SD ต่ำกว่า 6 คิดเป็น 6 (เครื่อง 6–8 ทำ SD ≤ 8 ได้ทั้งหมด)', 'Inclusive · SD below 6 counts as 6')}</div></div>
     <div class="fr"><label>📐 SL ${TT('สูงสุดที่รับได้', 'max')} (SSG · SEMI · SRG · SFG)</label><input type="number" id="mcc_sl" step="0.01" min="0" inputmode="decimal" value="${(() => { const s = mpMcSl(c && c.machine_id, c); return s.sl != null ? s.sl : ''; })()}" placeholder="${TT('เช่น 100 · ว่าง = ไม่จำกัด', 'e.g. 100 · blank = no limit')}" oninput="_mccTest()">
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('วาล์ว SL มากกว่าค่านี้เข้าไม่ได้ (เท่ากันได้) · ว่าง = ไม่จำกัด', 'Valves with SL above this cannot run here (equal is OK) · blank = no limit')}${c && MP_SL_DEFAULT[c.machine_id] ? ` · ${TT('ค่าตั้งต้น', 'default')} ${MP_SL_DEFAULT[c.machine_id]}` : ''}</div></div>
+    <div class="fr"><label>📐 FA ${TT('ที่รับได้', 'it takes')} (FG)</label><input type="text" id="mcc_fa" value="${v('fa')}" placeholder="${TT('เช่น 45 · 30, 45 · 44.5-45.5 · ว่าง = ไม่จำกัด', 'e.g. 45 · 30, 45 · 44.5-45.5 · blank = any')}" autocomplete="off" oninput="_mccTest()">
+      <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('ขั้น FG: วาล์วที่ FA ไม่ตรงค่านี้เข้าไม่ได้ · วาล์วที่ยังไม่มี FA = ไม่ถูกตัด · ว่าง = ไม่จำกัด', 'FG step: valves whose FA does not match cannot run here · valves without FA are not blocked · blank = any')}</div></div>
     <div class="fr"><label>Process ${TT('ที่ทำได้', 'it can do')}</label><input type="text" id="mcc_procs" value="${v('procs')}" placeholder="${escapeHtml(TT('ว่าง = อัตโนมัติ', 'blank = auto') + (auto.length ? ' (' + auto.join(', ') + ')' : ''))}">
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('คั่นด้วย , เช่น COT, VET, RED · ว่าง = Process ของเครื่อง + ที่เคยผลิตจริง', 'comma separated · blank = machine process + history')}${auto.length ? ` → <b>${escapeHtml(auto.join(', '))}</b>` : ''}</div></div>
     <div class="fr"><label>${TT('ผลิตเฉพาะเบอร์ (ถ้ามี)', 'Only these valves')}</label><textarea id="mcc_only" rows="2" placeholder="VF1349M0, VF1350M0 · ${TT('ใช้ * ได้ เช่น VF13*', '* wildcard ok')}" oninput="_mccTest()">${v('only_valves')}</textarea></div>
@@ -32512,6 +32953,15 @@ function _mccTest() {
     else if (vsl > msl + 1e-9) { ok = false; why.push(`SL ${_mpNum(vsl)} > ${_mpNum(msl)} (SSG/SRG/SFG)`); }
     else why.push(`SL ${_mpNum(vsl)} ≤ ${_mpNum(msl)}`);
   }
+  // ★ v4.07 FA (เฉพาะขั้น FG)
+  const mfa = mpParseFaList(($('mcc_fa') || {}).value);
+  if (mfa === null) { ok = false; why.push(TT('รูปแบบ FA ไม่ถูกต้อง', 'bad FA format')); }
+  else if (vk && mfa.length) {
+    const vfa = mpValveFa(vk);
+    if (vfa == null) why.push(TT('เบอร์นี้ยังไม่มี FA (ไม่ถูกตัด)', 'no FA for this valve (not blocked)'));
+    else if (!mpFaOk(vfa, mfa)) { ok = false; why.push(`FA ${mpFaTxt(vfa)} ≠ ${mpFaListTxt(mfa)} (FG)`); }
+    else why.push(`FA ${mpFaTxt(vfa)} ✓`);
+  }
   out.innerHTML = `${ok ? '✅ <b style="color:var(--green)">' + TT('ผลิตได้', 'OK') : '❌ <b style="color:var(--red)">' + TT('ผลิตไม่ได้', 'Not allowed')}</b> · ${escapeHtml(why.join(' · '))}`;
 }
 async function saveMcCap() {
@@ -32530,11 +32980,16 @@ async function saveMcCap() {
   const slRaw = String(($('mcc_sl') || {}).value || '').trim();
   if (slRaw !== '' && _vnum(slRaw) == null) { toast(TT('SL ไม่ถูกต้อง (ใส่ตัวเลขมากกว่า 0 หรือเว้นว่าง)', 'Bad SL (number above 0 or blank)'), 'orange'); return; }
   c.sl = slRaw !== '' ? _vnum(slRaw) : (MP_SL_DEFAULT[id] ? 0 : null);
+  // ★ v4.07 FA: เก็บเป็นข้อความที่จัดรูปแล้ว ("30°, 45°") · ว่าง = ไม่จำกัด
+  const faList = mpParseFaList(($('mcc_fa') || {}).value);
+  if (faList === null) { toast(TT('FA ไม่ถูกต้อง (เช่น 45 · 30, 45 · 44.5-45.5 หรือเว้นว่าง)', 'Bad FA (e.g. 45 · 30, 45 · 44.5-45.5 or blank)'), 'orange'); return; }
+  c.fa = faList.map(([a, b]) => a === b ? _mpNum(a) : `${_mpNum(a)}-${_mpNum(b)}`).join(', ');
   closeModal();
   const r = await mcCapsUpsert([c], false);
   renderMcCaps();
   let [msg, col] = _mcCapSyncMsg(r);
   if (r && r.ok && _mcSlCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ SL เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but SL is on this device only — deploy the Worker first'); col = 'orange'; }
+  else if (r && r.ok && c.fa && _mcFaCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ FA เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but FA is on this device only — deploy the Worker first'); col = 'orange'; }
   toast(`${id}: ${msg}`, col);
 }
 async function delMcCap(id) {
@@ -32547,7 +33002,7 @@ async function exportMcCaps() {
   if (!(await needXlsx())) return;   // ⚡ v3.80 โหลดตัว Excel ตอนใช้
   const zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
   const rows = _mcCaps.map(c => ({ Machine: c.machine_id, Zone: zoneOf.get(c.machine_id) || c.zone || '', Label: c.label, 'SD ranges': c.sd_ranges,
-    Process: c.procs, 'Only valves': c.only_valves, 'Except valves': c.except_valves, CT: c.ct || '', SL: mpMcSl(c.machine_id, c).sl ?? '', Active: c.active ? 1 : 0, Remark: c.remark }));
+    Process: c.procs, 'Only valves': c.only_valves, 'Except valves': c.except_valves, CT: c.ct || '', SL: mpMcSl(c.machine_id, c).sl ?? '', FA: c.fa || '', Active: c.active ? 1 : 0, Remark: c.remark }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MachineSD');
   XLSX.writeFile(wb, `vsm4-machine-sd-${todayISO()}.xlsx`);
@@ -32641,17 +33096,84 @@ async function commitPasteMcCaps() {
   toast(`✅ ${rows.length} ${TT('เครื่อง', 'machines')} · ${msg}`, col);
 }
 
+/* ★ v4.07 วาง FA ของเครื่อง (ขั้น FG) — Machine No | FA · FA หลายค่า/ช่วงในช่องเดียวได้ ("30, 45" · "44.5-45.5") · ช่องว่าง = ไม่จำกัด
+   แก้เฉพาะ FA — ช่วง SD / Process / SL / CT ที่ตั้งไว้เดิมคงไว้ */
+function openPasteMcFaModal() {
+  openModal('📐 ' + TT('วาง FA ของเครื่องจาก Excel (ขั้น FG)', 'Paste machine FA from Excel (FG step)'), `
+    <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px;line-height:1.7">
+      <b>${TT('รูปแบบ', 'Format')}:</b> <code>Machine No ⇥ FA</code> ${TT('เช่น', 'e.g.')} <code>G-2058 ⇥ 45</code> · <code>G-220 ⇥ 30, 45</code> · <code>G-232 ⇥ 44.5-45.5</code><br>
+      ${TT('ขั้น FG: เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง · ช่อง FA ว่าง = ไม่จำกัด · มีแถวหัวหรือไม่มีก็ได้', 'FG step: a machine with FA only takes matching valves · blank FA = any · header row optional')}<br>
+      ${TT('แก้เฉพาะ FA — ช่วง SD / Process / SL / CT เดิมไม่ถูกแตะ', 'Only FA changes — SD range / Process / SL / CT are kept')}</div>
+    <textarea id="pfaBox" rows="8" placeholder="${TT('วางข้อมูลจาก Excel ที่นี่…', 'Paste here…')}" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
+    <div class="row" style="gap:6px;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="previewPasteMcFa()">👁️ Preview</button>
+      <button class="btn btn-green btn-sm" onclick="commitPasteMcFa()">💾 ${TT('บันทึกลงระบบ', 'Save')}</button></div>
+    <div id="pfaRes" class="mt-8" style="font-size:12px"></div>`, { wide: true });
+}
+function _parsePasteMcFa(txt) {
+  const rows = [], bad = [], by = new Map();
+  for (const line of String(txt || '').split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const tab = line.includes('\t');
+    const cells = (tab ? line.split('\t') : line.trim().split(/\s+/)).map(s => s.trim());
+    const mi = cells.findIndex(x => /^[A-Z]{1,2}-?\d{3,4}[A-Z]?$/i.test(x));
+    if (mi < 0) { if (cells.some(x => /\d/.test(x)) && !/machine|เครื่อง/i.test(line)) bad.push(line); continue; }
+    const id = cells[mi].toUpperCase().replace(/^([A-Z]+)(\d)/, '$1-$2');
+    const raw = cells.slice(mi + 1).filter(Boolean).join(tab ? ', ' : ' ');
+    const list = mpParseFaList(raw);
+    if (list === null) { bad.push(line); continue; }
+    by.set(id, { machine_id: id, fa: list.map(([a, b]) => a === b ? _mpNum(a) : `${_mpNum(a)}-${_mpNum(b)}`).join(', '), list });
+  }
+  rows.push(...by.values());
+  return { rows, bad };
+}
+function previewPasteMcFa() {
+  const { rows, bad } = _parsePasteMcFa(($('pfaBox') || {}).value);
+  const res = $('pfaRes'); if (!res) return;
+  if (!rows.length) { res.innerHTML = `<span class="tag tag-red">${TT('ไม่พบแถวที่มีรหัสเครื่อง', 'No machine rows found')}</span>`; return; }
+  const capBy = new Map(_mcCaps.map(c => [c.machine_id, c])), zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
+  res.innerHTML = `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag tag-blue">📥 ${rows.length} ${TT('เครื่อง', 'machines')}</span>
+      ${bad.length ? `<span class="tag tag-red">✗ ${TT('อ่านไม่ได้', 'unreadable')} ${bad.length}</span>` : ''}</div>
+    <div class="tbl-wrap" style="max-height:45vh"><table style="font-size:12px;width:100%"><thead><tr><th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>FA</th><th></th></tr></thead><tbody>
+    ${rows.map(r => { const c = capBy.get(r.machine_id), old = c && c.fa ? mpFaListTxt(mpParseFaList(c.fa) || []) || c.fa : '';
+      return `<tr><td><b>${escapeHtml(r.machine_id)}</b></td><td>${escapeHtml(zoneOf.get(r.machine_id) || '-')}</td>
+        <td>${old ? `<s class="muted">${escapeHtml(old)}</s> → ` : ''}<b>${r.list.length ? escapeHtml(mpFaListTxt(r.list)) : TT('ไม่จำกัด', 'any')}</b></td>
+        <td style="color:var(--orange);font-size:11px">${zoneOf.has(r.machine_id) ? '' : TT('ไม่มีในเครื่อง VSM4', 'not VSM4')}</td></tr>`; }).join('')}</tbody></table></div>
+    ${bad.length ? `<div class="muted" style="font-size:11px;margin-top:6px">✗ ${bad.slice(0, 5).map(l => `<code>${escapeHtml(l.slice(0, 60))}</code>`).join(' · ')}</div>` : ''}`;
+}
+async function commitPasteMcFa() {
+  const { rows } = _parsePasteMcFa(($('pfaBox') || {}).value);
+  if (!rows.length) { toast(TT('ไม่มีข้อมูล', 'No data'), 'orange'); return; }
+  const capBy = new Map(_mcCaps.map(c => [c.machine_id, c])), zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
+  const list = rows.map(r => { const o = capBy.get(r.machine_id) || { machine_id: r.machine_id, zone: zoneOf.get(r.machine_id) || '', active: 1 }; return { ...o, fa: r.fa }; });
+  closeModal();
+  const r = await mcCapsUpsert(list, false);
+  renderMcCaps();
+  let [msg, col] = _mcCapSyncMsg(r);
+  if (r && r.ok && _mcFaCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ FA เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but FA is on this device only — deploy the Worker first'); col = 'orange'; }
+  toast(`📐 FA ${rows.length} ${TT('เครื่อง', 'machines')} · ${msg}`, col);
+}
+
 /* ============================================================
    SETTINGS — Master valve: วาง SD / TYPE จาก Excel (ชีท Process: Valve | TYPE | SD)
    ============================================================ */
-function openPasteSdModal() {
-  openModal('📏 ' + TT('วาง SD / TYPE / SL / HD / TL ของวาล์วจาก Excel', 'Paste valve SD / TYPE / SL / HD / TL from Excel'), `
+/* ★ v4.07 mode 'ext' = ปุ่ม 📋 วาง FA / COT / Type COT — แถวไม่มีหัว อ่านเป็น Valve | FA | COT | Type COT
+   (แยกโหมดเพราะ "V123 ⇥ 9 ⇥ OP" แบบไม่มีหัว อ่านได้ทั้ง SD/TYPE และ FA/COT — ให้ปุ่มที่กดเป็นตัวบอก) */
+let _psdMode = '';
+function openPasteSdModal(mode) {
+  _psdMode = mode === 'ext' ? 'ext' : '';
+  const ext = _psdMode === 'ext';
+  openModal(ext ? '📋 ' + TT('วาง FA / COT / Type COT ของวาล์วจาก Excel', 'Paste valve FA / COT / Type COT from Excel')
+    : '📏 ' + TT('วาง SD / TYPE / SL / HD / TL / FA / COT ของวาล์วจาก Excel', 'Paste valve SD / TYPE / SL / HD / TL / FA / COT from Excel'), `
     <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px;line-height:1.7">
-      <b>${TT('รูปแบบ', 'Format')}:</b> Valve No | TYPE | SD (${TT('สลับคอลัมน์ได้ — ระบบหาเอง', 'any column order')}) ${TT('เช่น', 'e.g.')} <code>V72225A0 ⇥ SWFS ⇥ 10</code><br>
-      📐 <b>SL / HD / TL</b> — ${TT('รูปแบบมาตรฐาน', 'standard layout')}: <code>ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42</code>
+      ${ext ? `<b>${TT('รูปแบบ', 'Format')}:</b> <code>Valve No ⇥ FA ⇥ COT ⇥ Type COT</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 45 ⇥ 5-10 ⇥ CR</code><br>
+      · ${TT('ก๊อปพร้อมแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (หัว FA · COT · Type COT)', 'with the header row, columns can be in any order or partial (FA · COT · Type COT)')}
+      · FA = ${TT('องศา เช่น 45 · 45.5 · 45°30\'', 'degrees, e.g. 45 · 45.5 · 45°30\'')} · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
+      ${TT('แก้เฉพาะ FA / COT / Type COT — SD / TYPE / SL / ลูกค้า / Process เดิมไม่ถูกแตะ', 'Only FA / COT / Type COT change — SD / TYPE / SL / customer / Process are kept')}`
+      : `<b>${TT('รูปแบบ', 'Format')}:</b> Valve No | TYPE | SD (${TT('สลับคอลัมน์ได้ — ระบบหาเอง', 'any column order')}) ${TT('เช่น', 'e.g.')} <code>V72225A0 ⇥ SWFS ⇥ 10</code><br>
+      📐 <b>SL / HD / TL / FA / COT</b> — ${TT('รูปแบบมาตรฐาน', 'standard layout')}: <code>ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL ⇥ FA ⇥ COT ⇥ Type COT</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42</code>
       · ${TT('ก๊อปพร้อมแถวหัวหรือไม่มีหัวก็ได้ · มีแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (จับตามชื่อหัว)', 'with or without the header row · with a header, columns can be in any order or partial (matched by name)')}
       · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
-      ${TT('แก้เฉพาะ SD / TYPE / SL / HD / TL — ลูกค้าและ Process เดิมไม่ถูกแตะ', 'Only SD / TYPE / SL / HD / TL change — customer and Process are kept')}</div>
+      ${TT('แก้เฉพาะ SD / TYPE / SL / HD / TL / FA / COT — ลูกค้าและ Process เดิมไม่ถูกแตะ', 'Only SD / TYPE / SL / HD / TL / FA / COT change — customer and Process are kept')}`}</div>
     <textarea id="psdBox" rows="10" placeholder="${TT('วางข้อมูลจาก Excel ที่นี่…', 'Paste here…')}" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin:8px 0"><input type="checkbox" id="psdAdd" style="width:auto"> ${TT('เพิ่มเบอร์ที่ยังไม่มีใน Master (ลูกค้า Other · ยังไม่มี Process)', 'Add valves not in Master (customer Other, no Process)')}</label>
     <div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" onclick="previewPasteSd()">👁️ Preview</button>
@@ -32660,9 +33182,11 @@ function openPasteSdModal() {
 }
 /* ★ v3.94 มีแถวหัวคอลัมน์ (SD · TYPE · SL · HD · TL · Valve No) → อ่านตามตำแหน่งหัว · ไม่มีหัว = แบบเดิม (SD = ตัวเลขตัวแรก · TYPE = ตัวอักษร)
    ช่องว่างใต้หัว = ไม่แก้ค่านั้น (วางทีละบางคอลัมน์ได้ ไม่ล้างของเดิม) */
-const _PSD_HDR = { v: /^(VALVE|VALVE\s*NO\.?|VALVENO|VALVE_NO|PART\s*NO\.?)$/i, sd: /^SD$/i, ty: /^(TYPE|VTYPE)$/i, sl: /^SL$/i, hd: /^HD$/i, tl: /^TL$/i };
+/* ★ v4.07 + FA · COT · Type COT (หัว "Type COT" ต้องอยู่ในช่องเดียวกัน — ก๊อปจาก Excel คั่นด้วย tab อยู่แล้ว) */
+const _PSD_HDR = { v: /^(VALVE|VALVE\s*NO\.?|VALVENO|VALVE_NO|PART\s*NO\.?)$/i, sd: /^SD$/i, ty: /^(TYPE|VTYPE)$/i, sl: /^SL$/i, hd: /^HD$/i, tl: /^TL$/i,
+  fa: /^FA(\s*\(?°\)?)?$/i, cot: /^COT$/i, ct: /^(TYPE[\s_]*COT|COT[\s_]*TYPE)$/i };
 const _psdIsValve = x => /^[A-Z]{1,3}[A-Z0-9]{4,10}$/i.test(x) && /\d/.test(x) && /^[A-Z]/i.test(x);
-function _parsePasteSd(txt) {
+function _parsePasteSd(txt, mode) {
   const rows = [], bad = [];
   let hdr = null;
   for (const line of String(txt || '').split(/\r?\n/)) {
@@ -32671,17 +33195,19 @@ function _parsePasteSd(txt) {
     const all = (tab ? line.split('\t') : line.split(/[,;]|\s{2,}|\s/)).map(s => s.trim());
     const cells = all.filter(Boolean);
     if (!cells.some(_psdIsValve)) {
-      // ไม่มี tab: "Valve No" แตกเป็น 2 คำ → ตัดคำ "No" ทิ้งก่อน ไม่งั้นตำแหน่งคอลัมน์หลังจากนั้นเลื่อนไป 1
-      const pos = tab ? all : cells.filter((c, i) => !(i > 0 && /^NO\.?$/i.test(c) && /^(VALVE|PART)$/i.test(cells[i - 1]))), h = {};
+      // ไม่มี tab: "Valve No" แตกเป็น 2 คำ → ตัดคำ "No" ทิ้งก่อน ไม่งั้นตำแหน่งคอลัมน์หลังจากนั้นเลื่อนไป 1 (★ v4.07 "Type COT" ก็เหมือนกัน)
+      const pos = tab ? all : cells.filter((c, i) => !(i > 0 && /^NO\.?$/i.test(c) && /^(VALVE|PART)$/i.test(cells[i - 1])))
+        .reduce((a, c) => { const p = a[a.length - 1]; if (p && /^(TYPE|COT)$/i.test(p) && /^(TYPE|COT)$/i.test(c) && p.toUpperCase() !== c.toUpperCase()) a[a.length - 1] = p + ' ' + c; else a.push(c); return a; }, []), h = {};
       pos.forEach((c, i) => { for (const [k, re] of Object.entries(_PSD_HDR)) if (h[k] == null && re.test(c)) h[k] = i; });
-      if (h.sd != null || h.ty != null || h.sl != null || h.hd != null || h.tl != null) { hdr = { ...h, tab }; continue; }
+      if (['sd', 'ty', 'sl', 'hd', 'tl', 'fa', 'cot', 'ct'].some(k => h[k] != null)) { hdr = { ...h, tab }; continue; }
     }
-    // อ่านแถวตามตำแหน่งคอลัมน์ (cols = { v, sd, ty, sl, hd, tl } → ลำดับใน pos) · ช่องว่าง/ไม่มีคอลัมน์ = ไม่แก้ · ตัวเลขผิด = แถวอ่านไม่ได้
+    // อ่านแถวตามตำแหน่งคอลัมน์ (cols = { v, sd, ty, sl, hd, tl, fa, cot, ct } → ลำดับใน pos) · ช่องว่าง/ไม่มีคอลัมน์ = ไม่แก้ · ตัวเลขผิด = แถวอ่านไม่ได้
     const readCols = (pos, cols, vi) => {
       const r = { valveNo: vKey(pos[vi]), sd: null, vtype: null };
       let ok = true;
+      const cell = k => cols[k] != null ? String(pos[cols[k]] == null ? '' : pos[cols[k]]).trim() : '';
       const num = (k, max) => {
-        const c = cols[k] != null ? String(pos[cols[k]] == null ? '' : pos[cols[k]]).trim() : '';
+        const c = cell(k);
         if (c === '') return undefined;
         const n = /^\d+(\.\d+)?$/.test(c) ? +c : NaN;
         if (!(n > 0 && n < max)) { ok = false; return undefined; }
@@ -32689,8 +33215,14 @@ function _parsePasteSd(txt) {
       };
       const sd = num('sd', 60); if (sd !== undefined) r.sd = sd;
       for (const k of VSPEC_NUMS) { const n = num(k, 5000); if (n !== undefined) r[k] = n; }
-      const ty = cols.ty != null ? String(pos[cols.ty] || '').trim() : '';
+      const ty = cell('ty');
       if (ty && /^[A-Z]{2,8}$/i.test(ty)) r.vtype = ty.toUpperCase();
+      // ★ v4.07 FA (องศา) · COT / Type COT (ข้อความ) — ช่องว่าง = ไม่แก้
+      const fa = mpParseFa(cell('fa'));
+      if (Number.isNaN(fa)) ok = false; else if (fa != null) r.fa = fa;
+      const cot = _vtxt(cell('cot')), ct = _vtxt(cell('ct'));
+      if (cot) r.cot = cot;
+      if (ct) r.cot_type = ct;
       return ok ? r : null;
     };
     if (hdr) {
@@ -32701,16 +33233,27 @@ function _parsePasteSd(txt) {
       if (r) rows.push(r); else bad.push(line);
       continue;
     }
+    // ★ v4.07 ปุ่ม 📋 วาง FA / COT / Type COT ไม่มีแถวหัว = Valve | FA | COT | Type COT
+    if (mode === 'ext') {
+      const pos = tab ? all : cells, vi = pos.findIndex(_psdIsValve);
+      if (vi < 0) { if (cells.some(x => /\d/.test(x))) bad.push(line); continue; }
+      const r = readCols(pos, { fa: vi + 1, cot: vi + 2, ct: vi + 3 }, vi);
+      if (r) rows.push(r); else bad.push(line);
+      continue;
+    }
     /* ★ v3.95 ไม่มีแถวหัว แต่เป็นรูปแบบมาตรฐานของ Admin: ValveNo | SD | Type | SL | HD | TL (ผู้ใช้ 22/10)
        เดิมก๊อปมาแค่แถวข้อมูล = อ่านได้แค่ SD/TYPE · SL/HD/TL หายเงียบ ๆ
        รู้ว่าเป็นรูปแบบนี้เมื่อ: หลัง Valve มีอย่างน้อย 3 ช่อง · ช่องถัดไปเป็นตัวเลข (SD) หรือว่าง · ช่องที่สองเป็น TYPE (OP/SW/HW…) หรือว่าง
-       ไม่เข้ารูปแบบ (เช่นแบบเดิม Valve | TYPE | SD) → อ่านแบบเดิม */
+       ไม่เข้ารูปแบบ (เช่นแบบเดิม Valve | TYPE | SD) → อ่านแบบเดิม
+       ★ v4.07 ต่อท้ายได้อีก 3 คอลัมน์: … | TL | FA | COT | Type COT
+         (ช่องที่ 7 ไม่ใช่มุม FA = ชีทมีคอลัมน์อื่นต่อท้าย → ไม่อ่าน 3 ช่องนี้ · SD–TL อ่านตามเดิม) */
     {
       const pos = tab ? all : cells, vi = pos.findIndex(_psdIsValve);
       const at = k => String(pos[vi + k] == null ? '' : pos[vi + k]).trim();
+      const ext = !Number.isNaN(mpParseFa(at(6)));
       if (vi >= 0 && pos.length - vi >= 4 && (at(1) === '' || /^\d+(\.\d+)?$/.test(at(1))) && (at(2) === '' || mpTypeRank(at(2)) < 99)
-        && [3, 4, 5].some(k => at(k) !== '')) {
-        const r = readCols(pos, { sd: vi + 1, ty: vi + 2, sl: vi + 3, hd: vi + 4, tl: vi + 5 }, vi);
+        && (ext ? [3, 4, 5, 6, 7, 8] : [3, 4, 5]).some(k => at(k) !== '')) {
+        const r = readCols(pos, { sd: vi + 1, ty: vi + 2, sl: vi + 3, hd: vi + 4, tl: vi + 5, ...(ext ? { fa: vi + 6, cot: vi + 7, ct: vi + 8 } : {}) }, vi);
         if (r) rows.push(r); else bad.push(line);
         continue;
       }
@@ -32727,8 +33270,11 @@ function _parsePasteSd(txt) {
   const by = new Map(); for (const r of rows) by.set(r.valveNo, r);   // เบอร์ซ้ำ → แถวหลังสุดชนะ
   return { rows: [...by.values()], bad };
 }
+/* ★ v4.07 ป้าย/ค่าของคอลัมน์ในตาราง Preview (SL/HD/TL ตัวเลข · FA องศา · COT/Type COT ข้อความ) */
+const _PSD_COL_LB = { sl: 'SL', hd: 'HD', tl: 'TL', fa: 'FA', cot: 'COT', cot_type: 'Type COT' };
+const _psdVal = (k, x) => k === 'fa' ? (_vnum(x) != null ? mpFaTxt(+x) : '') : VSPEC_EXT.includes(k) ? _vtxt(x) : (_vnum(x) != null ? _mpNum(+x) : '');
 function previewPasteSd() {
-  const { rows, bad } = _parsePasteSd(($('psdBox') || {}).value);
+  const { rows, bad } = _parsePasteSd(($('psdBox') || {}).value, _psdMode);
   const res = $('psdRes'); if (!res) return;
   if (!rows.length) { res.innerHTML = `<span class="tag tag-red">${TT('ไม่พบข้อมูลที่อ่านได้', 'Nothing readable')}</span>`; return; }
   let chg = 0, same = 0, miss = 0; const sample = [];
@@ -32736,30 +33282,33 @@ function previewPasteSd() {
     const v = mpValve(r.valveNo);
     if (!v) { miss++; if (sample.length < 12) sample.push({ r, v: null }); continue; }
     const diff = (r.sd != null && Number(v.sd) !== r.sd) || (r.vtype && String(v.vtype || '') !== r.vtype)
-      || VSPEC_NUMS.some(k => r[k] != null && _vnum(v[k]) !== r[k]);   // ★ v3.94
+      || VSPEC_NUMS.some(k => r[k] != null && _vnum(v[k]) !== r[k])   // ★ v3.94
+      || VSPEC_EXT.some(k => r[k] != null && _vext(v, k) !== r[k]);  // ★ v4.07
     if (diff) { chg++; if (sample.length < 12) sample.push({ r, v }); } else same++;
   }
-  const ext = VSPEC_NUMS.filter(k => rows.some(r => r[k] != null));   // ★ v3.94 คอลัมน์ SL/HD/TL ที่มีในข้อมูลที่วาง
-  const old = (v, k) => v && _vnum(v[k]) != null ? `<s class="muted">${escapeHtml(String(v[k]))}</s> → ` : '';
+  const ext = [...VSPEC_NUMS, ...VSPEC_EXT].filter(k => rows.some(r => r[k] != null));   // คอลัมน์ SL/HD/TL/FA/COT ที่มีในข้อมูลที่วาง
+  const base = _psdMode !== 'ext' || rows.some(r => r.sd != null || r.vtype);           // ★ v4.07 ปุ่ม FA/COT ไม่ต้องโชว์ SD/TYPE
+  const old = (v, k) => v && _psdVal(k, v[k]) ? `<s class="muted">${escapeHtml(_psdVal(k, v[k]))}</s> → ` : '';
   res.innerHTML = `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
       <span class="tag tag-blue">📥 ${rows.length}</span><span class="tag tag-orange">✏️ ${TT('เปลี่ยน', 'changed')} ${chg}</span>
       <span class="tag tag-green">= ${TT('เหมือนเดิม', 'same')} ${same}</span><span class="tag ${miss ? 'tag-red' : 'tag-green'}">❓ ${TT('ไม่มีใน Master', 'not in Master')} ${miss}</span>
-      ${ext.length ? `<span class="tag tag-blue">📐 ${ext.map(k => k.toUpperCase()).join(' · ')}</span>` : ''}
+      ${ext.length ? `<span class="tag tag-blue">📐 ${ext.map(k => _PSD_COL_LB[k]).join(' · ')}</span>` : ''}
       ${bad.length ? `<span class="tag tag-red">✗ ${TT('อ่านไม่ได้', 'unreadable')} ${bad.length}</span>` : ''}</div>
-    <table style="font-size:12px;width:100%"><thead><tr><th>Valve</th><th>SD</th><th>TYPE</th>${ext.map(k => `<th>${k.toUpperCase()}</th>`).join('')}</tr></thead><tbody>
+    <div class="tbl-wrap" style="max-height:45vh"><table style="font-size:12px;width:100%"><thead><tr><th>Valve</th>${base ? '<th>SD</th><th>TYPE</th>' : ''}${ext.map(k => `<th>${_PSD_COL_LB[k]}</th>`).join('')}</tr></thead><tbody>
     ${sample.map(({ r, v }) => `<tr><td><b>${escapeHtml(r.valveNo)}</b>${v ? '' : ' <span class="tag tag-red" style="font-size:9px">' + TT('ไม่มีใน Master', 'new') + '</span>'}</td>
-      <td>${r.sd != null && v && v.sd != null && v.sd !== '' ? `<s class="muted">${escapeHtml(String(v.sd))}</s> → ` : ''}<b>${r.sd != null ? _mpNum(r.sd) : (v && v.sd != null && v.sd !== '' ? escapeHtml(String(v.sd)) : '-')}</b></td>
-      <td>${r.vtype && v && v.vtype ? `<s class="muted">${escapeHtml(v.vtype)}</s> → ` : ''}<b>${escapeHtml(r.vtype || (v && v.vtype) || '-')}</b></td>
-      ${ext.map(k => `<td>${r[k] != null ? old(v, k) + '<b>' + _mpNum(r[k]) + '</b>' : (v && _vnum(v[k]) != null ? escapeHtml(String(v[k])) : '-')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      ${base ? `<td>${r.sd != null && v && v.sd != null && v.sd !== '' ? `<s class="muted">${escapeHtml(String(v.sd))}</s> → ` : ''}<b>${r.sd != null ? _mpNum(r.sd) : (v && v.sd != null && v.sd !== '' ? escapeHtml(String(v.sd)) : '-')}</b></td>
+      <td>${r.vtype && v && v.vtype ? `<s class="muted">${escapeHtml(v.vtype)}</s> → ` : ''}<b>${escapeHtml(r.vtype || (v && v.vtype) || '-')}</b></td>` : ''}
+      ${ext.map(k => `<td>${r[k] != null ? old(v, k) + '<b>' + escapeHtml(_psdVal(k, r[k])) + '</b>' : (v && _psdVal(k, v[k]) ? escapeHtml(_psdVal(k, v[k])) : '-')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    ${bad.length ? `<div class="muted" style="font-size:11px;margin-top:6px">✗ ${TT('อ่านไม่ได้', 'unreadable')}: ${bad.slice(0, 5).map(l => `<code>${escapeHtml(l.slice(0, 80))}</code>`).join(' · ')}${bad.length > 5 ? ' …' : ''}</div>` : ''}`;
 }
 async function commitPasteSd() {
-  const { rows } = _parsePasteSd(($('psdBox') || {}).value);
+  const { rows } = _parsePasteSd(($('psdBox') || {}).value, _psdMode);
   if (!rows.length) { toast(TT('ไม่มีข้อมูล', 'No data'), 'orange'); return; }
   const add = !!(($('psdAdd') || {}).checked);
   const pushed = []; let upd = 0, added = 0, skipped = 0;
   for (const r of rows) {
     let v = mpValve(r.valveNo);
-    const ext = Object.fromEntries(VSPEC_NUMS.filter(k => r[k] != null).map(k => [k, r[k]]));   // ★ v3.94 SL/HD/TL ที่วางมา
+    const ext = Object.fromEntries([...VSPEC_NUMS, ...VSPEC_EXT].filter(k => r[k] != null).map(k => [k, r[k]]));   // ★ v3.94 SL/HD/TL · ★ v4.07 FA/COT/Type COT ที่วางมา
     if (!v) {
       if (!add) { skipped++; continue; }
       upsertValve({ valveNo: r.valveNo, customer: 'Other', description: '', processes: [], barcode_id: '', sd: r.sd, vtype: r.vtype || '', ...ext });
@@ -32781,15 +33330,19 @@ async function commitPasteSd() {
     try {
       for (let i = 0; i < pushed.length; i += 400) await api('/api/valves/bulk', { body: { valves: pushed.slice(i, i + 400).map(_mpValvePayload) } });
       ok = true;
-      // ★ v3.94 เบอร์ที่มี SL/HD/TL ล้าง pending เฉพาะเมื่อ Worker รองรับ SL แล้ว (Worker เก่าทิ้งคีย์ sl เงียบ ๆ)
-      if (_vspecCloudOK === true) _vspecClear(pushed.filter(v => _vslCloudOK === true || !VSPEC_NUMS.some(k => _vnum(v[k]) != null)).map(v => v.valveNo));
+      // ★ v3.94 เบอร์ที่มี SL/HD/TL ล้าง pending เฉพาะเมื่อ Worker รองรับ SL แล้ว (Worker เก่าทิ้งคีย์ sl เงียบ ๆ) · ★ v4.07 FA/COT เหมือนกัน
+      _vspecClear(pushed.filter(_vspecCloudFull).map(v => v.valveNo));
     } catch (e) { ok = false; }
   }
   const hasExt = rows.some(r => VSPEC_NUMS.some(k => r[k] != null));
-  const cloudOk = _vspecCloudOK === true && (!hasExt || _vslCloudOK === true);
+  const hasFa = rows.some(r => VSPEC_EXT.some(k => r[k] != null));   // ★ v4.07
+  const cloudOk = _vspecCloudOK === true && (!hasExt || _vslCloudOK === true) && (!hasFa || _vfaCloudOK === true);
   const tail = !ok ? ' · ⚠️ ' + TT('ยังไม่ขึ้น Cloud (จะส่งใหม่ตอนซิงก์)', 'not on Cloud yet (will retry)')
-    : cloudOk ? ' · ☁️ Cloud' : ' · 💾 ' + (hasExt && _vspecCloudOK === true ? TT('Worker ยังไม่รองรับ SL/HD/TL — เก็บในเครื่องนี้ก่อน', 'Worker lacks SL/HD/TL support — kept on this device') : TT('Worker ยังไม่รองรับ SD — เก็บในเครื่องนี้ก่อน', 'Worker lacks SD support — kept on this device'));
-  toast(`✅ SD/TYPE${hasExt ? '/SL' : ''} ${TT('แก้', 'updated')} ${upd}${added ? ` · ${TT('เพิ่มใหม่', 'added')} ${added}` : ''}${skipped ? ` · ${TT('ข้าม (ไม่มีใน Master)', 'skipped')} ${skipped}` : ''}${tail}`, ok && cloudOk ? 'green' : 'orange');
+    : cloudOk ? ' · ☁️ Cloud' : ' · 💾 ' + (_vspecCloudOK !== true ? TT('Worker ยังไม่รองรับ SD — เก็บในเครื่องนี้ก่อน', 'Worker lacks SD support — kept on this device')
+      : hasExt && _vslCloudOK !== true ? TT('Worker ยังไม่รองรับ SL/HD/TL — เก็บในเครื่องนี้ก่อน', 'Worker lacks SL/HD/TL support — kept on this device')
+      : TT('Worker ยังไม่รองรับ FA/COT — เก็บในเครื่องนี้ก่อน (deploy Worker แล้วจะขึ้น Cloud เอง)', 'Worker lacks FA/COT support — kept on this device (syncs after the Worker deploy)'));
+  const what = _psdMode === 'ext' && !rows.some(r => r.sd != null || r.vtype) ? 'FA/COT' : `SD/TYPE${hasExt ? '/SL' : ''}${hasFa ? '/FA/COT' : ''}`;
+  toast(`✅ ${what} ${TT('แก้', 'updated')} ${upd}${added ? ` · ${TT('เพิ่มใหม่', 'added')} ${added}` : ''}${skipped ? ` · ${TT('ข้าม (ไม่มีใน Master)', 'skipped')} ${skipped}` : ''}${tail}`, ok && cloudOk ? 'green' : 'orange');
 }
 
 /* ═══ ★ v3.81 — Service Worker (sw.js) · เปิดซ้ำทันทีจาก cache + เปิดได้ตอนไม่มีเน็ต ═══════════════

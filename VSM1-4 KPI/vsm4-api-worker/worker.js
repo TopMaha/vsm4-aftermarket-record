@@ -277,7 +277,7 @@ export default {
    แต่ละคำสั่งคือการวิ่งไป-กลับ D1 หนึ่งรอบ ตอนนี้ชุดนี้ยาว 19 คำสั่ง = 19 รอบต่อ isolate ที่เย็น
    เช็คเวอร์ชันก่อน (1 รอบ) ตรงแล้วข้ามที่เหลือทั้งหมด · ไม่ตรงค่อยรันเต็มแล้วบันทึกเวอร์ชันใหม่
    เปลี่ยน schema เมื่อไหร่ = ขยับ SCHEMA_VER เพื่อให้ migration รันอีกรอบ */
-const SCHEMA_VER = '2026-10-22-sl';
+const SCHEMA_VER = '2026-11-02-fa';
 let _schemaReady = false;
 async function ensureSchema(env) {
   if (_schemaReady) return;
@@ -404,6 +404,16 @@ async function ensureSchema(env) {
     'ALTER TABLE valves ADD COLUMN hd REAL',
     'ALTER TABLE valves ADD COLUMN tl REAL',
     'ALTER TABLE machine_caps ADD COLUMN sl REAL',
+
+    /* ★ 2026-11-02 (v4.07) — FA (มุมหน้าวาล์วที่เจียร์ · องศา) + COT / Type COT ของวาล์ว + FA ที่เครื่องรับได้
+       valves.fa = ใช้คัดเครื่องขั้น FG (เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง)
+       valves.cot / valves.cot_type = ข้อความ เก็บไว้ก่อน (ยังไม่ใช้คำนวณ)
+       machine_caps.fa = FA ที่เครื่องรับได้ เช่น "45" · "30, 45" · "44.5-45.5" · NULL/ว่าง = ไม่จำกัด
+       ❗เพิ่มคอลัมน์อย่างเดียว · client รุ่นเก่าที่ไม่ส่งคีย์ fa/cot/cot_type จะไม่ทับค่าที่มีอยู่ */
+    'ALTER TABLE valves ADD COLUMN fa REAL',
+    'ALTER TABLE valves ADD COLUMN cot TEXT',
+    'ALTER TABLE valves ADD COLUMN cot_type TEXT',
+    'ALTER TABLE machine_caps ADD COLUMN fa TEXT',
   ]) {
     try { await env.DB.prepare(sql).run(); } catch (e) { /* มีคอลัมน์แล้ว → ข้าม */ }
   }
@@ -521,24 +531,33 @@ async function getInit(env) {
    ❗มีทางถอย: ถ้า SELECT คอลัมน์ใหม่ไม่ผ่าน (migration ยังไม่ลง) ให้กลับไปใช้ชุดเดิม
      /api/init พึ่งฟังก์ชันนี้ — ถ้าพังตรงนี้ ทั้งแอปเปิดไม่ขึ้น ห้ามเสี่ยง */
 /* ★ 2026-10-22 + sl/hd/tl — ถอยได้ 2 ขั้น (ไม่มี sl → ชุด sd/vtype · ไม่มี sd → ชุดเดิม) */
+/* ★ 2026-11-02 + fa/cot/cot_type — ถอยได้ 3 ขั้น (ไม่มี fa → ชุด sl · ไม่มี sl → ชุด sd/vtype · ไม่มี sd → ชุดเดิม) */
 const _numOrNull = x => (x === null || x === undefined || x === '') ? null : Number(x);
 async function getValves(env) {
-  let results, hasSpec = true, hasSl = true;
+  let results, hasSpec = true, hasSl = true, hasFa = true;
+  const BASE = 'SELECT valve_no, customer, description, processes, barcode_id';
   try {
     ({ results } = await env.DB.prepare(
-      'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype, sl, hd, tl FROM valves ORDER BY valve_no'
+      `${BASE}, sd, vtype, sl, hd, tl, fa, cot, cot_type FROM valves ORDER BY valve_no`
     ).all());
-  } catch (e0) {
-    hasSl = false;
+  } catch (eFa) {
+    hasFa = false;
     try {
       ({ results } = await env.DB.prepare(
-        'SELECT valve_no, customer, description, processes, barcode_id, sd, vtype FROM valves ORDER BY valve_no'
+        `${BASE}, sd, vtype, sl, hd, tl FROM valves ORDER BY valve_no`
       ).all());
-    } catch (e) {
-      hasSpec = false;
-      ({ results } = await env.DB.prepare(
-        'SELECT valve_no, customer, description, processes, barcode_id FROM valves ORDER BY valve_no'
-      ).all());
+    } catch (e0) {
+      hasSl = false;
+      try {
+        ({ results } = await env.DB.prepare(
+          `${BASE}, sd, vtype FROM valves ORDER BY valve_no`
+        ).all());
+      } catch (e) {
+        hasSpec = false;
+        ({ results } = await env.DB.prepare(
+          `${BASE} FROM valves ORDER BY valve_no`
+        ).all());
+      }
     }
   }
   return (results || []).map(r => {
@@ -554,6 +573,7 @@ async function getValves(env) {
       o.vtype = r.vtype || '';
     }
     if (hasSpec && hasSl) { o.sl = _numOrNull(r.sl); o.hd = _numOrNull(r.hd); o.tl = _numOrNull(r.tl); }
+    if (hasSpec && hasSl && hasFa) { o.fa = _numOrNull(r.fa); o.cot = r.cot || ''; o.cot_type = r.cot_type || ''; }
     return o;
   });
 }
@@ -568,16 +588,24 @@ const _specNum = (v, k) => {
   const n = Number(v[k]);
   return Number.isFinite(n) ? n : null;
 };
+/* ★ 2026-11-02 + fa (?17/?18) · cot (?19/?20) · cot_type (?21/?22) — กติกาเดียวกัน · ข้อความว่าง = ล้าง (NULL) */
+const _specTxt = (v, k) => {
+  if (!_hasKey(v, k) || v[k] === null || v[k] === undefined) return null;
+  const s = String(v[k]).replace(/\s+/g, ' ').trim().slice(0, 60);
+  return s || null;
+};
 function _valveSpecArgs(v) {
   const hasSd = _hasKey(v, 'sd');
   const hasTy = _hasKey(v, 'vtype');
   return [hasSd ? 1 : 0, _specNum(v, 'sd'), hasTy ? 1 : 0, hasTy ? String(v.vtype || '').trim().toUpperCase() : '',
-    _hasKey(v, 'sl') ? 1 : 0, _specNum(v, 'sl'), _hasKey(v, 'hd') ? 1 : 0, _specNum(v, 'hd'), _hasKey(v, 'tl') ? 1 : 0, _specNum(v, 'tl')];
+    _hasKey(v, 'sl') ? 1 : 0, _specNum(v, 'sl'), _hasKey(v, 'hd') ? 1 : 0, _specNum(v, 'hd'), _hasKey(v, 'tl') ? 1 : 0, _specNum(v, 'tl'),
+    _hasKey(v, 'fa') ? 1 : 0, _specNum(v, 'fa'), _hasKey(v, 'cot') ? 1 : 0, _specTxt(v, 'cot'), _hasKey(v, 'cot_type') ? 1 : 0, _specTxt(v, 'cot_type')];
 }
 const VALVE_UPSERT_SQL = `
-    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at, sd, vtype, sl, hd, tl)
+    INSERT INTO valves (valve_no, customer, description, processes, barcode_id, updated_at, sd, vtype, sl, hd, tl, fa, cot, cot_type)
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, CASE WHEN ?7 = 1 THEN ?8 ELSE NULL END, CASE WHEN ?9 = 1 THEN ?10 ELSE NULL END,
-            CASE WHEN ?11 = 1 THEN ?12 ELSE NULL END, CASE WHEN ?13 = 1 THEN ?14 ELSE NULL END, CASE WHEN ?15 = 1 THEN ?16 ELSE NULL END)
+            CASE WHEN ?11 = 1 THEN ?12 ELSE NULL END, CASE WHEN ?13 = 1 THEN ?14 ELSE NULL END, CASE WHEN ?15 = 1 THEN ?16 ELSE NULL END,
+            CASE WHEN ?17 = 1 THEN ?18 ELSE NULL END, CASE WHEN ?19 = 1 THEN ?20 ELSE NULL END, CASE WHEN ?21 = 1 THEN ?22 ELSE NULL END)
     ON CONFLICT(valve_no) DO UPDATE SET
       customer    = excluded.customer,
       description = excluded.description,
@@ -588,7 +616,10 @@ const VALVE_UPSERT_SQL = `
       vtype       = CASE WHEN ?9 = 1 THEN ?10 ELSE valves.vtype END,
       sl          = CASE WHEN ?11 = 1 THEN ?12 ELSE valves.sl END,
       hd          = CASE WHEN ?13 = 1 THEN ?14 ELSE valves.hd END,
-      tl          = CASE WHEN ?15 = 1 THEN ?16 ELSE valves.tl END`;
+      tl          = CASE WHEN ?15 = 1 THEN ?16 ELSE valves.tl END,
+      fa          = CASE WHEN ?17 = 1 THEN ?18 ELSE valves.fa END,
+      cot         = CASE WHEN ?19 = 1 THEN ?20 ELSE valves.cot END,
+      cot_type    = CASE WHEN ?21 = 1 THEN ?22 ELSE valves.cot_type END`;
 
 async function upsertValve(env, body) {
   const valveNo  = String(body.valveNo || body.valve_no || '').trim();
@@ -609,6 +640,9 @@ async function upsertValve(env, body) {
   if (spec[4]) out.sl = spec[5];
   if (spec[6]) out.hd = spec[7];
   if (spec[8]) out.tl = spec[9];
+  if (spec[10]) out.fa = spec[11];             // ★ 2026-11-02 มีคีย์ fa ในคำตอบ = client รู้ว่า Worker รองรับ FA/COT แล้ว
+  if (spec[12]) out.cot = spec[13] || '';
+  if (spec[14]) out.cot_type = spec[15] || '';
   return { valve: out };
 }
 
@@ -649,12 +683,16 @@ function _capRow(r) {
     updated_at: r.updated_at || '', updated_by: r.updated_by || '',
   };
   if (_hasKey(r, 'sl')) o.sl = _numOrNull(r.sl);   // ★ 2026-10-22 มีคีย์ sl = client รู้ว่า Worker รองรับ SL แล้ว
+  if (_hasKey(r, 'fa')) o.fa = r.fa || '';          // ★ 2026-11-02 มีคีย์ fa = client รู้ว่า Worker รองรับ FA แล้ว
   return o;
 }
 async function getMcCaps(env) {
   let results;
-  try { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS}, sl FROM machine_caps ORDER BY machine_id`).all()); }
-  catch (e) { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS} FROM machine_caps ORDER BY machine_id`).all()); }
+  try { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS}, sl, fa FROM machine_caps ORDER BY machine_id`).all()); }
+  catch (e0) {
+    try { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS}, sl FROM machine_caps ORDER BY machine_id`).all()); }
+    catch (e) { ({ results } = await env.DB.prepare(`SELECT ${MCCAP_COLS} FROM machine_caps ORDER BY machine_id`).all()); }
+  }
   return (results || []).map(_capRow);
 }
 /* body: { caps:[...] } หรือ cap เดียว · replace:true = ล้างของเดิมทั้งตารางก่อน (ใช้ตอนนำเข้าทั้งชีท) */
@@ -665,14 +703,16 @@ async function upsertMcCaps(env, body) {
   const txt  = (v, max) => (Array.isArray(v) ? v.join(',') : String(v == null ? '' : v)).slice(0, max || 4000);
   /* ★ 2026-10-22 sl (?13 = ค่า · ?14 = body มีคีย์ sl) — client รุ่นเก่าที่ไม่รู้จัก SL ส่ง caps ทั้งแถวมาเป็นประจำ
      ถ้าเขียนทับทุกครั้ง SL ที่ Admin ตั้งจะหายเงียบ ๆ → เขียนเฉพาะเมื่อมีคีย์ (null = ล้าง → client ใช้ค่าเริ่มต้น) */
+  /* ★ 2026-11-02 fa (?15 = ข้อความ · ?16 = body มีคีย์ fa) — กติกาเดียวกับ sl (client รุ่นเก่าไม่ทับค่าที่ตั้งไว้) */
   const stmt = env.DB.prepare(`
-    INSERT INTO machine_caps (${MCCAP_COLS}, sl) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12, CASE WHEN ?14 = 1 THEN ?13 ELSE NULL END)
+    INSERT INTO machine_caps (${MCCAP_COLS}, sl, fa) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12, CASE WHEN ?14 = 1 THEN ?13 ELSE NULL END, CASE WHEN ?16 = 1 THEN ?15 ELSE NULL END)
     ON CONFLICT(machine_id) DO UPDATE SET
       zone=excluded.zone, procs=excluded.procs, sd_ranges=excluded.sd_ranges,
       only_valves=excluded.only_valves, except_valves=excluded.except_valves,
       ct=excluded.ct, remark=excluded.remark, label=excluded.label, active=excluded.active,
       updated_at=excluded.updated_at, updated_by=excluded.updated_by,
-      sl = CASE WHEN ?14 = 1 THEN ?13 ELSE machine_caps.sl END`);
+      sl = CASE WHEN ?14 = 1 THEN ?13 ELSE machine_caps.sl END,
+      fa = CASE WHEN ?16 = 1 THEN ?15 ELSE machine_caps.fa END`);
   const batch = [];
   for (const c of list) {
     const id = String((c && (c.machine_id || c.id)) || '').trim().toUpperCase();
@@ -682,7 +722,8 @@ async function upsertMcCaps(env, body) {
     batch.push(stmt.bind(id, txt(c.zone, 20), txt(c.procs, 400), txt(c.sd_ranges, 200),
       txt(c.only_valves), txt(c.except_valves), ct, txt(c.remark, 1000), txt(c.label, 60),
       c.active === 0 || c.active === false ? 0 : 1, now, by || String(c.updated_by || '').slice(0, 60),
-      sl != null && sl >= 0 ? sl : null, _hasKey(c, 'sl') ? 1 : 0));
+      sl != null && sl >= 0 ? sl : null, _hasKey(c, 'sl') ? 1 : 0,
+      _hasKey(c, 'fa') ? (txt(c.fa, 120).trim() || null) : null, _hasKey(c, 'fa') ? 1 : 0));
   }
   if (body.replace === true) batch.unshift(env.DB.prepare('DELETE FROM machine_caps'));
   for (let i = 0; i < batch.length; i += 100) await env.DB.batch(batch.slice(i, i + 100));
