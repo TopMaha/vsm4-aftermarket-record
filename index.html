@@ -501,9 +501,31 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .mseq-btn:disabled{opacity:.35;cursor:default}
 .mseq-del:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
 /* ===== ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ปุ่มระหว่าง Output ของ Process กับ ค้นหา Process + ป๊อปอัปผล) ===== */
-.cv-launch{padding:12px 14px}
-.cv-btn{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;font-size:15px;font-weight:800;min-height:46px;border-radius:12px;box-shadow:0 4px 14px rgba(15,118,110,.22)}
-.cv-sub{font-size:11px;margin-top:6px;line-height:1.55}
+/* ★ v4.08 การ์ดปุ่ม (แทนแถบเขียวเต็มความกว้าง) — โครงเดียวกับ .card ของแอป: ไอคอนสี่เหลี่ยมมน · ชื่อ + คำอธิบาย · ปุ่มย่อ "ตรวจสอบ ›" */
+.cv-launch{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:border-color .15s,box-shadow .15s,transform .15s}
+.cv-launch:hover{border-color:var(--blue-soft);box-shadow:0 6px 18px rgba(26,86,219,.12);transform:translateY(-1px)}
+.cv-launch:active{transform:scale(.99)}
+.cv-launch:focus-visible{outline:3px solid rgba(26,86,219,.35);outline-offset:2px}
+.cv-ic{flex:0 0 auto;width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--blue-dark),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(26,86,219,.25)}
+.cv-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cv-tx b{font-size:14px;font-weight:800;color:var(--blue-dark);line-height:1.35}
+.cv-tx small{font-size:11.5px;color:var(--muted);line-height:1.45}
+.cv-go{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:999px;background:var(--blue-light);
+  border:1.5px solid var(--blue-soft);color:var(--blue);font-size:12.5px;font-weight:800;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.cv-go i{font-style:normal;font-size:16px;line-height:1;margin-top:-2px}
+.cv-launch:hover .cv-go{background:var(--blue);border-color:var(--blue);color:#fff}
+@media (max-width:420px){.cv-launch{gap:10px;padding:11px 12px}.cv-ic{width:38px;height:38px;font-size:18px}.cv-go{padding:0 10px}}
+/* ป๊อปอัป: แถวค้นหา = ช่องกว้าง + ปุ่มขนาดพอดี · รายการเบอร์ที่แนะนำ = อยู่ในเนื้อหา (ไม่ลอย) → ไม่ถูกขอบป๊อปอัปตัด */
+.cv-q{display:flex;gap:8px;align-items:flex-end}
+.cv-q .fr{flex:1;min-width:0;margin:0}
+.cv-q .btn{flex:0 0 auto;min-width:118px;height:44px}
+.cv-q input{height:44px}
+.ac-dd.cv-dd{position:static;margin-top:6px;max-height:min(300px,45vh)}
+/* ผลค้นหา: จอกว้างวาง 2 ใบต่อแถว (ไม่ยืดเต็มป๊อปอัป) · มือถือ 1 ใบ */
+.cv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px;margin-top:6px}
+.cv-grid .cv-row{margin-top:0}
 .cv-src,.cv-row{border:1.5px solid var(--blue-soft);border-radius:11px;padding:8px 10px;margin-top:6px;background:#fff}
 .cv-src{background:var(--blue-light);border-color:#93C5FD}
 .cv-row.best{border-color:#16A34A;background:#F0FDF4;box-shadow:0 0 0 2px rgba(22,163,74,.12)}
@@ -2936,7 +2958,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.07</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.08</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3169,10 +3191,12 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="procGrid" class="pgrid"></div>
   </div>
 
-  <!-- ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ผู้ใช้ 2/11: ปุ่มแทรกระหว่าง Output ของ Process กับ ค้นหา Process จาก Valve No) -->
-  <div class="card cv-launch">
-    <button type="button" class="btn btn-block cv-btn" onclick="openConvertModal()">🔧 เช็คงานที่พอดัดแปลงได้</button>
-    <div class="muted cv-sub">งานขาด / ต้อง Scrap → ใส่ Valve No แล้วระบบหาเบอร์ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย (SD · SL · HD) พร้อมเช็ค Order</div>
+  <!-- ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ผู้ใช้ 2/11: ปุ่มแทรกระหว่าง Output ของ Process กับ ค้นหา Process จาก Valve No)
+       ★ v4.08 (ผู้ใช้ 2/11 "ออกแบบปุ่มใหม่ไม่สวย") แถบปุ่มเขียวเต็มความกว้าง → การ์ดปุ่มแบบเดียวกับการ์ดอื่นในแอป (ไอคอน · ชื่อ · คำอธิบาย · ตรวจสอบ ›) -->
+  <div class="card cv-launch" role="button" tabindex="0" onclick="openConvertModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openConvertModal();}">
+    <span class="cv-ic" aria-hidden="true">🔧</span>
+    <span class="cv-tx"><b>เช็คงานที่พอดัดแปลงได้</b><small>งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order</small></span>
+    <span class="cv-go">ตรวจสอบ<i aria-hidden="true">›</i></span>
   </div>
 
   <!-- ค้นหา -->
@@ -11109,7 +11133,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.07":"Production Record + KPI · v4.07",
+"ระบบบันทึกผลิต + KPI · v4.08":"Production Record + KPI · v4.08",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11136,8 +11160,8 @@ const I18N_X = {
 "Output ของ Process":"Output by Process","ยอด OPR รวมตาม":"Total OPR by","process ที่ตั้งให้เครื่อง":"process assigned to each machine",
 "(เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)":"(e.g. N-202 = ROLL → N-202's OPR counts toward ROLL) — independent of what operators type · set a machine's process in ⚙️ Settings → Machines (tap chips to filter · tap a row for valves)",
 "ช่วงเวลาที่แสดง":"Period shown","ค้นหา Process จาก Valve No":"Find Process by Valve No",
-"🔧 เช็คงานที่พอดัดแปลงได้":"🔧 Check convertible work",
-"งานขาด / ต้อง Scrap → ใส่ Valve No แล้วระบบหาเบอร์ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย (SD · SL · HD) พร้อมเช็ค Order":"Short / scrapped work → enter the valve no. and the app finds valves of the same TYPE that are slightly smaller (SD · SL · HD) and checks for an Order",
+"เช็คงานที่พอดัดแปลงได้":"Check convertible work",
+"งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order":"Short / scrapped work → find valves of the same TYPE that are slightly smaller, with an Order check",
 "📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง FA / COT / Type COT":"📋 Paste FA / COT / Type COT","📐 วาง FA ของเครื่อง":"📐 Paste machine FA",
 "เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
 "🔎 เลือก process ที่จะแสดง":"🔎 Choose processes to show","เลือกทั้งหมด":"Select all",
@@ -22538,13 +22562,13 @@ function openConvertModal(prefill) {
     <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:9px 11px;border-radius:9px;line-height:1.65">
       ${TT('ใส่ Valve No ที่งานขาด / ต้อง Scrap → ระบบหา Valve No ที่ <b>TYPE เดียวกัน</b> และ <b>SD · SL · HD ไม่เกินของเดิม</b> (เจียร์ลดได้) เรียงจากที่ต้องเจียร์น้อยสุด แล้วเช็คว่ามี Order ไหม',
         'Enter the valve that is short / scrapped → finds valves with the <b>same TYPE</b> and <b>SD · SL · HD no larger</b> (can be ground down), least grinding first, and checks for an Order')}</div>
-    <div class="fg" style="gap:8px;align-items:flex-end">
-      <div class="fr ac" style="margin:0"><label>Valve No</label>
+    <div class="cv-q">
+      <div class="fr"><label>Valve No</label>
         <input type="search" id="cvValve" value="${escapeHtml(prefill || '')}" placeholder="${TT('เช่น', 'e.g.')} VF1345A0" autocomplete="off" autocapitalize="characters" spellcheck="false"
-          oninput="_cvAc(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();cvRun();}">
-        <div class="ac-dd" id="cvValve_dd"></div></div>
-      <div class="fr" style="margin:0"><button type="button" class="btn btn-blue btn-block" onclick="cvRun()">🔍 ${TT('ค้นหา', 'Search')}</button></div>
+          oninput="_cvAc(event)" onkeydown="if(event.key==='Enter'){event.preventDefault();cvRun();}"></div>
+      <button type="button" class="btn btn-blue" onclick="cvRun()">🔍 ${TT('ค้นหา', 'Search')}</button>
     </div>
+    <div class="ac-dd cv-dd" id="cvValve_dd"></div>
     <div id="cvRes" class="mt-8"></div>`, { wide: true });
   setTimeout(() => { const el = $('cvValve'); if (!el) return; if (prefill) cvRun(); else el.focus(); }, 60);
 }
@@ -22555,7 +22579,8 @@ function _cvAc(ev) {
   for (const v of state.valves || []) {
     const no = String(v.valveNo || '').trim(); if (!no || !no.toLowerCase().includes(q)) continue;
     const s = cvSpecOf(v);
-    list.push({ id: no, valveNo: no, description: [s.vtype || '-', s.sd != null ? 'SD ' + _mpNum(s.sd) : '', s.sl != null ? 'SL ' + _mpNum(s.sl) : '', s.hd != null ? 'HD ' + _mpNum(s.hd) : ''].filter(Boolean).join(' · ') });
+    list.push({ id: no, valveNo: no, description: (s.vtype || s.sd != null) ? [s.vtype || '-', s.sd != null ? 'SD ' + _mpNum(s.sd) : '', s.sl != null ? 'SL ' + _mpNum(s.sl) : '', s.hd != null ? 'HD ' + _mpNum(s.hd) : ''].filter(Boolean).join(' · ')
+      : TT('ยังไม่มีขนาดใน Master', 'no sizes in the master') });
     if (list.length >= 12) break;
   }
   acDropdown('cvValve', list, function pickCv(it, inputId) {
@@ -22598,13 +22623,13 @@ function cvRun(showAll) {
   box.innerHTML = srcHtml
     + (noDim.length ? `<div class="cv-note">ℹ️ ${TT(`เบอร์ต้นทางยังไม่มี ${noDim.join(' / ')} ใน Master — เทียบได้เฉพาะ TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')}`, `The source has no ${noDim.join(' / ')} in the master — compared on TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')} only`)}</div>` : '')
     + `<div class="cv-sec has">✅ ${TT('มี Order — แปลงแล้วจบงานได้', 'Has an Order — convert and close the job')} <span>${R.has.length}</span></div>`
-    + (R.has.length ? R.has.map((x, i) => row(x, i === 0)).join('') : `<div class="cv-empty">${TT('ไม่มีเบอร์ที่ขนาดพอแปลงได้และมี Order ตอนนี้', 'No convertible valve has an open Order right now')}${R.nOrd ? '' : ' · ' + TT('ยังไม่มีแผนขายที่เปิดอยู่ในระบบ', 'no open sales plan in the system')}</div>`)
+    + (R.has.length ? `<div class="cv-grid">${R.has.map((x, i) => row(x, i === 0)).join('')}</div>` : `<div class="cv-empty">${TT('ไม่มีเบอร์ที่ขนาดพอแปลงได้และมี Order ตอนนี้', 'No convertible valve has an open Order right now')}${R.nOrd ? '' : ' · ' + TT('ยังไม่มีแผนขายที่เปิดอยู่ในระบบ', 'no open sales plan in the system')}</div>`)
     + `<div class="cv-sec none">📋 ${TT('ยังไม่มี Order — เผื่อมี Order วันข้างหน้า', 'No Order yet — in case one comes later')} <span>${R.none.length}</span></div>`
-    + (R.none.length ? noneShown.map(x => row(x, false)).join('')
+    + (R.none.length ? `<div class="cv-grid">${noneShown.map(x => row(x, false)).join('')}</div>`
         + (R.none.length > noneShown.length ? `<button type="button" class="btn btn-outline btn-sm btn-block" style="margin-top:6px" onclick="cvRun(true)">${TT('แสดงทั้งหมด', 'Show all')} ${R.none.length}</button>` : '')
       : `<div class="cv-empty">${TT('ไม่มี', 'None')}</div>`)
     + (R.part.length ? `<details class="cv-part"><summary>❓ ${TT('มี Order แต่ขนาดใน Master ยังไม่ครบ — เช็คขนาดเองก่อน', 'Has an Order but sizes are incomplete in the master — check by hand')} <span>${R.part.length}</span></summary>
-        ${R.part.map(x => row(x, false)).join('')}</details>` : '')
+        <div class="cv-grid">${R.part.map(x => row(x, false)).join('')}</div></details>` : '')
     + `<div class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.6">${TT('เทียบจาก Master valve ของ', 'Compared within the valve master of')} ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}
       · ${TT('เรียง SD ใกล้สุดก่อน → SL → HD', 'sorted by closest SD → SL → HD')} · ${TT('ตัวเลขสีแดง = ต้องเจียร์ออก', 'red = to grind off')}
       · Order = ${TT(`แผนขายที่ยังไม่จบ (หน้า 📋 วางแผน) วันขายไม่เก่ากว่า ${CV_ORDER_BACK} วัน`, `open sales plans (📋 Plan tab), sale date within the last ${CV_ORDER_BACK} days or later`)}
