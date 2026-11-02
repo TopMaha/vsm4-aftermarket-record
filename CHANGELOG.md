@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v4.07 — 2026-11-02 — 🔧 เช็คงานที่พอดัดแปลงได้ · 📐 FA ของวาล์ว ↔ FA ของเครื่อง (ขั้น FG) · 🌐 IOT รวม 4 VSM มีผัง 3D · COT / Type COT ใน Master valve  ⏳ ยังไม่ deploy (ต้อง deploy Worker ก่อน Pages)
+## v4.07 — 2026-11-02 — 🔧 เช็คงานที่พอดัดแปลงได้ · 📐 FA ของวาล์ว ↔ FA ของเครื่อง (ขั้น FG) · 🌐 IOT รวม 4 VSM มีผัง 3D · COT / Type COT ใน Master valve  ✅ deployed (Pages ddddacd · Worker 1d048453)
 
 **ที่มา (ผู้ใช้ 2/11 · 4 ข้อ + รูปหน้าติดตามงาน):** ① ระบบหา Valve ที่ขนาดเล็กกว่าเล็กน้อย เพื่อแปลงงานที่ต้อง Scrap เป็นเบอร์อื่นที่มี Order (ตัวอย่าง VF1345A0 SD 9 · OP · SL 129.35 · HD 45 → ตัวที่ดีที่สุด SD 9 · OP · SL 115 · HD 40) พนักงานใส่ Valve No อย่างเดียว · ปุ่มอยู่ระหว่าง Output กับ ค้นหา Process ② เงื่อนไข FA สำหรับเครื่องที่ผลิต FG ③ 3D สำหรับ IOT รวม ④ ช่อง COT + Type COT ใน Valve No วางจาก Excel ได้ง่าย
 
