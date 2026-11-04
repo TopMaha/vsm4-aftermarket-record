@@ -3042,7 +3042,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.10</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.11</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3600,10 +3600,10 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       <input type="file" id="vImport" accept=".xlsx,.xls,.csv" class="hide" onchange="importValves(event)">
       <button class="btn btn-outline btn-sm" onclick="exportValves()">⬇️ Export</button>
       <button class="btn btn-green btn-sm" onclick="openPasteValvesModal()">📋 วางจาก Excel</button>
-      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff" onclick="openPasteSdModal()" title="วาง Valve | TYPE | SD จาก Excel (ชีท Process) · SL / HD / TL / FA / COT / Type COT = ก๊อปหัวคอลัมน์มาด้วย">📏 วาง SD / TYPE / SL</button>
-      <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteSdModal('ext')" title="วาง Valve | FA | COT | Type COT จาก Excel (มีหรือไม่มีแถวหัวก็ได้)">📋 วาง FA / COT / Type COT</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff" onclick="openPasteSdModal()" title="วาง Valve | TYPE | SD จาก Excel (ชีท Process) · SL / HD / TL / COT / Type COT = ก๊อปหัวคอลัมน์มาด้วย">📏 วาง SD / TYPE / SL</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteSdModal('ext')" title="วาง Valve | COT | Type COT จาก Excel (มีหรือไม่มีแถวหัวก็ได้)">📋 วาง COT / Type COT</button>
     </div>
-    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th title="FA (มุมหน้าวาล์ว · ใช้คัดเครื่องขั้น FG) · COT · Type COT">FA <span style="font-weight:600;opacity:.7">· COT · Type</span></th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th title="COT · Type COT (Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้)">COT <span style="font-weight:600;opacity:.7">· Type</span></th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
     <div id="vPagination"></div>
   </div>
 
@@ -3619,7 +3619,6 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       <input type="search" id="mcCapSearch" placeholder="🔎 ค้นหาเครื่อง / Process / ป้าย" oninput="renderMcCaps()" style="flex:1;min-width:150px;padding:8px;border:1.5px solid var(--blue-soft);border-radius:8px;font-size:13px">
       <button class="btn btn-blue btn-sm" onclick="openMcCapModal()">➕ เพิ่มเครื่อง</button>
       <button class="btn btn-green btn-sm" onclick="openPasteMcCapsModal()">📋 วางจาก Excel</button>
-      <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteMcFaModal()" title="วาง Machine No | FA จาก Excel — FA ที่เครื่องรับได้ (ขั้น FG)">📐 วาง FA ของเครื่อง</button>
       <button class="btn btn-outline btn-sm" onclick="exportMcCaps()">⬇️ Export</button>
       <button class="btn btn-outline btn-sm" onclick="refreshMcCaps()">🔄 โหลดใหม่</button>
       <span id="mcCapState"></span>
@@ -7273,6 +7272,9 @@ function planLotAlloc(b) {
   const wipAll = (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || []);
   for (const it of wipAll) {
     const vk = vKey(it.valve); if (!byV.has(vk)) continue;
+    // ★ v4.11 Admin เติมยอด FG ให้ล็อตนี้แล้ว = ผ่าน FG ตามแผน (ตรงกับตัววางแผนเครื่อง ที่ไม่วาง FG ให้ล็อตนี้อีก) — ไม่ใช่ยอด WIP OUT / Dashboard
+    const af = pfAdmOfJob(it.valve, it.lot).FG;
+    if (af) { add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'fg', qty: Number(it.qty) || 0, fin: af.date, proc: 'FG', prog: 2, recv: af.date }); continue; }
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: Number(it.qty) || 0, proc: it.curProc || '', prog: progOf(it.valve, it.curProc),
               recv: String(it.date || '').slice(0, 10), noIntake: it.basis === 'produced' });
   }
@@ -11399,7 +11401,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.10":"Production Record + KPI · v4.10",
+"ระบบบันทึกผลิต + KPI · v4.11":"Production Record + KPI · v4.11",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11431,7 +11433,7 @@ const I18N_X = {
 "วันนี้ผลิตอะไร เครื่องไหน · คิวเครื่องทีละ Zone":"What to make today, on which machine · queues by zone",
 "🔎 พิมพ์ Valve No หรือ Lot — เช่น 4796":"🔎 Type a Valve No or Lot — e.g. 4796",
 "งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order":"Short / scrapped work → find valves of the same TYPE that are slightly smaller, with an Order check",
-"📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง FA / COT / Type COT":"📋 Paste FA / COT / Type COT","📐 วาง FA ของเครื่อง":"📐 Paste machine FA",
+"📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง COT / Type COT":"📋 Paste COT / Type COT",
 "เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
 "🔎 เลือก process ที่จะแสดง":"🔎 Choose processes to show","เลือกทั้งหมด":"Select all",
 "ไม่มีข้อมูล OPR":"No OPR data","ไม่มีวาล์ว":"No valves","วาล์วเบอร์":"Valve","รวม OPR":"Total OPR",
@@ -17514,10 +17516,13 @@ function deleteWipin(id){
   _saveWipin(); _wipinPush(e);
 }
 /* ── cloud sync (poll 15s เหมือนต่อกะ) ── */
-let _wipinSig='';
+let _wipinSig='', _wipinSyncAt=0;
 function _wipinSigNow(){ return JSON.stringify(_wipinList().map(e=>[e.id,e.valve,e.lot,e.qty,e.updatedAt]))+'|'+Math.floor(Date.now()/3600000); }
+/* ★ v4.11 หน้าค้นหา Process ต้องเห็นใบรับเข้าล่าสุด (รอบอัตโนมัติ 2 ชม. — แก้ Lot ในใบจากเครื่องอื่นแล้วแถวเลขเดิมยังค้าง) · ดึงซ้ำไม่เกินนาทีละครั้ง */
+function _wipinFresh(){ return Date.now()-_wipinSyncAt<60000 ? Promise.resolve() : syncWipin(); }
 async function syncWipin(){
   try{
+    _wipinSyncAt=Date.now();
     await _wipinFlush();
     const d=await wipinApi('/wipin/list');
     let changed=false;
@@ -18978,12 +18983,48 @@ function wipinMissingEdit(valveEnc, lotEnc){
      ② ช่อง ☑ ในป๊อปอัป ✏️ แก้ใบรับเข้า WIP IN 1.5 (editWipinEntry) — ใบรับเข้ากับยอดผลิต
         ต้องเป็น Lot เดียวกันเสมอ ไม่งั้นแก้ข้างเดียวจะกลายเป็นงานคนละล็อตทันที
    คืน {n,kpi,prod,ok} · ok=false = แก้ในเครื่องแล้วแต่ยังไม่ขึ้น Cloud (หมาย _unsynced ให้ส่งซ้ำเอง) */
+/* ★ v4.11 แก้เลข Lot แล้ว "รายละเอียดรายช่วงเวลา" (shifts) ของ KPI ต้องเปลี่ยนด้วย ให้ข้อมูลในแถวเดียวกันตรงกัน
+   (วัดจริง 4/11: VV4728A0 ยอด 2 แถวที่ย้ายผ่านใบรับเข้า คอลัมน์ lot = 2611S120004 แต่ shifts ยังเป็น 2609S090004 · ทั้งระบบ 23 จาก 11,742 แถวใน 30 วัน — ไม่มีตัวเลขไหนอ่านค่านี้) */
+function _shiftsLotFix(r, oldV, oldLk, newV, newL){
+  const arr=_shiftsArr(r); if(!arr.length) return r.shifts;
+  const vk=vKey(oldV);
+  return arr.map(s=>({ ...s, ...(lotKey(s.lot)===oldLk?{lot:newL}:{}), ...(s.valve&&vKey(s.valve)===vk?{valve:newV}:{}) }));
+}
+/* ★ v4.11 (ผู้ใช้ 4/11 ข้อ 2 "แก้เลข Lot แล้วระบบยังอาจอิงเลขเดิมอยู่") ข้อมูลที่ผูกกับเลข Lot ต้องตามไปเลขใหม่ด้วย:
+     targets: สถานะงานหลัง FG (jobproc*) · ยอด 🔑 Admin (admfill*) — เดิมค้างที่เลขเดิม (ทำให้เกิด "ไม่มีข้อมูลผลิตของ Lot นี้แล้ว" 53 ล็อต ณ 31/10)
+     แผนขายที่ระบุ Lot นี้ · แผนที่วางเอง / ย้ายเครื่องของ Lot นี้
+   ปลายทางมีค่าของตัวเองอยู่แล้ว (รวม 2 ล็อต) = ใช้ของปลายทาง · ล้มเหลว = บอกผู้เรียกไม่ได้ทำให้การแก้ Lot พัง (แก้ซ้ำได้) */
+async function _lotMoveRefs(oldV, oldL, newV, newL){
+  const from=jobKey(oldV, oldL), to=jobKey(newV, newL), oldLk=lotKey(oldL), newLk=lotKey(newL), oldVk=vKey(oldV), newVk=vKey(newV);
+  if(!oldLk || from===to) return 0;
+  let n=0;
+  const T=state.targets||{}, body={};
+  const mv=(a,b)=>{ if(!(Number(T[a])>0)) return; if(!(Number(T[b])>0)) body[b]=T[a]; body[a]=0; n++; };
+  for(const p of [JOBPROC_PREFIX, JOBPROCD_PREFIX, JOBPROCQ_PREFIX]) mv(p+from, p+to);
+  for(const p of [ADMFILLQ_PREFIX, ADMFILLD_PREFIX]){ const h=p+from+'@'; for(const k in T) if(k.startsWith(h)) mv(k, p+to+k.slice(p.length+from.length)); }
+  if(Object.keys(body).length){ try{ await _pfTargetsPut(body); }catch(e){ console.warn('[lot rename] targets', e); } }
+  let nPlan=0;
+  for(const p of (state.plans||[])){
+    if(vKey(p.valve_no)!==oldVk) continue;
+    const keys=planLotKeys(p); if(!keys.includes(oldLk)) continue;
+    p.lot=[...new Set(keys.map(k=>k===oldLk?newLk:k))].join(', '); if(oldVk!==newVk) p.valve_no=newV;
+    try{ await _planSave(p); }catch(e){ console.warn('[lot rename] plan', e); }
+    nPlan++;
+  }
+  if(nPlan){ lsSave(LS.PLANS, state.plans); n+=nPlan; }
+  const pins=mpManItems('pin').filter(x=>x.vk===oldVk && x.lk===oldLk);
+  if(pins.length){ mpManPut(pins.map(x=>({ ...x, id:mpPinId(newVk, newLk, x.fam), vk:newVk, lk:newLk }))); mpManRemove(pins.map(x=>x.id)); n+=pins.length; }
+  return n;
+}
 async function _fixValveLotRecs(oldV, oldL, newV, newL){
   const {kpi,prod}=_recsWithValveLot(oldV, oldL);
   const n=kpi.length+prod.length;
-  if(!n) return {n:0,kpi:0,prod:0,ok:true};
+  const nMv=await _lotMoveRefs(oldV, oldL, newV, newL);    // ★ v4.11 ใบรับเข้าย้ายแล้ว ข้อมูลที่อิงเลขเดิมก็ต้องย้าย ถึงในเครื่องจะไม่มียอดผลิตของ Lot นี้
+  const cloudN=await _fixValveLotCloud(oldV, oldL, newV, newL, kpi, prod);
+  if(!n) return {n:cloudN,kpi:0,prod:0,ok:true,moved:nMv};
   const now=new Date().toISOString();
-  for(const r of kpi){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.valve_unknown=!isKnownValve(newV); r.updated_at=now; }
+  const lk0=lotKey(oldL);
+  for(const r of kpi){ r.shifts=_shiftsLotFix(r, oldV, lk0, newV, newL); r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.valve_unknown=!isKnownValve(newV); r.updated_at=now; }
   for(const r of prod){ r.valve_no=newV; r.valveNo=newV; r.lot=newL; r.updated_at=now; }
   lsSave(LS.KPI, state.kpiRecords);
   lsSave(LS.PROD_REC, state.prodRecords);
@@ -18994,15 +19035,31 @@ async function _fixValveLotRecs(oldV, oldL, newV, newL){
     if(kpi.length)  await api('/api/kpi', { body: { records: kpi } });
     if(prod.length) await api('/api/records/bulk', { body: { records: prod } });
     hideBusy();
-    return {n,kpi:kpi.length,prod:prod.length,ok:true};
+    return {n:n+cloudN,kpi:kpi.length,prod:prod.length,ok:true,moved:nMv};
   }catch(e){
     // ★ req #6: หมาย _unsynced → ระบบส่งซ้ำเองเมื่อเน็ตกลับมา + ขึ้นแถบ "ยังไม่ขึ้น Cloud"
     hideBusy();
     kpi.forEach(r=>r._unsynced=true); prod.forEach(r=>r._unsynced=true);
     lsSave(LS.KPI, state.kpiRecords); lsSave(LS.PROD_REC, state.prodRecords);
     renderSyncBar();
-    return {n,kpi:kpi.length,prod:prod.length,ok:false};
+    return {n:n+cloudN,kpi:kpi.length,prod:prod.length,ok:false,moved:nMv};
   }
+}
+/* ★ v4.11 แถวของ Lot นี้ที่อยู่บน Cloud แต่ไม่อยู่ในเครื่อง (เก่ากว่าชุด 30 วัน) — แก้ตามด้วยไม่งั้นเหลือแถวเลขเดิมค้าง (saveLotRename ทำอยู่แล้ว ทางนี้ไม่เคยทำ)
+   ดึงไม่ได้ / แก้ไม่ได้ = ข้าม (แก้ซ้ำได้ที่หน้าค้นหา Process → แตะ Lot) */
+async function _fixValveLotCloud(oldV, oldL, newV, newL, kpi, prod){
+  if(!API) return 0;
+  const lk=lotKey(oldL), have=new Set([...kpi,...prod].map(r=>r.record_id||r.recordId));
+  let n=0;
+  try{
+    const pr=await api(`/api/records?valve=${encodeURIComponent(oldV)}&limit=100000`,{silent:true});
+    const pAll=filterVsmPeer(pr?.records||[]).filter(r=>lotKey(r.lot)===lk && !have.has(r.record_id||r.recordId));
+    await _chunkRun(pAll, async r=>{ const res=await api('/api/records/update',{ body:{ record_id:r.record_id||r.recordId, lot:newL, valveNo:newV } }); if(res&&res.updated) n++; }, 8);
+    const kr=await api(`/api/kpi?valve=${encodeURIComponent(oldV)}&limit=100000`,{silent:true});
+    const kAll=filterVsmPeer(kr?.records||[]).filter(r=>lotKey(r.lot)===lk && !have.has(r.record_id));
+    await _chunkRun(kAll, async r=>{ const res=await api('/api/kpi/update',{ body:{ record_id:r.record_id, lot:newL, valve_no:newV, shifts:_shiftsLotFix(r, oldV, lk, newV, newL) } }); if(res&&res.updated) n++; }, 8);
+  }catch(e){ console.warn('[lot rename] cloud rows', e); }
+  return n;
 }
 async function applyWipinMissingEdit(){
   const oldV=$('wmeOldValve').value, oldL=$('wmeOldLot').value;
@@ -22879,7 +22936,7 @@ function cvRun(showAll) {
     const dk = d && d[k];
     return `<span class="cv-d">${lb} <b>${_mpNum(o[k])}</b>${d ? (dk > 1e-9 ? `<i>−${_mpNum(dk)}</i>` : '<i class="eq">=</i>') : ''}</span>`;
   }).join('');
-  const extra = v => [_vnum(v.fa) != null ? `FA ${mpFaTxt(+v.fa)}` : '', _vnum(v.tl) != null ? `TL ${_mpNum(+v.tl)}` : '', _vtxt(v.cot) ? `COT ${_vtxt(v.cot)}` : '', _vtxt(v.cot_type) ? `Type COT ${_vtxt(v.cot_type)}` : ''].filter(Boolean);
+  const extra = v => [_vnum(v.tl) != null ? `TL ${_mpNum(+v.tl)}` : '', _vtxt(v.cot) ? `COT ${_vtxt(v.cot)}` : '', _vtxt(v.cot_type) ? `Type COT ${_vtxt(v.cot_type)}` : ''].filter(Boolean);
   const srcHtml = `<div class="cv-src"><div class="cv-h"><span>🎯 ${TT('ต้นทาง', 'From')}</span><b>${escapeHtml(R.vk)}</b><span class="cv-ty">${escapeHtml(s.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(R.src.customer))}</span></div>
     <div class="cv-dims">${specLine(s)}${extra(R.src).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div></div>`;
   if (R.err === 'nospec') {
@@ -22954,20 +23011,42 @@ function acProcValveSearch(ev) {
     searchProcess();   // เลือกแล้วค้นหาให้เลย
   });
 }
-// รวม records จาก cloud + local แล้วเลือกชุดที่ "ใหม่กว่า" รายตัวตาม updated_at (เสมอกัน = local ที่เพิ่งแก้ชนะ)
-// แก้อาการ: แก้ไข record ที่หน้าประวัติ แล้วค้นหา Process ยังเห็นค่าเดิม เพราะ D1 ยังไม่ propagate (req #6)
+/* รวม records จาก cloud + local — ★ v4.11 (ผู้ใช้ 4/11 ข้อ 2 · VV4728A0) Cloud คือความจริง · ใช้ของในเครื่องเฉพาะแถวที่ยังแก้ค้างอยู่ในเครื่องนี้
+   (_unsynced = ยังส่งไม่ขึ้น · แก้ในเครื่องนี้ไม่เกิน _SP_LOCAL_MS = Cloud อาจยังไม่ทัน ตามเหตุผลเดิมของ req #6)
+   เดิม: เทียบ updated_at แต่ Worker ไม่ส่ง updated_at มากับยอดผลิต → ทุกแถวเวลาเสมอกัน (timestamp) แล้ว "เสมอกัน = local ชนะ"
+     ⇒ เครื่องที่ยังไม่ซิงก์ (รอบอัตโนมัติ 2 ชม.) อิงเลข Lot เดิมตลอด: แก้ Lot 2609S090004 → 2611S120004 บน Cloud แล้ว
+        ตารางยังเอา SFG 2,390 ไปไว้แถว 2609S090004 ทั้งที่กด ✏️ เห็น 2611S120004 */
+const _SP_LOCAL_MS = 10 * 60 * 1000;
+const _spLocalPending = (r, now) => !!r._unsynced || (!!r.updated_at && (now || Date.now()) - new Date(r.updated_at).getTime() < _SP_LOCAL_MS);
 function _mergeProdFreshest(cloudRecs, localRecs){
-  const byId=new Map(); let anon=0;
-  const t = r => new Date(r.updated_at || r.updatedAt || r.timestamp || 0).getTime();
-  const put = r => {
-    const id = r.record_id || r.recordId;
-    if(!id){ byId.set('__a'+(anon++), r); return; }   // ไม่มี id → เก็บแยก ไม่ทับใคร
-    const ex = byId.get(id);
-    if(!ex || t(r) >= t(ex)) byId.set(id, r);
-  };
-  (cloudRecs||[]).forEach(put);
-  (localRecs||[]).forEach(put);     // ใส่ local ทีหลัง → ค่าที่ updated_at ≥ ทับ (local ที่เพิ่งแก้ชนะตอนเสมอ)
+  const byId=new Map(), now=Date.now(); let anon=0;
+  for(const r of (cloudRecs||[])){ const id=r.record_id||r.recordId; byId.set(id||('__a'+(anon++)), r); }
+  for(const r of (localRecs||[])){
+    const id=r.record_id||r.recordId;
+    if(!id){ byId.set('__a'+(anon++), r); continue; }   // ไม่มี id → เก็บแยก ไม่ทับใคร
+    if(!byId.has(id) || _spLocalPending(r, now)) byId.set(id, r);
+  }
   return [...byId.values()];
+}
+/* ★ v4.11 ค้นหาแล้วเจอแถวที่ Cloud ต่างจากในเครื่อง (แก้จากเครื่องอื่น) → อัปเดตในเครื่องด้วย หน้าอื่นจะได้ไม่อิงเลขเดิมรอถึงรอบซิงก์ถัดไป
+   แตะเฉพาะข้อเท็จจริงของแถว (Valve · Lot · ยอด · Process) และไม่แตะแถวที่ยังแก้ค้างอยู่ในเครื่องนี้ */
+function _spPatchLocal(cloudRecs){
+  const byId=new Map((cloudRecs||[]).map(r=>[r.record_id||r.recordId, r])), now=Date.now();
+  let changed=false;
+  const fix=(L,save)=>{
+    let ch=false;
+    for(const x of (L||[])){
+      const c=byId.get(x.record_id||x.recordId); if(!c || _spLocalPending(x, now)) continue;
+      const valve=c.valveNo||c.valve_no, proc=c.currentProcess||c.current_process||'';
+      if(x.lot===c.lot && Number(x.quantity)===Number(c.quantity) && vKey(x.valve_no||x.valveNo)===vKey(valve) && (x.current_process||x.currentProcess||'')===proc) continue;
+      Object.assign(x,{ lot:c.lot, quantity:c.quantity, valve_no:valve, valveNo:valve, current_process:proc, currentProcess:proc });
+      ch=true;
+    }
+    if(ch && save) changed=true;
+  };
+  fix(state.prodRecords,true);
+  fix(typeof _histProdRows!=='undefined'?_histProdRows:null,false);
+  if(changed) lsSave(LS.PROD_REC, state.prodRecords);
 }
 /* ═══ ★ 2026-08-06 (req #1) — Lot ที่ "รับเข้า WIP IN 1.5" แล้วของเบอร์นี้ ═══════
    ทำไมต้องมี: หน้าค้นหา Process อ่านจาก production_records อย่างเดียว
@@ -23008,9 +23087,9 @@ async function searchProcess() {
         const rRes = await api(`/api/records?valve=${encodeURIComponent(q)}`);
         // เดิม: ใช้ผล cloud ทับ local ทั้งหมด → การ "กดแก้ไข" ที่หน้าประวัติ ที่ D1 ยังกระจายไม่ทัน
         //       เลยไม่ขึ้นเป็นค่าล่าสุด (req #6). ตอนนี้: รวม cloud+local เลือกตัวที่ updated_at ใหม่กว่ารายตัว
-        if (rRes.records?.length) records = _mergeProdFreshest(filterVsmPeer(rRes.records), records);
+        if (rRes.records?.length) { records = _mergeProdFreshest(filterVsmPeer(rRes.records), records); _spPatchLocal(rRes.records); }
       } catch (e) { /* fallback to local */ }
-      await pullJobProcTargets();   // ดึงสถานะงานหลัง FG ล่าสุด → เห็นตรงกับเครื่องอื่น
+      await Promise.all([pullJobProcTargets(), _wipinFresh()]);   // ดึงสถานะงานหลัง FG + ★ v4.11 ใบรับเข้าล่าสุด → เห็นตรงกับเครื่องอื่น
     }
     // ★ req #1: Lot ที่รับเข้า WIP IN 1.5 แล้ว (ยังไม่ผลิตก็ต้องเห็น)
     const _recvLots = _wipinLotsOfValve(q);
@@ -23233,7 +23312,7 @@ async function searchProcessMulti(toks) {
   const box = $('searchResult');
   box.innerHTML = `<div class="muted center" style="padding:14px">⏳ กำลังค้นหา ${toks.length} Valve…</div>`;
   try {
-    if (API) { try { await pullJobProcTargets(); } catch (e) {} }   // สถานะจบงาน/หลัง FG ล่าสุด
+    if (API) { try { await Promise.all([pullJobProcTargets(), _wipinFresh()]); } catch (e) {} }   // สถานะจบงาน/หลัง FG + ★ v4.11 ใบรับเข้าล่าสุด
     const out = [];
     for (let i = 0; i < toks.length; i += 10) {      // ทีละ 10 — กันยิง API พร้อมกันเป็นร้อย
       await Promise.all(toks.slice(i, i + 10).map(async vno => {
@@ -23244,7 +23323,7 @@ async function searchProcessMulti(toks) {
         if (API) {
           try {
             const rRes = await api(`/api/records?valve=${encodeURIComponent(vno)}`);
-            if (rRes.records?.length) recs = _mergeProdFreshest(filterVsmPeer(rRes.records), recs);
+            if (rRes.records?.length) { recs = _mergeProdFreshest(filterVsmPeer(rRes.records), recs); _spPatchLocal(rRes.records); }
           } catch (e) { /* fallback local */ }
         }
         recs = recs.map(r => ({ ...r, record_id: r.record_id || r.recordId, valveNo: r.valveNo || r.valve_no, currentProcess: r.currentProcess || r.current_process }));
@@ -23650,7 +23729,7 @@ function _spShowRecords(lk, procKeys, title, isOff) {
         <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(emp || r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}${emp && r.operator && vKey(String(emp).split('—')[0]) !== vKey(String(r.operator).split('—')[0]) ? ` โดย ${escapeHtml(String(r.operator).split('—')[0].trim())}` : ''}</span>` : ''}</div>
       </div>
       <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
-      ${canEditRec(r) ? `<button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>`
+      ${canEditRec(r) ? `<button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}',1)">✏️</button>`
         : _recLockBtn('prod', r.record_id || r.recordId || '', r, 'padding:5px 9px;font-size:12px;flex-shrink:0')}
     </div>`;
   }).join('');
@@ -23737,11 +23816,11 @@ async function saveLotRename() {
 
   // 1) อัปเดต local ทันที (prod + kpi เท่าที่โหลดมา) เพื่อให้เห็นผลเร็ว
   for (const r of state.prodRecords) {
-    if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk) { r.lot = newLot; r.updated_at = now; }
+    if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk && _vsmPeerOK(r)) { r.lot = newLot; r.updated_at = now; }
   }
   for (const r of _spRecords) { if (lotKey(r.lot) === ld.lk) { r.lot = newLot; r.updated_at = now; } }
-  const kpiLocalHit = state.kpiRecords.filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk);
-  for (const r of kpiLocalHit) { r.lot = newLot; r.updated_at = now; }
+  const kpiLocalHit = filterVsmPeer(state.kpiRecords).filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk);
+  for (const r of kpiLocalHit) { r.shifts = _shiftsLotFix(r, vno, ld.lk, vno, newLot); r.lot = newLot; r.updated_at = now; }
   lsSave(LS.PROD_REC, state.prodRecords);
   lsSave(LS.KPI, state.kpiRecords);
   closeModal();
@@ -23761,12 +23840,12 @@ async function saveLotRename() {
     let prodAll = [];
     try {
       const pr = await api(`/api/records?valve=${encodeURIComponent(vno)}&limit=100000`);
-      prodAll = (pr?.records || []).filter(r => lotKey(r.lot) === ld.lk);
+      prodAll = filterVsmPeer(pr?.records || []).filter(r => lotKey(r.lot) === ld.lk);   // ★ v4.11 เฉพาะสายที่ตารางนี้แสดง — เลข Lot เดียวกันที่ VSM1/VSM2 เป็นคนละเรื่อง
     } catch (e) { prodAll = _spRecords.filter(r => lotKey(r.lot) === ld.lk); }   // ดึงไม่ได้ → ใช้เท่าที่มี
     const pMap = new Map();
     for (const r of prodAll) { const pid = r.recordId || r.record_id; if (pid) pMap.set(pid, r); }
     for (const r of state.prodRecords) {   // รวม local-only (เพิ่งลงตอน offline) เข้าไปด้วย
-      if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk) { const pid = r.recordId || r.record_id; if (pid && !pMap.has(pid)) pMap.set(pid, r); }
+      if (vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk && _vsmPeerOK(r)) { const pid = r.recordId || r.record_id; if (pid && !pMap.has(pid)) pMap.set(pid, r); }
     }
     const prodList = [...pMap.values()];
     await _chunkRun(prodList, async r => {
@@ -23787,7 +23866,7 @@ async function saveLotRename() {
     let kpiAll = [];
     try {
       const kr = await api(`/api/kpi?valve=${encodeURIComponent(vno)}&limit=100000`);
-      kpiAll = (kr?.records || []).filter(r => lotKey(r.lot) === ld.lk);
+      kpiAll = filterVsmPeer(kr?.records || []).filter(r => lotKey(r.lot) === ld.lk);
     } catch (e) { kpiAll = kpiLocalHit; }
     const kMap = new Map();
     for (const r of kpiAll)      { if (r.record_id) kMap.set(r.record_id, r); }
@@ -23814,14 +23893,15 @@ async function saveLotRename() {
     // ---- WIP IN 1.5: รายการรับเข้าของ lot เดิม → เปลี่ยนเป็น lot ใหม่ (LWW ผ่าน handover-worker) ----
     for (const e of Object.values(_wipin || {})) {
       if (!e || e.deleted) continue;
-      if (vKey(e.valve) === vk && lotKey(e.lot) === ld.lk) {
+      if (vKey(e.valve) === vk && lotKey(e.lot) === ld.lk && (!e.vsm || vsmPeers(viewVsm()).includes(e.vsm))) {
         e.lot = newLot; e.updatedAt = now;
         _saveWipin(); _wipinPush(e); nWip++;
       }
     }
 
+    const nMv = await _lotMoveRefs(vno, ld.lk, vno, newLot);   // ★ v4.11 สถานะงาน · ยอด 🔑 Admin · แผนขาย · แผนวางเอง ตามไปเลขใหม่
     hideBusy();
-    toast(`✅ ฐานข้อมูลยืนยันแก้ Lot เป็น ${newLot} — prod ${nProd} · KPI ${nKpi}${nIds ? ` · Valve ID ${nIds}` : ''}${nWip ? ` · WIP IN ${nWip}` : ''}`, 'green');
+    toast(`✅ ฐานข้อมูลยืนยันแก้ Lot เป็น ${newLot} — prod ${nProd} · KPI ${nKpi}${nIds ? ` · Valve ID ${nIds}` : ''}${nWip ? ` · WIP IN ${nWip}` : ''}${nMv ? ` · ${TT('ข้อมูลที่อิงเลขเดิม', 'linked items')} ${nMv}` : ''}`, 'green');
   } catch (e) {
     hideBusy();
     toast('แก้ Local แล้ว — Cloud ไม่สำเร็จ: ' + e.message, 'orange');
@@ -24972,8 +25052,10 @@ async function saveKpiEdit() {
 /* ============================================================
    HISTORY — EDIT PRODUCTION
    ============================================================ */
-function editProdRecord(rid) {
-  const r = _histProdRows.find(x => x.record_id === rid)
+function editProdRecord(rid, fromSearch) {
+  // ★ v4.11 เปิดจากหน้าค้นหา Process = แถวเดียวกับที่ตารางโชว์ (เดิมอาจได้สำเนาอื่น → ตารางบอก Lot หนึ่ง ฟอร์มแก้บอกอีก Lot · กดบันทึกแล้วเขียนเลขผิดกลับ)
+  const r = (fromSearch && _spRecords.find(x => (x.record_id || x.recordId) === rid))
+         || _histProdRows.find(x => x.record_id === rid)
          || state.prodRecords.find(x => x.record_id === rid)
          || _spRecords.find(x => (x.record_id || x.recordId) === rid);   // มาจากหน้าค้นหา Process
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
@@ -25487,11 +25569,13 @@ function _recsWithValve(wrong) {
 }
 // record ทั้งหมดที่ตรง (valve, lot) — ใช้แก้ Valve/Lot ที่ลงผิดจากแผง "ลืมลงบันทึก WIP IN 1.5"
 // เทียบแบบไม่สนตัวพิมพ์/ช่องว่าง ($→S) เหมือนตอนจับกลุ่มแสดงผล — ตรงกับ jobKey/lotKey
+/* ★ v4.11 เฉพาะสายที่กำลังดู + สายพี่น้อง — เลข Lot เดียวกันที่ VSM1/VSM2 เป็นคนละงาน (VV4728A0: 2609s090004 คือ Lot ที่ VSM1 ลงยอด 22,810 ชิ้น) ห้ามย้ายตาม */
+const _vsmPeerOK = r => vsmPeers(viewVsm()).includes(vsmOf(r));
 function _recsWithValveLot(valve, lot) {
   const vk = vKey(valve), lk = lotKey(lot);
   return {
-    kpi:  state.kpiRecords.filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === lk),
-    prod: state.prodRecords.filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === lk),
+    kpi:  filterVsmPeer(state.kpiRecords).filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === lk),
+    prod: filterVsmPeer(state.prodRecords).filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === lk),
   };
 }
 function fixUnknownValve(wrongValve) {
@@ -26031,7 +26115,7 @@ function renderValveList() {
         <td class="right">${(v.sd !== null && v.sd !== undefined && v.sd !== '') ? '<b>' + escapeHtml(String(v.sd)) + '</b>' : '<span class="muted" style="font-size:11px">—</span>'}</td>
         <td>${v.vtype ? '<span class="tag tag-green" style="font-size:10px">' + escapeHtml(v.vtype) + '</span>' : '<span class="muted" style="font-size:11px">—</span>'}</td>
         <td class="right" style="white-space:nowrap">${_vnum(v.sl) != null ? '<b>' + escapeHtml(String(v.sl)) + '</b>' : '<span class="muted" style="font-size:11px">—</span>'}${(_vnum(v.hd) != null || _vnum(v.tl) != null) ? `<span class="muted" style="font-size:10.5px"> · ${_vnum(v.hd) != null ? escapeHtml(String(v.hd)) : '—'} · ${_vnum(v.tl) != null ? escapeHtml(String(v.tl)) : '—'}</span>` : ''}</td>
-        <td style="font-size:11px;white-space:nowrap">${_vextHas(v) ? `${_vnum(v.fa) != null ? '<b>' + escapeHtml(mpFaTxt(+v.fa)) + '</b>' : '<span class="muted">—</span>'}${(_vtxt(v.cot) || _vtxt(v.cot_type)) ? `<span class="muted" style="font-size:10.5px"> · ${escapeHtml(_vtxt(v.cot) || '—')} · ${escapeHtml(_vtxt(v.cot_type) || '—')}</span>` : ''}` : '<span class="muted">—</span>'}</td>
+        <td style="font-size:11px;white-space:nowrap">${_vextHas(v) ? `<b>${escapeHtml(_vtxt(v.cot) || '—')}</b><span class="muted" style="font-size:10.5px"> · ${escapeHtml(_vtxt(v.cot_type) || '—')}</span>` : '<span class="muted">—</span>'}</td>
         <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span>${(() => { const r = vsmProcRec(v.valveNo); const b = []; if (r && (r.p1 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM1</span>'); if (r && (r.p2 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM2</span>'); return b.length ? '<div style="margin-top:3px;display:flex;gap:4px">' + b.join('') + '</div>' : ''; })()}</td>
         <td class="center">${idCell}</td>
         <td><button class="btn btn-outline btn-sm" onclick="openValveModal('${escapeHtml(v.valveNo)}')">แก้</button>
@@ -26513,13 +26597,12 @@ function openValveModal(valveNo) {
       <div class="fr"><label>TL</label><input type="number" id="m_tl" step="0.01" min="0" inputmode="decimal" value="${_vnum(v && v.tl) != null ? escapeHtml(String(v.tl)) : ''}"></div>
     </div>
     <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">SL = ${TT('ใช้เลือกเครื่อง SSG · SEMI · SRG · SFG (เครื่องรับได้ไม่เกิน SL ของเครื่อง)', 'picks SSG · SEMI · SRG · SFG machines (up to the machine SL)')} · HD / TL = ${TT('เก็บไว้ก่อน', 'stored for later')}</div>
-    <!-- ★ 2026-11-02 (v4.07) FA = มุมหน้าวาล์วที่เจียร์ (ใช้เลือกเครื่องขั้น FG) · COT / Type COT = เก็บไว้ก่อน -->
-    <div class="fg" style="gap:8px;grid-template-columns:repeat(3,minmax(0,1fr))">
-      <div class="fr"><label>FA (°)</label><input type="text" id="m_fa" inputmode="decimal" value="${_vnum(v && v.fa) != null ? escapeHtml(_mpNum(+v.fa)) : ''}" placeholder="${TT('เช่น 45 · 45°30\'', 'e.g. 45 · 45°30\'')}" autocomplete="off"></div>
+    <!-- ★ v4.11 COT = แบบ COT (เรียงคิวเครื่อง MUG ให้รุ่นเดียวกันติดกัน) · Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้ -->
+    <div class="fg" style="gap:8px">
       <div class="fr"><label>COT</label><input type="text" id="m_cot" maxlength="60" value="${escapeHtml(_vtxt(v && v.cot))}" autocomplete="off"></div>
       <div class="fr"><label>Type COT</label><input type="text" id="m_cott" maxlength="60" value="${escapeHtml(_vtxt(v && v.cot_type))}" autocomplete="off"></div>
     </div>
-    <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">FA = ${TT('มุมหน้าวาล์วที่เจียร์ — ใช้เลือกเครื่องขั้น FG (เครื่องที่ตั้ง FA ไว้ รับเฉพาะ FA ที่ตรง)', 'face angle — picks FG machines (a machine with FA set only takes matching valves)')} · COT / Type COT = ${TT('เก็บไว้ก่อน', 'stored for later')}</div>
+    <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">${TT('COT = เรียงคิวเครื่อง MUG ให้แบบเดียวกันติดกัน · Type COT = Carbide → ขั้น COT ไปเครื่องที่ไม่ใช่ MUG', 'COT keeps the same form together on MUG machines · Type COT = Carbide → the COT step goes to a non-MUG machine')}</div>
     <div class="fr"><label>Process Master (ลำดับการผลิต)</label>
       <div id="m_proc_tabs" style="display:flex;gap:6px;margin-bottom:8px">
         <button type="button" class="btn btn-sm" id="m_tab_std" style="flex:1;background:var(--blue);color:#fff" onclick="mProcSwitchTab('std')">VSM 3/4</button>
@@ -26620,12 +26703,7 @@ async function saveValve(orig) {
     if (!(n > 0 && n < 5000)) { toast(`${k.toUpperCase()} ${TT('ไม่ถูกต้อง (ใส่ตัวเลขมากกว่า 0)', 'is invalid (enter a number above 0)')}`, 'orange'); return; }
     entry[k] = n;
   }
-  // ★ v4.07 FA (องศา · 45 / 45.5 / 45°30') + COT / Type COT (ข้อความ) — ว่าง = ไม่มี · ไม่มีช่องในฟอร์ม = คงค่าเดิม
-  if ($('m_fa')) {
-    const fa = mpParseFa($('m_fa').value);
-    if (Number.isNaN(fa)) { toast(TT('FA ไม่ถูกต้อง (ใส่องศา เช่น 45 · 45.5 · 45°30\')', 'Bad FA (degrees, e.g. 45 · 45.5 · 45°30\')'), 'orange'); return; }
-    entry.fa = fa;
-  }
+  // ★ v4.07 COT / Type COT (ข้อความ) — ว่าง = ไม่มี · ไม่มีช่องในฟอร์ม = คงค่าเดิม
   if ($('m_cot')) entry.cot = _vtxt($('m_cot').value);
   if ($('m_cott')) entry.cot_type = _vtxt($('m_cott').value);
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
@@ -26639,7 +26717,7 @@ async function saveValve(orig) {
   const r = API ? await apiSave('/api/valves', entry, { label: 'Master Valve', key: vKey(entry.valveNo) }) : { ok: true };   // ★ req #6
   if (r.ok && r.res && r.res.valve && Object.prototype.hasOwnProperty.call(r.res.valve, 'sd')
     && (Object.prototype.hasOwnProperty.call(r.res.valve, 'sl') || !VSPEC_NUMS.some(k => entry[k] != null))
-    && (Object.prototype.hasOwnProperty.call(r.res.valve, 'fa') || !_vextHas(entry))) _vspecClear([entry.valveNo]);   // ★ v4.07 + FA/COT
+    && (Object.prototype.hasOwnProperty.call(r.res.valve, 'cot') || !_vextHas(entry))) _vspecClear([entry.valveNo]);   // ★ v4.07 + COT
   if (r.ok) toast(replaced ? 'แทนที่ Valve เดิมด้วยข้อมูลใหม่' : 'บันทึก Valve', 'green');
   else {
     toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud','Saved locally — not on Cloud yet'), 'orange');
@@ -26676,9 +26754,8 @@ async function importValves(ev) {
       ...((r.Type !== undefined || r.TYPE !== undefined || r.vtype !== undefined) ? { vtype: String(r.Type ?? r.TYPE ?? r.vtype ?? '').trim().toUpperCase() } : {}),
       // ★ v3.94 คอลัมน์ SL / HD / TL (มีค่า = นำเข้า · ช่องว่าง/ไม่มีคอลัมน์ = คงค่าเดิม — sheet_to_json ไม่ส่งคีย์ของช่องว่าง)
       ...Object.fromEntries(VSPEC_NUMS.map(k => [k, r[k.toUpperCase()] !== undefined ? r[k.toUpperCase()] : r[k]]).filter(([, x]) => x !== undefined).map(([k, x]) => [k, _vnum(x)])),
-      // ★ v4.07 คอลัมน์ FA / COT / Type COT (กติกาเดียวกัน: มีค่า = นำเข้า · ไม่มีคอลัมน์/ช่องว่าง = คงค่าเดิม · FA อ่านไม่ได้ = ข้าม)
-      ...(() => { const o = {}, fa = r.FA ?? r.fa, cot = r.COT ?? r.cot, ct = r['Type COT'] ?? r['TYPE COT'] ?? r['COT Type'] ?? r.cot_type;
-        if (fa !== undefined) { const n = mpParseFa(fa); if (!Number.isNaN(n)) o.fa = n; }
+      // ★ v4.07 คอลัมน์ COT / Type COT (กติกาเดียวกัน: มีค่า = นำเข้า · ไม่มีคอลัมน์/ช่องว่าง = คงค่าเดิม)
+      ...(() => { const o = {}, cot = r.COT ?? r.cot, ct = r['Type COT'] ?? r['TYPE COT'] ?? r['COT Type'] ?? r.cot_type;
         if (cot !== undefined) o.cot = _vtxt(cot);
         if (ct !== undefined) o.cot_type = _vtxt(ct);
         return o; })(),
@@ -26708,7 +26785,7 @@ async function exportValves() {
     Processes: v.processes.join(','), Barcode: v.barcode_id || '',
     SD: (v.sd === null || v.sd === undefined) ? '' : v.sd, Type: v.vtype || '',
     SL: _vnum(v.sl) ?? '', HD: _vnum(v.hd) ?? '', TL: _vnum(v.tl) ?? '',   // ★ v3.94
-    FA: _vnum(v.fa) ?? '', COT: _vtxt(v.cot), 'Type COT': _vtxt(v.cot_type),   // ★ v4.07
+    COT: _vtxt(v.cot), 'Type COT': _vtxt(v.cot_type),   // ★ v4.07
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Valves');
@@ -28399,42 +28476,36 @@ function mpValveType(valveNo) { const v = mpValve(valveNo); return (v && v.vtype
 const VSPEC_NUMS = ['sl', 'hd', 'tl'];
 const _vnum = x => { if (x === null || x === undefined || x === '') return null; const n = Number(x); return isFinite(n) && n > 0 ? n : null; };
 function mpValveSl(valveNo) { const v = mpValve(valveNo); return v ? _vnum(v.sl) : null; }
-/* ★ v4.07 (ผู้ใช้ 2/11) FA = มุมหน้าวาล์วที่จะเจียร์ (องศา) — ใช้คัดเครื่องขั้น FG · COT / Type COT = ข้อความ เก็บไว้ก่อน (ยังไม่ใช้คำนวณ)
-   ชุดนี้ขึ้น Cloud ได้เมื่อ Worker คืนคีย์ fa มากับ valves (_vfaCloudOK) — กติกาเดียวกับ SL ของ v3.94 */
-const VSPEC_EXT = ['fa', 'cot', 'cot_type'];
+/* ★ v4.07 COT / Type COT = ข้อความใน Master valve · ★ v4.11 (ผู้ใช้ 4/11 ข้อ 3) เลิกใช้ FA แล้ว — ไม่มีช่อง / ไม่คัดเครื่องขั้น FG อีก (คอลัมน์ fa ใน D1 ยังอยู่เฉย ๆ)
+   ชุดนี้ขึ้น Cloud ได้เมื่อ Worker คืนคีย์ fa มากับ valves (_vfaCloudOK = Worker รุ่นที่มี cot/cot_type) — กติกาเดียวกับ SL ของ v3.94 */
+const VSPEC_EXT = ['cot', 'cot_type'];
 const _vtxt = x => String(x == null ? '' : x).replace(/\s+/g, ' ').trim().slice(0, 60);
-const _vext = (v, k) => k === 'fa' ? _vnum(v && v.fa) : _vtxt(v && v[k]);
-const _vextHas = v => !!v && VSPEC_EXT.some(k => k === 'fa' ? _vnum(v.fa) != null : !!_vtxt(v[k]));
-/* FA ที่พิมพ์/วาง: "45" · "45.5" · "45°" · "45°30'" (องศา + ลิปดา) → องศาทศนิยม · ว่าง = null · อ่านไม่ได้ = NaN */
-function mpParseFa(s) {
-  const t = String(s == null ? '' : s).trim().replace(/[º˚]/g, '°').replace(/[′’`]/g, "'").replace(/\s+/g, '');
-  if (!t) return null;
-  const m = /^(\d+(?:\.\d+)?)°?(?:(\d+(?:\.\d+)?)'?)?$/.exec(t);
-  if (!m || (m[2] != null && !/[°']/.test(t))) return NaN;
-  const n = +m[1] + (m[2] != null ? +m[2] / 60 : 0);
-  return n > 0 && n < 180 ? Math.round(n * 10000) / 10000 : NaN;
-}
-const mpFaTxt = n => (n == null || !isFinite(n)) ? '-' : _mpNum(n) + '°';
-function mpValveFa(valveNo) { const v = mpValve(valveNo); return v ? _vnum(v.fa) : null; }
-/* FA ที่เครื่องรับได้: "45" · "30, 45" · "44.5-45.5" · "45°" → [[a,b], ...] · ว่าง = [] (ไม่จำกัด) · มีส่วนที่อ่านไม่ได้ = null */
-function mpParseFaList(s) {
-  const t = String(s == null ? '' : s).replace(/[–—~]/g, '-').replace(/\s*-\s*/g, '-').trim();
-  if (!t) return [];
-  const out = [];
-  for (const part of t.split(/[\s,;\/|]+/).filter(Boolean)) {
-    const ab = part.split('-');
-    if (ab.length > 2) return null;
-    const a = mpParseFa(ab[0]), b = ab.length === 2 ? mpParseFa(ab[1]) : a;
-    if (!(a > 0) || !(b > 0)) return null;
-    out.push(a <= b ? [a, b] : [b, a]);
-  }
-  return out;
-}
-const mpFaListTxt = r => (r || []).map(([a, b]) => a === b ? mpFaTxt(a) : `${_mpNum(a)}–${mpFaTxt(b)}`).join(', ');
-const mpFaOk = (fa, ranges) => (ranges || []).some(([a, b]) => fa >= a - 1e-6 && fa <= b + 1e-6);
-const MP_FA_FAMS = new Set(['FG']);    // ขั้นที่ใช้กติกา FA (เจียร์หน้าวาล์ว)
-const mpFaFam = fam => MP_FA_FAMS.has(fam);
+const _vext = (v, k) => _vtxt(v && v[k]);
+const _vextHas = v => !!v && VSPEC_EXT.some(k => !!_vtxt(v[k]));
 let _vfaCloudOK = null;                // ★ v4.07 Worker คืน fa/cot/cot_type มากับ valves หรือยัง
+/* ═══ ★ v4.11 (ผู้ใช้ 4/11 ข้อ 4) เครื่อง MUG ═══
+   ทำได้: VET · CCOT · COT · RE/R · REDUC · RED/R · RED/F · RED · COT+TIP · COT1 · COT2 · TRG · TRG. · TR-R (ตั้งที่ ⚙️ ช่วง SD ของเครื่อง → Process) · ช่วง SD คิดตามปกติ
+   ① Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้ (ไม่ผ่อนให้เครื่องที่เคยผลิต) → ไปเครื่อง COT ที่ไม่ใช่ MUG
+      ขั้นอื่นของเบอร์ Carbide (VET · RED) ยังลง MUG ได้ — วัดจริง 90 วัน: VET ของเบอร์ Carbide ทำที่ MUG 99% · นอก MUG มี VET แค่ L-253 เครื่องเดียว
+   ② ล็อตที่ต้องทำหลายขั้นของ MUG (เช่น VET → COT) ลงคู่เครื่องข้างกัน เครื่องละ Process — ขึ้นทั้งคู่ที่เครื่องเดียวได้ แต่พนักงานต้องเปลี่ยนอะไหล่ในเครื่องทุกครั้ง
+      ขั้นที่ติดกัน สลับลำดับได้ตามความหนาแน่นของคิว (VET ก่อน หรือ COT ก่อน)
+   ③ คิวในเครื่องเรียงตามรุ่นก่อนหน้า: Process เดียวกัน · แบบ COT เดียวกัน (เช่น R0.786*45x3) ติดกัน ลดการเปลี่ยนเครื่อง */
+const MP_MUG_PAIRS = [['G-240', 'G-2037'], ['G-2029', 'G-2038'], ['G-235', 'G-237']];   // คู่เครื่องที่อยู่ติดกัน
+const _mpMugMate = new Map(MP_MUG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
+const mpIsMug = id => _mpMugMate.has(id);
+const MP_MUG_FAMS = new Set(['VET', 'COT', 'RED', 'TRG', 'TR-R']);   // กลุ่ม Process (mpFam) ของเครื่อง MUG
+const MP_CARB_FAMS = new Set(['COT']);                               // CCOT · COT · COT+TIP · COT1 · COT2 = ห้าม Carbide บนเครื่อง MUG
+const MP_MUG_SWAP_H = 1;   // สลับลำดับเมื่อเร็วขึ้นจริง — เท่ากัน = ตาม Process ใน Master
+const mpIsCarbide = t => /carbide/i.test(String(t || ''));
+const mpCotKey = s => String(s || '').toUpperCase().replace(/\s+/g, '');
+const mpMugKey = (fam, cotKey) => fam === 'COT' ? 'COT|' + (cotKey || '') : fam;   // "รุ่น" ที่เครื่องตั้งอยู่
+/* รุ่นก่อนหน้า → รุ่นนี้: 'p' = เปลี่ยน Process (เปลี่ยนอะไหล่ในเครื่อง) · 's' = Process เดียวกัน คนละแบบ COT · '' = ไม่เปลี่ยน (ไม่มีข้อมูลแบบ COT = ไม่นับ) */
+function mpMugChg(prev, key) {
+  if (prev == null || prev === key) return '';
+  const a = String(prev).split('|'), b = String(key).split('|');
+  return a[0] !== b[0] ? 'p' : (a[1] && b[1]) ? 's' : '';
+}
+function _mpSetCot(j, v) { j.cot = _vtxt(v && v.cot); j.cotKey = mpCotKey(j.cot); j.cotType = _vtxt(v && v.cot_type); j.carbide = mpIsCarbide(j.cotType); }
 function _mpValvePayload(v) {
   const o = { valveNo: v.valveNo, customer: v.customer || 'Other', description: v.description || '',
     processes: v.processes || [], barcode_id: v.barcode_id || '',
@@ -28509,22 +28580,18 @@ function mpCapNorm(c) {
     updated_at: c.updated_at || '', updated_by: c.updated_by || '',
     // ★ v3.94 SL สูงสุดของเครื่อง · null = ยังไม่ได้ตั้ง (ใช้ MP_SL_DEFAULT) · 0 = ไม่จำกัด (ดู mpMcSl)
     sl: (c.sl === null || c.sl === undefined || c.sl === '' || !isFinite(Number(c.sl)) || Number(c.sl) < 0) ? null : Number(c.sl),
-    fa: txt(c.fa).slice(0, 120),   // ★ v4.07 FA ที่เครื่องรับได้ (ขั้น FG) เช่น "45" · "30, 45" · "44.5-45.5" · ว่าง = ไม่จำกัด
   };
   if (c._local) o._local = true;
   return o;
 }
-/* ★ v3.94 caps จาก Cloud → รายการในเครื่อง · Worker รุ่นเก่า (ไม่มีคีย์ sl) = คง SL ที่ตั้งไว้ในเครื่อง · ★ v4.07 FA เหมือนกัน */
-let _mcFaCloud = null;   // ★ v4.07 Worker คืน fa มากับ machine caps หรือยัง
+/* ★ v3.94 caps จาก Cloud → รายการในเครื่อง · Worker รุ่นเก่า (ไม่มีคีย์ sl) = คง SL ที่ตั้งไว้ในเครื่อง */
 function _mcCapsFromServer(caps) {
   const hasSl = caps.some(c => c && Object.prototype.hasOwnProperty.call(c, 'sl'));
-  const hasFa = caps.some(c => c && Object.prototype.hasOwnProperty.call(c, 'fa'));
-  _mcSlCloud = hasSl; _mcFaCloud = hasFa;
+  _mcSlCloud = hasSl;
   const prev = new Map(_mcCaps.map(c => [c.machine_id, c]));
   return new Map(caps.map(raw => {
     const c = mpCapNorm(raw), p = prev.get(c.machine_id);
     if (!hasSl && p && p.sl != null) c.sl = p.sl;
-    if (!hasFa && p && p.fa) c.fa = p.fa;
     return [c.machine_id, c];
   }));
 }
@@ -28638,6 +28705,7 @@ function mpHistory(floor) {
   const push = (map, k, v) => { let a = map.get(k); if (!a) map.set(k, a = []); a.push(v); };
   const ctMFS = new Map(), ctMF = new Map(), ctFB = new Map(), ctM = new Map(), effM = new Map(), aff = new Set();
   const lastSd = new Map(), lastKey = new Map();
+  const lastMug = new Map(), lastMugT = new Map();   // ★ v4.11 เครื่อง MUG ตั้งรุ่นอะไรอยู่ (Process + แบบ COT ของกะล่าสุด)
   const lastRun = new Map();    // ★ v3.77 "ครั้งก่อนหน้า" ของ เครื่อง|Process|Valve → CT + ประสิทธิภาพของกะล่าสุดที่ผลิต
   /* ★ v4.00 (ผู้ใช้ 28/10) "เก็บว่า Valve นี้เคยผลิตที่เครื่องไหน — มี Order มาอีกก็เดินเครื่องเดิมได้เลย"
      VALVE|Process → เครื่องที่เคยผลิต (ทั้งประวัติ KPI ที่โหลดมา · ล่าสุดก่อน) — ไม่ต้องเก็บตารางใหม่: ยอดผลิตจริงคือที่เก็บ */
@@ -28652,6 +28720,7 @@ function mpHistory(floor) {
       const sd = v ? mpValveSd(v) : null;
       if (v) aff.add(m + '|' + v);
       if (v && fam) vmAdd(v + '|' + fam, m, opr, key.slice(0, 10));
+      if (fam && mpIsMug(m) && MP_MUG_FAMS.has(fam) && (!lastMugT.has(m) || key >= lastMugT.get(m))) { lastMugT.set(m, key); lastMug.set(m, mpMugKey(fam, mpCotKey((mpValve(v) || {}).cot))); }
       if (ct > 0 && ct < 600 && fam) {
         push(ctMF, m + '|' + fam, ct); push(ctM, m, ct);
         if (sd != null) push(ctMFS, m + '|' + fam + '|' + sd, ct);
@@ -28721,7 +28790,7 @@ function mpHistory(floor) {
     sdEnv.set(k, { lo, hi, n: a.length, min: a[0][0], max: a[a.length - 1][0] });
   }
   _mpHistCache = { ctMFS: medMap(ctMFS), ctMF: medMap(ctMF), ctFB: medMap(ctFB), ctM: medMap(ctM), effM: medMap(effM),
-    aff, lastSd, mach, lastRun, lastRunV, vmHist, sdEnv, fullN: full.length, slimN: slim.length, slimAll: !!((typeof _allKpi !== 'undefined') && _allKpi),
+    aff, lastSd, lastMug, mach, lastRun, lastRunV, vmHist, sdEnv, fullN: full.length, slimN: slim.length, slimAll: !!((typeof _allKpi !== 'undefined') && _allKpi),
     fullFrom: full.reduce((a, r) => { const d = String(r.shift_date || r.record_date || ''); return d && (!a || d < a) ? d : a; }, '') };
   _mpHistSig = sig;
   return _mpHistCache;
@@ -28864,6 +28933,8 @@ function mpDefaults() {
     seqDays: 7,     // ★ v3.78 รอบเรียงคิว: วันขายในรอบเดียวกัน → SD น้อย→มาก → TYPE ง่าย→ยาก
     v3Days: 3, v3RunDays: 1,     // ★ v3.83 ส่ง VSM3 1 รอบ = กี่วันทำงาน (ยังไม่ส่ง / ล็อตอยู่ที่ VSM3 แล้ว)
     zoneStick: 40,               // ★ v3.89 ย้าย Zone เมื่อจำเป็น: ยอมรอเครื่องใน Zone เดิมได้ถึงกี่ชม. (0 = ไม่สน Zone)
+    mugStick: 80,                // ★ v4.11 เครื่อง MUG: ลงคู่เครื่องข้างกัน · ไม่เปลี่ยน Process ในเครื่อง — ยอมรอได้ถึงกี่ชม. (0 = ไม่สน)
+    cotStick: 16,                // ★ v4.11 เครื่อง MUG: แบบ COT เดียวกันติดกัน — ยอมรอได้ถึงกี่ชม. (0 = ไม่สน)
     slStick: 40,                 // ★ v3.94 SL ใกล้ที่สุดก่อน: ยอมรอเครื่อง SL พอดีได้ถึงกี่ชม. ต่อขั้น SL ที่ห่างออกไป (0 = ไม่สน SL)
     valveStick: 80,              // ★ v4.00 Valve เดียวกัน Process เดียวกัน → เครื่องเดียวกันทุกล็อต: ยอมรอเครื่องนั้นได้ถึงกี่ชม. (0 = ไม่สน)
     histStick: 40,               // ★ v4.00 เครื่องที่เคยผลิตเบอร์นี้ Process นี้ (ประวัติ): ยอมรอได้ถึงกี่ชม. (0 = ไม่สน)
@@ -28915,19 +28986,22 @@ function mpCalendar(S, n) {
 /* หาช่องว่างของเครื่องที่ใส่งานนี้ได้ — ไล่ทุกช่อง แล้วเลือกช่องที่ "ต้นทุน" ต่ำสุด
    ต้นทุน = เวลาเสร็จ + ค่าปรับเปลี่ยน SD (stick ชม. — ไม่ใช่เวลาจริง แค่ใช้ตัดสินใจ)
    ⇒ ยอมเสร็จช้าลงนิดหน่อยเพื่อไปต่อท้ายงาน SD เดียวกัน แทนที่จะแทรกกลางงานคนละขนาด */
-function mpFindSlot(iv, ready, base, setupH, sd, initSd, stick) {
-  let prevEnd = 0, prevSd = initSd == null ? null : initSd, best = null;
+/* ★ v4.11 mk (เครื่อง MUG เท่านั้น) = { key, init, ps, ss }: รุ่นของงานนี้ · รุ่นที่เครื่องตั้งอยู่ตอนเริ่ม · ค่าปรับเปลี่ยน Process · ค่าปรับเปลี่ยนแบบ COT
+   เปลี่ยนรุ่นใช้เวลาตั้งเครื่องเท่าเปลี่ยน SD (เปลี่ยนทั้งคู่ = ตั้งครั้งเดียว) · a.setup ยังหมายถึงเปลี่ยน SD อย่างเดียว · ไม่ส่ง mk = เหมือนเดิมทุกประการ */
+function mpFindSlot(iv, ready, base, setupH, sd, initSd, stick, mk) {
+  let prevEnd = 0, prevSd = initSd == null ? null : initSd, prevK = mk ? mk.init : null, best = null;
   for (let i = 0; i <= iv.length; i++) {
     const gs = Math.max(prevEnd, ready);
     const ge = i < iv.length ? iv[i].s : Infinity;
     const setup = (sd != null && prevSd != null && prevSd !== sd) ? setupH : 0;
-    const dur = base + setup;
+    const chg = mk ? mpMugChg(prevK, mk.key) : '';
+    const dur = base + (chg ? setupH : setup);
     if (ge - gs >= dur - 1e-9) {
-      const cost = gs + dur + (setup > 0 ? (stick || 0) : 0);
-      if (!best || cost < best.cost - 1e-9) best = { s: gs, e: gs + dur, setup, idx: i, prevSd, cost };
+      const cost = gs + dur + (setup > 0 ? (stick || 0) : 0) + (chg === 'p' ? mk.ps : chg === 's' ? mk.ss : 0);
+      if (!best || cost < best.cost - 1e-9) best = { s: gs, e: gs + dur, setup, idx: i, prevSd, cost, chg, prevK };
       if (ge === Infinity) break;
     }
-    if (i < iv.length) { prevEnd = Math.max(prevEnd, iv[i].e); if (iv[i].sd != null) prevSd = iv[i].sd; }
+    if (i < iv.length) { prevEnd = Math.max(prevEnd, iv[i].e); if (iv[i].sd != null) prevSd = iv[i].sd; if (mk && iv[i].k) prevK = iv[i].k; }
   }
   return best;
 }
@@ -28966,7 +29040,7 @@ function mpContext(S) {
     if (S.histEff && he && he.n >= 5) { eff = Math.min(0.98, Math.max(0.5, he.med)); effSrc = TT('ประวัติ', 'history'); }
     const slx = mpMcSl(mc.id, cap);      // ★ v3.94 SL สูงสุดที่เครื่องรับได้ (null = ไม่จำกัด)
     machines.push({ id: mc.id, zone: mc.zone, cap, hasCap: !!cap, fams, procSrc: explicit.length ? 'Admin' : TT('อัตโนมัติ', 'auto'), sl: slx.sl, slSrc: slx.src,
-      fa: cap ? (mpParseFaList(cap.fa) || []) : [],   // ★ v4.07 FA ที่เครื่องรับได้ (ขั้น FG) · [] = ไม่จำกัด
+      mug: mpIsMug(mc.id), mate: _mpMugMate.get(mc.id) || '', lastMug: hist.lastMug.get(mc.id) || null,   // ★ v4.11
       ranges: cap ? mpParseRanges(cap.sd_ranges) : [], only: cap ? mpList(cap.only_valves) : [], except: cap ? mpList(cap.except_valves) : [],
       label: cap ? cap.label : '', remark: cap ? cap.remark : '', ctOverride: (cap && cap.ct > 0) ? +cap.ct : null,
       offPerm: offSet.has(mc.id), capOff: !!(cap && cap.active === 0),
@@ -29040,9 +29114,9 @@ function mpContext(S) {
     if (m.except.some(p => mpPatMatch(job.vk, p))) return { ok: false, why: 'except' };
     if (m.only.length) { if (!m.only.some(p => mpPatMatch(job.vk, p))) return { ok: false, why: 'only' }; }
     else if (hasDed) return { ok: false, why: 'dedicated' };
-    /* ★ v4.07 ขั้น FG: เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง (ผู้ใช้ 2/11 "บางเครื่องค่า FA มีเฉพาะ จะเข้าไม่ได้")
-       ไม่ผ่อนให้เครื่องที่เคยผลิต (provenOn) — FA ที่ Admin ตั้งคือข้อจำกัดของเครื่องจริง · วาล์วไม่มี FA / เครื่องไม่ตั้ง FA = ไม่ตัด */
-    if (m.fa && m.fa.length && job.fa != null && mpFaFam(fam) && !mpFaOk(job.fa, m.fa)) return { ok: false, why: 'fa' };
+    /* ★ v4.11 เครื่อง MUG ทำขั้น COT ของ Type COT = Carbide ไม่ได้ — ไม่ผ่อนให้เครื่องที่เคยผลิต (provenOn)
+       วัดจริง 90 วัน: COT ของ Carbide เคยลง MUG 49% แต่ผู้ใช้ยืนยันว่าทำไม่ได้แล้ว · ไม่มี Type COT = ไม่ตัด (เตือนใน 🧩) */
+    if (m.mug && job.carbide && MP_CARB_FAMS.has(fam)) return { ok: false, why: 'carbide' };
     const no = why => provenOn(m, job.vk, fam) ? { ok: true, proven: true, over: why } : { ok: false, why };
     if (m.ranges.length) {
       if (job.sd == null) return no('nosd');
@@ -29145,11 +29219,19 @@ function mpJobs(S, ctx) {
     if (S.cust && custGroup(j.customer) !== S.cust) { skipped.cust++; skipK.set(j.k, 'cust'); continue; }
     const v = mpValve(j.vk);
     j.sd = mpValveSd(j.vk); j.vtype = mpValveType(j.vk); j.sl = mpValveSl(j.vk);   // ★ v3.94 SL
-    j.fa = mpValveFa(j.vk);                                                          // ★ v4.07 FA
+    _mpSetCot(j, v);                                                                 // ★ v4.11 แบบ COT · Carbide
     const flow = v ? procsOf(v, MP_VSM) : [];
     const doneP = recsByJob[j.k] || {}, doneK = kpiByJob[j.k] || {};
     j.steps = stepsOf(j.vk, flow);
-    for (const st of j.steps) st.done = Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
+    /* ★ v4.11 (ผู้ใช้ 4/11 ข้อ 1 · VV4690A0) ยอด 🔑 Admin = Admin ยืนยันว่าขั้นนั้นผลิตแล้ว (พนักงานไม่ได้ลงยอด) → แผนนับเป็นยอดผลิตของขั้นนั้น
+       เดิม: นับเฉพาะยอดพนักงาน → VV4690A0 Lot 2606S070043 มี FG / QC ยอด Admin ครบ แต่แผนยังวาง FG 547 บน G-262
+       พนักงานลงยอดขั้นนั้นเมื่อไหร่ = ใช้ยอดพนักงาน (กติกาเดียวกับหน้าค้นหา Process) · KPI / Output / Dashboard ยังไม่นับยอด Admin เหมือนเดิม */
+    const admQ = pfAdmOfJob(j.valve, j.lot);
+    for (const st of j.steps) {
+      st.done = Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
+      const aq = st.done > 0 ? null : admQ[_procCanon(String(st.proc).trim())];
+      if (aq && aq.qty > 0) { st.done = aq.qty; st.adm = true; }
+    }
     if (!j.steps.length) { j.noflow = true; jobs.push(j); continue; }
     let run = 0;
     for (let i = j.steps.length - 1; i >= 0; i--) { run = Math.max(run, j.steps[i].done); j.steps[i].effDone = run; }
@@ -29188,16 +29270,19 @@ function mpJobs(S, ctx) {
              'opt'  ล็อตที่ผลิตจบแล้วของเบอร์เดียวกันส่วนใหญ่ไม่ได้ทำขั้นนี้ (≥ MP_HOLE_MIN ล็อต) = Master มีขั้นนี้แต่หน้างานไม่ทำ เช่น VF1161M0 UND (ทำ 1 จาก 74 ล็อต)
            วัดจริง 3/11: 225 ล็อตที่กำลังผลิต → วางกลับมาทำ 56 ล็อต (VV1908A0 · VV4661A0 COPY ฯลฯ) · ช่องว่างแบบอื่น 59 ล็อต (แผนเท่าเดิม) */
         if (S.holeBack !== false && Math.round(j.total) > tol) {
-          const adm = pfAdmOfJob(j.valve, j.lot), need = Math.round(j.total);
+          const need = Math.round(j.total);
           let seen = false, ev = null;
           for (let i = 0; i < front; i++) {
             const s = j.steps[i];
-            if (s.done > 0 || (adm[_procCanon(String(s.proc).trim())] || {}).qty > 0) { seen = true; continue; }
+            if (s.done > 0) { seen = true; continue; }   // ★ v4.11 s.done รวมยอด 🔑 Admin แล้ว
             if (!s.internal || s.v3) { s.gap = 'line'; continue; }
-            if (!seen) { s.gap = 'lead'; continue; }
+            /* ★ v4.11 ขั้น MUG ที่ติดกันสลับลำดับได้ (COT ก่อน VET) = ไม่ใช่การข้ามขั้น — ยังต้องวางขั้นนี้ แต่ไม่ขึ้น ⏪ */
+            const nxS = j.steps[i + 1], mugSw = MP_MUG_FAMS.has(s.fam) && nxS && MP_MUG_FAMS.has(nxS.fam) && nxS.fam !== s.fam && nxS.done > 0;
+            if (!seen && !mugSw) { s.gap = 'lead'; continue; }
             ev = ev || finOf(j);
             const did = ev.did(s.fam);
             if (ev.n >= MP_HOLE_MIN && did < ev.n * 0.5) { s.gap = 'opt'; s.gapN = [did, ev.n]; continue; }
+            if (mugSw) { s.need = need; delete s.passed; continue; }
             s.hole = true; s.need = need; delete s.passed;
           }
           const hs = j.steps.filter(s => s.hole);
@@ -29211,6 +29296,7 @@ function mpJobs(S, ctx) {
     if (lm) { j.curZone = lm.zone; j.curMc = lm.m; }      // ★ v3.89 ล็อตอยู่ Zone ไหนตอนนี้ (เครื่องล่าสุดที่ลงยอด)
     const jf = mcByJobFam[j.k];                              // ★ v4.00 ขั้นที่ทำค้างไว้ (ภายใน batchDays) → เครื่องที่ทำอยู่
     if (jf) for (const f in jf) if (jf[f].key.slice(0, 10) >= batchCut) (j.stepMc = j.stepMc || {})[f] = jf[f].m;
+    if (jf) { let tk = ''; for (const f in jf) if (MP_MUG_FAMS.has(f) && mpIsMug(jf[f].m) && jf[f].key >= tk) { tk = jf[f].key; j.mugDone = jf[f].m; } }   // ★ v4.11 ขั้นก่อนหน้าทำที่เครื่อง MUG ไหน → ขั้นถัดไปไปเครื่องข้าง ๆ
     _mpMarkV3(j);
     const lastInt = j.steps.map(s => s.internal && s.need > 0).lastIndexOf(true);
     _mpKeepV3(j, lastInt);
@@ -29266,7 +29352,7 @@ function mpJobs(S, ctx) {
         vk, k: 'ORDER::' + vk + '::' + r.due + '::' + (r.id || ''), due: r.due, plans: [{ date: r.due, qty: r.missing }],
         order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk),
         planLot: planLotNorm(p && p.lot) };     // ★ v3.89 Lot ที่แผนขายระบุ (ยังไม่เข้า VSM4) — แสดงอย่างเดียว ไม่ใช่ Lot จริงของงาน
-      j.sd = mpValveSd(vk); j.vtype = mpValveType(vk); j.sl = mpValveSl(vk); j.fa = mpValveFa(vk);   // ★ v4.07 FA
+      j.sd = mpValveSd(vk); j.vtype = mpValveType(vk); j.sl = mpValveSl(vk); _mpSetCot(j, v);   // ★ v4.11 แบบ COT · Carbide
       const flow = v ? procsOf(v, MP_VSM) : [];
       j.steps = stepsOf(vk, flow);
       for (const st of j.steps) { st.done = 0; st.effDone = 0; st.need = r.missing; }
@@ -29294,18 +29380,20 @@ function mpJobs(S, ctx) {
   const sdk = j => { const e = mpSdEff(j.sd, S.sdFloor); return e == null ? 999 : e; };
   const tyk = j => mpTypeRank(j.vtype);
   const isOrd = j => (j.kind === 'order' ? 1 : 0);
+  // ★ v4.11 คิวเรียงตามรุ่นก่อนหน้า: ล็อตที่ยังต้องทำขั้น COT แบบเดียวกันติดกัน (SD เดียวกัน) → เครื่องไม่ต้องเปลี่ยนแบบ COT สลับไปมา
+  const cotk = j => j._ck != null ? j._ck : (j._ck = (j.steps || []).some(s => s.fam === 'COT' && s.need > 0 && s.internal && !s.v3) ? (j.cotKey || '') : '');
   out.sort((a, b) => {
     if (a.due && b.due) {
       const sa = seqOf(a.due), sb = seqOf(b.due);
       if (sa !== sb) return sa - sb;
       // ★ v4.00 วันขายเดียวกัน → ล็อตของเบอร์เดียวกันติดกัน (ต่อคิวเครื่องเดียวกันได้ ไม่มีเบอร์อื่นแทรกกลาง)
-      return (isOrd(a) - isOrd(b)) || (sdk(a) - sdk(b)) || (tyk(a) - tyk(b)) || a.due.localeCompare(b.due) || String(a.vk).localeCompare(String(b.vk)) || String(a.recv || '').localeCompare(String(b.recv || ''));
+      return (isOrd(a) - isOrd(b)) || (sdk(a) - sdk(b)) || cotk(a).localeCompare(cotk(b)) || (tyk(a) - tyk(b)) || a.due.localeCompare(b.due) || String(a.vk).localeCompare(String(b.vk)) || String(a.recv || '').localeCompare(String(b.recv || ''));
     }
     if (a.due || b.due) return a.due ? -1 : 1;
     /* งานไม่มีแผนขาย = รอบเดียวกันทั้งหมด (ต่อท้ายงานที่มีวันขาย) → SD → TYPE → กำลังผลิตก่อนยังไม่เริ่ม → วันรับเข้า
        วัดกับข้อมูลจริง 14/10 (447 งาน): แบ่งรอบตามสัปดาห์รับเข้าแบบเดิม = 30 รอบสลับกันบนเครื่อง → ตั้งเครื่อง 683 ครั้ง
        รวมเป็นรอบเดียว = 589 ครั้ง (ทันวันขายเท่าเดิม · งานรับเข้าเก่าก่อน ส.ค. ที่ไม่มีแผนขายเสร็จช้าลงเฉลี่ย ~12 วัน) */
-    return (sdk(a) - sdk(b)) || (tyk(a) - tyk(b)) || ((a.kind === 'wip' ? 0 : 1) - (b.kind === 'wip' ? 0 : 1)) || String(a.vk).localeCompare(String(b.vk)) || String(a.recv || '').localeCompare(String(b.recv || ''));
+    return (sdk(a) - sdk(b)) || cotk(a).localeCompare(cotk(b)) || (tyk(a) - tyk(b)) || ((a.kind === 'wip' ? 0 : 1) - (b.kind === 'wip' ? 0 : 1)) || String(a.vk).localeCompare(String(b.vk)) || String(a.recv || '').localeCompare(String(b.recv || ''));
   });
   out.forEach((j, i) => { j.prio = i + 1; j.dueFg = j.due ? _mpAddDays(j.due, -(+S.postFgDays || 0)) : ''; });
   skipped.v3 = v3jobs.length;
@@ -29321,7 +29409,7 @@ const MP_WHY = {
   dedicated: 'เบอร์นี้มีเครื่องเฉพาะ', nosd: 'วาล์วไม่มี SD', sd: 'SD นอกช่วง', norange: 'เครื่องยังไม่กำหนดช่วง SD',
   v3: 'เบอร์นี้ Process นี้ทำที่ VSM3 (แก้ที่ 🔀 เส้นทาง)',   // ★ v3.83
   sl: 'SL วาล์วเกิน SL เครื่อง',                              // ★ v3.94
-  fa: 'FA วาล์วไม่ตรง FA เครื่อง',                            // ★ v4.07
+  carbide: 'เครื่อง MUG ทำขั้น COT ของ Type COT = Carbide ไม่ได้',   // ★ v4.11
 };
 /* ตัวจัดตาราง — v3.77 เพิ่ม "แผนที่ Admin วางเอง" (pins) + งานที่ของยังไม่เข้า (kind 'order')
    pins = Map  "<VALVE>::<LOT>@<FAM>" (ล็อตนั้น) / "<VALVE>::*@<FAM>" (ทั้งเบอร์ รวมของที่จะเข้าทีหลัง) → { m, rank }
@@ -29362,8 +29450,8 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
   // ล้างผลรอบก่อน — กระดานวางแผนเองเรียกซ้ำบนงานชุดเดิมทุกครั้งที่ลาก
   for (const job of jobs) {
     job.assign = [];
-    for (const k of ['blocked', 'skipped', 'endT', 'finish', 'lateDays', 'wait', 'ready0', 'leadH', 'leadDays', 'mustBy', 'fgT']) delete job[k];
-    for (const st of (job.steps || [])) for (const k of ['skipped', 'external', 'start', 'end', 'machines', 'pin', 'pinBad', 'pinWarn', '_c', 'atV3']) delete st[k];
+    for (const k of ['blocked', 'skipped', 'endT', 'finish', 'lateDays', 'wait', 'ready0', 'leadH', 'leadDays', 'mustBy', 'fgT', 'mugSwap']) delete job[k];
+    for (const st of (job.steps || [])) for (const k of ['skipped', 'external', 'start', 'end', 'machines', 'pin', 'pinBad', 'pinWarn', '_c', 'atV3', 'mugSw']) delete st[k];
     for (const b of (job.v3b || [])) { delete b.s; delete b.e; }
   }
   for (const job of jobs) {
@@ -29398,6 +29486,10 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
     for (const m of cands) best = Math.min(best, costOf(m, job, st, st.need).base);
     return best + lag;
   };
+  /* ★ v4.11 เครื่อง MUG — ค่าปรับเปลี่ยนรุ่น (mkOf) + รุ่นที่จดไว้บนช่วงเวลาของเครื่อง (ivK) · noPen = คิวที่ Admin วางเอง เรียงตามที่วาง ไม่หลบ */
+  const MS = Math.max(0, S.mugStick != null ? +S.mugStick || 0 : 80), CS = Math.max(0, S.cotStick != null ? +S.cotStick || 0 : 16);
+  const mkOf = (m, job, fam, noPen) => m.mug ? { key: mpMugKey(fam, job.cotKey), init: m.lastMug, ps: noPen ? 0 : MS, ss: noPen ? 0 : CS } : null;
+  const ivK = (m, job, fam) => m.mug ? mpMugKey(fam, job.cotKey) : null;
   const pinOf = (job, st) => {
     if (!pins || !pins.size) return null;
     const lk = job.kind === 'order' ? '' : lotKey(job.lot);
@@ -29451,8 +29543,8 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         const ready = readyOf(p, endOf);
         const k = costOf(m, p.job, p.st, p.st.need);
         const sdE = mpSdEff(p.job.sd, S.sdFloor);
-        const slot = mpFindSlot(iv, ready, k.base, setupH, sdE, m.lastSd, 0);
-        iv.splice(slot.idx, 0, { s: slot.s, e: slot.e, sd: sdE });
+        const slot = mpFindSlot(iv, ready, k.base, setupH, sdE, m.lastSd, 0, mkOf(m, p.job, p.st.fam, true));
+        iv.splice(slot.idx, 0, { s: slot.s, e: slot.e, sd: sdE, k: ivK(m, p.job, p.st.fam) });
         nPlace.set(p, { ...k, ...slot, ready, sdE });
         nEnd.set(p.st, slot.e);
         const o = place.get(p); if (!o || Math.abs(o.s - slot.s) > 1e-6) moved++;
@@ -29461,7 +29553,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
     endOf = nEnd; place = nPlace;
     if (!moved) break;
   }
-  for (const [p, pl] of place) { pl.iv = { s: pl.s, e: pl.e, sd: pl.sdE, pin: true }; tl.get(p.m.id).push(pl.iv); }
+  for (const [p, pl] of place) { pl.iv = { s: pl.s, e: pl.e, sd: pl.sdE, pin: true, k: ivK(p.m, p.job, p.st.fam) }; tl.get(p.m.id).push(pl.iv); }
   for (const iv of tl.values()) iv.sort((a, b) => a.s - b.s);
 
   /* ── ② ทุกงานตามลำดับความสำคัญ: งานที่วางเองใช้ตำแหน่งจาก ① · ที่เหลือระบบวาง ── */
@@ -29476,6 +29568,36 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
      ใกล้ไม่ทันวันขาย = ค่าปรับเหลือ 1/4 (zf ตัวเดียวกับ Zone) */
   const VS = Math.max(0, +S.valveStick || 0), HS = Math.max(0, +S.histStick || 0);
   const camp = new Map(ctx.vfNow || []);     // VALVE|FAM → เครื่องที่ตั้งไว้สำหรับเบอร์นี้แล้ว (กำลังทำ / ล็อตแรกที่วางรอบนี้)
+  const refOf = (job, st, cands) => {
+    const kf = job.vk + '|' + st.fam, inC = id => !!id && cands.some(m => m.id === id);
+    if (VS && st.done > 0 && job.stepMc && inC(job.stepMc[st.fam])) return { m: job.stepMc[st.fam], pen: VS, src: 'own' };
+    if (VS && inC(camp.get(kf))) return { m: camp.get(kf), pen: VS, src: 'valve' };
+    if (HS) { const h = (ctx.hist.vmHist.get(kf) || []).find(x => x.q >= MP_PROVEN_Q && inC(x.m)); if (h) return { m: h.m, pen: HS, src: 'hist', last: h.last }; }
+    return null;
+  };
+  /* ★ v4.11 ขั้น MUG 2 ขั้นที่ติดกันของล็อตเดียว (A → B) — ลองทุกคู่เครื่องข้างกัน × เครื่องไหนทำขั้นไหน × ทำขั้นไหนก่อน แล้วเลือกที่จบเร็วสุด (รวมค่าปรับเปลี่ยนรุ่น / Zone / เครื่องเดิมของเบอร์)
+     ตัวอย่างผู้ใช้: VET ที่ G-240 แล้วตั้ง COT ที่ G-2037 — หรือ COT ก่อนแล้ว VET ตาม "แล้วแต่คิวงานความหนาแน่น"
+     คู่ที่จบช้ากว่าวางแบบปกติ (เครื่องที่เสร็จเร็วสุดทีละขั้น) เกิน S.mugStick ชม. = ไม่ใช้คู่ · คืน null = วางแบบปกติ */
+  const mugPick = (job, A, B, t0, sdE, zPen, zf, canSwap) => {
+    const ca = candsOf(job, A).cands, cb = candsOf(job, B).cands;
+    const ra = refOf(job, A, ca), rb = refOf(job, B, cb);
+    const vp = (s, m) => { const r = s === A ? ra : rb; return (r && m.id !== r.m) ? r.pen * zf : 0; };
+    const slotOf = (m, s, t) => mpFindSlot(tl.get(m.id), t, costOf(m, job, s, s.need).base, setupH, sdE, m.lastSd, +S.sdStick || 0, mkOf(m, job, s.fam));
+    const run = (x, mx, y, my) => {
+      const e1 = slotOf(mx, x, t0), e2 = e1 && slotOf(my, y, e1.e + lag);
+      return e2 ? { x, mx, y, my, c: e2.cost + (e1.cost - e1.e) + zPen(mx) + zPen(my) + vp(x, mx) + vp(y, my) + (x === A ? 0 : MP_MUG_SWAP_H) } : null;
+    };
+    let best = null;
+    for (const [p, q] of MP_MUG_PAIRS) for (const [a, b] of [[p, q], [q, p]]) {
+      const ma = ca.find(m => m.id === a), mb = cb.find(m => m.id === b);
+      if (!ma || !mb) continue;
+      for (const o of [run(A, ma, B, mb), canSwap ? run(B, mb, A, ma) : null]) if (o && (!best || o.c < best.c - 1e-9)) best = o;
+    }
+    if (!best) return null;
+    const one = (s, cs, t) => { let g = null; for (const m of cs) { const e = slotOf(m, s, t), c = e.cost + zPen(m) + vp(s, m); if (!g || c < g.c - 1e-9) g = { e: e.e, c, pen: c - e.e }; } return g; };
+    const g1 = one(A, ca, t0), g2 = g1 && one(B, cb, g1.e + lag);
+    return (g2 && best.c > g2.c + g1.pen + MS * zf) ? null : best;
+  };
   for (const job of jobs) {
     if (job.noflow) { job.blocked = { proc: '', why: TT('วาล์วไม่มี Process ใน Master valve', 'valve has no Process in Master valve') }; unplan.push(job); continue; }
     if (job.wait) { waitIn.push(job); continue; }
@@ -29508,8 +29630,11 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
     const dueEndT = job.dueFg ? tOfDate(_mpAddDays(job.dueFg, 1)) : Infinity;
     let zf = 1;
     const zPen = m => ZS > 0 ? zf * (((zPrev && m.zone !== zPrev) ? ZS : 0) + ((zHome && m.zone !== zHome) ? ZS / 2 : 0)) : 0;
-    for (let si = 0; si <= job.lastInt; si++) {
-      const st = job.steps[si];
+    const force = new Map();          // ★ v4.11 ขั้น → เครื่องที่ mugPick เลือกให้แล้ว
+    let mugLast = job.mugDone || '';  // ★ v4.11 เครื่อง MUG ล่าสุดของล็อตนี้
+    const seq = []; for (let i = 0; i <= job.lastInt; i++) seq.push(i);   // ลำดับที่วาง (สลับได้เฉพาะคู่ขั้น MUG ที่ติดกัน)
+    for (let qi = 0; qi < seq.length; qi++) {
+      let si = seq[qi], st = job.steps[si];
       if (st.need <= 0) continue;
       if (st.v3) {   // ★ v3.83 ส่ง VSM3 — ขั้นที่ติดกันเป็นรอบเดียว: ของกลับมาเมื่อครบรอบ (ไม่ใช้เครื่อง VSM4)
         st.atV3 = true;
@@ -29527,14 +29652,14 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
           // ของมาถึงเครื่องช้ากว่าคิวที่วางไว้ (ขั้นก่อนหน้าที่ระบบวางเสร็จช้ากว่าที่ประมาณ) → เลื่อนคิวนี้ออกไป
           const iv = tl.get(pp.m.id);
           const ix = iv.indexOf(pl.iv); if (ix >= 0) iv.splice(ix, 1);
-          const slot = mpFindSlot(iv, ready, pl.base, setupH, pl.sdE, pp.m.lastSd, 0);
-          const nv = { s: slot.s, e: slot.e, sd: pl.sdE, pin: true };
+          const slot = mpFindSlot(iv, ready, pl.base, setupH, pl.sdE, pp.m.lastSd, 0, mkOf(pp.m, job, st.fam, true));
+          const nv = { s: slot.s, e: slot.e, sd: pl.sdE, pin: true, k: ivK(pp.m, job, st.fam) };
           iv.splice(slot.idx, 0, nv);
           shifted = slot.s - pl.s;
           pl = { ...pl, ...slot, iv: nv };
           place.set(pp, pl);
         }
-        const a = { job, step: st, si, m: pp.m, qty: st.need, s: pl.s, e: pl.e, setup: pl.setup, prevSd: pl.prevSd, sdE: pl.sdE,
+        const a = { job, step: st, si, m: pp.m, qty: st.need, s: pl.s, e: pl.e, setup: pl.setup, prevSd: pl.prevSd, sdE: pl.sdE, chg: pl.chg, prevK: pl.prevK,
           ct: pl.ct, ctSrc: pl.ctSrc, eff: pl.eff, effSrc: pl.effSrc, part: 1, parts: 1, pin: pp.pin, shifted,
           waitMat: pl.ready > 1e-6 && Math.abs(pl.s - pl.ready) < 1e-6 };   // เริ่มตามเวลาที่ของพร้อม (ไม่ใช่ตามเครื่องว่าง)
         a.days = mpDaySplit(a, H);
@@ -29542,8 +29667,23 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         st.start = a.s; st.end = a.e; st.machines = [pp.m.id];
         ready = a.e + lag;
         zPrev = pp.m.zone;
+        if (pp.m.mug) mugLast = pp.m.id;
         if (!camp.has(job.vk + '|' + st.fam)) camp.set(job.vk + '|' + st.fam, pp.m.id);   // ★ v4.00 ล็อตอื่นของเบอร์นี้ตามไปเครื่องที่ย้าย/วางเองด้วย
         continue;
+      }
+      zf = (remH.length && ready + (remH[si] || 0) > dueEndT - ZS) ? 0.25 : 1;   // ★ v3.89 ใกล้ไม่ทันวันขาย = ย้าย Zone ได้ง่ายขึ้น
+      /* ★ v4.11 ขั้นนี้กับขั้นถัดไปที่ยังต้องทำเป็นขั้น MUG คนละ Process → เลือกคู่เครื่อง + ลำดับพร้อมกัน (ดู mugPick)
+         ไม่สลับลำดับ: ขั้นนี้เริ่มทำไปแล้ว · ⏪ ขั้นที่ถูกข้ามไป (ต้องทำตามลำดับ) */
+      if (MS > 0 && MP_MUG_FAMS.has(st.fam) && !force.has(st)) {
+        let bi = -1; for (let k = si + 1; k <= job.lastInt; k++) if (job.steps[k].need > 0) { bi = k; break; }
+        const B = bi >= 0 ? job.steps[bi] : null;
+        if (B && B.internal && !B.v3 && MP_MUG_FAMS.has(B.fam) && B.fam !== st.fam && !pinnedBySt.get(B)) {
+          const pick = mugPick(job, st, B, ready, sdE, zPen, zf, !st.hole && !B.hole && !(st.done > 0));
+          if (pick) {
+            force.set(pick.x, pick.mx.id); force.set(pick.y, pick.my.id);
+            if (pick.x !== st) { const qb = seq.indexOf(bi); seq[qb] = si; seq[qi] = bi; st.mugSw = B.mugSw = true; job.mugSwap = true; si = bi; st = B; }
+          }
+        }
       }
       const { cands, rej } = candsOf(job, st);
       if (!cands.length) {
@@ -29554,6 +29694,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
           why = `SL ${_mpNum(job.sl)} ${TT('เกิน SL เครื่อง', 'exceeds machine SL')} · ` + rej.sl.map(m => `${m.id} SL ${_mpNum(m.sl)}`).slice(0, 10).join(', ')
             + (Object.keys(rej).some(k => k !== 'sl') ? ` · SD ${job.sd == null ? '-' : _mpNum(job.sd)}` : '');
         }
+        else if (rej.carbide && rej.carbide.length) why = `Type COT Carbide · ${TT('เครื่อง MUG ทำไม่ได้', 'MUG machines cannot run it')} · ${TT('เครื่อง COT อื่นไม่รับ', 'no other COT machine takes')} SD ${job.sd == null ? '-' : _mpNum(job.sd)}`;   // ★ v4.11
         else why = `SD ${job.sd == null ? '-' : _mpNum(job.sd)}${(job.sd != null && job.sd < S.sdFloor) ? ` (${TT('คิดเป็น', 'as')} ${S.sdFloor})` : ''} · ` +
           famMs.map(m => `${m.id}${m.ranges.length ? ' ' + mpRangesText(m.ranges) : ''}${m.only.length ? ' (' + TT('เฉพาะ', 'only') + ')' : ''}`).slice(0, 10).join(', ');
         const blk = { proc: st.proc, why, reasons: Object.fromEntries(Object.entries(rej).map(([k, a]) => [k, a.map(m => m.id)])) };
@@ -29570,7 +29711,6 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         if (!unplan.includes(job)) unplan.push(job);
         break;
       }
-      zf = (remH.length && ready + (remH[si] || 0) > dueEndT - ZS) ? 0.25 : 1;   // ★ v3.89 ใกล้ไม่ทันวันขาย = ย้าย Zone ได้ง่ายขึ้น
       /* ★ v3.94 SL ใกล้ที่สุดก่อน (ผู้ใช้ 22/10): ขั้น SSG/SRG/SFG ของวาล์วที่มี SL → เรียง SL ของเครื่องที่รับได้ (ผ่าน SD แล้ว) น้อย→มาก
          ขั้นที่ 0 = พอดีที่สุด · ห่างออกไป 1 ขั้น = ค่าปรับ S.slStick ชม. · เครื่องที่ไม่ได้ตั้ง SL = ไม่ปรับ (ไม่รู้ขนาดที่รับได้) */
       const SLS = Math.max(0, +S.slStick || 0);
@@ -29578,34 +29718,45 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
         ? [...new Set(cands.filter(m => m.sl != null).map(m => m.sl))].sort((a, b) => a - b) : null;
       const slPen = m => (slTier && m.sl != null) ? SLS * Math.max(0, slTier.indexOf(m.sl)) : 0;
       // ★ v4.00 เครื่องอ้างอิงของเบอร์นี้ขั้นนี้ (ดูคำอธิบายที่ VS/HS ด้านบน) — เครื่องอ้างอิงต้องอยู่ในเครื่องที่รับงานนี้ได้
-      const kf = job.vk + '|' + st.fam, inC = id => !!id && cands.some(m => m.id === id);
-      let ref = null;
-      if (VS && st.done > 0 && job.stepMc && inC(job.stepMc[st.fam])) ref = { m: job.stepMc[st.fam], pen: VS, src: 'own' };
-      else if (VS && inC(camp.get(kf))) ref = { m: camp.get(kf), pen: VS, src: 'valve' };
-      else if (HS) { const h = (ctx.hist.vmHist.get(kf) || []).find(x => x.q >= MP_PROVEN_Q && inC(x.m)); if (h) ref = { m: h.m, pen: HS, src: 'hist', last: h.last }; }
+      const kf = job.vk + '|' + st.fam, ref = refOf(job, st, cands);
       const vPen = m => (ref && m.id !== ref.m) ? ref.pen * zf : 0;
+      /* ★ v4.11 คู่เครื่อง MUG สำหรับขั้นที่ mugPick ไม่ได้เลือกให้: ขั้นก่อนหน้าทำเครื่องไหน → ขั้นนี้ไปเครื่องข้าง ๆ (เช่น VET → COPY → COT)
+         ยังไม่เคยลง MUG + มีขั้น MUG รออยู่ข้างหน้า → เลือกเครื่องที่เครื่องข้าง ๆ ทำขั้นนั้นต่อได้ (SD ตรงทั้งคู่) */
+      const forced = force.get(st);
+      let mugPen = null;
+      if (!forced && MS > 0 && MP_MUG_FAMS.has(st.fam)) {
+        const mate = mugLast ? _mpMugMate.get(mugLast) : '';
+        if (mate && !(st.done > 0) && cands.some(m => m.id === mate)) mugPen = m => m.id === mate ? 0 : MS * zf;
+        else if (!mugLast) {
+          let nx = null;
+          for (let k = si + 1; k <= job.lastInt; k++) { const s = job.steps[k]; if (s.need > 0 && s.internal && !s.v3 && s.fam !== st.fam && MP_MUG_FAMS.has(s.fam)) { nx = s; break; } }
+          if (nx) { const hd = ctx.dedicatedFor(job, nx.fam); mugPen = m => { const pm = m.mug ? ctx.mById.get(m.mate) : null; return (pm && ctx.canDo(pm, job, nx.fam, hd).ok) ? 0 : MS * zf; }; }
+        }
+        // งาน COT ที่รู้ว่าไม่ใช่ Carbide ลงเครื่อง MUG ก่อน — เครื่อง COT อื่นเป็นที่เดียวของ Carbide (L-247 · L-253 · L-256 ยังทำ COPY ด้วย) · วัดจริง 90 วัน: COT ของ CBN อยู่ที่ MUG 88%
+        if (!mugPen && MP_CARB_FAMS.has(st.fam) && job.cotType && !job.carbide && cands.some(m => m.mug)) mugPen = m => m.mug ? 0 : MS * zf;
+      }
       const evalM = (m, qty, excl) => {
         if (excl && excl.has(m.id)) return null;
         const k = costOf(m, job, st, qty);
-        const slot = mpFindSlot(tl.get(m.id), ready, k.base, setupH, sdE, m.lastSd, +S.sdStick || 0);
-        return slot ? { m, ...k, ...slot, aff: ctx.hist.aff.has(m.id + '|' + job.vk), zp: zPen(m) + slPen(m) + vPen(m) } : null;
+        const slot = mpFindSlot(tl.get(m.id), ready, k.base, setupH, sdE, m.lastSd, +S.sdStick || 0, mkOf(m, job, st.fam));
+        return slot ? { m, ...k, ...slot, aff: ctx.hist.aff.has(m.id + '|' + job.vk), zp: zPen(m) + slPen(m) + vPen(m) + (mugPen ? mugPen(m) : 0) } : null;
       };
       const cmp = (a, b) => ((a.cost + a.zp) - (b.cost + b.zp)) || ((b.aff ? 1 : 0) - (a.aff ? 1 : 0)) || (a.setup - b.setup) || a.m.id.localeCompare(b.m.id);
       const put = (ev, qty, k, n) => {
         const iv = tl.get(ev.m.id);
-        iv.splice(ev.idx, 0, { s: ev.s, e: ev.e, sd: sdE });
-        const a = { job, step: st, si, m: ev.m, qty, s: ev.s, e: ev.e, setup: ev.setup, prevSd: ev.prevSd, sdE, ct: ev.ct, ctSrc: ev.ctSrc,
+        iv.splice(ev.idx, 0, { s: ev.s, e: ev.e, sd: sdE, k: ivK(ev.m, job, st.fam) });
+        const a = { job, step: st, si, m: ev.m, qty, s: ev.s, e: ev.e, setup: ev.setup, prevSd: ev.prevSd, sdE, chg: ev.chg, prevK: ev.prevK, ct: ev.ct, ctSrc: ev.ctSrc,
           eff: ev.eff, effSrc: ev.effSrc, part: k + 1, parts: n, ref: ref ? { m: ref.m, src: ref.src, last: ref.last || '' } : null };
         a.days = mpDaySplit(a, H);
         assigns.push(a); job.assign.push(a);
         return a;
       };
-      const evs = cands.map(m => evalM(m, st.need)).filter(Boolean).sort(cmp);
+      const evs = (forced ? cands.filter(m => m.id === forced) : cands).map(m => evalM(m, st.need)).filter(Boolean).sort(cmp);
       const best = evs[0];
       const placed = [];
       // ★ v3.89 แบ่งล็อตลงหลายเครื่อง = เฉพาะเครื่องใน Zone เดียวกับเครื่องที่เลือก (ไม่แบ่งข้าม Zone)
       const sc = ZS > 0 ? cands.filter(m => m.zone === best.m.zone) : cands;
-      if (best.base > (+S.splitH || 1e9) && sc.length > 1 && st.need >= 200) {
+      if (!forced && best.base > (+S.splitH || 1e9) && sc.length > 1 && st.need >= 200) {   // ★ v4.11 คู่ MUG = เครื่องละ Process ไม่แบ่งล็อตลงเครื่องข้าง ๆ
         const n = Math.min(sc.length, Math.max(1, +S.maxSplit || 1), Math.ceil(best.base / (+S.splitH)));
         const used = new Set(); let left = st.need;
         for (let k = 0; k < n; k++) {
@@ -29618,6 +29769,7 @@ function _mpScheduleOnce(jobs, ctx, S, pins, hint, t0) {
       st.machines = placed.map(a => a.m.id);
       ready = st.end + lag;
       zPrev = best.m.zone;
+      if (best.m.mug) mugLast = best.m.id;
       if (!camp.has(kf)) camp.set(kf, placed[0].m.id);   // ★ v4.00 ล็อตถัดไปของเบอร์นี้ ต่อคิวเครื่องนี้
     }
     // ★ v3.83 หลังขั้น VSM4 สุดท้าย: ส่ง VSM3 / แผนกอื่น → FG ที่ทำที่ VSM3 เสร็จเมื่อไร (ใช้ตัดสินทันวันขาย)
@@ -29832,11 +29984,12 @@ function _mpDataStatus() {
   const noSd = [...lots].filter(v => mpValveSd(v) == null);
   const sdAll = (state.valves || []).filter(v => v.sd !== null && v.sd !== undefined && v.sd !== '').length;
   const slAll = (state.valves || []).filter(v => _vnum(v.sl) != null).length;   // ★ v3.94
+  const ctAll = (state.valves || []).filter(v => _vtxt(v.cot_type)).length;     // ★ v4.11
   const slMc = mpVsm4Machines().filter(m => mpMcSl(m.id, _mcCaps.find(c => c.machine_id === m.id)).sl != null).length;
   const v4 = new Set(mpVsm4Machines().map(m => m.id));
   const capN = _mcCaps.filter(c => v4.has(c.machine_id)).length, mcN = v4.size;
   const off = mpOffSet();
-  return { nIn, nWip, noSd, sdAll, slAll, slMc, valves: (state.valves || []).length, capN, mcN, kpi30: (state.kpiRecords || []).filter(r => MP_ZONES.includes(r.zone)).length,
+  return { nIn, nWip, noSd, sdAll, slAll, slMc, ctAll, valves: (state.valves || []).length, capN, mcN, kpi30: (state.kpiRecords || []).filter(r => MP_ZONES.includes(r.zone)).length,
     allLoaded: (typeof _allKpi !== 'undefined') && !!_allKpi,
     offN: [...off].filter(id => v4.has(id)).length, pinN: mpManItems('pin').length, oldN: _mpOldKpi ? _mpOldKpi.length : null };
 }
@@ -29850,6 +30003,7 @@ function _mpStatusHtml() {
     ${chip(s.capN > 0, `${cloud} ${TT('ช่วง SD เครื่อง', 'Machine SD ranges')} ${s.capN}/${s.mcN}`)}
     ${chip(s.sdAll > 0, `📏 ${TT('วาล์วมี SD', 'Valves with SD')} ${nn(s.sdAll)}/${nn(s.valves)}`)}
     ${chip(s.slAll > 0, `📐 ${TT('วาล์วมี SL', 'Valves with SL')} ${nn(s.slAll)}/${nn(s.valves)} · ${TT('เครื่องตั้ง SL', 'machines with SL')} ${s.slMc}`)}
+    ${chip(s.ctAll > 0, `🔧 ${TT('วาล์วมี Type COT', 'Valves with Type COT')} ${nn(s.ctAll)}/${nn(s.valves)}`)}
     ${chip(!s.noSd.length, s.noSd.length ? `⚠️ ${TT('เบอร์ในงานที่ยังไม่มี SD', 'WIP valves without SD')} ${s.noSd.length}` : `✅ ${TT('ทุกเบอร์ในงานมี SD', 'All WIP valves have SD')}`)}
     ${chip(s.kpi30 > 0, `📈 ${TT('ประวัติ CT', 'CT history')} ${nn(s.kpi30 + (s.oldN || 0))}${s.oldN == null ? ' ⏳' : ''}`)}
     ${s.allLoaded ? '' : chip(false, '⏳ ' + TT('ประวัติทั้งหมดยังโหลดไม่ครบ', 'Full history still loading'))}
@@ -30009,7 +30163,7 @@ async function openMachinePlanner() {
     // ★ v4.00 (ผู้ใช้ 28/10 ข้อ 3) + ใบรับเข้า WIP IN 1.5 ล่าสุดด้วย — เดิมไม่ดึง: ใบที่เพิ่งลงจากเครื่องอื่น (VV6360A0 รับเข้า 14:31)
     //   ไม่เข้าแผนจนกว่าจะถึงรอบดึงอัตโนมัติ 2 ชม. → ค้นหาในแผนแล้ว "ไม่พบงาน" ทั้งที่หน้าค้นหา Process เห็นใบรับเข้าแล้ว
     if (API) await Promise.all([ensureAllJobsLoaded(true).catch(() => false), mcCapsLoad().catch(() => null), mpManLoad().catch(() => null),
-      typeof syncWipin === 'function' ? syncWipin().catch(() => null) : null]);
+      typeof syncWipin === 'function' ? syncWipin().catch(() => null) : null, pullJobProcTargets().catch(() => null)]);   // ★ v4.11 + ยอด 🔑 Admin ล่าสุดจากเครื่องอื่น
     if (!_mpv || !_mpv.open) return;
     await mpvRecompute();
     _mpvLiveStart();
@@ -30031,11 +30185,11 @@ function _mpvLiveStart() {
   _mpvLive = setInterval(() => {
     if (!_mpv || !_mpv.open) { clearInterval(_mpvLive); _mpvLive = 0; return; }
     if (document.hidden || !API) return;
-    const sig = typeof _wipinSigNow === 'function' ? _wipinSigNow() : '';
-    Promise.all([ensureAllJobsLoaded(true).catch(() => false), typeof syncWipin === 'function' ? syncWipin().catch(() => {}) : null]).then(([ch]) => {
+    const sig = typeof _wipinSigNow === 'function' ? _wipinSigNow() : '', tg0 = state.targets;
+    Promise.all([ensureAllJobsLoaded(true).catch(() => false), typeof syncWipin === 'function' ? syncWipin().catch(() => {}) : null, pullJobProcTargets().catch(() => {})]).then(([ch]) => {
       const inCh = typeof _wipinSigNow === 'function' && _wipinSigNow() !== sig;
       if (ch) { try { refreshProducedSet(); renderWipBuckets(); renderWipInSummary(); } catch (e) {} }
-      if (ch || inCh) mpvDataChanged();
+      if (ch || inCh || state.targets !== tg0) mpvDataChanged();   // ★ v4.11 Admin เติมยอดจากเครื่องอื่น = แผนเปลี่ยน
     });
   }, 5 * 60 * 1000);
 }
@@ -30361,13 +30515,21 @@ function _mpvRouteZ(j, res, W, zOf) {
   const flush = () => { if (done.length) out.push(`<span class="mpv-rz dn" title="${TT('ทำครบแล้ว', 'done')}">✓ ${done.join(' · ')}</span>`); done = []; };
   // ★ v4.09 ขั้นที่ถูกข้ามไป (ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด) = ⏪ กลับมาทำ — แผนวางให้ทำก่อนขั้นที่เหลือ
   const hTip = s => s.hole ? ' · ⏪ ' + TT('ข้ามไป — ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด ต้องกลับมาทำก่อน', 'skipped — a later step has output but this one has none, so it is done first') : '';
-  const hPre = s => s.hole ? '⏪ ' : '';
+  const hPre = s => s.hole ? '⏪ ' : s.mugSw ? '🔁 ' : '';   // ★ v4.11 🔁 = สลับลำดับตามคิวเครื่อง MUG
   //   ช่องว่างที่แผนไม่วางซ้ำ (s.gap) = ขีดฆ่า ไม่ใช่ ✓ เฉย ๆ — เดิม COPY ที่ยังไม่ได้ทำขึ้นในกลุ่ม "ทำครบแล้ว" (ผู้ใช้ 3/11 วงไว้)
   const gTip = s => s.gap === 'line' ? TT('ไม่มียอดของ Lot นี้ — ขั้นนี้ลงยอดที่ VSM3 / แผนกอื่น แผนจึงไม่วางซ้ำ', 'no output for this lot — this step is recorded at VSM3 / another dept, so it is not planned again')
     : s.gap === 'lead' ? TT('ไม่มียอด — ล็อตนี้เริ่มลงยอดที่ขั้นหลัง (ขั้นแรก ๆ ทำที่อื่น / ก่อนรับเข้า) แผนจึงไม่วางซ้ำ', 'no output — this lot\'s records start at a later step (earlier steps done elsewhere), so it is not planned again')
     : `${TT('ไม่มียอด — ล็อตที่ผลิตจบแล้วของเบอร์นี้ส่วนใหญ่ไม่ทำขั้นนี้', 'no output — most finished lots of this valve skip this step')} (${TT('ทำ', 'did')} ${s.gapN[0]}/${s.gapN[1]} ${TT('ล็อต', 'lots')}) ${TT('แผนจึงไม่วาง', 'so it is not planned')}`;
-  (j.steps || []).forEach((s, i) => {
-    if (!(s.need > 0)) { done.push(s.gap ? `<s title="${escapeHtml(gTip(s))}">${escapeHtml(s.proc)}</s>` : escapeHtml(s.proc)); return; }
+  const seqI = (j.steps || []).map((s, i) => i);
+  if (j.mugSwap) for (let q = 0; q < seqI.length - 1; q++) {   // ★ v4.11 คู่ขั้นที่สลับลำดับ = แสดงตามลำดับที่ทำจริง
+    const A = j.steps[seqI[q]]; if (!A.mugSw) continue;
+    let r = q + 1; while (r < seqI.length && !(j.steps[seqI[r]].need > 0)) r++;
+    const B = j.steps[seqI[r]];
+    if (B && B.mugSw && B.start < A.start) { const t = seqI[q]; seqI[q] = seqI[r]; seqI[r] = t; q = r; }
+  }
+  seqI.forEach(i => {
+    const s = j.steps[i];
+    if (!(s.need > 0)) { done.push(s.gap ? `<s title="${escapeHtml(gTip(s))}">${escapeHtml(s.proc)}</s>` : (s.adm ? `<span title="${TT('Admin เติมยอด — ถือว่าผลิตแล้ว', 'filled by Admin — counts as produced')}">🔑 ${escapeHtml(s.proc)}</span>` : escapeHtml(s.proc))); return; }
     flush();
     const A = (bySi.get(i) || []).slice().sort((x, y) => (x.part - y.part) || (x.s - y.s));   // แบ่งล็อต = 1/2 ก่อน 2/2
     if (A.length) {
@@ -30446,6 +30608,14 @@ function _mpvDoneBox(res, qn, others) {
       let x = o.ms.get(id); if (!x) o.ms.set(id, x = { id, q: 0, d0: d, d1: d, v3, zone: String(r.zone || '').toUpperCase().replace(/\s+/g, '') });
       x.q += q; if (d && (!x.d0 || d < x.d0)) x.d0 = d; if (d > x.d1) x.d1 = d;
       if (d >= last) { last = d; lastP = p; last3 = v3; }
+    }
+    // ★ v4.11 ขั้นที่ Admin เติมยอด (พนักงานไม่ได้ลง) = ผลิตแล้วตามแผน → ชิป 🔑 Admin แทนชื่อเครื่อง
+    const admQ = pfAdmOfJob(g.valve, g.lot);
+    for (const p in admQ) {
+      if (P.has(p) && P.get(p).q > 0) continue;
+      const A = admQ[p], d = A.date || '';
+      P.set(p, { p, q: A.qty, d, ms: new Map([['ADM', { id: '🔑 Admin', q: A.qty, d0: d, d1: d, v3: false, zone: '' }]]) });
+      if (d >= last) { last = d; lastP = p; last3 = false; }
     }
     const flow = procsOf(mpValve(g.valve), MP_VSM).map(p => _procCanon(String(p).trim()));
     const rk = p => { const i = flow.indexOf(p); return i >= 0 ? i : 1000 + _procRank(p); };
@@ -30550,6 +30720,7 @@ function mpNotPlanned(res) {
   const cut = _mpAddDays(S.start, -14);
   for (const it of (b.wip.noIntake.items || [])) {
     const k = jobKey(it.valve, it.lot);
+    if (pfAdmOfJob(it.valve, it.lot).FG) continue;              // ★ v4.11 Admin ยืนยันถึง FG แล้ว = ไม่มีงานให้วาง
     if (String(it.date || '') >= cut && !seen.has(k)) { seen.add(k); push(it, 'noIntake', `${TT('ล่าสุด', 'last')} ${it.curProc || '-'} ${_mpD(it.date).slice(0, 5)}`); }
   }
   return (res._np = out);
@@ -30918,8 +31089,7 @@ function _mpvWhyBox(res, W, qn) {
     <div class="mpv-rbh"><b>❓ ${TT('ทำไมไม่เห็นในแผน', 'Why it is not in the plan')}</b><small>${nn(lots.size)} ${TT('ล็อต', 'lots')} · ${_mpvWinLbl(W)}</small></div>${rows}${btn}</section>`;
 }
 /* ช่วง SD ที่เครื่องรับได้ (ใช้ทั้งการ์ดวิเคราะห์ และหัวการ์ดแผนงาน) */
-function _mpvSdrTxt(m) { return (m.ranges.length ? 'SD ' + mpRangesText(m.ranges) : m.only.length ? TT('ผลิตเฉพาะเบอร์', 'listed valves only') : TT('SD ไม่จำกัด', 'any SD')) + (m.sl != null ? ' · SL ' + _mpNum(m.sl) : '')
-  + (m.fa && m.fa.length ? ' · FA ' + mpFaListTxt(m.fa) : '')   // ★ v4.07
+function _mpvSdrTxt(m) { return (m.ranges.length ? 'SD ' + mpRangesText(m.ranges) : m.only.length ? TT('ผลิตเฉพาะเบอร์', 'listed valves only') : TT('SD ไม่จำกัด', 'any SD')) + (m.sl != null ? ' · SL ' + _mpNum(m.sl) : '') + (m.mug ? ` · MUG ${TT('คู่', 'with')} ${m.mate}` : '')
   + (m.capF != null && m.capF < 0.75 ? ` · ⏱ ${_mpNum(Math.round(m.hpd * 10) / 10)} ${TT('ชม./วัน', 'h/day')}` : ''); }   // ★ v3.94 + SL เครื่อง · ★ v4.00 เครื่องที่เดินน้อย = ชม.จริงต่อวัน
 function _mpvCard(m, o, W, res, filtering) {
   const V = _mpv, S = res.S, cal = res.cal, H = res.H;
@@ -30971,7 +31141,7 @@ function _mpvRow(a, i, n, res) {
     <span class="n">${n}</span>
     <span class="v">${a.pin && !a.pin.mv ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${a.step.hole ? _mpvHoleTag() : ''}${v3tag}${_mpMvTag(a, res)}</span>
     <span class="q">${_mpvQHtml(a)}</span>
-    <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span>${a.m.sl != null ? `<span>SL ${j.sl == null ? '-' : _mpNum(j.sl)}</span>` : ''}${a.m.fa && a.m.fa.length ? `<span>FA ${mpFaTxt(j.fa)}</span>` : ''}<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
+    <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span>${a.m.sl != null ? `<span>SL ${j.sl == null ? '-' : _mpNum(j.sl)}</span>` : ''}<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
     <span class="mpv-st ${sc}">${st}</span>
     ${open ? _mpvRowDetail(a, res) : ''}
   </div>`;
@@ -30986,6 +31156,7 @@ function _mpvRowDetail(a, res) {
   const vm = _mpvVmLine(a, res); if (vm) out.push(vm);     // ★ v4.00 เครื่องเดิมของเบอร์นี้
   out.push(`CT <b>${_mpNum(a.ct)}</b> ${TT('วิ', 's')} <span class="muted">(${escapeHtml(a.ctSrc)})</span> · ${TT('ประสิทธิภาพ', 'eff.')} <b>${Math.round(a.eff * 100)}%</b> <span class="muted">(${escapeHtml(a.effSrc)})</span> · ${Math.round((a.e - a.s) * 10) / 10} ${TT('ชม.', 'h')}`);
   if (a.setup > 0) out.push(`🔁 ${TT('เปลี่ยน SD', 'SD change')} ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ${TT('ชม. ตั้งเครื่อง', 'h setup')})`);
+  const mg = _mpvMugLine(a); if (mg) out.push(mg);         // ★ v4.11 แบบ COT · คู่เครื่อง MUG
   const path = (j.assign || []).slice().sort((x, y) => x.s - y.s)
     .map(x => `${x === a ? '<b>' : ''}${escapeHtml(x.step.proc)} ${escapeHtml(x.m.id)} ${_mpD(cal.dateAt(x.s + 1e-6)).slice(0, 5)}${x === a ? '</b>' : ''}`);
   const hasV3 = (j.steps || []).some(s => s.v3);
@@ -31054,15 +31225,37 @@ const _mpvSaleS = j => { const s = _mpvSale(j, _mpv && _mpv.S); return `<small c
 const _mpvLotS = j => j.kind === 'order'
   ? `<span class="l no">${j.planLot ? `<b>${escapeHtml(j.planLot)}</b>` : ''}${TT('รอของเข้า', 'not in yet')}${_mpvSaleS(j)}</span>`
   : `<span class="l">${escapeHtml(j.lot || '-')}${_mpvSaleS(j)}</span>`;
+/* ★ v4.11 งานขั้น MUG บนเครื่อง MUG: แบบ COT ที่ต้องตั้ง + ขั้นคู่ทำเครื่องไหน (ผู้ใช้: "VET แล้วให้ตั้ง COT ที่ G-2037 COT = R0.786*45X3") */
+function _mpMugNext(a) {
+  const oth = (a.job.assign || []).filter(x => x.si !== a.si && x.m.mug && MP_MUG_FAMS.has(x.step.fam));
+  return { nx: oth.filter(x => x.s >= a.s).sort((p, q) => p.s - q.s)[0] || null, pv: oth.filter(x => x.s < a.s).sort((p, q) => q.s - p.s)[0] || null };
+}
+function _mpvMugS(a) {
+  if (!a.m.mug || !MP_MUG_FAMS.has(a.step.fam)) return '';
+  const { nx, pv } = _mpMugNext(a);
+  return (a.job.cot ? ` · ${a.step.fam === 'COT' ? '' : 'COT '}${escapeHtml(a.job.cot)}` : '') + (nx ? ` · → ${escapeHtml(nx.step.proc)} ${escapeHtml(nx.m.id)}` : pv ? ` · ← ${escapeHtml(pv.step.proc)} ${escapeHtml(pv.m.id)}` : '');
+}
+/* แตะแถวแล้วเห็น: แบบ COT · Type COT · เส้นทางขั้น MUG ของล็อต · สลับลำดับ · เครื่องต้องเปลี่ยนรุ่นจากอะไร */
+function _mpvMugLine(a) {
+  const j = a.job;
+  if (!MP_MUG_FAMS.has(a.step.fam) || (!a.m.mug && !j.carbide)) return '';
+  const bits = [];
+  if (j.cot || j.cotType) bits.push(`COT <b>${escapeHtml(j.cot || '-')}</b> · Type <b>${escapeHtml(j.cotType || '-')}</b>`);
+  if (j.carbide && MP_CARB_FAMS.has(a.step.fam)) bits.push(TT('Carbide — ขั้นนี้ลงเครื่อง MUG ไม่ได้', 'Carbide — this step cannot run on MUG'));
+  const path = (j.assign || []).filter(x => MP_MUG_FAMS.has(x.step.fam)).sort((p, q) => p.s - q.s);
+  if (a.m.mug && path.length > 1) bits.push(path.map(x => `${x === a ? '<b>' : ''}${escapeHtml(x.step.proc)} ${escapeHtml(x.m.id)}${x === a ? '</b>' : ''}`).join(' → ') + (a.step.mugSw ? ` · 🔁 ${TT('สลับลำดับตามคิวงาน', 'order swapped by queue load')}` : ''));
+  if (a.chg) bits.push(`🔧 ${a.chg === 'p' ? TT('เครื่องเปลี่ยน Process จาก', 'machine changes Process from') : TT('เปลี่ยนแบบ COT จาก', 'COT form changes from')} ${escapeHtml(String(a.prevK || '').replace(/^COT\|/, a.chg === 'p' ? 'COT ' : ''))}`);
+  return bits.length ? '🔗 ' + bits.join(' · ') : '';
+}
 /* ★ v3.86 บรรทัดเล็กใต้ Valve No: [Process ·] SD · TYPE ของ Valve (ผู้ใช้ 17/10 "เพิ่ม SD กับ TYPE ของ Valve ทำเล็กๆ พอ") */
 /* ★ v3.94 (ผู้ใช้ 22/10 ข้อ 3) เครื่องที่ตั้ง SL → บอก SL ของ Valve ต่อท้ายด้วย (ไม่มี SL ใน Master = "SL -") */
-const _mpvVmS = (j, proc, m) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}${m && m.sl != null ? ` · SL ${j.sl == null ? '-' : _mpNum(j.sl)}` : ''}${m && m.fa && m.fa.length ? ` · FA ${mpFaTxt(j.fa)}` : ''}</small>`;
+const _mpvVmS = (j, proc, m, a) => `<small>${proc ? `<b>${escapeHtml(proc)}</b> · ` : ''}SD ${j.sd == null ? '-' : _mpNum(j.sd)}${j.vtype ? ' · ' + escapeHtml(j.vtype) : ''}${m && m.sl != null ? ` · SL ${j.sl == null ? '-' : _mpNum(j.sl)}` : ''}${a ? _mpvMugS(a) : ''}</small>`;
 const _mpvMoreS = (id, total, more) => total <= _MPV_LIM_S ? ''
   : `<button type="button" class="mpv-more" data-act="more" data-mid="${escapeHtml(id)}" aria-expanded="${more}">${more ? '▴ ' + TT('ย่อคิว', 'Collapse') : `▾ ${TT('ดูคิวทั้งหมด', 'Show all')} (${TT('อีก', '+')} ${nn(total - _MPV_LIM_S)})`}</button>`;
 function _mpvCardS(m, o, res, filtering) {
   const idx = filtering ? o.hit : o.all, more = _mpv.moreM.has(m.id), showAll = filtering || more;
   // เครื่องที่ทำหลาย Process (เช่น L-253: VET → CB → COT ล็อตเดียวกัน) — ไม่บอก Process = แถวดูเหมือนซ้ำ → ใส่ชื่อ Process บรรทัดเล็กใต้ Valve
-  const multi = new Set(o.all.map(i => res.assigns[i].step.proc)).size > 1;
+  const multi = m.mug || new Set(o.all.map(i => res.assigns[i].step.proc)).size > 1;   // ★ v4.11 เครื่อง MUG บอก Process เสมอ
   const rows = (showAll ? idx : idx.slice(0, _MPV_LIM_S)).map(i => _mpvRowS(res.assigns[i], i, o.all.indexOf(i) + 1, res, multi)).join('');
   return `<article class="mpv-m mpv-sm" aria-label="${escapeHtml(m.id)}" data-mc="${escapeHtml(m.id)}">
     <div class="mpv-smh"><b>${escapeHtml(m.id)}</b><small class="sdr" title="${TT('ช่วง SD ที่เครื่องรับได้', 'SD range this machine takes')}${m.sl != null ? ' · ' + TT('SL สูงสุดที่เครื่องรับได้ (SSG/SRG/SFG)', 'max valve SL (SSG/SRG/SFG)') : ''}">${escapeHtml(_mpvSdrTxt(m))}</small><span>${nn(o.all.length)} ${TT('งาน', 'jobs')}</span></div>
@@ -31072,7 +31265,7 @@ function _mpvCardS(m, o, res, filtering) {
 function _mpvRowS(a, i, n, res, multi) {
   const j = a.job, open = _mpv.openRows.has(_mpvRowKey(a));
   return `<div class="mpv-sr${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}"${multi ? ' data-p="1"' : ''}>
-    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${a.step.hole ? _mpvHoleTag() : ''}${_mpvVmS(j, multi ? a.step.proc : '', a.m)}</span>${_mpvLotS(j)}<span class="q">${_mpvQHtml(a)}</span>
+    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${a.step.hole ? _mpvHoleTag() : ''}${_mpvVmS(j, multi ? a.step.proc : '', a.m, a)}</span>${_mpvLotS(j)}<span class="q">${_mpvQHtml(a)}</span>
     ${open ? _mpvRowDetailS(a, i, res) : ''}
   </div>`;
 }
@@ -31085,7 +31278,8 @@ function _mpvRowDetailS(a, i, res) {
   const wh = _mpvWhereLine(j);    // ★ v3.89 ล็อตอยู่ที่ Process ไหน / Zone ไหน
   const vm = _mpvVmLine(a, res);  // ★ v4.00 เครื่องเดิมของเบอร์นี้
   const sp = _mpvSplitLine(a);    // ★ v4.05 แบ่งล็อตทำพร้อมกันหลายเครื่อง
-  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div>${sp ? `<div style="flex-basis:100%">${sp}</div>` : ''}<div style="flex-basis:100%">${_mpvSaleLine(j, res.S)}</div>${wh ? `<div style="flex-basis:100%">${wh}</div>` : ''}${vm ? `<div style="flex-basis:100%">${vm}</div>` : ''}${mv}</div>`;
+  const mg = _mpvMugLine(a);      // ★ v4.11 แบบ COT · คู่เครื่อง MUG
+  return `<div class="mpv-dt mpv-dts"><div>${out.join(' · ')}</div>${sp ? `<div style="flex-basis:100%">${sp}</div>` : ''}${mg ? `<div style="flex-basis:100%">${mg}</div>` : ''}<div style="flex-basis:100%">${_mpvSaleLine(j, res.S)}</div>${wh ? `<div style="flex-basis:100%">${wh}</div>` : ''}${vm ? `<div style="flex-basis:100%">${vm}</div>` : ''}${mv}</div>`;
 }
 /* ★ v4.05 (ผู้ใช้ 29/10 ข้อ 1 "COT 1/2 · COT 2/2 คืออะไร เปิด 2 เครื่องในการผลิตหรอ") แบ่งล็อต = ขั้นนี้ของล็อตนี้ทำพร้อมกันหลายเครื่อง แบ่งจำนวนกัน
    แผนแบ่งเองเมื่อเครื่องเดียวต้องใช้เกิน "แบ่งล็อตเมื่อเกิน" (⚙️ ตั้งค่า → 🛠️ ขั้นสูง · เริ่มต้น 20 ชม. · สูงสุด 3 เครื่อง · Zone เดียวกัน · ขั้นนั้น ≥ 200 ชิ้น) */
@@ -31480,6 +31674,13 @@ function openMpvSettings() {
       ${ck('mp_mcHours', S.mcHours !== false, '⏱️ ' + TT('ใช้ชั่วโมงเดินจริงของแต่ละเครื่อง (ลงยอด 28 วันล่าสุด) — เครื่องที่แทบไม่มีคนเดินได้งานน้อยลง', 'Use each machine\'s real running hours (last 28 days) — rarely staffed machines get less work'))}</div>
     <div class="hint">${TT('ล็อตที่กำลังทำอยู่ ทำต่อเครื่องเดิม · ล็อตอื่นของเบอร์เดียวกันต่อคิวเครื่องที่ตั้งไว้แล้ว (ไม่ต้องตั้งเครื่องใหม่ · ตรวจง่าย) · ไม่มีล็อตไหนทำอยู่ → เครื่องที่เคยผลิตเบอร์นี้ล่าสุด · ไปเครื่องอื่นเมื่อคิวเครื่องเดิมช้ากว่าค่านี้ หรือใกล้ไม่ทันวันขาย',
       'A running lot stays on its machine · other lots of the valve queue on the machine already set up · otherwise the machine that made it last · another machine only if that queue is later than this, or the sale date is at risk')}</div>
+    <h4>🔗 ${TT('เครื่อง MUG', 'MUG machines')} (${MP_MUG_PAIRS.map(p => p.join(' + ')).join(' · ')})</h4>
+    <div class="fg-auto">
+      ${num('mp_mugStick', S.mugStick != null ? S.mugStick : 80, TT('ลงคู่เครื่องข้างกัน · ไม่เปลี่ยน Process ในเครื่อง: ยอมรอได้ถึง (ชม.)', 'Use the neighbouring pair · keep one process per machine: wait up to (h)'))}
+      ${num('mp_cotStick', S.cotStick != null ? S.cotStick : 16, TT('แบบ COT เดียวกันติดกัน: ยอมรอได้ถึง (ชม.)', 'Keep the same COT form together: wait up to (h)'))}
+    </div>
+    <div class="hint">${TT('ล็อตที่ต้องทำหลายขั้นของ MUG (VET → COT) ลงคู่เครื่องข้างกัน เครื่องละ Process · ขั้นที่ติดกันสลับลำดับได้ตามคิว · Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้ (ไปเครื่อง COT อื่น) · ช่วง SD คิดตามปกติ · 0 = ไม่สน',
+      'Lots with several MUG steps (VET → COT) use a neighbouring pair, one process per machine · adjacent steps may swap by queue load · Type COT = Carbide cannot run its COT step on MUG · SD ranges apply as usual · 0 = ignore')}</div>
     <h4>📐 SL (SSG · SEMI · SRG · SFG)</h4>
     <div class="fg-auto">
       ${num('mp_slStick', S.slStick != null ? S.slStick : 40, TT('SL ใกล้ที่สุดก่อน: ยอมรอเครื่อง SL พอดีได้ถึง (ชม. ต่อขั้น SL)', 'Closest SL first: wait for the best-fit machine up to (h per SL step)'), 1, TT('20 ชม. ≈ 1 วันทำงาน · 0 = ไม่สน SL (ยังห้าม SL เกินเครื่องเหมือนเดิม)', '20 h ≈ 1 working day · 0 = ignore fit (the SL limit still applies)'))}
@@ -31545,9 +31746,8 @@ function openMpvIssues() {
   const noSd = [...new Set(res.jobs.filter(j => j.sd == null).map(j => j.valve))];
   // ★ v3.94 เบอร์ที่ยังต้องผ่าน SSG/SEMI/SRG/SFG แต่ไม่มี SL → ไม่ถูกคัดเครื่องตาม SL
   const noSl = [...new Set(res.jobs.filter(j => j.sl == null && (j.steps || []).some(s => s.need > 0 && s.internal && mpSlFam(s.fam))).map(j => j.valve))];
-  // ★ v4.07 มีเครื่อง FG ที่ตั้ง FA ไว้แล้ว → เบอร์ที่ยังต้องผ่าน FG แต่ไม่มี FA = ไม่ถูกคัดเครื่องตาม FA
-  const faOn = res.ctx.machines.some(m => m.fa && m.fa.length);
-  const noFa = faOn ? [...new Set(res.jobs.filter(j => j.fa == null && (j.steps || []).some(s => s.need > 0 && s.internal && mpFaFam(s.fam))).map(j => j.valve))] : [];
+  // ★ v4.11 เบอร์ที่ยังต้องทำขั้น COT แต่ไม่มี Type COT = ไม่รู้ว่า Carbide ไหม → ยังลงเครื่อง MUG ได้ตามปกติ
+  const noCt = [...new Set(res.jobs.filter(j => !j.cotType && (j.steps || []).some(s => s.need > 0 && s.internal && !s.v3 && MP_CARB_FAMS.has(s.fam))).map(j => j.valve))];
   const sec = (t, c, body) => `<div style="font-weight:900;font-size:13px;color:${c};margin:12px 0 4px">${t}</div>${body}`;
   const ul = x => `<ul style="margin:0 0 0 18px;font-size:12.5px;line-height:1.75">${x}</ul>`;
   const html = [
@@ -31560,8 +31760,8 @@ function openMpvIssues() {
       `<div style="font-size:12.5px;line-height:1.7">${noSd.slice(0, 60).map(escapeHtml).join(', ')}${noSd.length > 60 ? ' …' : ''}</div>`) : '',
     noSl.length ? sec('📐 ' + TT('เบอร์ในงานที่ต้องผ่าน SSG / SEMI / SRG / SFG แต่ยังไม่มี SL — ยังไม่ถูกคัดเครื่องตาม SL', 'Valves in work needing SSG / SEMI / SRG / SFG without SL — not filtered by SL yet') + ` — ${noSl.length}`, 'var(--blue-dark)',
       `<div style="font-size:12.5px;line-height:1.7">${noSl.slice(0, 60).map(escapeHtml).join(', ')}${noSl.length > 60 ? ' …' : ''}</div>`) : '',
-    noFa.length ? sec('📐 ' + TT('เบอร์ในงานที่ต้องผ่าน FG แต่ยังไม่มี FA — ยังไม่ถูกคัดเครื่องตาม FA', 'Valves in work needing FG without FA — not filtered by FA yet') + ` — ${noFa.length}`, 'var(--blue-dark)',
-      `<div style="font-size:12.5px;line-height:1.7">${noFa.slice(0, 60).map(escapeHtml).join(', ')}${noFa.length > 60 ? ' …' : ''}</div>`) : '',
+    noCt.length ? sec('🔧 ' + TT('เบอร์ในงานที่ต้องทำขั้น COT แต่ยังไม่มี Type COT — ยังลงเครื่อง MUG ได้ตามปกติ (ถ้าเป็น Carbide ให้เติมใน Master valve)', 'Valves in work needing COT without Type COT — may still go on MUG (fill it in if Carbide)') + ` — ${noCt.length}`, 'var(--blue-dark)',
+      `<div style="font-size:12.5px;line-height:1.7">${noCt.slice(0, 60).map(escapeHtml).join(', ')}${noCt.length > 60 ? ' …' : ''}</div>`) : '',
     res.bottleneck.length ? sec('🚧 ' + TT('คอขวด — เครื่องที่คิวยาวที่สุด', 'Bottlenecks — longest queues'), '#B45309',
       ul(res.bottleneck.slice(0, 6).map(b => `<li><b>${escapeHtml(b.m.id)}</b> ${escapeHtml(b.m.zone)} · ${escapeHtml([...b.m.fams].join('/'))} → ${TT('คิวเสร็จ', 'queue ends')} ${_mpD(b.endDate)}</li>`).join(''))) : '',
   ].join('');
@@ -31595,6 +31795,8 @@ function mpReadForm() {
   S.v3Days = Math.max(0, Math.min(30, n('mp_v3d', S.v3Days))); S.v3RunDays = Math.max(0, Math.min(30, n('mp_v3r', S.v3RunDays)));   // ★ v3.83
   S.zoneStick = Math.max(0, Math.min(400, n('mp_zone', S.zoneStick))); S.batchDays = Math.max(0, Math.min(90, Math.round(n('mp_batch', S.batchDays))));   // ★ v3.89
   S.slStick = Math.max(0, Math.min(400, n('mp_slStick', S.slStick != null ? S.slStick : 40)));   // ★ v3.94
+  S.mugStick = Math.max(0, Math.min(400, n('mp_mugStick', S.mugStick != null ? S.mugStick : 80)));   // ★ v4.11
+  S.cotStick = Math.max(0, Math.min(400, n('mp_cotStick', S.cotStick != null ? S.cotStick : 16)));
   S.valveStick = Math.max(0, Math.min(400, n('mp_vStick', S.valveStick != null ? S.valveStick : 80)));   // ★ v4.00
   S.histStick = Math.max(0, Math.min(400, n('mp_hStick', S.histStick != null ? S.histStick : 40)));
   S.histCap = c('mp_hCap', S.histCap !== false);
@@ -31796,7 +31998,7 @@ async function mpExportExcel(res) {
       ['ขั้นที่ไม่มีเครื่องรับ SD', S.skipBlocked ? 'ข้ามแล้ววางขั้นที่เหลือต่อ (รอ 1 วัน)' : 'หยุดวางแผนล็อตนั้น'],
       ['ย้าย Zone', +S.zoneStick > 0 ? `เมื่อจำเป็น — ยอมรอเครื่องใน Zone เดิมได้ถึง ${S.zoneStick} ชม. · แบ่งล็อตเฉพาะใน Zone เดียวกัน` : 'ไม่สน Zone (เครื่องที่เสร็จเร็วสุด)'],
       ['SL (SSG · SEMI · SRG · SFG)', `SL วาล์ว > SL เครื่อง = เข้าไม่ได้ · เลือกเครื่อง SL ใกล้ที่สุดก่อน${+S.slStick > 0 ? ` (ยอมรอได้ ${S.slStick} ชม. ต่อขั้น SL)` : ' (ปิด — ไม่สน SL ที่ใกล้ที่สุด)'} · เครื่องที่ตั้ง SL ${res.ctx.machines.filter(m => m.sl != null).length} เครื่อง`],   // ★ v3.94
-      ['FA (ขั้น FG)', `เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง · วาล์วไม่มี FA = ไม่ตัด · เครื่องที่ตั้ง FA ${res.ctx.machines.filter(m => m.fa && m.fa.length).length} เครื่อง`],   // ★ v4.07
+      ['เครื่อง MUG', `${MP_MUG_PAIRS.map(p => p.join(' + ')).join(' · ')} — ล็อตที่มีหลายขั้นของ MUG ลงคู่เครื่องข้างกัน เครื่องละ Process (ยอมรอได้ ${S.mugStick != null ? S.mugStick : 80} ชม.) สลับลำดับตามคิว · แบบ COT เดียวกันติดกัน (${S.cotStick != null ? S.cotStick : 16} ชม.) · Type COT = Carbide ทำขั้น COT ที่ MUG ไม่ได้`],   // ★ v4.11
       ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้าที่มียอด = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน${S.holeBack !== false ? ' · ขั้นก่อนหน้าที่ยังไม่มียอดเลย = ⏪ วางให้กลับมาทำก่อน' : ''}`],
       ['งานที่รวม', [S.incIn ? 'WIP IN 1.5' : '', S.incWip ? 'กำลังผลิต' : '', S.incOrder ? 'Order ที่ยังไม่มีของ (ตามวันคาดว่าเข้า)' : '', S.onlyPlan ? '(เฉพาะที่มีแผนขาย)' : ''].filter(Boolean).join(' + ')],
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
@@ -31948,6 +32150,7 @@ async function mpExportExcel(res) {
         if (a.m.id !== prevM) zebra = !zebra;
         const notes = [];
         if (d.setup && a.setup > 0) notes.push(`🔁 เปลี่ยน SD ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)}`);
+        if (a.m.mug && MP_MUG_FAMS.has(a.step.fam)) { const { nx } = _mpMugNext(a); if (a.job.cot) notes.push(`COT ${a.job.cot}`); if (nx) notes.push(`→ ${nx.step.proc} ${nx.m.id}`); }   // ★ v4.11
         if (a.parts > 1) notes.push(`แบ่งล็อต ${a.part}/${a.parts}`);
         if (a.days.length > 1) notes.push(`ต่อเนื่อง ${a.days.indexOf(d) + 1}/${a.days.length} วัน`);
         if (!a.m.ranges.length && !a.m.only.length) notes.push('⚠️ เครื่องยังไม่กำหนดช่วง SD');
@@ -32059,6 +32262,7 @@ async function mpExportExcel(res) {
           const prev = i ? L[i - 1] : null;
           const notes = [];
           if (a.setup > 0) notes.push(`🔁 เปลี่ยน SD ${a.prevSd == null ? '-' : _mpNum(a.prevSd)} → ${_mpNum(a.sdE)} (+${a.setup} ชม.)`);
+          if (a.m.mug && MP_MUG_FAMS.has(a.step.fam)) { const { nx } = _mpMugNext(a); if (a.job.cot) notes.push(`COT ${a.job.cot}`); if (nx) notes.push(`→ ${nx.step.proc} ${nx.m.id}`); }   // ★ v4.11
           if (prev && prev.job.vtype && a.job.vtype && prev.job.vtype !== a.job.vtype) notes.push(`↪ TYPE ${prev.job.vtype} → ${a.job.vtype}`);
           if (a.parts > 1) notes.push(`แบ่งล็อต ${a.part}/${a.parts}`);
           if (a.ctSrc !== 'Admin' && /เริ่มต้น|default/.test(a.ctSrc)) notes.push('CT ค่าเริ่มต้น');
@@ -32405,7 +32609,7 @@ function _mpbRows() {
     if (si < 0) continue;
     const st = j.steps[si];
     let r = by.get(j.vk);
-    if (!r) by.set(j.vk, r = { vk: j.vk, valve: j.valve, sd: j.sd, vtype: j.vtype, sl: j.sl, fa: j.fa, cust: custGroup(j.customer), due: '', items: [], need: 0, at: 0, up: 0, noin: 0, pinQ: 0 });
+    if (!r) by.set(j.vk, r = { vk: j.vk, valve: j.valve, sd: j.sd, vtype: j.vtype, sl: j.sl, cot: j.cot, carbide: j.carbide, cust: custGroup(j.customer), due: '', items: [], need: 0, at: 0, up: 0, noin: 0, pinQ: 0 });
     const state = j.kind === 'order' ? 'noin' : (j.firstStep === si ? 'at' : 'up');
     const pin = st.pin || (j.kind === 'order' ? B.pins.get(j.vk + '::*@' + fam) : null) || null;
     r.items.push({ j, si, st, state, pin, bad: st.pinBad || null, a: (j.assign || []).filter(x => x.step === st) });
@@ -32471,7 +32675,7 @@ function _mpbRenderList() {
       <div class="mpb-vh">
         <span class="mpb-grip" aria-hidden="true" title="${TT('ลากไปวางที่เครื่อง', 'Drag onto a machine')}">⠿</span>
         <b class="mpb-vno">${escapeHtml(r.valve)}</b>
-        <span class="mpb-c">SD ${r.sd == null ? '❓' : _mpNum(r.sd)}</span>${r.vtype ? `<span class="mpb-c">${escapeHtml(r.vtype)}</span>` : ''}${mpSlFam(B.fam) ? `<span class="mpb-c">SL ${r.sl == null ? '❓' : _mpNum(r.sl)}</span>` : ''}${mpFaFam(B.fam) ? `<span class="mpb-c">FA ${r.fa == null ? '❓' : mpFaTxt(r.fa)}</span>` : ''}<span class="mpb-c cu">${escapeHtml(r.cust)}</span>
+        <span class="mpb-c">SD ${r.sd == null ? '❓' : _mpNum(r.sd)}</span>${r.vtype ? `<span class="mpb-c">${escapeHtml(r.vtype)}</span>` : ''}${mpSlFam(B.fam) ? `<span class="mpb-c">SL ${r.sl == null ? '❓' : _mpNum(r.sl)}</span>` : ''}${MP_MUG_FAMS.has(B.fam) && r.cot ? `<span class="mpb-c">COT ${escapeHtml(r.cot)}${r.carbide ? ' · Carbide' : ''}</span>` : ''}<span class="mpb-c cu">${escapeHtml(r.cust)}</span>
         <span class="mpb-due${r.late ? ' late' : ''}">${r.due ? `🎯 ${_mpDW(r.due)}` : TT('ไม่มีแผนขาย', 'no sale plan')}</span>
       </div>
       <div class="mpb-vq"><b>${nn(r.need)}</b> ${TT('ชิ้น', 'pcs')}
@@ -32539,7 +32743,7 @@ function _mpbRenderLanes() {
     return `<div class="mpb-lane${selOk ? (selOk.ok ? ' ok tap' : ' no') : ''}" data-lane="${escapeHtml(m.id)}">
       <div class="mpb-lh">
         <div class="mpb-lid"><b>${escapeHtml(m.id)}</b> <span class="muted">${escapeHtml(m.zone)}</span>
-          <span class="mpb-c">${m.ranges.length ? 'SD ' + escapeHtml(mpRangesText(m.ranges)) : m.only.length ? TT('เฉพาะเบอร์', 'listed only') : TT('ไม่จำกัด SD', 'any SD')}</span>${m.sl != null ? `<span class="mpb-c" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.fa && m.fa.length ? `<span class="mpb-c" title="${TT('FA ที่เครื่องรับได้ (ขั้น FG)', 'FA this machine takes (FG)')}">FA ${escapeHtml(mpFaListTxt(m.fa))}</span>` : ''}${m.label ? `<span class="mpb-c">${escapeHtml(m.label)}</span>` : ''}
+          <span class="mpb-c">${m.ranges.length ? 'SD ' + escapeHtml(mpRangesText(m.ranges)) : m.only.length ? TT('เฉพาะเบอร์', 'listed only') : TT('ไม่จำกัด SD', 'any SD')}</span>${m.sl != null ? `<span class="mpb-c" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.mug ? `<span class="mpb-c" title="${TT('คู่เครื่องข้างกัน', 'neighbouring machine')}">MUG · ${escapeHtml(m.mate)}</span>` : ''}${m.label ? `<span class="mpb-c">${escapeHtml(m.label)}</span>` : ''}
           ${[...m.fams].filter(f => f !== fam).length ? `<span class="mpb-c pf2" title="${TT('Process อื่นของเครื่องนี้', 'other processes')}">+${escapeHtml([...m.fams].filter(f => f !== fam).join(', '))}</span>` : ''}</div>
         <div class="mpb-ls2"><b>${L.length}</b> ${TT('งาน', 'jobs')} · <b>${Math.round(tot * 10) / 10}</b> ${TT('ชม.', 'h')}${pinH ? ` <span class="muted">(📌 ${Math.round(pinH * 10) / 10})</span>` : ''}
           · ${L.length ? `${TT('เต็มถึง', 'busy until')} <b>${_mpDW(cal.dateAt(end))}</b>` : `<span style="color:var(--green)">${TT('ว่าง', 'free')}</span>`}${late ? ` · <b class="mpb-red">⏰ ${late}</b>` : ''}</div>
@@ -32574,7 +32778,7 @@ function _mpbCheck(src, m) {
   if (!c.ok) {
     const why = c.why === 'proc' ? `${TT('ไม่ทำ', 'no')} ${st.fam}` : c.why === 'sd' ? `SD ${job.sd == null ? '-' : _mpNum(job.sd)} ${TT('นอกช่วง', 'outside')} ${mpRangesText(m.ranges)}`
       : c.why === 'sl' ? `SL ${_mpNum(job.sl)} > SL ${TT('เครื่อง', 'machine')} ${_mpNum(m.sl)}`   // ★ v3.94
-      : c.why === 'fa' ? `FA ${mpFaTxt(job.fa)} ≠ FA ${TT('เครื่อง', 'machine')} ${mpFaListTxt(m.fa)}` : (MP_WHY[c.why] || c.why);   // ★ v4.07
+      : (MP_WHY[c.why] || c.why);
     return { ok: false, why };
   }
   let h = 0;
@@ -33221,7 +33425,7 @@ function _mpiPaint(box) {
     const fams = [...m.fams].sort((a, b) => _mpbFamRank(a) - _mpbFamRank(b));
     return `<article class="mpi-m" style="--zc:${zc}" aria-label="${escapeHtml(m.id)}">
       <div class="mpi-mh"><span class="mpi-id">${escapeHtml(m.id)}</span>${fams.map(f => `<span class="mpv-pf" style="--pc:#${_mpPCol(f)}">${escapeHtml(f)}</span>`).join('')}
-        <span class="mpi-z">${escapeHtml(m.zone)}</span>${m.sl != null ? `<span class="mpi-z" style="color:#475569" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.fa && m.fa.length ? `<span class="mpi-z" style="color:#475569" title="${TT('FA ที่เครื่องรับได้ (ขั้น FG)', 'FA this machine takes (FG)')}">FA ${escapeHtml(mpFaListTxt(m.fa))}</span>` : ''}${now.length ? `<span class="mpi-ld ${ld > 95 ? 'hi' : ld > 70 ? 'md' : 'lo'}">${ld}%</span>` : ''}</div>
+        <span class="mpi-z">${escapeHtml(m.zone)}</span>${m.sl != null ? `<span class="mpi-z" style="color:#475569" title="${TT('SL สูงสุดที่เครื่องรับได้', 'max valve SL')}">SL ${_mpNum(m.sl)}</span>` : ''}${m.mug ? `<span class="mpi-z" style="color:#475569" title="${TT('คู่เครื่องข้างกัน', 'neighbouring machine')}">MUG · ${escapeHtml(m.mate)}</span>` : ''}${now.length ? `<span class="mpi-ld ${ld > 95 ? 'hi' : ld > 70 ? 'md' : 'lo'}">${ld}%</span>` : ''}</div>
       <div class="mpi-sec">▶ ${isToday ? TT('วันผลิตนี้', 'This production day') : TT('วันทำงานถัดไป', 'Next working day')} ${_mpDW(d0)}</div>
       ${now.length ? now.map(i => jobRow(i, true)).join('') : `<div class="mpi-none">💤 ${TT('ไม่มีงานในแผนวันนี้', 'No planned work today')}</div>`}
       ${next.length ? `<div class="mpi-sec">⏭ ${TT('ถัดไป', 'Next')}</div>${next.map(i => jobRow(i, false)).join('')}` : ''}
@@ -33355,12 +33559,11 @@ function renderMcCaps() {
     const procs = mpList(c.procs).length ? `<b>${escapeHtml(mpList(c.procs).join(', '))}</b>` : `<span class="muted" title="${TT('อัตโนมัติ = Process ของเครื่อง + ที่เคยผลิตจริง', 'auto')}">⚙️ ${escapeHtml(auto.join(', ') || '-')}</span>`;
     const rng = mpParseRanges(c.sd_ranges);
     return `<tr style="${c.active && !offSet.has(c.machine_id) ? '' : 'opacity:.55'}">
-      <td><b>${escapeHtml(c.machine_id)}</b>${offTag(c.machine_id)}${c.label ? ` <span class="tag tag-blue" style="font-size:9.5px">${escapeHtml(c.label)}</span>` : ''}${mc ? '' : ` <span class="tag tag-orange" style="font-size:9.5px" title="${TT('ไม่มีในรายการเครื่อง VSM4', 'not a VSM4 machine')}">?</span>`}${c._local ? ' <span title="ยังไม่ขึ้น Cloud">💾</span>' : ''}</td>
+      <td><b>${escapeHtml(c.machine_id)}</b>${offTag(c.machine_id)}${mpIsMug(c.machine_id) ? ` <span class="tag tag-blue" style="font-size:9.5px" title="${TT('คู่เครื่องข้างกัน', 'neighbouring machine')} ${escapeHtml(_mpMugMate.get(c.machine_id))}">MUG</span>` : ''}${c.label ? ` <span class="tag tag-blue" style="font-size:9.5px">${escapeHtml(c.label)}</span>` : ''}${mc ? '' : ` <span class="tag tag-orange" style="font-size:9.5px" title="${TT('ไม่มีในรายการเครื่อง VSM4', 'not a VSM4 machine')}">?</span>`}${c._local ? ' <span title="ยังไม่ขึ้น Cloud">💾</span>' : ''}</td>
       <td>${escapeHtml(zoneOf.get(c.machine_id) || '-')}</td>
       <td style="font-size:11.5px">${procs}</td>
       <td>${rng.length ? `<b style="color:var(--blue-dark)">${escapeHtml(mpRangesText(rng))}</b>` : (mpList(c.only_valves).length ? `<span class="muted">${TT('ตามรายการเฉพาะ', 'by list')}</span>` : `<span class="tag tag-orange" style="font-size:9.5px">${TT('ไม่จำกัด', 'any')}</span>`)}</td>
       <td class="right">${(() => { const s = mpMcSl(c.machine_id, c); return s.sl != null ? `<b style="color:var(--blue-dark)">${_mpNum(s.sl)}</b>${s.src === 'default' ? ` <span class="muted" style="font-size:9.5px" title="${TT('ค่าเริ่มต้นที่ผู้ใช้กำหนด 22/10 — กดแก้เพื่อเปลี่ยน', 'default from 22/10 — edit to change')}">${TT('ตั้งต้น', 'default')}</span>` : ''}` : '<span class="muted">—</span>'; })()}</td>
-      <td style="white-space:nowrap">${(() => { const r = mpParseFaList(c.fa); return r && r.length ? `<b style="color:var(--blue-dark)">${escapeHtml(mpFaListTxt(r))}</b>` : c.fa ? `<span class="tag tag-red" style="font-size:9.5px" title="${TT('อ่าน FA ไม่ได้ — กดแก้', 'unreadable FA — edit')}">${escapeHtml(c.fa)}</span>` : '<span class="muted">—</span>'; })()}</td>
       <td style="font-size:11px">${short(c.only_valves, 3)}</td>
       <td style="font-size:11px">${short(c.except_valves, 3)}</td>
       <td class="right">${c.ct ? _mpNum(c.ct) : '<span class="muted">' + TT('ประวัติ', 'hist') + '</span>'}</td>
@@ -33373,8 +33576,8 @@ function renderMcCaps() {
   const offN = mcs.filter(m => offSet.has(m.id)).length;
   box.innerHTML = `
     <div class="tbl-wrap" style="max-height:60vh"><table style="font-size:12px;min-width:920px"><thead><tr>
-      <th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>Process</th><th>${TT('ช่วง SD', 'SD range')}</th><th class="right" title="${TT('SL สูงสุดของวาล์วที่เข้าเครื่องได้ (SSG/SEMI/SRG/SFG)', 'max valve SL (SSG/SEMI/SRG/SFG)')}">SL</th><th title="${TT('FA ที่เครื่องรับได้ (ขั้น FG) · ว่าง = ไม่จำกัด', 'FA this machine takes (FG) · blank = any')}">FA</th><th>${TT('ผลิตเฉพาะ', 'Only')}</th><th>${TT('ยกเว้น', 'Except')}</th><th class="right">CT</th><th>${TT('หมายเหตุ', 'Remark')}</th><th>${TT('จัดการ', 'Actions')}</th>
-    </tr></thead><tbody>${rows || `<tr><td colspan="11" class="center muted" style="padding:14px">${q ? TT('ไม่พบ', 'No match') : TT('ยังไม่มีข้อมูล — กด 📋 วางจาก Excel (ชีท Machine) หรือ ➕ เพิ่มเครื่อง', 'No data yet — paste from Excel or add a machine')}</td></tr>`}</tbody></table></div>
+      <th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>Process</th><th>${TT('ช่วง SD', 'SD range')}</th><th class="right" title="${TT('SL สูงสุดของวาล์วที่เข้าเครื่องได้ (SSG/SEMI/SRG/SFG)', 'max valve SL (SSG/SEMI/SRG/SFG)')}">SL</th><th>${TT('ผลิตเฉพาะ', 'Only')}</th><th>${TT('ยกเว้น', 'Except')}</th><th class="right">CT</th><th>${TT('หมายเหตุ', 'Remark')}</th><th>${TT('จัดการ', 'Actions')}</th>
+    </tr></thead><tbody>${rows || `<tr><td colspan="10" class="center muted" style="padding:14px">${q ? TT('ไม่พบ', 'No match') : TT('ยังไม่มีข้อมูล — กด 📋 วางจาก Excel (ชีท Machine) หรือ ➕ เพิ่มเครื่อง', 'No data yet — paste from Excel or add a machine')}</td></tr>`}</tbody></table></div>
     <div class="muted" style="font-size:11.5px;margin-top:6px">${TT('รวม', 'Total')} <b>${_mcCaps.length}</b> ${TT('เครื่อง', 'machines')}${pend ? ` · 💾 ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud')} <b>${pend}</b>` : ''}
       · <a href="javascript:void 0" onclick="openMpOffModal()" style="font-weight:700">🚫 ${TT('เครื่องปิดถาวร', 'Permanently off')} ${offN} ${TT('เครื่อง', 'machines')} ✎</a></div>
     ${missing.length ? `<div style="margin-top:8px;font-size:11.5px;background:var(--orange-bg);border:1px solid var(--orange-bd);border-radius:9px;padding:7px 10px;line-height:1.8">
@@ -33398,8 +33601,6 @@ function openMcCapModal(id) {
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('ช่วงรวมปลายทั้งสองข้าง · SD ต่ำกว่า 6 คิดเป็น 6 (เครื่อง 6–8 ทำ SD ≤ 8 ได้ทั้งหมด)', 'Inclusive · SD below 6 counts as 6')}</div></div>
     <div class="fr"><label>📐 SL ${TT('สูงสุดที่รับได้', 'max')} (SSG · SEMI · SRG · SFG)</label><input type="number" id="mcc_sl" step="0.01" min="0" inputmode="decimal" value="${(() => { const s = mpMcSl(c && c.machine_id, c); return s.sl != null ? s.sl : ''; })()}" placeholder="${TT('เช่น 100 · ว่าง = ไม่จำกัด', 'e.g. 100 · blank = no limit')}" oninput="_mccTest()">
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('วาล์ว SL มากกว่าค่านี้เข้าไม่ได้ (เท่ากันได้) · ว่าง = ไม่จำกัด', 'Valves with SL above this cannot run here (equal is OK) · blank = no limit')}${c && MP_SL_DEFAULT[c.machine_id] ? ` · ${TT('ค่าตั้งต้น', 'default')} ${MP_SL_DEFAULT[c.machine_id]}` : ''}</div></div>
-    <div class="fr"><label>📐 FA ${TT('ที่รับได้', 'it takes')} (FG)</label><input type="text" id="mcc_fa" value="${v('fa')}" placeholder="${TT('เช่น 45 · 30, 45 · 44.5-45.5 · ว่าง = ไม่จำกัด', 'e.g. 45 · 30, 45 · 44.5-45.5 · blank = any')}" autocomplete="off" oninput="_mccTest()">
-      <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('ขั้น FG: วาล์วที่ FA ไม่ตรงค่านี้เข้าไม่ได้ · วาล์วที่ยังไม่มี FA = ไม่ถูกตัด · ว่าง = ไม่จำกัด', 'FG step: valves whose FA does not match cannot run here · valves without FA are not blocked · blank = any')}</div></div>
     <div class="fr"><label>Process ${TT('ที่ทำได้', 'it can do')}</label><input type="text" id="mcc_procs" value="${v('procs')}" placeholder="${escapeHtml(TT('ว่าง = อัตโนมัติ', 'blank = auto') + (auto.length ? ' (' + auto.join(', ') + ')' : ''))}">
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('คั่นด้วย , เช่น COT, VET, RED · ว่าง = Process ของเครื่อง + ที่เคยผลิตจริง', 'comma separated · blank = machine process + history')}${auto.length ? ` → <b>${escapeHtml(auto.join(', '))}</b>` : ''}</div></div>
     <div class="fr"><label>${TT('ผลิตเฉพาะเบอร์ (ถ้ามี)', 'Only these valves')}</label><textarea id="mcc_only" rows="2" placeholder="VF1349M0, VF1350M0 · ${TT('ใช้ * ได้ เช่น VF13*', '* wildcard ok')}" oninput="_mccTest()">${v('only_valves')}</textarea></div>
@@ -33439,14 +33640,9 @@ function _mccTest() {
     else if (vsl > msl + 1e-9) { ok = false; why.push(`SL ${_mpNum(vsl)} > ${_mpNum(msl)} (SSG/SRG/SFG)`); }
     else why.push(`SL ${_mpNum(vsl)} ≤ ${_mpNum(msl)}`);
   }
-  // ★ v4.07 FA (เฉพาะขั้น FG)
-  const mfa = mpParseFaList(($('mcc_fa') || {}).value);
-  if (mfa === null) { ok = false; why.push(TT('รูปแบบ FA ไม่ถูกต้อง', 'bad FA format')); }
-  else if (vk && mfa.length) {
-    const vfa = mpValveFa(vk);
-    if (vfa == null) why.push(TT('เบอร์นี้ยังไม่มี FA (ไม่ถูกตัด)', 'no FA for this valve (not blocked)'));
-    else if (!mpFaOk(vfa, mfa)) { ok = false; why.push(`FA ${mpFaTxt(vfa)} ≠ ${mpFaListTxt(mfa)} (FG)`); }
-    else why.push(`FA ${mpFaTxt(vfa)} ✓`);
+  // ★ v4.11 เครื่อง MUG: Type COT = Carbide ทำขั้น COT ไม่ได้
+  if (vk && mpIsMug(String(($('mcc_id') || {}).value || '').trim().toUpperCase()) && mpIsCarbide((mpValve(vk) || {}).cot_type)) {
+    ok = false; why.push(TT('Type COT = Carbide — เครื่อง MUG ทำขั้น COT ไม่ได้', 'Type COT = Carbide — MUG machines cannot run its COT step'));
   }
   out.innerHTML = `${ok ? '✅ <b style="color:var(--green)">' + TT('ผลิตได้', 'OK') : '❌ <b style="color:var(--red)">' + TT('ผลิตไม่ได้', 'Not allowed')}</b> · ${escapeHtml(why.join(' · '))}`;
 }
@@ -33466,16 +33662,11 @@ async function saveMcCap() {
   const slRaw = String(($('mcc_sl') || {}).value || '').trim();
   if (slRaw !== '' && _vnum(slRaw) == null) { toast(TT('SL ไม่ถูกต้อง (ใส่ตัวเลขมากกว่า 0 หรือเว้นว่าง)', 'Bad SL (number above 0 or blank)'), 'orange'); return; }
   c.sl = slRaw !== '' ? _vnum(slRaw) : (MP_SL_DEFAULT[id] ? 0 : null);
-  // ★ v4.07 FA: เก็บเป็นข้อความที่จัดรูปแล้ว ("30°, 45°") · ว่าง = ไม่จำกัด
-  const faList = mpParseFaList(($('mcc_fa') || {}).value);
-  if (faList === null) { toast(TT('FA ไม่ถูกต้อง (เช่น 45 · 30, 45 · 44.5-45.5 หรือเว้นว่าง)', 'Bad FA (e.g. 45 · 30, 45 · 44.5-45.5 or blank)'), 'orange'); return; }
-  c.fa = faList.map(([a, b]) => a === b ? _mpNum(a) : `${_mpNum(a)}-${_mpNum(b)}`).join(', ');
   closeModal();
   const r = await mcCapsUpsert([c], false);
   renderMcCaps();
   let [msg, col] = _mcCapSyncMsg(r);
   if (r && r.ok && _mcSlCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ SL เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but SL is on this device only — deploy the Worker first'); col = 'orange'; }
-  else if (r && r.ok && c.fa && _mcFaCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ FA เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but FA is on this device only — deploy the Worker first'); col = 'orange'; }
   toast(`${id}: ${msg}`, col);
 }
 async function delMcCap(id) {
@@ -33488,7 +33679,7 @@ async function exportMcCaps() {
   if (!(await needXlsx())) return;   // ⚡ v3.80 โหลดตัว Excel ตอนใช้
   const zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
   const rows = _mcCaps.map(c => ({ Machine: c.machine_id, Zone: zoneOf.get(c.machine_id) || c.zone || '', Label: c.label, 'SD ranges': c.sd_ranges,
-    Process: c.procs, 'Only valves': c.only_valves, 'Except valves': c.except_valves, CT: c.ct || '', SL: mpMcSl(c.machine_id, c).sl ?? '', FA: c.fa || '', Active: c.active ? 1 : 0, Remark: c.remark }));
+    Process: c.procs, 'Only valves': c.only_valves, 'Except valves': c.except_valves, CT: c.ct || '', SL: mpMcSl(c.machine_id, c).sl ?? '', Active: c.active ? 1 : 0, Remark: c.remark }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MachineSD');
   XLSX.writeFile(wb, `vsm4-machine-sd-${todayISO()}.xlsx`);
@@ -33582,84 +33773,27 @@ async function commitPasteMcCaps() {
   toast(`✅ ${rows.length} ${TT('เครื่อง', 'machines')} · ${msg}`, col);
 }
 
-/* ★ v4.07 วาง FA ของเครื่อง (ขั้น FG) — Machine No | FA · FA หลายค่า/ช่วงในช่องเดียวได้ ("30, 45" · "44.5-45.5") · ช่องว่าง = ไม่จำกัด
-   แก้เฉพาะ FA — ช่วง SD / Process / SL / CT ที่ตั้งไว้เดิมคงไว้ */
-function openPasteMcFaModal() {
-  openModal('📐 ' + TT('วาง FA ของเครื่องจาก Excel (ขั้น FG)', 'Paste machine FA from Excel (FG step)'), `
-    <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px;line-height:1.7">
-      <b>${TT('รูปแบบ', 'Format')}:</b> <code>Machine No ⇥ FA</code> ${TT('เช่น', 'e.g.')} <code>G-2058 ⇥ 45</code> · <code>G-220 ⇥ 30, 45</code> · <code>G-232 ⇥ 44.5-45.5</code><br>
-      ${TT('ขั้น FG: เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง · ช่อง FA ว่าง = ไม่จำกัด · มีแถวหัวหรือไม่มีก็ได้', 'FG step: a machine with FA only takes matching valves · blank FA = any · header row optional')}<br>
-      ${TT('แก้เฉพาะ FA — ช่วง SD / Process / SL / CT เดิมไม่ถูกแตะ', 'Only FA changes — SD range / Process / SL / CT are kept')}</div>
-    <textarea id="pfaBox" rows="8" placeholder="${TT('วางข้อมูลจาก Excel ที่นี่…', 'Paste here…')}" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
-    <div class="row" style="gap:6px;margin-top:8px"><button class="btn btn-outline btn-sm" onclick="previewPasteMcFa()">👁️ Preview</button>
-      <button class="btn btn-green btn-sm" onclick="commitPasteMcFa()">💾 ${TT('บันทึกลงระบบ', 'Save')}</button></div>
-    <div id="pfaRes" class="mt-8" style="font-size:12px"></div>`, { wide: true });
-}
-function _parsePasteMcFa(txt) {
-  const rows = [], bad = [], by = new Map();
-  for (const line of String(txt || '').split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    const tab = line.includes('\t');
-    const cells = (tab ? line.split('\t') : line.trim().split(/\s+/)).map(s => s.trim());
-    const mi = cells.findIndex(x => /^[A-Z]{1,2}-?\d{3,4}[A-Z]?$/i.test(x));
-    if (mi < 0) { if (cells.some(x => /\d/.test(x)) && !/machine|เครื่อง/i.test(line)) bad.push(line); continue; }
-    const id = cells[mi].toUpperCase().replace(/^([A-Z]+)(\d)/, '$1-$2');
-    const raw = cells.slice(mi + 1).filter(Boolean).join(tab ? ', ' : ' ');
-    const list = mpParseFaList(raw);
-    if (list === null) { bad.push(line); continue; }
-    by.set(id, { machine_id: id, fa: list.map(([a, b]) => a === b ? _mpNum(a) : `${_mpNum(a)}-${_mpNum(b)}`).join(', '), list });
-  }
-  rows.push(...by.values());
-  return { rows, bad };
-}
-function previewPasteMcFa() {
-  const { rows, bad } = _parsePasteMcFa(($('pfaBox') || {}).value);
-  const res = $('pfaRes'); if (!res) return;
-  if (!rows.length) { res.innerHTML = `<span class="tag tag-red">${TT('ไม่พบแถวที่มีรหัสเครื่อง', 'No machine rows found')}</span>`; return; }
-  const capBy = new Map(_mcCaps.map(c => [c.machine_id, c])), zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
-  res.innerHTML = `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag tag-blue">📥 ${rows.length} ${TT('เครื่อง', 'machines')}</span>
-      ${bad.length ? `<span class="tag tag-red">✗ ${TT('อ่านไม่ได้', 'unreadable')} ${bad.length}</span>` : ''}</div>
-    <div class="tbl-wrap" style="max-height:45vh"><table style="font-size:12px;width:100%"><thead><tr><th>${TT('เครื่อง', 'Machine')}</th><th>Zone</th><th>FA</th><th></th></tr></thead><tbody>
-    ${rows.map(r => { const c = capBy.get(r.machine_id), old = c && c.fa ? mpFaListTxt(mpParseFaList(c.fa) || []) || c.fa : '';
-      return `<tr><td><b>${escapeHtml(r.machine_id)}</b></td><td>${escapeHtml(zoneOf.get(r.machine_id) || '-')}</td>
-        <td>${old ? `<s class="muted">${escapeHtml(old)}</s> → ` : ''}<b>${r.list.length ? escapeHtml(mpFaListTxt(r.list)) : TT('ไม่จำกัด', 'any')}</b></td>
-        <td style="color:var(--orange);font-size:11px">${zoneOf.has(r.machine_id) ? '' : TT('ไม่มีในเครื่อง VSM4', 'not VSM4')}</td></tr>`; }).join('')}</tbody></table></div>
-    ${bad.length ? `<div class="muted" style="font-size:11px;margin-top:6px">✗ ${bad.slice(0, 5).map(l => `<code>${escapeHtml(l.slice(0, 60))}</code>`).join(' · ')}</div>` : ''}`;
-}
-async function commitPasteMcFa() {
-  const { rows } = _parsePasteMcFa(($('pfaBox') || {}).value);
-  if (!rows.length) { toast(TT('ไม่มีข้อมูล', 'No data'), 'orange'); return; }
-  const capBy = new Map(_mcCaps.map(c => [c.machine_id, c])), zoneOf = new Map(mpVsm4Machines().map(m => [m.id, m.zone]));
-  const list = rows.map(r => { const o = capBy.get(r.machine_id) || { machine_id: r.machine_id, zone: zoneOf.get(r.machine_id) || '', active: 1 }; return { ...o, fa: r.fa }; });
-  closeModal();
-  const r = await mcCapsUpsert(list, false);
-  renderMcCaps();
-  let [msg, col] = _mcCapSyncMsg(r);
-  if (r && r.ok && _mcFaCloud === false) { msg = '⚠️ ' + TT('บันทึกแล้ว แต่ FA เก็บในเครื่องนี้เท่านั้น — ต้อง deploy Worker ก่อน เครื่องอื่นถึงจะเห็น', 'Saved, but FA is on this device only — deploy the Worker first'); col = 'orange'; }
-  toast(`📐 FA ${rows.length} ${TT('เครื่อง', 'machines')} · ${msg}`, col);
-}
-
 /* ============================================================
    SETTINGS — Master valve: วาง SD / TYPE จาก Excel (ชีท Process: Valve | TYPE | SD)
    ============================================================ */
-/* ★ v4.07 mode 'ext' = ปุ่ม 📋 วาง FA / COT / Type COT — แถวไม่มีหัว อ่านเป็น Valve | FA | COT | Type COT
-   (แยกโหมดเพราะ "V123 ⇥ 9 ⇥ OP" แบบไม่มีหัว อ่านได้ทั้ง SD/TYPE และ FA/COT — ให้ปุ่มที่กดเป็นตัวบอก) */
+/* ★ v4.07 mode 'ext' = ปุ่ม 📋 วาง COT / Type COT — แถวไม่มีหัว อ่านเป็น Valve | COT | Type COT (★ v4.11 แบบเดิม 4 ช่องที่มี FA ยังวางได้ ช่อง FA ไม่อ่าน)
+   (แยกโหมดเพราะ "V123 ⇥ 9 ⇥ OP" แบบไม่มีหัว อ่านได้ทั้ง SD/TYPE และ COT — ให้ปุ่มที่กดเป็นตัวบอก) */
 let _psdMode = '';
 function openPasteSdModal(mode) {
   _psdMode = mode === 'ext' ? 'ext' : '';
   const ext = _psdMode === 'ext';
-  openModal(ext ? '📋 ' + TT('วาง FA / COT / Type COT ของวาล์วจาก Excel', 'Paste valve FA / COT / Type COT from Excel')
-    : '📏 ' + TT('วาง SD / TYPE / SL / HD / TL / FA / COT ของวาล์วจาก Excel', 'Paste valve SD / TYPE / SL / HD / TL / FA / COT from Excel'), `
+  openModal(ext ? '📋 ' + TT('วาง COT / Type COT ของวาล์วจาก Excel', 'Paste valve COT / Type COT from Excel')
+    : '📏 ' + TT('วาง SD / TYPE / SL / HD / TL / COT ของวาล์วจาก Excel', 'Paste valve SD / TYPE / SL / HD / TL / COT from Excel'), `
     <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:10px;border-radius:9px;line-height:1.7">
-      ${ext ? `<b>${TT('รูปแบบ', 'Format')}:</b> <code>Valve No ⇥ FA ⇥ COT ⇥ Type COT</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 45 ⇥ 5-10 ⇥ CR</code><br>
-      · ${TT('ก๊อปพร้อมแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (หัว FA · COT · Type COT)', 'with the header row, columns can be in any order or partial (FA · COT · Type COT)')}
-      · FA = ${TT('องศา เช่น 45 · 45.5 · 45°30\'', 'degrees, e.g. 45 · 45.5 · 45°30\'')} · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
-      ${TT('แก้เฉพาะ FA / COT / Type COT — SD / TYPE / SL / ลูกค้า / Process เดิมไม่ถูกแตะ', 'Only FA / COT / Type COT change — SD / TYPE / SL / customer / Process are kept')}`
+      ${ext ? `<b>${TT('รูปแบบ', 'Format')}:</b> <code>Valve No ⇥ COT ⇥ Type COT</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ R0.786*45x3 ⇥ CBN</code><br>
+      · ${TT('ก๊อปพร้อมแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (หัว COT · Type COT)', 'with the header row, columns can be in any order or partial (COT · Type COT)')}
+      · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
+      ${TT('แก้เฉพาะ COT / Type COT — SD / TYPE / SL / ลูกค้า / Process เดิมไม่ถูกแตะ', 'Only COT / Type COT change — SD / TYPE / SL / customer / Process are kept')}`
       : `<b>${TT('รูปแบบ', 'Format')}:</b> Valve No | TYPE | SD (${TT('สลับคอลัมน์ได้ — ระบบหาเอง', 'any column order')}) ${TT('เช่น', 'e.g.')} <code>V72225A0 ⇥ SWFS ⇥ 10</code><br>
-      📐 <b>SL / HD / TL / FA / COT</b> — ${TT('รูปแบบมาตรฐาน', 'standard layout')}: <code>ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL ⇥ FA ⇥ COT ⇥ Type COT</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42</code>
+      📐 <b>SL / HD / TL</b> — ${TT('รูปแบบมาตรฐาน', 'standard layout')}: <code>ValveNo ⇥ SD ⇥ Type ⇥ SL ⇥ HD ⇥ TL</code> ${TT('เช่น', 'e.g.')} <code>V27164A1 ⇥ 8.99 ⇥ OP ⇥ 129.35 ⇥ 44 ⇥ 7.42</code>
       · ${TT('ก๊อปพร้อมแถวหัวหรือไม่มีหัวก็ได้ · มีแถวหัว = สลับคอลัมน์/มีบางคอลัมน์ได้ (จับตามชื่อหัว)', 'with or without the header row · with a header, columns can be in any order or partial (matched by name)')}
       · ${TT('ช่องว่าง = คงค่าเดิม', 'blank cell = keep the current value')}<br>
-      ${TT('แก้เฉพาะ SD / TYPE / SL / HD / TL / FA / COT — ลูกค้าและ Process เดิมไม่ถูกแตะ', 'Only SD / TYPE / SL / HD / TL / FA / COT change — customer and Process are kept')}`}</div>
+      ${TT('แก้เฉพาะ SD / TYPE / SL / HD / TL / COT — ลูกค้าและ Process เดิมไม่ถูกแตะ', 'Only SD / TYPE / SL / HD / TL / COT change — customer and Process are kept')}`}</div>
     <textarea id="psdBox" rows="10" placeholder="${TT('วางข้อมูลจาก Excel ที่นี่…', 'Paste here…')}" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border:1.5px solid var(--blue-soft);border-radius:9px"></textarea>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin:8px 0"><input type="checkbox" id="psdAdd" style="width:auto"> ${TT('เพิ่มเบอร์ที่ยังไม่มีใน Master (ลูกค้า Other · ยังไม่มี Process)', 'Add valves not in Master (customer Other, no Process)')}</label>
     <div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" onclick="previewPasteSd()">👁️ Preview</button>
@@ -33668,9 +33802,9 @@ function openPasteSdModal(mode) {
 }
 /* ★ v3.94 มีแถวหัวคอลัมน์ (SD · TYPE · SL · HD · TL · Valve No) → อ่านตามตำแหน่งหัว · ไม่มีหัว = แบบเดิม (SD = ตัวเลขตัวแรก · TYPE = ตัวอักษร)
    ช่องว่างใต้หัว = ไม่แก้ค่านั้น (วางทีละบางคอลัมน์ได้ ไม่ล้างของเดิม) */
-/* ★ v4.07 + FA · COT · Type COT (หัว "Type COT" ต้องอยู่ในช่องเดียวกัน — ก๊อปจาก Excel คั่นด้วย tab อยู่แล้ว) */
+/* ★ v4.07 + COT · Type COT (หัว "Type COT" ต้องอยู่ในช่องเดียวกัน — ก๊อปจาก Excel คั่นด้วย tab อยู่แล้ว) */
 const _PSD_HDR = { v: /^(VALVE|VALVE\s*NO\.?|VALVENO|VALVE_NO|PART\s*NO\.?)$/i, sd: /^SD$/i, ty: /^(TYPE|VTYPE)$/i, sl: /^SL$/i, hd: /^HD$/i, tl: /^TL$/i,
-  fa: /^FA(\s*\(?°\)?)?$/i, cot: /^COT$/i, ct: /^(TYPE[\s_]*COT|COT[\s_]*TYPE)$/i };
+  cot: /^COT$/i, ct: /^(TYPE[\s_]*COT|COT[\s_]*TYPE)$/i };
 const _psdIsValve = x => /^[A-Z]{1,3}[A-Z0-9]{4,10}$/i.test(x) && /\d/.test(x) && /^[A-Z]/i.test(x);
 function _parsePasteSd(txt, mode) {
   const rows = [], bad = [];
@@ -33685,9 +33819,9 @@ function _parsePasteSd(txt, mode) {
       const pos = tab ? all : cells.filter((c, i) => !(i > 0 && /^NO\.?$/i.test(c) && /^(VALVE|PART)$/i.test(cells[i - 1])))
         .reduce((a, c) => { const p = a[a.length - 1]; if (p && /^(TYPE|COT)$/i.test(p) && /^(TYPE|COT)$/i.test(c) && p.toUpperCase() !== c.toUpperCase()) a[a.length - 1] = p + ' ' + c; else a.push(c); return a; }, []), h = {};
       pos.forEach((c, i) => { for (const [k, re] of Object.entries(_PSD_HDR)) if (h[k] == null && re.test(c)) h[k] = i; });
-      if (['sd', 'ty', 'sl', 'hd', 'tl', 'fa', 'cot', 'ct'].some(k => h[k] != null)) { hdr = { ...h, tab }; continue; }
+      if (['sd', 'ty', 'sl', 'hd', 'tl', 'cot', 'ct'].some(k => h[k] != null)) { hdr = { ...h, tab }; continue; }
     }
-    // อ่านแถวตามตำแหน่งคอลัมน์ (cols = { v, sd, ty, sl, hd, tl, fa, cot, ct } → ลำดับใน pos) · ช่องว่าง/ไม่มีคอลัมน์ = ไม่แก้ · ตัวเลขผิด = แถวอ่านไม่ได้
+    // อ่านแถวตามตำแหน่งคอลัมน์ (cols = { v, sd, ty, sl, hd, tl, cot, ct } → ลำดับใน pos) · ช่องว่าง/ไม่มีคอลัมน์ = ไม่แก้ · ตัวเลขผิด = แถวอ่านไม่ได้
     const readCols = (pos, cols, vi) => {
       const r = { valveNo: vKey(pos[vi]), sd: null, vtype: null };
       let ok = true;
@@ -33703,9 +33837,7 @@ function _parsePasteSd(txt, mode) {
       for (const k of VSPEC_NUMS) { const n = num(k, 5000); if (n !== undefined) r[k] = n; }
       const ty = cell('ty');
       if (ty && /^[A-Z]{2,8}$/i.test(ty)) r.vtype = ty.toUpperCase();
-      // ★ v4.07 FA (องศา) · COT / Type COT (ข้อความ) — ช่องว่าง = ไม่แก้
-      const fa = mpParseFa(cell('fa'));
-      if (Number.isNaN(fa)) ok = false; else if (fa != null) r.fa = fa;
+      // ★ v4.07 COT / Type COT (ข้อความ) — ช่องว่าง = ไม่แก้
       const cot = _vtxt(cell('cot')), ct = _vtxt(cell('ct'));
       if (cot) r.cot = cot;
       if (ct) r.cot_type = ct;
@@ -33719,11 +33851,12 @@ function _parsePasteSd(txt, mode) {
       if (r) rows.push(r); else bad.push(line);
       continue;
     }
-    // ★ v4.07 ปุ่ม 📋 วาง FA / COT / Type COT ไม่มีแถวหัว = Valve | FA | COT | Type COT
+    // ★ v4.07 ปุ่ม 📋 วาง COT / Type COT ไม่มีแถวหัว = Valve | COT | Type COT · ★ v4.11 แบบเดิม Valve | FA | COT | Type COT (4 ช่องขึ้นไป) ข้ามช่อง FA
     if (mode === 'ext') {
       const pos = tab ? all : cells, vi = pos.findIndex(_psdIsValve);
       if (vi < 0) { if (cells.some(x => /\d/.test(x))) bad.push(line); continue; }
-      const r = readCols(pos, { fa: vi + 1, cot: vi + 2, ct: vi + 3 }, vi);
+      const o = pos.length - vi >= 4 ? 1 : 0;
+      const r = readCols(pos, { cot: vi + 1 + o, ct: vi + 2 + o }, vi);
       if (r) rows.push(r); else bad.push(line);
       continue;
     }
@@ -33731,15 +33864,15 @@ function _parsePasteSd(txt, mode) {
        เดิมก๊อปมาแค่แถวข้อมูล = อ่านได้แค่ SD/TYPE · SL/HD/TL หายเงียบ ๆ
        รู้ว่าเป็นรูปแบบนี้เมื่อ: หลัง Valve มีอย่างน้อย 3 ช่อง · ช่องถัดไปเป็นตัวเลข (SD) หรือว่าง · ช่องที่สองเป็น TYPE (OP/SW/HW…) หรือว่าง
        ไม่เข้ารูปแบบ (เช่นแบบเดิม Valve | TYPE | SD) → อ่านแบบเดิม
-       ★ v4.07 ต่อท้ายได้อีก 3 คอลัมน์: … | TL | FA | COT | Type COT
-         (ช่องที่ 7 ไม่ใช่มุม FA = ชีทมีคอลัมน์อื่นต่อท้าย → ไม่อ่าน 3 ช่องนี้ · SD–TL อ่านตามเดิม) */
+       ★ v4.07 ต่อท้ายได้อีก 3 คอลัมน์: … | TL | (ช่อง FA เดิม ไม่อ่านแล้ว) | COT | Type COT
+         (ช่องที่ 7 ไม่ว่างและไม่ใช่ตัวเลข = ชีทมีคอลัมน์อื่นต่อท้าย → ไม่อ่าน 3 ช่องนี้ · SD–TL อ่านตามเดิม) */
     {
       const pos = tab ? all : cells, vi = pos.findIndex(_psdIsValve);
       const at = k => String(pos[vi + k] == null ? '' : pos[vi + k]).trim();
-      const ext = !Number.isNaN(mpParseFa(at(6)));
+      const ext = at(6) === '' || /^\d/.test(at(6));
       if (vi >= 0 && pos.length - vi >= 4 && (at(1) === '' || /^\d+(\.\d+)?$/.test(at(1))) && (at(2) === '' || mpTypeRank(at(2)) < 99)
-        && (ext ? [3, 4, 5, 6, 7, 8] : [3, 4, 5]).some(k => at(k) !== '')) {
-        const r = readCols(pos, { sd: vi + 1, ty: vi + 2, sl: vi + 3, hd: vi + 4, tl: vi + 5, ...(ext ? { fa: vi + 6, cot: vi + 7, ct: vi + 8 } : {}) }, vi);
+        && (ext ? [3, 4, 5, 7, 8] : [3, 4, 5]).some(k => at(k) !== '')) {
+        const r = readCols(pos, { sd: vi + 1, ty: vi + 2, sl: vi + 3, hd: vi + 4, tl: vi + 5, ...(ext ? { cot: vi + 7, ct: vi + 8 } : {}) }, vi);
         if (r) rows.push(r); else bad.push(line);
         continue;
       }
@@ -33756,9 +33889,9 @@ function _parsePasteSd(txt, mode) {
   const by = new Map(); for (const r of rows) by.set(r.valveNo, r);   // เบอร์ซ้ำ → แถวหลังสุดชนะ
   return { rows: [...by.values()], bad };
 }
-/* ★ v4.07 ป้าย/ค่าของคอลัมน์ในตาราง Preview (SL/HD/TL ตัวเลข · FA องศา · COT/Type COT ข้อความ) */
-const _PSD_COL_LB = { sl: 'SL', hd: 'HD', tl: 'TL', fa: 'FA', cot: 'COT', cot_type: 'Type COT' };
-const _psdVal = (k, x) => k === 'fa' ? (_vnum(x) != null ? mpFaTxt(+x) : '') : VSPEC_EXT.includes(k) ? _vtxt(x) : (_vnum(x) != null ? _mpNum(+x) : '');
+/* ★ v4.07 ป้าย/ค่าของคอลัมน์ในตาราง Preview (SL/HD/TL ตัวเลข · COT/Type COT ข้อความ) */
+const _PSD_COL_LB = { sl: 'SL', hd: 'HD', tl: 'TL', cot: 'COT', cot_type: 'Type COT' };
+const _psdVal = (k, x) => VSPEC_EXT.includes(k) ? _vtxt(x) : (_vnum(x) != null ? _mpNum(+x) : '');
 function previewPasteSd() {
   const { rows, bad } = _parsePasteSd(($('psdBox') || {}).value, _psdMode);
   const res = $('psdRes'); if (!res) return;
@@ -33772,8 +33905,8 @@ function previewPasteSd() {
       || VSPEC_EXT.some(k => r[k] != null && _vext(v, k) !== r[k]);  // ★ v4.07
     if (diff) { chg++; if (sample.length < 12) sample.push({ r, v }); } else same++;
   }
-  const ext = [...VSPEC_NUMS, ...VSPEC_EXT].filter(k => rows.some(r => r[k] != null));   // คอลัมน์ SL/HD/TL/FA/COT ที่มีในข้อมูลที่วาง
-  const base = _psdMode !== 'ext' || rows.some(r => r.sd != null || r.vtype);           // ★ v4.07 ปุ่ม FA/COT ไม่ต้องโชว์ SD/TYPE
+  const ext = [...VSPEC_NUMS, ...VSPEC_EXT].filter(k => rows.some(r => r[k] != null));   // คอลัมน์ SL/HD/TL/COT ที่มีในข้อมูลที่วาง
+  const base = _psdMode !== 'ext' || rows.some(r => r.sd != null || r.vtype);           // ★ v4.07 ปุ่ม COT ไม่ต้องโชว์ SD/TYPE
   const old = (v, k) => v && _psdVal(k, v[k]) ? `<s class="muted">${escapeHtml(_psdVal(k, v[k]))}</s> → ` : '';
   res.innerHTML = `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
       <span class="tag tag-blue">📥 ${rows.length}</span><span class="tag tag-orange">✏️ ${TT('เปลี่ยน', 'changed')} ${chg}</span>
@@ -33794,7 +33927,7 @@ async function commitPasteSd() {
   const pushed = []; let upd = 0, added = 0, skipped = 0;
   for (const r of rows) {
     let v = mpValve(r.valveNo);
-    const ext = Object.fromEntries([...VSPEC_NUMS, ...VSPEC_EXT].filter(k => r[k] != null).map(k => [k, r[k]]));   // ★ v3.94 SL/HD/TL · ★ v4.07 FA/COT/Type COT ที่วางมา
+    const ext = Object.fromEntries([...VSPEC_NUMS, ...VSPEC_EXT].filter(k => r[k] != null).map(k => [k, r[k]]));   // ★ v3.94 SL/HD/TL · ★ v4.07 COT/Type COT ที่วางมา
     if (!v) {
       if (!add) { skipped++; continue; }
       upsertValve({ valveNo: r.valveNo, customer: 'Other', description: '', processes: [], barcode_id: '', sd: r.sd, vtype: r.vtype || '', ...ext });
@@ -33816,7 +33949,7 @@ async function commitPasteSd() {
     try {
       for (let i = 0; i < pushed.length; i += 400) await api('/api/valves/bulk', { body: { valves: pushed.slice(i, i + 400).map(_mpValvePayload) } });
       ok = true;
-      // ★ v3.94 เบอร์ที่มี SL/HD/TL ล้าง pending เฉพาะเมื่อ Worker รองรับ SL แล้ว (Worker เก่าทิ้งคีย์ sl เงียบ ๆ) · ★ v4.07 FA/COT เหมือนกัน
+      // ★ v3.94 เบอร์ที่มี SL/HD/TL ล้าง pending เฉพาะเมื่อ Worker รองรับ SL แล้ว (Worker เก่าทิ้งคีย์ sl เงียบ ๆ) · ★ v4.07 COT เหมือนกัน
       _vspecClear(pushed.filter(_vspecCloudFull).map(v => v.valveNo));
     } catch (e) { ok = false; }
   }
@@ -33826,8 +33959,8 @@ async function commitPasteSd() {
   const tail = !ok ? ' · ⚠️ ' + TT('ยังไม่ขึ้น Cloud (จะส่งใหม่ตอนซิงก์)', 'not on Cloud yet (will retry)')
     : cloudOk ? ' · ☁️ Cloud' : ' · 💾 ' + (_vspecCloudOK !== true ? TT('Worker ยังไม่รองรับ SD — เก็บในเครื่องนี้ก่อน', 'Worker lacks SD support — kept on this device')
       : hasExt && _vslCloudOK !== true ? TT('Worker ยังไม่รองรับ SL/HD/TL — เก็บในเครื่องนี้ก่อน', 'Worker lacks SL/HD/TL support — kept on this device')
-      : TT('Worker ยังไม่รองรับ FA/COT — เก็บในเครื่องนี้ก่อน (deploy Worker แล้วจะขึ้น Cloud เอง)', 'Worker lacks FA/COT support — kept on this device (syncs after the Worker deploy)'));
-  const what = _psdMode === 'ext' && !rows.some(r => r.sd != null || r.vtype) ? 'FA/COT' : `SD/TYPE${hasExt ? '/SL' : ''}${hasFa ? '/FA/COT' : ''}`;
+      : TT('Worker ยังไม่รองรับ COT — เก็บในเครื่องนี้ก่อน (deploy Worker แล้วจะขึ้น Cloud เอง)', 'Worker lacks COT support — kept on this device (syncs after the Worker deploy)'));
+  const what = _psdMode === 'ext' && !rows.some(r => r.sd != null || r.vtype) ? 'COT' : `SD/TYPE${hasExt ? '/SL' : ''}${hasFa ? '/COT' : ''}`;
   toast(`✅ ${what} ${TT('แก้', 'updated')} ${upd}${added ? ` · ${TT('เพิ่มใหม่', 'added')} ${added}` : ''}${skipped ? ` · ${TT('ข้าม (ไม่มีใน Master)', 'skipped')} ${skipped}` : ''}${tail}`, ok && cloudOk ? 'green' : 'orange');
 }
 
