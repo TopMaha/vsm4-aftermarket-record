@@ -986,6 +986,18 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mpv-npbar .nw{white-space:nowrap}
 .mpv-npbar .ar{flex:0 0 auto;margin-left:auto;font-size:16px}
 .mpv-npbar:focus-visible{outline:2px solid #B45309;outline-offset:1px}
+/* ★ v4.10 แถบ + รายการ ⏪ ล็อตที่ข้ามขั้น */
+.mpv-npbar.hb{border-style:dashed;border-color:#F59E0B}
+.mph-r{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:12.5px;line-height:1.5;padding:7px 0;border-top:1px solid #F1F5F9}
+.mph-r .l{color:#475569;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.mph-r .q{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mph-r .sl{font-size:11.5px;font-weight:800;white-space:nowrap}
+.mph-go{margin-left:auto;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue);font:inherit;font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 10px;min-height:30px;cursor:pointer;white-space:nowrap}
+.mph-go:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.mph-cs{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:2px}
+.mph-c{font-size:11.5px;font-weight:700;color:#92400E;background:#FFFBEB;border:1px dashed #F59E0B;border-radius:8px;padding:1px 7px;white-space:nowrap}
+.mph-c b{font-weight:900}
+.mph-at{font-size:11.5px;font-weight:700;color:#64748B;white-space:nowrap}
 .mpv-why{background:#fff;border:1.5px solid #FCD34D;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:10px}
 .mpv-why .mpv-rbh{background:#FFFBEB;border-bottom-color:#FDE68A}
 .mpv-why .mpv-rbh b{color:#92400E}
@@ -3030,7 +3042,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.09</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.10</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11387,7 +11399,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.09":"Production Record + KPI · v4.09",
+"ระบบบันทึกผลิต + KPI · v4.10":"Production Record + KPI · v4.10",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -29799,7 +29811,8 @@ function mpAlerts(S, jobs, R, pins) {
   // ★ v4.09 ล็อตที่มีขั้นถูกข้ามไป (แผนวางให้กลับมาทำแล้ว) — รวมเป็นบรรทัดเดียว (แจ้งให้รู้) ไม่งั้น 80 ล็อตดันรายการอื่นตกขอบ
   const hj = jobs.filter(j => j.kind !== 'order' && j.holes && j.holes.length);
   if (hj.length) out.push({ type: 'hole', lvl: 1, job: hj[0], jobs: hj });
-  const ord = { noin: 0, pinbad: 1, pinwarn: 2, pinlate: 3, pinshift: 4, hole: 5 };
+  // ★ v4.10 hole ขึ้นก่อน noin ระดับเดียวกัน — เดิมอยู่ท้ายสุด (แถว 32) กล่องแสดง 12 แถว = ไม่เคยขึ้นจอ
+  const ord = { hole: -1, noin: 0, pinbad: 1, pinwarn: 2, pinlate: 3, pinshift: 4 };
   return out.sort((a, b) => (b.lvl - a.lvl) || (ord[a.type] - ord[b.type]) || String(a.job.mustBy || a.job.due || '').localeCompare(String(b.job.mustBy || b.job.due || '')));
 }
 
@@ -30147,7 +30160,7 @@ function _mpvRenderHead() {
   const V = _mpv, res = V && V.res, el = $('mpvHead'); if (!res || !el) return;
   const W = _mpvWin(res), M = V.M = mpMonthStats(res, W);
   // ★ v4.00 แถบ ⚠️ ล็อตที่ไม่อยู่ในแผน (ขึ้นเฉพาะเมื่อมี) — ทั้ง 2 โหมด (ผู้ใช้ 28/10 ข้อ 3: ต้องแจ้งว่าทำไมไม่มีแผน)
-  const np = _mpvNpBar(res);
+  const np = _mpvNpBar(res) + _mpvHoleBar(res);   // ★ v4.10 + แถบ ⏪ ล็อตที่ข้ามขั้น
   if (_mpvSimple()) { el.innerHTML = np; return; }      // ★ v3.85 โหมดแผนงาน = ไม่มีตัวเลขวิเคราะห์ด้านบน
   // ★ v3.86 การ์ดตัวเลข · แถบสรุป/ชิป · ต้องปรับแผน = ซ่อนไว้ (ผู้ใช้ 17/10 "ซ่อนไว้เลย ไม่ต้องแสดง") — แตะ 📈 สรุป · แจ้งเตือน ถึงเห็น
   if (!V.sumOpen) { el.innerHTML = _mpvToolsHtml() + np; return; }
@@ -30552,6 +30565,47 @@ function _mpvNpBar(res) {
   if (noin) bits.push(`<span class="nw">${TT('ผลิตอยู่แต่ไม่มีใบรับเข้า', 'running w/o WIP IN')} <b>${nn(noin)}</b></span>`);
   return `<button type="button" class="mpv-npbar${miss ? ' bad' : ''}" data-act="np"><span class="t"><span class="nw">⚠️ ${TT('ล็อตที่ไม่อยู่ในแผน', 'Lots missing from the plan')}</span> · ${bits.join(' · ')}</span><span class="ar" aria-hidden="true">›</span></button>`;
 }
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.10 (ผู้ใช้ 4/11 "แก้แล้วอัพเลย") รายการ ⏪ ล็อตที่ข้ามขั้น — ครบทุกล็อต บนหน้าแผน
+   v4.09 บอกแค่บรรทัดเดียวใน ⚠️ ต้องปรับแผน: เรียงอยู่แถวสุดท้าย (แถว 32 จาก 32) แต่กล่องแสดง 12 แถว = ไม่เคยขึ้นจอ · มีเฉพาะโหมดวิเคราะห์ · บอกแค่ 6 เบอร์
+   ทั้งที่ Admin ต้องไล่ดูทุกล็อตว่า "ข้ามจริง" หรือ "ทำแล้วแต่ไม่ได้ลงยอด" (→ เติมยอดที่ค้นหา Process แล้วแผนไม่วางอีก)
+   แถบ ⏪ (ทั้ง 2 โหมด) → ป๊อปอัปทุกล็อต: มีแผนขายขึ้นก่อนตามวันขาย · ขั้นที่ข้าม + เครื่อง / วันที่แผนวาง · แตะเบอร์ = ค้นหาในแผน · ปุ่ม = ไปค้นหา Process ของเบอร์นั้น
+   ═══════════════════════════════════════════════════════════════════════ */
+const _mpHoleJobs = res => (res.jobs || []).concat(res.v3jobs || []).filter(j => j.kind !== 'order' && j.holes && j.holes.length);
+function _mpvHoleBar(res) {
+  const L = _mpHoleJobs(res); if (!L.length) return '';
+  const nS = L.reduce((n, j) => n + j.holes.length, 0);
+  return `<button type="button" class="mpv-npbar hb" data-act="holes"><span class="t"><span class="nw">⏪ ${TT('ล็อตที่ข้ามขั้น — แผนให้กลับมาทำก่อน', 'Lots that skipped a step — planned first')}</span> · <span class="nw"><b>${nn(L.length)}</b> ${TT('ล็อต', 'lots')} · <b>${nn(nS)}</b> ${TT('ขั้น', 'steps')}</span></span><span class="ar" aria-hidden="true">›</span></button>`;
+}
+function openMpHoles() {
+  const res = _mpv && _mpv.res; if (!res) return;
+  const cal = res.cal, L = _mpHoleJobs(res);
+  const row = j => {
+    const vk = escapeHtml(j.vk), f = j.front != null && j.steps[j.front];
+    const cs = j.steps.map((s, i) => {
+      if (!s.hole) return '';
+      const A = (j.assign || []).filter(a => a.si === i).sort((x, y) => x.part - y.part);
+      const at = A.length ? `${A.map(a => escapeHtml(a.m.id)).join(' + ')} · ${_mpD(cal.dateAt(A[0].s + 1e-6)).slice(0, 5)}` : s.skipped ? TT('ไม่มีเครื่องรับ', 'no machine') : TT('ยังไม่ได้วาง', 'not placed');
+      return `<span class="mph-c">⏪ <b>${escapeHtml(s.proc)}</b> ${at}</span>`;
+    }).join('');
+    return `<div class="mph-r"><button type="button" class="mpnp-v" onclick="_mpvNpGo('${vk}')" title="${TT('ค้นหาเบอร์นี้ในแผน', 'Find this valve in the plan')}">${escapeHtml(j.valve)}</button>
+      <span class="l">${escapeHtml(j.lot || '-')}</span><span class="q">${nn(j.qty)} ${TT('ชิ้น', 'pcs')}</span>${j.due ? _mpvSaleS(j) : ''}
+      <div class="mph-cs">${cs}${f ? `<span class="mph-at">📍 ${TT('อยู่ที่', 'at')} ${escapeHtml(f.proc)}</span>` : ''}
+        <button type="button" class="mph-go" onclick="_mpvHoleGoProc('${vk}')" title="${escapeHtml(TT('ดูยอดทุก Process ของเบอร์นี้ · Admin แตะช่องเหลืองเพื่อเติมยอด', 'See every process of this valve · an Admin taps the yellow cell to fill it'))}">${TT('ค้นหา Process', 'Find Process')} ›</button></div></div>`;
+  };
+  const byDue = (a, b) => String(a.due).localeCompare(String(b.due)) || String(a.valve).localeCompare(String(b.valve));
+  const sale = L.filter(j => j.due).sort(byDue), rest = L.filter(j => !j.due).sort((a, b) => String(a.valve).localeCompare(String(b.valve)) || String(a.lot).localeCompare(String(b.lot)));
+  const sec = (cls, title, fix, A) => A.length ? `<div class="mpnp-s"><div class="mpnp-h ${cls}">${title} — ${nn(A.length)} ${TT('ล็อต', 'lots')}</div>${fix ? `<div class="mpnp-fix">${fix}</div>` : ''}${A.map(row).join('')}</div>` : '';
+  openModal('⏪ ' + TT('ล็อตที่ข้ามขั้น — แผนให้กลับมาทำก่อน', 'Lots that skipped a step — planned first'),
+    `<div class="muted" style="font-size:12px;line-height:1.7">${TT('ขั้นเหล่านี้ยังไม่มียอดเลย ทั้งที่ขั้นหลังมียอดแล้ว แผนจึงวางให้ทำก่อนขั้นที่เหลือ — <b>ทำไปแล้วแต่ไม่ได้ลงยอด</b> → กด "ค้นหา Process" แล้ว Admin แตะช่องเหลืองเพื่อเติมยอด เปิดแผนใหม่ ขั้นนั้นจะหายจากรายการนี้',
+      'These steps have no output although a later step does, so the plan does them first — <b>done but not recorded</b> → tap "Find Process", then an Admin taps the yellow cell to fill it; reopen the plan and the step leaves this list')}</div>
+    ${sec('part', '🛒 ' + TT('มีแผนขาย', 'With a sales plan'), '', sale)}
+    ${sec('noin', TT('ยังไม่มีแผนขาย', 'No sales plan yet'), TT('อยู่ท้ายคิว ต่อจากงานที่มีวันขาย', 'Queued after lots with a sale date'), rest)}
+    ${L.length ? '' : `<div class="muted" style="padding:10px 0">✅ ${TT('ไม่มีล็อตที่ข้ามขั้น', 'No lot skipped a step')}</div>`}
+    <button type="button" class="btn btn-outline btn-block" style="margin-top:14px" onclick="closeModal()">${TT('ปิด', 'Close')}</button>`, { wide: true });
+}
+// ปิดหน้าแผนแล้วไป ติดตามงาน → ค้นหา Process ของเบอร์นั้น (ที่นั่น Admin แตะช่องเหลืองเติมยอดได้ · เปิดแผนใหม่ = คิดใหม่จากยอดล่าสุด)
+function _mpvHoleGoProc(vk) { closeModal(); closeMpPlan(); plsGoProcess(vk); }
 function openMpNotPlanned() {
   const res = _mpv && _mpv.res; if (!res) return;
   const L = mpNotPlanned(res), by = {};
@@ -31282,6 +31336,7 @@ function _mpvClick(ev) {
     case 'move': ev.stopPropagation(); openMpMove(V.res, +t.dataset.ai); break;       // ★ v3.84
     case 'moves': openMpMoves(V.res); break;
     case 'np': openMpNotPlanned(); break;                                              // ★ v4.00 ล็อตที่ไม่อยู่ในแผน
+    case 'holes': openMpHoles(); break;                                                // ★ v4.10 ล็อตที่ข้ามขั้น
     case 'floor': openMpFloor(); break;                                                // ★ v4.00 📚 ของจริงหน้างาน
     case 'refresh': _mpvRefresh(t); break;                                             // ★ v4.00 ดึงใบรับเข้า/ยอดผลิตล่าสุด
     case 'close': closeMpPlan(); break;
@@ -31579,7 +31634,7 @@ function mpAlertText(x) {
     const by = new Map();
     for (const h of x.jobs) { const o = by.get(h.valve) || { n: 0, p: new Set() }; o.n++; h.holes.forEach(p => o.p.add(p)); by.set(h.valve, o); }
     const vs = [...by].slice(0, 6).map(([v, o]) => `<b>${escapeHtml(v)}</b> ${escapeHtml([...o.p].join('·'))}${o.n > 1 ? ` (${o.n} Lot)` : ''}`).join(' · ');
-    return `⏪ ${nn(x.jobs.length)} ${TT('ล็อตข้ามขั้นไปทำขั้นหลังก่อน (ขั้นนั้นยังไม่มียอด) → แผนให้กลับมาทำก่อน', 'lots skipped a step (it has no output yet) → planned first')}: ${vs}${by.size > 6 ? ` +${by.size - 6} ${TT('เบอร์', 'valves')}` : ''} · <span class="muted">${TT('ทำแล้วแต่ไม่ได้ลงยอด → Admin เติมยอดที่ 🔍 ค้นหา Process แผนจะไม่วางอีก', 'done but not recorded → an Admin fills it in Process search and the plan drops it')}</span>`;
+    return `⏪ ${nn(x.jobs.length)} ${TT('ล็อตข้ามขั้นไปทำขั้นหลังก่อน (ขั้นนั้นยังไม่มียอด) → แผนให้กลับมาทำก่อน', 'lots skipped a step (it has no output yet) → planned first')}: ${vs}${by.size > 6 ? ` +${by.size - 6} ${TT('เบอร์', 'valves')}` : ''} · <span class="muted">${TT('ทำแล้วแต่ไม่ได้ลงยอด → Admin เติมยอดที่ 🔍 ค้นหา Process แผนจะไม่วางอีก · ดูครบทุกล็อตที่แถบ ⏪ บนหน้าแผน', 'done but not recorded → an Admin fills it in Process search and the plan drops it · every lot is listed in the ⏪ bar on the plan page')}</span>`;
   }
   return '';
 }
