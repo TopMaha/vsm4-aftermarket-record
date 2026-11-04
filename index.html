@@ -405,6 +405,11 @@ tbody tr:last-child td{border-bottom:none}
 .tbl-wrap{overflow:auto;max-height:60vh;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
 
 /* ===== โหมดตรวจสอบ (Verify Mode) หน้าประวัติ ===== */
+/* ★ v4.09 รายการที่คนอื่นบันทึก — 🔒 + รหัสผู้บันทึก แทนปุ่มแก้ไข/ลบ (แตะ = บอกชื่อเต็ม) */
+.btn.rec-lock{padding:4px 8px;font-size:11px;color:#64748B;border-color:#CBD5E1;background:#F8FAFC;gap:3px;white-space:nowrap}
+.btn.rec-lock small{font-size:10.5px;font-weight:800;color:#475569;font-variant-numeric:tabular-nums}
+.btn.rec-lock:hover{border-color:#94A3B8;background:#F1F5F9}
+.rec-lock-note{margin-top:6px;font-size:11.5px;font-weight:700;color:#475569;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:9px;padding:6px 10px;line-height:1.55}
 tr.hv-group{cursor:pointer;border-top:2px solid var(--blue-soft)}
 tr.hv-group:hover{background:var(--blue-light)}
 tr.hv-group>td{padding:10px}
@@ -954,6 +959,12 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mpv-rz.v3{--zc:#BE185D;--zl:#FDF2F8}
 .mpv-rz.lx b{font-size:11.5px;font-weight:700;color:#64748B}
 .mpv-rz.bad b{color:#B91C1C}
+/* ★ v4.09 ขั้นที่ถูกข้ามไป (⏪ กลับมาทำก่อน) — ขอบประสีส้ม เห็นต่างจากขั้นปกติทันที */
+.mpv-rz.hole{border-color:#F59E0B;border-style:dashed}
+.mpv-rz.hole small:first-child{color:#B45309;font-weight:800}
+.mpv-rz.dn s{color:#94A3B8;text-decoration-thickness:1.5px;cursor:help}
+.mpv-hole{display:inline-block;font-size:10.5px;font-weight:800;line-height:1.35;border-radius:6px;padding:1px 6px;margin-left:5px;vertical-align:2px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;white-space:nowrap}
+.mpv-holel{color:#92400E}
 /* ★ v4.05 ✅ ผลิตจบแล้ว — ล็อตที่ค้นหาแต่ไม่มีงานค้างในแผน: ทุก Process → เครื่องที่ลงยอดผลิตจริง (ชิปไม่ต้องแตะ) */
 .mpv-done{border-color:#86EFAC}
 .mpv-done .mpv-rbh{background:#F0FDF4;border-bottom-color:#BBF7D0}
@@ -1850,6 +1861,67 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .pl-st:hover{border-color:var(--blue-soft)}
 .pl-st.on{border-color:var(--blue);box-shadow:0 0 0 2.5px rgba(26,86,219,.16)}
 .pl-st.on span{color:var(--blue-dark)}
+/* ══ ★ v4.09 หน้าวางแผน 2 โหมด: 🔎 ดูง่าย (ค่าเริ่มต้น) · 🛠️ จัดการแผน (หน้าเดิม) ══ */
+#pane-plan[data-plm="simple"] .pl-fullonly{display:none!important}
+#pane-plan:not([data-plm="simple"]) .pls-only,#pane-plan:not([data-plm="simple"]) #planSimple{display:none!important}
+.pl-mode{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--blue-light);border:1.5px solid var(--blue-soft);margin-right:auto}
+.pl-mode button{border:0;background:transparent;color:var(--blue-dark);font-family:inherit;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:8px;min-height:34px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.pl-mode button:hover{background:rgba(255,255,255,.6)}
+.pl-mode button[aria-pressed="true"]{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(15,23,42,.14)}
+.pl-mode button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.pls-q{width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid var(--blue-soft);border-radius:12px;font-size:16px;font-family:inherit;font-weight:700;background:#fff;color:var(--text)}
+.pls-q:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.14)}
+.pls-hint{margin-top:12px;text-align:center;font-size:13px;color:var(--muted);line-height:1.7;padding:16px 10px;border:1.5px dashed var(--blue-soft);border-radius:12px;background:#FAFCFF}
+.pls-hint b{display:block;font-size:14px;color:var(--blue-dark)}
+.pls-hint small{display:block;margin-top:4px;font-size:11.5px}
+.pls-hint.none b{color:#B45309}
+.pls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:10px;margin-top:10px;align-items:start}
+.pls-v{border:1.5px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+.pls-vh{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(135deg,#F8FAFF,#EFF6FF);border-bottom:1px solid var(--border)}
+.pls-vh>b{font-size:16px;font-weight:900;color:var(--blue-dark);letter-spacing:.2px}
+.pls-vh .cu{font-size:11px;font-weight:800;color:#1D4ED8;background:#DBEAFE;border-radius:6px;padding:1px 7px}
+.pls-vh .n{font-size:11.5px;font-weight:700;color:var(--muted)}
+.pls-go{margin-left:auto;border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue);font-family:inherit;font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 10px;min-height:28px;cursor:pointer;white-space:nowrap}
+.pls-go:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.pls-r{padding:10px 12px}
+.pls-r+.pls-r{border-top:1px solid #EEF2F7}
+.pls-r.none{font-size:13px;font-weight:700;color:var(--muted)}
+.pls-r1{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap}
+.pls-d{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap}
+.pls-d b{font-weight:900}
+.pls-st{font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pls-st.ok{background:#DCFCE7;color:#15803D}.pls-st.late{background:#FEE2E2;color:#B91C1C}
+.pls-st.soon{background:#FEF3C7;color:#92400E}.pls-st.up{background:#F1F5F9;color:#475569}
+.pls-o{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.pls-o b{font-size:14px;color:var(--text);font-variant-numeric:tabular-nums}
+.pls-lots{display:flex;flex-direction:column;gap:3px;margin:7px 0 8px}
+.pls-lot{display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap;font-size:12.5px;line-height:1.45;color:#334155}
+.pls-lot .lt{font-weight:800;overflow-wrap:anywhere}
+.pls-lot .lq{font-weight:800;font-variant-numeric:tabular-nums}
+.pls-lot .ls{font-size:12px;font-weight:700;color:var(--muted)}
+.pls-lot.done .ls,.pls-lot.fg .ls{color:#047857}.pls-lot.wip .ls{color:#B45309}.pls-lot.in .ls{color:#1D4ED8}
+.pls-lot.miss .ls{color:#6D28D9}.pls-lot.none .ls{color:#B91C1C}
+.pls-nums{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pls-n{border-radius:10px;padding:6px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+.pls-n small{font-size:12px;font-weight:800;white-space:nowrap}
+.pls-n b{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pls-n.have{background:#ECFDF5;border:1px solid #A7F3D0;color:#047857}
+.pls-n.wait{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.pls-n.wait.ok{background:#F8FAFC;border-color:#E2E8F0;color:#64748B}
+.pls-n.wait.ok b{font-size:14px}
+.pls-bar{display:flex;height:6px;border-radius:99px;overflow:hidden;background:#FECACA;margin-top:7px}
+.pls-bar i{display:block;height:100%}
+.pls-bar .d{background:#10B981}.pls-bar .w{background:#60A5FA}
+.pls-foot{padding:7px 12px 8px;border-top:1px dashed #E2E8F0;font-size:12px;font-weight:700;color:var(--muted);line-height:1.6}
+.pls-foot .pls-lots{margin:4px 0 0}
+.pls-more{margin-top:10px;font-size:12px;font-weight:700;color:var(--muted);line-height:2}
+.pls-chip{border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);font-family:inherit;font-size:12px;font-weight:800;border-radius:999px;padding:2px 10px;margin:0 3px 3px 0;cursor:pointer;min-height:30px}
+.pls-chip:hover{background:var(--blue-light)}
+@media(max-width:560px){
+  .pl-mode{flex:1 1 auto}
+  .pl-mode button{flex:1 1 0;padding:5px 8px}
+  .pls-n b{font-size:17px}
+}
 /* กราฟเทียบ Order / WIP IN / WIP OUT */
 .pc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:8px}
 .pc-card{background:#fff;border:1px solid var(--border);border-radius:11px;padding:8px 11px}
@@ -2958,7 +3030,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.08</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.09</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3271,12 +3343,21 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div class="tbl-wrap mt-8">
       <table id="histTable"><thead></thead><tbody></tbody></table>
     </div>
+    <!-- ★ v4.09 บอกความหมายของ 🔒 (โชว์เมื่อหน้านี้มีรายการที่คนอื่นบันทึก) -->
+    <div id="histLockNote" class="rec-lock-note" style="display:none"></div>
     <div id="histPager" class="row mt-8" style="justify-content:center;gap:6px;flex-wrap:wrap;display:none"></div>
   </div>
 </section>
 
 <!-- ============== TAB: วางแผนการผลิต ============== -->
-<section id="pane-plan" class="pane">
+<section id="pane-plan" class="pane" data-plm="simple">
+  <!-- ★ v4.09 (ผู้ใช้ 3/11 ข้อ 1) โหมด 🔎 ดูง่าย: ทางเข้าแผนผลิตรายเครื่อง = การ์ดปุ่มแบบเดียวกับการ์ดอื่น (ชื่อไม่ซ้ำกับชื่อหน้า "วางแผนการผลิต")
+       โหมด 🛠️ จัดการแผน ใช้ปุ่ม 🏭 สีเขียวในแถบเครื่องมือเหมือนเดิม -->
+  <div class="card cv-launch pls-only" role="button" tabindex="0" onclick="openMachinePlanner()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMachinePlanner();}">
+    <span class="cv-ic" aria-hidden="true" style="background:linear-gradient(135deg,#0F766E,#14B8A6);box-shadow:0 3px 10px rgba(15,118,110,.25)">🏭</span>
+    <span class="cv-tx"><b>แผนผลิตรายเครื่อง <span id="mpBadge2" class="mpb-badge" style="display:none"></span></b><small>วันนี้ผลิตอะไร เครื่องไหน · คิวเครื่องทีละ Zone</small></span>
+    <span class="cv-go">เปิด<i aria-hidden="true">›</i></span>
+  </div>
   <div class="card">
     <!-- ★ 2026-08-15 (req) จัดรูปแบบใหม่ — ฟังก์ชันเหมือนเดิมทุกอย่าง (id เดิมครบ) แต่เลิกยัดทุกอย่าง
          ให้เห็นพร้อมกันหมด · หลักการ: สิ่งที่ใช้ทุกวัน = เห็นเลย · สิ่งที่ใช้นาน ๆ ครั้ง = พับไว้
@@ -3286,7 +3367,15 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
            ④ ปฏิทินรายเดือน + กราฟเทียบ = พับได้ทั้งคู่ จำสถานะไว้ใน localStorage -->
     <div class="pl-top">
       <div class="card-title" style="margin:0"><span class="ci">📅</span>วางแผนการผลิต</div>
-      <div class="pl-actions">
+      <!-- ★ v4.09 (ผู้ใช้ 3/11 ข้อ 1) "ปุ่มเยอะจนผู้ใช้งงว่าอะไรคืออะไร ข้อมูลเยอะเกินไป บางครั้งแค่ต้องการดูว่า
+           งานเบอร์นี้ขายวันไหน เป็น Lot อะไร มีงานแล้วเท่าไหร่ รอเข้าเท่าไร"
+           🔎 ดูง่าย (ค่าเริ่มต้น) = ช่องค้นหาช่องเดียว → คำตอบ 4 อย่างนั้น · 🛠️ จัดการแผน = หน้าเดิมทุกปุ่ม (เพิ่ม / วาง Excel / ตาราง / กราฟ)
+           จำโหมดไว้ในเครื่อง (คนวางแผนเลือก 🛠️ ครั้งเดียว ครั้งต่อไปเปิดมาเป็น 🛠️ เลย) -->
+      <div class="pl-mode" role="group" aria-label="มุมมองหน้าวางแผน">
+        <button type="button" data-plm="simple" aria-pressed="true" onclick="planSetMode('simple')">🔎 ดูง่าย</button>
+        <button type="button" data-plm="full" aria-pressed="false" onclick="planSetMode('full')">🛠️ จัดการแผน</button>
+      </div>
+      <div class="pl-actions pl-fullonly">
         <button class="btn btn-blue btn-sm" onclick="addPlanRow()">➕ เพิ่มแผน</button>
         <!-- ★ 2026-10-01 (v3.74) วางแผนเครื่องจักร VSM4 → Export Excel (ตาม Lot / ตามวันที่ / ตามเครื่อง) -->
         <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;font-weight:800" onclick="openMachinePlanner()" title="เปิดแผนผลิต VSM4 — เลือกเดือน ดูคิวเครื่องทีละ Zone (แต่ละ Lot ผลิตเครื่องไหน วันไหน) · Export Excel ได้">🏭 วางแผนการผลิต<span id="mpBadge" class="mpb-badge" style="display:none"></span></button>
@@ -3303,6 +3392,14 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       </div>
     </div>
 
+    <!-- ★ v4.09 โหมด 🔎 ดูง่าย — ช่องค้นหาช่องเดียว + คำตอบต่อแผนขาย: วันขาย · Lot · มีงานแล้ว · รอเข้า (renderPlanSimple) -->
+    <div id="planSimple" class="pls">
+      <input type="search" id="planQS" class="pls-q" placeholder="🔎 พิมพ์ Valve No หรือ Lot — เช่น 4796" oninput="planQSInput(this.value)"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="ค้นหาแผนขายจาก Valve No หรือ Lot">
+      <div id="plsOut" aria-live="polite"></div>
+    </div>
+
+    <div id="planFull" class="pl-fullonly">
     <!-- ★ 2026-08-05 (req) Filter — ช่องค้นหาเดียวจบ + ช่วงวันที่ · ตัวกรองราย "คอลัมน์" อยู่ที่หัวตาราง (แบบ Excel) -->
     <div class="pl-filter">
       <input type="search" id="planSearch" placeholder="🔎 ค้นหา Valve No / หมายเหตุ / วันที่ — พิมพ์บางส่วนก็ได้" oninput="planSearchInput(this.value)"
@@ -3396,6 +3493,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     </div>
     <!-- ป๊อปอัปตัวกรองรายคอลัมน์ (ใช้ร่วมกันทุกคอลัมน์ · วางตำแหน่งด้วย JS) -->
     <div id="planColPop" class="pcp"></div>
+    </div><!-- /#planFull -->
   </div>
 </section>
 
@@ -8123,7 +8221,163 @@ function _ensureValveDatalist() {
   dl.dataset.sig = sig; _vdlValves = state.valves;
 }
 document.addEventListener('focusin', e => { const t = e.target; if (t && t.getAttribute && t.getAttribute('list') === 'valveList') _ensureValveDatalist(); });
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.09 (ผู้ใช้ 3/11 ข้อ 1 + รูปมือถือค้นหา "4796") — หน้าวางแผน 2 โหมด
+   ผู้ใช้: "ปุ่มและฟังก์ชันดี ละเอียดดี แต่หลายปุ่มจนผู้ใช้งงว่าอะไรคืออะไร ข้อมูลเยอะเกินไป
+            บางครั้งแค่ต้องการดูว่างานเบอร์นี้ขายวันไหน เป็น Lot อะไร มีงานแล้วเท่าไหร่ รอเข้าเท่าไร"
+   เดิม: ค้นหา 4796 แล้วต้องไล่ดูปุ่ม 6 ปุ่ม · ชิปตัวกรอง · กราฟลูกค้า · ยอดรายเดือน · การ์ดสถานะ 4 ใบ · แผงเตือน ก่อนถึงตาราง
+   🔎 ดูง่าย (ค่าเริ่มต้น): ช่องค้นหาช่องเดียว → การ์ดต่อเบอร์ · แถวละ 1 แผนขาย = วันขาย · Lot · มีงานแล้ว · รอเข้า
+     ตัวเลขมาจากตัวจัดสรรกลาง planLotAlloc ชุดเดียวกับตารางแผน / กราฟ Order·WIP IN·WIP OUT / ตัววางแผนเครื่อง (ไม่มีตัวเลขชุดที่สอง)
+     มีงานแล้ว = ของของแผนนี้ที่มีอยู่จริง (จบแล้ว · ผ่าน FG · กำลังผลิต · รับเข้ารอผลิต) · รอเข้า = สั่ง − มีงานแล้ว (ยังไม่รับเข้า WIP IN 1.5)
+   🛠️ จัดการแผน: หน้าเดิมทุกอย่าง (renderPlans ด้านล่าง) — โหมดดูง่ายไม่วาดส่วนนี้เลย (เปิดหน้าเร็วขึ้นบนมือถือ) · สลับมาค่อยวาด
+   ═══════════════════════════════════════════════════════════════════════ */
+const LS_PLAN_MODE = 'vsm4_plan_mode';
+let _planMode = (() => { try { return localStorage.getItem(LS_PLAN_MODE) === 'full' ? 'full' : 'simple'; } catch (e) { return 'simple'; } })();
+let _planQS = '', _planQSTimer = null;
+function _planModeApply() {
+  const pane = $('pane-plan'); if (!pane) return;
+  if (pane.dataset.plm !== _planMode) pane.dataset.plm = _planMode;
+  for (const b of pane.querySelectorAll('.pl-mode [data-plm]')) b.setAttribute('aria-pressed', String(b.dataset.plm === _planMode));
+}
+function planSetMode(m) {
+  m = m === 'full' ? 'full' : 'simple';
+  if (m !== _planMode) {
+    // คำค้นตามไปด้วย — สลับโหมดแล้วไม่ต้องพิมพ์ใหม่
+    if (m === 'full' && _planQS.trim() && !_planQ.trim()) { _planQ = _planQS.trim(); if ($('planSearch')) $('planSearch').value = _planQ; _planPage = 1; }
+    if (m === 'simple' && !_planQS.trim() && _planQ.trim()) _planQS = _planQ.trim();
+  }
+  _planMode = m;
+  try { localStorage.setItem(LS_PLAN_MODE, m); } catch (e) {}
+  renderPlans();
+  if (m === 'simple') { const i = $('planQS'); if (i && i.value !== _planQS) i.value = _planQS; }
+}
+function planQSInput(v) {
+  _planQS = String(v || '');
+  clearTimeout(_planQSTimer);
+  _planQSTimer = setTimeout(renderPlanSimple, 140);
+}
+// ป้ายสถานะของ Lot ที่จัดสรรให้แผน (คำเต็ม — โหมดดูง่ายไม่ใช้ตัวย่อ)
+const _PLS_LB = { done: ['✅', 'จบงานแล้ว', 'finished'], fg: ['✅', 'ผ่าน FG แล้ว', 'past FG'], wip: ['⚙️', 'กำลังผลิต', 'in production'], in: ['📥', 'รับเข้าแล้ว รอผลิต', 'received, waiting'] };
+function _plsLotHtml(l) {
+  const [ic, th, en] = _PLS_LB[l.st] || ['📦', '', ''];
+  const at = l.st === 'wip' && l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : '';
+  return `<div class="pls-lot ${l.st}"><span class="lt">📦 ${escapeHtml(l.lot || TT('(ไม่มี Lot)', '(no lot)'))}</span><span class="lq">${nn(l.qty)}</span><span class="ls">${ic} ${TT(th, en)}${at}</span></div>`;
+}
+/* ของในไลน์ของเบอร์นี้ (ไม่ผูกแผน) — ใช้กับเบอร์ที่ยังไม่มีแผนขาย: กำลังผลิต + รับเข้ารอผลิต (กติกาเดียวกับ planLotAlloc) */
+function _plsStock(vk, b) {
+  const by = new Map();
+  const add = (lot, st, q, proc) => { if (!(q > 0)) return; const k = lotKey(lot) + '|' + st; const o = by.get(k) || { lot, st, qty: 0, proc }; o.qty += q; by.set(k, o); };
+  for (const it of (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, 'wip', Number(it.qty) || 0, it.curProc || '');
+  for (const it of (b.wipIn.items || [])) {
+    if (it.started || it.unknown || it.orphan || vKey(it.valve) !== vk || getJobProc(it.valve, it.lot) === 'DONE') continue;
+    add(it.lot, 'in', Number(it.qty) || 0, '');
+  }
+  return [...by.values()];
+}
+const _PLS_MAX = 8;
+function renderPlanSimple() {
+  const out = $('plsOut'); if (!out) return;
+  const inp = $('planQS');
+  if (inp && document.activeElement !== inp && inp.value !== _planQS) inp.value = _planQS;
+  const q = vKey(_planQS).replace(/\s+/g, '');
+  if (q.length < 2) {
+    out.innerHTML = `<div class="pls-hint"><b>${TT('พิมพ์ Valve No หรือ Lot', 'Type a Valve No or Lot')}</b>${TT('ดูได้ทันที: ขายวันไหน · Lot อะไร · มีงานแล้วเท่าไหร่ · รอเข้าเท่าไร', 'See at once: sale date · lot · stock on hand · still to come in')}
+      <small>${TT('ต้องการเพิ่ม / แก้ / วางแผนจาก Excel → กด 🛠️ จัดการแผน', 'To add / edit / paste plans → tap 🛠️ Manage')}</small></div>`;
+    return;
+  }
+  const today = todayISO(), lq = lotKey(q), lotQ = q.length >= 4;
+  const byV = new Map();
+  const vOf = valve => { const vk = vKey(valve); let o = byV.get(vk); if (!o) byV.set(vk, o = { vk, valve: vk, rows: [], lotHit: false }); return o; };
+  for (const p of filterVsm(state.plans || [])) {
+    if (p.status === 'cancelled' || !(Number(p.quantity) > 0)) continue;
+    const vk = vKey(p.valve_no); if (!vk) continue;
+    const r = planAllocOf(p);
+    if (!r) continue;                         // วันขายเก่ากว่า 120 วัน / วันที่เสีย — ไม่ใช่งานที่ยังเดินอยู่ (กติกาเดียวกับ planLotAlloc)
+    const vHit = vk.includes(q);
+    const lHit = !vHit && lotQ && (planLotKeys(p).some(k => k.includes(lq)) || r.lots.some(l => l.lk.includes(lq)));
+    if (!vHit && !lHit) continue;
+    const o = vOf(vk); o.rows.push(r); if (lHit) o.lotHit = true;
+  }
+  // เบอร์ที่ยังไม่มีแผนขาย แต่มีของในไลน์ (ค้นเจอจากเบอร์ / Lot ของงานค้าง)
+  const b = getWipBucketsView();
+  const seenNo = new Set();
+  for (const it of (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || [], b.wipIn.items || [])) {
+    const vk = vKey(it.valve); if (!vk || byV.has(vk) || seenNo.has(vk)) continue;
+    if (vk.includes(q) || (lotQ && lotKey(it.lot).includes(lq))) { seenNo.add(vk); vOf(vk); }
+  }
+  const list = [...byV.values()].sort((a, c) => (a.vk.indexOf(q) === 0 ? 0 : 1) - (c.vk.indexOf(q) === 0 ? 0 : 1) || a.vk.localeCompare(c.vk));
+  if (!list.length) {
+    out.innerHTML = `<div class="pls-hint none"><b>${TT('ไม่พบ', 'No match for')} "${escapeHtml(_planQS.trim())}"</b>${TT('ไม่มีแผนขาย และไม่มีของในไลน์ของ', 'No sales plan and nothing in the line for')} ${escapeHtml(viewVsm().toUpperCase())}
+      <small>${TT('ลองพิมพ์ส่วนหนึ่งของเบอร์ เช่น 4 ตัวท้าย · หรือดูประวัติผลิตที่ ติดตามงาน → ค้นหา Process', 'Try part of the number · or see production in Tracking → Find Process')}</small></div>`;
+    return;
+  }
+  const A = planLotAlloc(b);
+  const card = o => {
+    const rows = o.rows.slice().sort((x, y) => x.due.localeCompare(y.due) || String(x.p.plan_id || '').localeCompare(String(y.p.plan_id || '')));
+    const past = rows.filter(r => r.st === 'done' && r.due < today);          // ขายครบไปแล้ว → พับเป็นบรรทัดเดียว
+    const open = rows.filter(r => !(r.st === 'done' && r.due < today));
+    const cust = custGroup(custOfValve(o.vk)) || '';
+    const rowHtml = r => {
+      const days = _mpDayDiff(today, r.due), wait = r.shortSig ? r.short : 0, fin = r.done + r.fg;   // ขาดไม่เกินเศษ scrap (planTol) = ครบ
+      const st = r.st === 'done' ? ['ok', '✅ ' + TT('ของครบแล้ว', 'all done')]
+        : days < 0 ? ['late', `⏰ ${TT('เลยวันขาย', 'overdue')} ${-days} ${TT('วัน', 'd')}`]
+        : days === 0 ? ['soon', '📅 ' + TT('ขายวันนี้', 'sells today')]
+        : days <= 3 ? ['soon', `⚠️ ${TT('อีก', 'in')} ${days} ${TT('วัน', 'd')}`]
+        : ['up', `${TT('อีก', 'in')} ${days} ${TT('วัน', 'd')}`];
+      const lots = r.lots.map(_plsLotHtml);
+      // Lot ที่แผนระบุไว้ แต่ยังไม่มีใน VSM นี้ (ยังอยู่สายอื่น / พิมพ์ผิด / เป็นของเบอร์อื่น)
+      const chk = new Map(planLotCheck(r.p.valve_no, r.p.lot).map(c => [c.k, c]));
+      for (const k of (r.lotMiss || [])) {
+        const c = chk.get(k), w = (!c || c.st === 'away' || c.st === 'ok') ? _lotSeenElsewhere(r.vk, k) : null;
+        const why = c && (c.st === 'bad' || c.st === 'none') ? planLotCheckTxt(c)
+          : `🚚 ${TT('ยังไม่เข้า', 'not in')} ${viewVsm().toUpperCase()}${w ? ` · ${TT('ล่าสุดอยู่', 'last at')} ${w.vsm} ${_fmtThDate(w.d)}` : ''}`;
+        lots.push(`<div class="pls-lot miss"><span class="lt">🔒 ${escapeHtml(k)}</span><span class="ls">${escapeHtml(why)}</span></div>`);
+      }
+      if (!lots.length) lots.push(`<div class="pls-lot none"><span class="ls">📭 ${TT('ยังไม่มีของ — รอรับเข้า WIP IN 1.5', 'no stock yet — waiting for WIP IN 1.5')}</span></div>`);
+      const pc = v => r.order > 0 ? Math.max(0, Math.min(100, v / r.order * 100)).toFixed(1) : 0;
+      return `<div class="pls-r">
+        <div class="pls-r1"><span class="pls-d">📅 ${TT('ขาย', 'Sale')} <b>${_mpDW(r.due)}</b></span><span class="pls-st ${st[0]}">${st[1]}</span>
+          <span class="pls-o">${TT('สั่ง', 'Order')} <b>${nn(r.order)}</b></span></div>
+        <div class="pls-lots">${lots.join('')}</div>
+        <div class="pls-nums">
+          <div class="pls-n have"><small>${TT('มีงานแล้ว', 'On hand')}</small><b>${nn(r.got)}</b></div>
+          <div class="pls-n wait${wait ? '' : ' ok'}"><small>${TT('รอเข้า', 'To come in')}</small><b>${wait ? nn(wait) : '✓ ' + TT('ครบ', 'none')}</b></div>
+        </div>
+        <div class="pls-bar" role="img" aria-label="${escapeHtml(`${TT('จบ/ผ่าน FG', 'finished')} ${nn(fin)} · ${TT('อยู่ในไลน์', 'in line')} ${nn(r.wip + r.in)} · ${TT('รอเข้า', 'to come in')} ${nn(wait)}`)}"><i class="d" style="width:${pc(fin)}%"></i><i class="w" style="width:${pc(r.wip + r.in)}%"></i></div>
+      </div>`;
+    };
+    const spare = o.rows.length ? (A.spare.get(o.vk) || []) : _plsStock(o.vk, b);
+    const spareQ = spare.reduce((s, x) => s + x.qty, 0);
+    const spareHtml = spare.length ? `<div class="pls-foot">${o.rows.length ? `📦 ${TT('ของในไลน์ที่ยังไม่มีแผนขาย', 'In the line, not on any sales plan')}` : `📦 ${TT('ของในไลน์', 'In the line')}`} <b>${nn(spareQ)}</b> ${TT('ชิ้น', 'pcs')}
+      <div class="pls-lots">${spare.slice(0, 4).map(_plsLotHtml).join('')}${spare.length > 4 ? `<div class="pls-lot none"><span class="ls">+${spare.length - 4} Lot</span></div>` : ''}</div></div>` : '';
+    const body = open.length ? open.map(rowHtml).join('')
+      : !o.rows.length ? `<div class="pls-r none">🛒 ${TT('ยังไม่มีแผนขายของเบอร์นี้', 'No sales plan for this valve yet')}</div>` : '';
+    const pastHtml = past.length ? `<div class="pls-foot">✅ ${TT('ขายครบไปแล้ว', 'Already sold')}: ${past.slice(-4).map(r => `<b>${_mpD(r.due).slice(0, 5)}</b> ${nn(r.order)}`).join(' · ')}${past.length > 4 ? ` +${past.length - 4}` : ''}</div>` : '';
+    return `<section class="pls-v" aria-label="${escapeHtml(o.vk)}">
+      <header class="pls-vh"><b>${escapeHtml(o.vk)}</b>${cust ? `<span class="cu">${escapeHtml(cust)}</span>` : ''}<span class="n">${o.rows.length ? `${nn(open.length || o.rows.length)} ${TT('แผนขาย', 'sales plans')}` : ''}</span>
+        <button type="button" class="pls-go" onclick="plsGoProcess('${escapeHtml(o.vk)}')" title="${escapeHtml(TT('ดูยอดทุก Process ของเบอร์นี้ (ติดตามงาน → ค้นหา Process)', 'See every process of this valve (Tracking → Find Process)'))}">${TT('ดูขั้นตอนผลิต', 'Steps')} ›</button></header>
+      ${body}${pastHtml}${spareHtml}
+    </section>`;
+  };
+  const shown = list.slice(0, _PLS_MAX);
+  const more = list.length > _PLS_MAX ? `<div class="pls-more">${TT('พบ', 'Found')} ${nn(list.length)} ${TT('เบอร์ — พิมพ์ให้ละเอียดขึ้น หรือแตะเบอร์', 'valves — type more, or tap one')}:
+      ${list.slice(0, 40).map(o => `<button type="button" class="pls-chip" onclick="plsPick('${escapeHtml(o.vk)}')">${escapeHtml(o.vk)}</button>`).join('')}${list.length > 40 ? ' …' : ''}</div>` : '';
+  out.innerHTML = more + `<div class="pls-grid">${shown.map(card).join('')}</div>`;
+}
+function plsPick(vk) { _planQS = vk; const i = $('planQS'); if (i) i.value = vk; renderPlanSimple(); }
+// ไปหน้า ติดตามงาน → ค้นหา Process ของเบอร์นี้ (ยอดทุกขั้น · ช่องเหลือง = ขั้นถัดไป)
+function plsGoProcess(vk) {
+  setPane('prod');
+  setTimeout(() => {
+    const i = $('searchValve'); if (!i) return;
+    i.value = vk; searchProcess();
+    i.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, 80);
+}
 function renderPlans() {
+  _planModeApply();
+  // ★ v4.09 โหมดดูง่าย = ไม่วาดหน้าจัดการแผน (ตาราง · กราฟ · แผงเตือน) · ป้าย ⚠️ ของ 🏭 ยังต้องอัปเดต
+  if (_planMode === 'simple') { renderPlanSimple(); try { mpUpdateBadge(); } catch (e) {} return; }
   const rows = filteredPlans();
   const tbody = $('planTable')?.querySelector('tbody');
   if (!tbody) return;
@@ -11133,7 +11387,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.08":"Production Record + KPI · v4.08",
+"ระบบบันทึกผลิต + KPI · v4.09":"Production Record + KPI · v4.09",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11161,6 +11415,9 @@ const I18N_X = {
 "(เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)":"(e.g. N-202 = ROLL → N-202's OPR counts toward ROLL) — independent of what operators type · set a machine's process in ⚙️ Settings → Machines (tap chips to filter · tap a row for valves)",
 "ช่วงเวลาที่แสดง":"Period shown","ค้นหา Process จาก Valve No":"Find Process by Valve No",
 "เช็คงานที่พอดัดแปลงได้":"Check convertible work",
+"🔎 ดูง่าย":"🔎 Simple","🛠️ จัดการแผน":"🛠️ Manage","แผนผลิตรายเครื่อง":"Machine production plan","เปิด":"Open",
+"วันนี้ผลิตอะไร เครื่องไหน · คิวเครื่องทีละ Zone":"What to make today, on which machine · queues by zone",
+"🔎 พิมพ์ Valve No หรือ Lot — เช่น 4796":"🔎 Type a Valve No or Lot — e.g. 4796",
 "งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order":"Short / scrapped work → find valves of the same TYPE that are slightly smaller, with an Order check",
 "📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง FA / COT / Type COT":"📋 Paste FA / COT / Type COT","📐 วาง FA ของเครื่อง":"📐 Paste machine FA",
 "เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
@@ -19640,7 +19897,7 @@ function wipDetailBody(bucket){
         ${/* ★ 2026-09-17 (req #1) — ✏️/🗑 ต้องมี "ทุกแถว" รวมแถวที่ขึ้น "เริ่มผลิตแล้ว"
              เดิมซ่อนปุ่มทิ้งเมื่อ i.started → ใบที่พิมพ์ Lot ผิดแล้วมียอดผลิตตามมา (เคสจริง VV6301A0 / 2606a070078)
              แก้ไม่ได้เลยสักทาง ต้องไปไล่ลบ/ลงใหม่ · ตอนนี้กด ✏️ แก้ได้เลย (ในกล่องมีคำเตือน + ช่องแก้ยอดผลิตให้ด้วย) */''}
-        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button><button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}',${i.started?1:0})">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" title="${TT('ลบใบรับเข้า','Delete intake slip')}" onclick="onDeleteWipin('${i.id}',${i.started?1:0})">🗑</button></td>
+        <td class="center" style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘</button>${/* ★ v4.09 แก้ไข / ลบใบรับเข้าได้เฉพาะคนที่ลงใบนั้น (Admin ได้ทุกใบ) */''}${canEditRec(_wipin[i.id]) ? `<button class="btn btn-outline btn-sm" style="color:var(--blue);border-color:var(--blue-soft)" title="${TT('แก้ไข Valve/Lot/จำนวน','Edit valve/lot/qty')}" onclick="editWipinEntry('${i.id}',${i.started?1:0})">✏️</button><button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" title="${TT('ลบใบรับเข้า','Delete intake slip')}" onclick="onDeleteWipin('${i.id}',${i.started?1:0})">🗑</button>` : _recLockBtn('wipin', i.id, _wipin[i.id])}</td>
       </tr>`;
     _wipDet={items:sorted,rowFn,colspan:8};
     const s=_wipPgSlice();
@@ -19926,6 +20183,7 @@ function _wipinConfirm(message){
   });
 }
 async function onDeleteWipin(id, started){
+  if(!canEditRec(_wipin[id])){ _recLockToast(_wipin[id]); return; }   // ★ v4.09 ลบได้เฉพาะใบที่ตัวเองลง (Admin ได้ทุกใบ)
   /* ★ 2026-09-17 — ใบที่เริ่มผลิตแล้วก็ลบได้ (ปุ่มโผล่ทุกแถวแล้ว) แต่ต้องเตือนให้ชัด
      ว่าลบแล้วยอด "รับเข้า" หายไปเฉย ๆ ยอดผลิต/KPI ไม่ได้หายตาม — ถ้าแค่ลงผิดให้กด ✏️ */
   const msg = started
@@ -19950,9 +20208,13 @@ async function onDeleteWipin(id, started){
 function editWipinEntry(id, started){
   const e=_wipin[id];
   if(!e || e.deleted){ toast(TT('ไม่พบรายการ','Entry not found'),'orange'); return; }
+  if(!canEditRec(e)){ _recLockToast(e); return; }        // ★ v4.09 แก้ได้เฉพาะใบที่ตัวเองลง (Admin ได้ทุกใบ)
   const oldValve=e.valve||'', oldLot=e.lot||'';
   const _rl=_recsWithValveLot(oldValve, oldLot);          // ยอดผลิต/KPI ที่ผูกกับ Valve+Lot เดิมอยู่
-  const nRec=_rl.kpi.length+_rl.prod.length;
+  /* ★ v4.09 ช่อง "แก้ยอดผลิต + KPI ของ Lot เดิมด้วย" แตะรายการของคนอื่นได้ → พนักงานได้ช่องนี้เมื่อทุกรายการเป็นของตัวเอง
+     มีของคนอื่น = ไม่โชว์ช่องติ๊ก แต่บอกว่าให้ Admin แก้ส่วนนั้น (ใบรับเข้าแก้ได้ตามปกติ) */
+  const _rlOther=[..._rl.kpi,..._rl.prod].filter(r=>!canEditRec(r)).length;
+  const nRec=_rlOther?0:_rl.kpi.length+_rl.prod.length;
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(13,17,23,.65);z-index:2100;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
   ov.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto">
@@ -19973,6 +20235,8 @@ function editWipinEntry(id, started){
         <span>${TT('แก้ <b>ยอดผลิต + KPI</b> ของ Lot เดิมให้ตรงกันด้วย','Also fix the <b>production + KPI</b> rows on the old lot')}
           <span class="tag tag-blue" style="font-size:10px">${nn(nRec)} record</span>
           <div style="color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(oldValve)}${oldLot?(' / '+escapeHtml(oldLot)):''} → ${TT('เลขใหม่ที่กรอกด้านบน','the new values above')}</div></span></label>`:''}
+      ${_rlOther?`<div style="margin:10px 0 0;padding:8px 11px;border-radius:10px;background:#F8FAFC;border:1.5px dashed #CBD5E1;font-size:11.5px;line-height:1.65;color:#475569">
+        🔒 ${TT(`ยอดผลิต / KPI ของ Lot เดิม ${nn(_rl.kpi.length+_rl.prod.length)} รายการ มีของคนอื่นบันทึก — แก้ได้เฉพาะใบรับเข้านี้ · ถ้าย้าย Valve / Lot ให้ Admin แก้ยอดผลิตให้ตรงด้วย`,`${nn(_rl.kpi.length+_rl.prod.length)} production / KPI rows on the old lot include other people's entries — only this slip is changed · if you move the valve / lot, ask an Admin to fix those rows`)}</div>`:''}
       <div id="editWiWarn" style="display:none;margin-top:10px;padding:8px 11px;border-radius:10px;background:#FEF2F2;border:1.5px solid #FCA5A5;color:#B91C1C;font-size:11.5px;line-height:1.65"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
         <button class="btn btn-outline" id="editWiCancel">${TT('ยกเลิก','Cancel')}</button>
@@ -23374,7 +23638,8 @@ function _spShowRecords(lk, procKeys, title, isOff) {
         <div style="font-size:11px;color:var(--muted)">📅 ${escapeHtml(dt)} · 👤 ${escapeHtml(emp || r.operator || '—')}${savedAt ? ` <span style="opacity:.6">· บันทึก ${escapeHtml(savedAt)}${emp && r.operator && vKey(String(emp).split('—')[0]) !== vKey(String(r.operator).split('—')[0]) ? ` โดย ${escapeHtml(String(r.operator).split('—')[0].trim())}` : ''}</span>` : ''}</div>
       </div>
       <div style="font-size:15px;font-weight:800;color:var(--green);white-space:nowrap">${nn(q)}</div>
-      <button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>
+      ${canEditRec(r) ? `<button class="btn btn-sm btn-outline" style="padding:5px 9px;font-size:12px;flex-shrink:0" onclick="closeModal();editProdRecord('${rid}')">✏️</button>`
+        : _recLockBtn('prod', r.record_id || r.recordId || '', r, 'padding:5px 9px;font-size:12px;flex-shrink:0')}
     </div>`;
   }).join('');
   openModal('🔎 ' + title, `
@@ -23413,6 +23678,19 @@ function showSpRemark(ri) {
 // แตะ Lot → แก้เลข lot (เขียนทุก record ของ lot นี้ ทั้ง Local + ฐานข้อมูล)
 function editLotName(ri) {
   const ld = _spLotData[ri]; if (!ld) return;
+  /* ★ v4.09 แก้เลข Lot = แก้ "ทุก record ของล็อตนี้" (ยอดผลิต + KPI + ใบรับเข้า) → พนักงานทำได้เมื่อทุกรายการเป็นของตัวเอง · มีของคนอื่น = Admin */
+  if (!state.adminUnlocked) {
+    const vk = vKey(_spValve?.valveNo || '');
+    const recs = [..._spRecords.filter(r => lotKey(r.lot) === ld.lk),
+      ...state.kpiRecords.filter(r => vKey(r.valve_no || r.valveNo) === vk && lotKey(r.lot) === ld.lk),
+      ...Object.values(_wipin || {}).filter(e => e && !e.deleted && vKey(e.valve) === vk && lotKey(e.lot) === ld.lk)];
+    const other = recs.filter(r => !canEditRec(r));
+    if (other.length || !recs.length) {
+      const who = [...new Set(other.map(_recOwnerId).filter(Boolean))].slice(0, 3).join(', ');
+      toast(`🔒 ${TT('แก้เลข Lot ทั้งล็อตต้องเข้า Admin Mode', 'Renaming a whole lot needs Admin Mode')} — ${other.length ? `${TT('มีรายการที่คนอื่นบันทึก', 'it has entries recorded by others')} ${nn(other.length)} ${TT('รายการ', 'entries')}${who ? ' (' + who + ')' : ''}` : TT('ไม่พบผู้บันทึก', 'no recorder found')} · ${TT('แก้เฉพาะรายการของตัวเอง: แตะตัวเลขในตาราง → ✏️', 'to fix only your own entry: tap a number → ✏️')}`, 'orange');
+      return;
+    }
+  }
   const pc = _spRecords.filter(r => lotKey(r.lot) === ld.lk).length;
   openModal('✏️ แก้เลข Lot', `
     <input type="hidden" id="editLotRi" value="${ri}">
@@ -23436,6 +23714,7 @@ function editLotName(ri) {
 async function saveLotRename() {
   const ri = +($('editLotRi')?.value ?? -1);
   const ld = _spLotData[ri]; if (!ld) { toast('ไม่พบ lot', 'red'); return; }
+  if (!state.adminUnlocked && _spRecords.some(r => lotKey(r.lot) === ld.lk && !canEditRec(r))) { closeModal(); _recLockToast(_spRecords.find(r => lotKey(r.lot) === ld.lk && !canEditRec(r))); return; }   // ★ v4.09
   const newLot = ($('editLotNew')?.value || '').trim();
   if (!newLot) { toast('กรอกเลข Lot ใหม่', 'orange'); return; }
   if (newLot === ld.lot) { toast('เลข Lot เหมือนเดิม', 'orange'); return; }
@@ -23893,7 +24172,8 @@ function _isModalOpen() {
    ถ้าไม่เปลี่ยน จะข้ามการเขียน DOM ทิ้ง เพื่อไม่ให้ตารางกระตุก/กระพริบทุกครั้งที่ auto-refresh */
 let _histSig = '';
 function _histViewSig(view, page) {
-  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + page + '|' +
+  // ★ v4.09 ปุ่มแก้ไข/ลบขึ้นกับว่าใคร login + เปิด Admin อยู่ไหม → ปลด/ล็อก Admin แล้วต้องวาดใหม่
+  return state.histType + '|' + (($('histSearch')?.value || '').trim()) + '|' + page + '|' + (state.adminUnlocked ? 'A' : '') + ((CURRENT_USER && CURRENT_USER.id) || '') + '|' +
     view.map(r =>
       (r.record_id || r.recordId || '') + ':' +
       (r.updated_at || r.saved_at || r.timestamp || '') + ':' +
@@ -23924,9 +24204,48 @@ function _histSortProd(rows) {
   });
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.09 (ผู้ใช้ 3/11 ข้อ 3) "สร้างระบบป้องกันพนักงานลบข้อมูลมั่ว — แก้ไข / ลบได้เฉพาะที่ตัวเองลงบันทึก ยกเว้น Admin
+     เช่น วิภาวัสลงข้อมูล ก็ลบ/แก้ได้แค่ข้อมูลของวิภาวัส · เข้า Admin Mode เมื่อไหร่ แก้ / ลบได้ทั้งหมด"
+   เจ้าของรายการ = คนที่ Lock in ตอนกดบันทึก (ไม่ใช่พนักงานที่เดินเครื่อง emp_id — KPI 30 วันล่าสุด 1 ใน 3 มีคนลงแทน)
+     KPI / ยอดผลิต → operator "S-057 — ชื่อ" · ใบรับเข้า WIP IN 1.5 → byId · ไม่มีผู้บันทึก (ข้อมูลเก่า / ระบบสร้าง) = Admin เท่านั้น
+   ใช้ทุกทางที่แก้ / ลบได้: ตารางประวัติ (KPI · Production · โหมดตรวจสอบ) · รายการยอดในค้นหา Process · แก้เลข Lot ทั้งล็อต · ใบรับเข้า WIP IN 1.5
+   กันที่ตัวแอป — Worker ไม่มีระบบ login ให้ตรวจซ้ำฝั่งฐานข้อมูล
+   ═══════════════════════════════════════════════════════════════════════ */
+function _recOwnerId(r) { return r ? String(r.byId || r.operator || '').split('—')[0].trim().toUpperCase() : ''; }
+function canEditRec(r) {
+  if (state.adminUnlocked) return true;
+  const me = String((CURRENT_USER && CURRENT_USER.id) || '').trim().toUpperCase();
+  return !!me && !!r && _recOwnerId(r) === me;
+}
+function _recOwnerTxt(r) {
+  const s = r ? (r.byId ? `${r.byId}${r.byName ? ' — ' + r.byName : ''}` : String(r.operator || '')).trim() : '';
+  return s || TT('ไม่ระบุผู้บันทึก', 'unknown');
+}
+function _recLockToast(r) {
+  toast(`🔒 ${TT('บันทึกโดย', 'Recorded by')} ${_recOwnerTxt(r)} — ${TT('แก้ไข / ลบได้เฉพาะคนที่บันทึก หรือ Admin Mode', 'only the person who recorded it or Admin Mode can edit / delete')}`, 'orange');
+}
+function _recFind(kind, rid) {
+  if (kind === 'wipin') return (typeof _wipin !== 'undefined' && _wipin[rid]) || null;
+  const id = r => r.record_id || r.recordId;
+  if (kind === 'kpi') return (_histKpiRows || []).find(r => id(r) === rid) || state.kpiRecords.find(r => id(r) === rid) || null;
+  return (_histProdRows || []).find(r => id(r) === rid) || state.prodRecords.find(r => id(r) === rid) || (_spRecords || []).find(r => id(r) === rid) || null;
+}
+function recLockTap(kind, rid) { _recLockToast(_recFind(kind, rid)); }
+// ปุ่ม 🔒 แทน ✏️/🗑️ — บอกรหัสผู้บันทึกในปุ่มเลย (แตะ = ชื่อเต็ม + วิธีแก้)
+function _recLockBtn(kind, rid, r, style) {
+  const who = _recOwnerId(r);
+  return `<button type="button" class="btn btn-sm btn-outline rec-lock" style="${style || ''}" onclick="event.stopPropagation();recLockTap('${kind}','${escapeHtml(String(rid)).replace(/'/g, "\\'")}')"
+    title="${escapeHtml(TT('บันทึกโดย', 'Recorded by') + ' ' + _recOwnerTxt(r) + ' — ' + TT('แก้ไข / ลบได้เฉพาะคนที่บันทึก หรือ Admin Mode', 'only the recorder or Admin Mode can edit / delete'))}">🔒${who ? `<small>${escapeHtml(who)}</small>` : ''}</button>`;
+}
+function _histLockNoteSync(n) {
+  const el = $('histLockNote'); if (!el) return;
+  el.style.display = n ? '' : 'none';
+  if (n) el.textContent = `🔒 = ${TT('บันทึกโดยคนอื่น', 'recorded by someone else')} (${nn(n)} ${TT('รายการในหน้านี้', 'on this page')}) — ${TT('แก้ไข / ลบได้เฉพาะคนที่บันทึก หรือเข้า Admin Mode', 'only the person who recorded it, or Admin Mode, can edit / delete')}`;
+}
 /* ช่อง "จัดการ" ของตารางประวัติ — ถ้าไม่มี record_id (ข้อมูลยังไม่พร้อม) ปุ่มแก้ไข/ลบจะกดไม่ได้
    กันอาการกดแล้วเด้ง "ไม่พบข้อมูล" — ข้อมูลที่แสดงต้องพร้อมใช้งานจริงเท่านั้นจึงแก้ได้ */
-function _histActionsCell(rid, editFn, delFn) {
+function _histActionsCell(rid, editFn, delFn, rec, kind) {
   rid = String(rid || '').trim();
   if (!rid) {
     return `<td class="center" style="white-space:nowrap">
@@ -23934,6 +24253,7 @@ function _histActionsCell(rid, editFn, delFn) {
       <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 7px;font-size:11px;margin-left:3px;opacity:.4;cursor:not-allowed" disabled title="ข้อมูลยังไม่พร้อมลบ">🗑️</button>
     </td>`;
   }
+  if (rec && !canEditRec(rec)) return `<td class="center" style="white-space:nowrap">${_recLockBtn(kind, rid, rec)}</td>`;   // ★ v4.09
   const e = escapeHtml(rid);
   return `<td class="center" style="white-space:nowrap">
       <button class="btn btn-sm btn-outline" style="padding:4px 7px;font-size:11px" onclick="${editFn}('${e}')">✏️</button>
@@ -24044,12 +24364,13 @@ function _renderKpiVerify(rows) {
   _setHistPager(total);
   _hvUpdateProgress(doneCount, total);
 
-  const sig = 'V|' + _histVerifySort + '|' + _pg + '|' + view.map(g => g.key + ':' + g.opr + ':' + g.scrap + ':' + g.recs.length + ':' + (_hvIsDone(g.key) ? 1 : 0) + ':' + (_hvIsOpen(g.key) ? 1 : 0)).join('|');
+  const sig = 'V|' + _histVerifySort + '|' + _pg + '|' + (state.adminUnlocked ? 'A' : '') + ((CURRENT_USER && CURRENT_USER.id) || '') + '|' + view.map(g => g.key + ':' + g.opr + ':' + g.scrap + ':' + g.recs.length + ':' + (_hvIsDone(g.key) ? 1 : 0) + ':' + (_hvIsOpen(g.key) ? 1 : 0)).join('|');
   const t = $('histTable'); const tb = t.querySelector('tbody');
   if (sig === _histSig && tb && tb.children.length) return;
   _histSig = sig;
 
   t.querySelector('thead').innerHTML = '<tr><th class="center" style="width:40px">ตรวจ</th><th>วันที่ · กะ</th><th>Zone</th><th>เครื่อง</th><th>Valve</th><th>Lot</th><th class="center">รวม OPR</th><th class="center">Scrap</th><th>Process</th><th class="center" style="width:100px">ช่วงเวลา</th></tr>';
+  _histLockNoteSync(view.reduce((n, g) => n + g.recs.filter(r => r.record_id && !canEditRec(r)).length, 0));   // ★ v4.09
   if (!view.length) { tb.innerHTML = _histEmptyRow(10, 'ข้อมูล KPI'); return; }
 
   tb.innerHTML = view.map(g => {
@@ -24071,7 +24392,8 @@ function _renderKpiVerify(rows) {
     </tr>`;
     const detailRows = g.recs.map(r => {
       const rid = escapeHtml(r.record_id || '');
-      const btns = rid
+      const btns = rid && !canEditRec(r) ? _recLockBtn('kpi', r.record_id, r, 'padding:3px 7px;font-size:11px')   // ★ v4.09
+        : rid
         ? `<button class="btn btn-sm btn-outline" style="padding:3px 7px;font-size:11px" onclick="event.stopPropagation();editKpiRecord('${rid}')">✏️</button>
            <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:3px 7px;font-size:11px;margin-left:3px" onclick="event.stopPropagation();deleteKpiRecord('${rid}')">🗑️</button>`
         : '';
@@ -24143,8 +24465,9 @@ function renderKpiHist(rows) {
     <td>${escapeHtml(r.valve_no||'-')}</td>
     <td>${escapeHtml(r.lot||'-')}</td>
     <td>${escapeHtml(r.last_process||'-')}</td>
-    ${_histActionsCell(r.record_id, 'editKpiRecord', 'deleteKpiRecord')}
+    ${_histActionsCell(r.record_id, 'editKpiRecord', 'deleteKpiRecord', r, 'kpi')}
   </tr>`).join('') || _histEmptyRow(11, 'ข้อมูล KPI');
+  _histLockNoteSync(view.filter(r => r.record_id && !canEditRec(r)).length);   // ★ v4.09
 }
 function renderProdHist(rows) {
   // prod record จาก API ใช้คีย์ recordId (camelCase) ไม่มี record_id → ปุ่ม ✏️/🗑️ จะได้ id ว่าง
@@ -24172,8 +24495,9 @@ function renderProdHist(rows) {
     <td><span class="tag tag-orange">${escapeHtml(r.currentProcess||r.current_process||'-')}</span></td>
     <td>${escapeHtml(r.status||'-')}</td>
     <td>${escapeHtml(r.operator||'-')}</td>
-    ${_histActionsCell(r.record_id, 'editProdRecord', 'deleteProdRecord')}
+    ${_histActionsCell(r.record_id, 'editProdRecord', 'deleteProdRecord', r, 'prod')}
   </tr>`).join('') || _histEmptyRow(8, 'งาน Production');
+  _histLockNoteSync(view.filter(r => r.record_id && !canEditRec(r)).length);   // ★ v4.09
 }
 async function exportHistory() {
   if (!(await needXlsx())) return;   // ⚡ v3.80 โหลดตัว Excel ตอนใช้
@@ -24234,6 +24558,7 @@ async function exportHistory() {
    ใหม่: ยิงลบที่ Worker ก่อน → ฐานข้อมูลยืนยันแล้วเท่านั้นจึงลบจากหน้าจอ + reload */
 async function deleteKpiRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
+  if (!state.adminUnlocked) { const o = _recFind('kpi', rid); if (!canEditRec(o)) { _recLockToast(o); return; } }   // ★ v4.09 ลบได้เฉพาะที่ตัวเองบันทึก
   /* ★ 2026-08-04 — บอกให้ชัดว่ายอดที่หน้าติดตามงานจะหายตามไปด้วยกี่รายการ
      เดิมลบแค่ฝั่ง KPI → prod ค้างเป็น "แถวผี" ที่หน้าติดตามงานยังนับยอดอยู่ (พบค้าง 170 แถว) */
   const linked = state.prodRecords.filter(r => r.kpi_record_id === rid);
@@ -24280,6 +24605,7 @@ async function deleteKpiRecord(rid) {
 
 async function deleteProdRecord(rid) {
   if (!rid) { toast('ไม่พบ Record ID', 'red'); return; }
+  if (!state.adminUnlocked) { const o = _recFind('prod', rid); if (!canEditRec(o)) { _recLockToast(o); return; } }   // ★ v4.09 ลบได้เฉพาะที่ตัวเองบันทึก
   /* ★ 2026-08-04 — ลบยอดผลิตที่เป็นคู่ 1:1 กับ KPI จะลบ KPI ตามไปด้วย (Worker เป็นคนตัดสิน)
      ต้องเตือนก่อน เพราะ KPI ถือ OAE/DLE ของกะนั้นไว้ ไม่ใช่แค่ตัวเลขยอด */
   const me  = state.prodRecords.find(r => r.record_id === rid);
@@ -24359,6 +24685,7 @@ function editKpiRecord(rid) {
   const r = _histKpiRows.find(x => x.record_id === rid)
          || state.kpiRecords.find(x => x.record_id === rid);
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
+  if (!canEditRec(r)) { _recLockToast(r); return; }   // ★ v4.09 แก้ได้เฉพาะที่ตัวเองบันทึก (Admin ได้ทุกรายการ)
   // FIX 8: แสดงทุก field ในหน้าแก้ไข KPI
   // ⚠️ API คืน shifts เป็น string — parse ด้วย _shiftsArr ก่อน ไม่งั้นเวลาเริ่ม/สิ้นสุด/CT จะว่าง
   const _sh0 = _shiftsArr(r)[0] || {};
@@ -24507,6 +24834,7 @@ async function saveKpiEdit() {
   }
   if (idx < 0) { toast('ไม่พบ record ใน local', 'red'); return; }
   const r = state.kpiRecords[idx];
+  if (!canEditRec(r)) { closeModal(); _recLockToast(r); return; }   // ★ v4.09 (ล็อก Admin ระหว่างเปิดหน้าแก้ไขค้างไว้)
   /* ⚡ v3.92 ถ่ายสำเนาไว้ "ก่อน" สร้าง patch — _shiftsArr(r) คืนอาร์เรย์ตัวจริงของ record (ถ้าไม่ใช่สตริง JSON)
      แล้ว _shArr[0] = … ข้างล่างเขียนทับในที่ → ฐานข้อมูลไม่รับ ต้องคืนจากสำเนานี้ถึงจะครบทุกช่อง */
   const _snapsEarly = _snapRecs([r, ...state.prodRecords.filter(p => p.kpi_record_id === rid)]);
@@ -24637,6 +24965,8 @@ function editProdRecord(rid) {
          || state.prodRecords.find(x => x.record_id === rid)
          || _spRecords.find(x => (x.record_id || x.recordId) === rid);   // มาจากหน้าค้นหา Process
   if (!r) { toast('ไม่พบข้อมูล', 'red'); return; }
+  if (!canEditRec(r)) { _recLockToast(r); return; }   // ★ v4.09 แก้ได้เฉพาะที่ตัวเองบันทึก (Admin ได้ทุกรายการ)
+  const _opLock = !state.adminUnlocked;                 // ★ v4.09 ผู้บันทึกเปลี่ยนได้เฉพาะ Admin (ไม่งั้นโอนรายการไปให้คนอื่นแก้/ลบได้)
   const statusOpts = ['In Progress','Completed','Cancelled'].map(s =>
     `<option value="${s}" ${(r.status||'')=== s?'selected':''}>${s}</option>`).join('');
   // Process = dropdown จาก process ของวาล์วเบอร์นั้น (Master valve)
@@ -24680,8 +25010,8 @@ function editProdRecord(rid) {
       <div class="fr"><label>Status</label>
         <select id="editProdStatus">${statusOpts}</select>
       </div>
-      <div class="fr"><label>Operator</label>
-        <input type="text" id="editProdOp" value="${escapeHtml(r.operator||'')}">
+      <div class="fr"><label>Operator${_opLock ? ' <span style="font-weight:600;color:var(--muted);font-size:10px">🔒 ' + TT('แก้ได้เฉพาะ Admin', 'Admin only') + '</span>' : ''}</label>
+        <input type="text" id="editProdOp" value="${escapeHtml(r.operator||'')}"${_opLock ? ' readonly style="background:#F0F4FF;color:var(--muted)"' : ''}>
       </div>
     </div>
     <div class="fr"><label>หมายเหตุ${_unknown ? ' <span style="color:var(--muted);font-weight:600">(เก็บค่าที่พนักงานพิมพ์ไว้แล้ว)</span>' : ''}</label>
@@ -24722,6 +25052,7 @@ async function saveProdEdit() {
   // FIX P0-2/P0-3 (2026-07-16): เปลี่ยนจาก "ลบแล้ว insert ใหม่" → UPDATE record เดียวที่ Worker
   //   และรอ Cloud ยืนยันก่อนค่อยอัปเดตหน้าจอ (ไม่ optimistic) — ล้มเหลว = ข้อมูลเดิมคงอยู่
   const r0 = state.prodRecords[idx];
+  if (!canEditRec(r0)) { closeModal(); _recLockToast(r0); return; }   // ★ v4.09
   const patch = {
     record_id:       rid,
     valveNo:         valve,
@@ -24729,7 +25060,7 @@ async function saveProdEdit() {
     quantity:        fnum($('editProdQty').value),
     currentProcess:  proc,
     status:          $('editProdStatus').value,
-    operator:        $('editProdOp').value.trim(),
+    operator:        state.adminUnlocked ? $('editProdOp').value.trim() : (r0.operator || ''),   // ★ v4.09 ผู้บันทึกเปลี่ยนได้เฉพาะ Admin
     note:            $('editProdNote').value.trim(),
     // ฟิลด์ประกอบ (ให้ fallback-insert ฝั่ง Worker มีข้อมูลครบ + เครื่องจักร/โซนไม่หาย)
     timestamp:       r0.timestamp,
@@ -28527,6 +28858,7 @@ function mpDefaults() {
     histCap: true,               // ★ v4.00 เครื่องที่เคยผลิตเบอร์นี้ Process นี้จริง = ทำได้ แม้ SD / SL นอกช่วงที่ตั้งไว้
     mcHours: true, mcHoursDays: 28,   // ★ v4.00 ชั่วโมงเดินจริงของแต่ละเครื่อง (WT ที่ลงยอด N วันล่าสุด) — เครื่องที่แทบไม่มีคนเดินได้งานน้อยลง
     batchDays: 14,               // ★ v3.89 ล็อตทยอยผลิต: ขั้นก่อนหน้าที่ยังมีคนลงยอดในกี่วัน = ยังทำอยู่ (ไม่ข้าม)
+    holeBack: true,              // ★ v4.09 ขั้นที่ถูกข้ามไป (ยังไม่มียอดเลย ทั้งที่ขั้นหลังมียอดแล้ว) = วางแผนกลับมาทำก่อน
     finDays: PLAN_FIN_DAYS };    // ★ v3.84 Lot ที่เสร็จก่อนวันขายเกินกี่วัน = ขายรอบก่อนไปแล้ว (ดู planLotAlloc)
 }
 function mpSettings() {
@@ -28605,6 +28937,7 @@ function mpDaySplit(a, H) {
 const MP_ENV_N = 20;      // ★ v4.00 ช่วง SD จากของจริงใช้ได้เมื่อเครื่อง|Process นั้นลงยอดแล้ว ≥ 20 ครั้ง
 const MP_CAPF_MIN = 0.2;  // ★ v4.00 เครื่องที่แทบไม่มีคนเดิน = เวลาผลิตยืดได้ไม่เกิน 5 เท่า (เครื่องเดียวที่ทำ Process นั้นยังวางได้)
 const MP_PROVEN_Q = 30;   // ★ v4.00 ผลิตเบอร์นี้ Process นี้บนเครื่องนี้รวมกี่ชิ้นขึ้นไป = "เคยผลิตจริง" (กันลงยอดผิดเครื่องครั้งเดียว)
+const MP_HOLE_MIN = 3;    // ★ v4.09 ล็อตที่ผลิตจบแล้วของเบอร์นี้อย่างน้อยกี่ล็อต ถึงจะตัดสินว่า "ขั้นนี้หน้างานไม่ทำ" ได้ (ส่วนใหญ่ไม่ทำ = ไม่วางกลับมาทำ)
 /* ---------- บริบท: เครื่อง + กติกา + CT ---------- */
 function mpContext(S) {
   const hist = mpHistory(S.sdFloor);
@@ -28744,6 +29077,28 @@ function mpJobs(S, ctx) {
     seen(k, f, String(r.shift_date || r.record_date || '').slice(0, 10), r.machine_id, r.shift_type);
   }
   const batchCut = _mpAddDays(S.start, -Math.max(0, +S.batchDays || 0));
+  /* ★ v4.09 ล็อตอื่นของเบอร์เดียวกันที่ "ผลิตจบแล้ว" (มียอด FG / ขั้นสุดท้ายของ VSM4 หรือกดจบงาน) — ใช้ตัดสินว่าขั้นที่ว่างเป็นขั้นที่หน้างานไม่ทำอยู่แล้วหรือเปล่า
+     คิดเฉพาะเบอร์ที่มีช่องว่างให้ตัดสิน (สร้างดัชนีครั้งเดียวต่อรอบ) · ไม่นับล็อตตัวเอง */
+  let lotsByV = null;
+  const finByV = new Map();
+  const finOf = j => {
+    if (!lotsByV) {
+      lotsByV = new Map();
+      for (const src of [recsByJob, kpiByJob]) for (const k in src) { const vk = k.slice(0, k.indexOf('::')); let s = lotsByV.get(vk); if (!s) lotsByV.set(vk, s = new Set()); s.add(k); }
+    }
+    let F = finByV.get(j.vk);
+    if (!F) {
+      const endF = j.steps.some(s => s.fam === 'FG') ? 'FG' : (j.steps.filter(s => s.internal).pop() || {}).fam, T = state.targets || {};
+      F = [];
+      for (const k of (lotsByV.get(j.vk) || [])) {
+        const got = f => ((recsByJob[k] || {})[f] || 0) > 0 || ((kpiByJob[k] || {})[f] || 0) > 0;
+        if ((endF && got(endF)) || (T[JOBPROC_PREFIX + k] && procFromCode(T[JOBPROC_PREFIX + k]) === 'DONE')) F.push({ k, got });
+      }
+      finByV.set(j.vk, F);
+    }
+    const L = F.filter(x => x.k !== j.k);
+    return { n: L.length, did: f => L.filter(x => x.got(f)).length };
+  };
   const raw = [];
   if (S.incWip) for (const it of (b.wip.items || [])) {
     raw.push({ kind: 'wip', valve: it.valve, lot: it.lot, customer: it.customer, qty: +it.qty || 0,
@@ -28810,6 +29165,32 @@ function mpJobs(S, ctx) {
           if (s.need > tol && s.need > fDone && (ld[s.fam] || '') >= batchCut) { from = i; break; }
         }
         for (let i = 0; i < from; i++) { const s = j.steps[i]; if (s.need > 0) { s.passed = s.need; s.need = 0; } }
+        /* ★ v4.09 (ผู้ใช้ 3/11 ข้อ 2 · VV1908A0) "Process สลับกัน — ยังไม่ได้ทำ COPY ข้ามไปทำ COT ก่อน แต่แผนก็ข้ามไปด้วย
+             ต้องกลับมาผลิต COPY ก่อน หรือผลิตตามสีเหลืองก่อน"
+           ขั้นที่ถูกข้าม = ขั้นก่อน Process ปัจจุบันที่ "ยังไม่มียอดเลย" (ไม่มียอดพนักงาน + ไม่มียอด 🔑 Admin) = ช่องสีเหลืองในหน้าค้นหา Process
+           เดิม: ยอดของขั้นหลังถูกนับให้ขั้นก่อนหน้าด้วย (effDone) + ขั้นก่อน Process ปัจจุบัน = ผ่านแล้ว → แผนไม่เคยวาง COPY
+           ตอนนี้: วางขั้นนั้นทั้งล็อตตามลำดับ Process (= ทำก่อนขั้นที่เหลือ) · ขั้นที่ทำจริงแต่พนักงานไม่ได้ลงยอด → Admin เติมยอดในหน้าค้นหา Process แล้วแผนไม่วางอีก
+           ไม่วางซ้ำ (ช่องว่างที่ไม่ใช่การข้ามขั้น — s.gap · ขีดฆ่าในกล่องเส้นทาง):
+             'line' ขั้นที่ทำที่ VSM3 / แผนกอื่น — ยอดลงคนละที่ (Lot ของ VSM3 ไม่มี S เช่น 2607070364) วัดจริง: VF1161M0 13 ล็อตไม่มี SSG
+             'lead' ยังไม่มีขั้นก่อนหน้าที่มียอดเลย — ล็อตเริ่มลงยอดที่ขั้นหลัง (ขั้นแรก ๆ ทำที่อื่น) เช่น VF1713M0 มีแต่ POL
+             'opt'  ล็อตที่ผลิตจบแล้วของเบอร์เดียวกันส่วนใหญ่ไม่ได้ทำขั้นนี้ (≥ MP_HOLE_MIN ล็อต) = Master มีขั้นนี้แต่หน้างานไม่ทำ เช่น VF1161M0 UND (ทำ 1 จาก 74 ล็อต)
+           วัดจริง 3/11: 225 ล็อตที่กำลังผลิต → วางกลับมาทำ 56 ล็อต (VV1908A0 · VV4661A0 COPY ฯลฯ) · ช่องว่างแบบอื่น 59 ล็อต (แผนเท่าเดิม) */
+        if (S.holeBack !== false && Math.round(j.total) > tol) {
+          const adm = pfAdmOfJob(j.valve, j.lot), need = Math.round(j.total);
+          let seen = false, ev = null;
+          for (let i = 0; i < front; i++) {
+            const s = j.steps[i];
+            if (s.done > 0 || (adm[_procCanon(String(s.proc).trim())] || {}).qty > 0) { seen = true; continue; }
+            if (!s.internal || s.v3) { s.gap = 'line'; continue; }
+            if (!seen) { s.gap = 'lead'; continue; }
+            ev = ev || finOf(j);
+            const did = ev.did(s.fam);
+            if (ev.n >= MP_HOLE_MIN && did < ev.n * 0.5) { s.gap = 'opt'; s.gapN = [did, ev.n]; continue; }
+            s.hole = true; s.need = need; delete s.passed;
+          }
+          const hs = j.steps.filter(s => s.hole);
+          if (hs.length) j.holes = hs.map(s => s.proc);
+        }
         j.front = front; j.from = from;
         j.passedN = j.steps.slice(0, from).filter(s => s.passed > 0).length;
       }
@@ -29415,7 +29796,10 @@ function mpAlerts(S, jobs, R, pins) {
     if (pa.length && j.due && j.due >= S.start && j.lateDays > 0) out.push({ type: 'pinlate', lvl: 2, job: j, a: pa[pa.length - 1] });
   }
   for (const a of (R.assigns || [])) if (a.pin && a.shifted >= 4) out.push({ type: 'pinshift', lvl: 1, job: a.job, a });   // เลื่อนไม่ถึงครึ่งกะ = ไม่ต้องเตือน (ยังเห็น ⏩ ในคิว)
-  const ord = { noin: 0, pinbad: 1, pinwarn: 2, pinlate: 3, pinshift: 4 };
+  // ★ v4.09 ล็อตที่มีขั้นถูกข้ามไป (แผนวางให้กลับมาทำแล้ว) — รวมเป็นบรรทัดเดียว (แจ้งให้รู้) ไม่งั้น 80 ล็อตดันรายการอื่นตกขอบ
+  const hj = jobs.filter(j => j.kind !== 'order' && j.holes && j.holes.length);
+  if (hj.length) out.push({ type: 'hole', lvl: 1, job: hj[0], jobs: hj });
+  const ord = { noin: 0, pinbad: 1, pinwarn: 2, pinlate: 3, pinshift: 4, hole: 5 };
   return out.sort((a, b) => (b.lvl - a.lvl) || (ord[a.type] - ord[b.type]) || String(a.job.mustBy || a.job.due || '').localeCompare(String(b.job.mustBy || b.job.due || '')));
 }
 
@@ -29961,9 +30345,16 @@ function _mpvRouteZ(j, res, W, zOf) {
   const bySi = new Map();
   for (const a of (j.assign || [])) { if (!bySi.has(a.si)) bySi.set(a.si, []); bySi.get(a.si).push(a); }
   let done = [];
-  const flush = () => { if (done.length) out.push(`<span class="mpv-rz dn" title="${TT('ทำครบแล้ว', 'done')}">✓ ${done.map(escapeHtml).join(' · ')}</span>`); done = []; };
+  const flush = () => { if (done.length) out.push(`<span class="mpv-rz dn" title="${TT('ทำครบแล้ว', 'done')}">✓ ${done.join(' · ')}</span>`); done = []; };
+  // ★ v4.09 ขั้นที่ถูกข้ามไป (ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด) = ⏪ กลับมาทำ — แผนวางให้ทำก่อนขั้นที่เหลือ
+  const hTip = s => s.hole ? ' · ⏪ ' + TT('ข้ามไป — ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด ต้องกลับมาทำก่อน', 'skipped — a later step has output but this one has none, so it is done first') : '';
+  const hPre = s => s.hole ? '⏪ ' : '';
+  //   ช่องว่างที่แผนไม่วางซ้ำ (s.gap) = ขีดฆ่า ไม่ใช่ ✓ เฉย ๆ — เดิม COPY ที่ยังไม่ได้ทำขึ้นในกลุ่ม "ทำครบแล้ว" (ผู้ใช้ 3/11 วงไว้)
+  const gTip = s => s.gap === 'line' ? TT('ไม่มียอดของ Lot นี้ — ขั้นนี้ลงยอดที่ VSM3 / แผนกอื่น แผนจึงไม่วางซ้ำ', 'no output for this lot — this step is recorded at VSM3 / another dept, so it is not planned again')
+    : s.gap === 'lead' ? TT('ไม่มียอด — ล็อตนี้เริ่มลงยอดที่ขั้นหลัง (ขั้นแรก ๆ ทำที่อื่น / ก่อนรับเข้า) แผนจึงไม่วางซ้ำ', 'no output — this lot\'s records start at a later step (earlier steps done elsewhere), so it is not planned again')
+    : `${TT('ไม่มียอด — ล็อตที่ผลิตจบแล้วของเบอร์นี้ส่วนใหญ่ไม่ทำขั้นนี้', 'no output — most finished lots of this valve skip this step')} (${TT('ทำ', 'did')} ${s.gapN[0]}/${s.gapN[1]} ${TT('ล็อต', 'lots')}) ${TT('แผนจึงไม่วาง', 'so it is not planned')}`;
   (j.steps || []).forEach((s, i) => {
-    if (!(s.need > 0)) { done.push(s.proc); return; }
+    if (!(s.need > 0)) { done.push(s.gap ? `<s title="${escapeHtml(gTip(s))}">${escapeHtml(s.proc)}</s>` : escapeHtml(s.proc)); return; }
     flush();
     const A = (bySi.get(i) || []).slice().sort((x, y) => (x.part - y.part) || (x.s - y.s));   // แบ่งล็อต = 1/2 ก่อน 2/2
     if (A.length) {
@@ -29971,18 +30362,18 @@ function _mpvRouteZ(j, res, W, zOf) {
       out.push(A.map(a => {
         const z = zOf.get(a.m.id) || '', [zc, zl] = MP_ZCOL[z] || ['#475569', '#F8FAFC'];
         const sD = cal.dateAt(a.s + 1e-6), eD = cal.dateAt(a.e), now = W.day != null && W.inWin(a);
-        return `<button type="button" class="mpv-rz${now ? ' now' : ''}" style="--zc:${zc};--zl:${zl}" data-act="rzgo" data-z="${escapeHtml(z)}" data-mc="${escapeHtml(a.m.id)}"
-          title="${escapeHtml(`${s.proc} · ${a.m.id} · ${z} · ${sD === eD ? _mpDW(sD) : _mpDW(sD) + ' → ' + _mpDW(eD)} · ${nn(a.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อตทำพร้อมกัน', 'split across')} ${a.parts} ${TT('เครื่อง', 'machines')}` : ''}`)}"><small>${escapeHtml(s.proc)}${a.parts > 1 ? ` · ${TT('แบ่ง', 'split')} ${a.part}/${a.parts}` : ''}</small><b>${escapeHtml(a.m.id)}</b><small>${escapeHtml(z.replace(/^ZONE\s*/i, 'Z'))} · ${_mpD(sD).slice(0, 5)}${a.parts > 1 ? ' · ' + nn(a.qty) : ''}</small></button>`;
+        return `<button type="button" class="mpv-rz${now ? ' now' : ''}${s.hole ? ' hole' : ''}" style="--zc:${zc};--zl:${zl}" data-act="rzgo" data-z="${escapeHtml(z)}" data-mc="${escapeHtml(a.m.id)}"
+          title="${escapeHtml(`${s.proc} · ${a.m.id} · ${z} · ${sD === eD ? _mpDW(sD) : _mpDW(sD) + ' → ' + _mpDW(eD)} · ${nn(a.qty)} ${TT('ชิ้น', 'pcs')}${a.parts > 1 ? ` · ${TT('แบ่งล็อตทำพร้อมกัน', 'split across')} ${a.parts} ${TT('เครื่อง', 'machines')}` : ''}${hTip(s)}`)}"><small>${hPre(s)}${escapeHtml(s.proc)}${a.parts > 1 ? ` · ${TT('แบ่ง', 'split')} ${a.part}/${a.parts}` : ''}</small><b>${escapeHtml(a.m.id)}</b><small>${escapeHtml(z.replace(/^ZONE\s*/i, 'Z'))} · ${_mpD(sD).slice(0, 5)}${a.parts > 1 ? ' · ' + nn(a.qty) : ''}</small></button>`;
       }).join('<i aria-hidden="true">+</i>'));
       return;
     }
     if (s.v3) {
       const b = s.v3b;
-      if (b && b.head === s && b.s != null) out.push(`<span class="mpv-rz v3" title="${TT('ส่งไปทำที่ VSM3', 'done at VSM3')}"><small>${b.steps.map(x => escapeHtml(x.proc)).join(' · ')}</small><b>VSM3</b><small>${b.started && b.s < 1e-6 ? '📍 ' + TT('อยู่แล้ว', 'there') : '📤 ' + _mpD(cal.dateAt(b.s + 1e-6)).slice(0, 5)}</small></span>`);
+      if (b && b.head === s && b.s != null) out.push(`<span class="mpv-rz v3${b.steps.some(x => x.hole) ? ' hole' : ''}" title="${TT('ส่งไปทำที่ VSM3', 'done at VSM3')}${escapeHtml(b.steps.some(x => x.hole) ? hTip({ hole: true }) : '')}"><small>${b.steps.map(x => hPre(x) + escapeHtml(x.proc)).join(' · ')}</small><b>VSM3</b><small>${b.started && b.s < 1e-6 ? '📍 ' + TT('อยู่แล้ว', 'there') : '📤 ' + _mpD(cal.dateAt(b.s + 1e-6)).slice(0, 5)}</small></span>`);
       return;
     }
     const why = s.skipped ? '⚠️ ' + TT('ไม่มีเครื่องรับ SD', 'no machine for SD') : !s.internal ? TT('แผนกอื่น', 'other dept') : TT('ยังไม่ได้วาง', 'not placed');
-    out.push(`<span class="mpv-rz lx${s.skipped ? ' bad' : ''}"><small>${escapeHtml(s.proc)}</small><b>${why}</b></span>`);
+    out.push(`<span class="mpv-rz lx${s.skipped ? ' bad' : ''}${s.hole ? ' hole' : ''}"${s.hole ? ` title="${escapeHtml(hTip(s).slice(3))}"` : ''}><small>${hPre(s)}${escapeHtml(s.proc)}</small><b>${why}</b></span>`);
   });
   flush();
   return out.join('<i aria-hidden="true">›</i>');
@@ -30524,7 +30915,7 @@ function _mpvRow(a, i, n, res) {
     + (nx && nx.v3 ? `<span class="mpv-v3n" title="${TT('ทำเสร็จแล้วส่งต่อ VSM3', 'goes to VSM3 next')}: ${escapeHtml(nx.v3b ? nx.v3b.steps.map(s => s.proc).join(' · ') : nx.proc)}">→ VSM3</span>` : '');
   return `<div class="mpv-r${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}" style="--pc:#${_mpPCol(a.step.fam)}">
     <span class="n">${n}</span>
-    <span class="v">${a.pin && !a.pin.mv ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${v3tag}${_mpMvTag(a, res)}</span>
+    <span class="v">${a.pin && !a.pin.mv ? '<span title="' + TT('Admin วางเอง', 'Placed manually') + '">📌</span>' : ''}${escapeHtml(j.valve)} <span class="lot">${escapeHtml(lot)}</span> <span class="mpv-pf">${escapeHtml(a.step.proc)}</span>${a.step.hole ? _mpvHoleTag() : ''}${v3tag}${_mpMvTag(a, res)}</span>
     <span class="q">${_mpvQHtml(a)}</span>
     <span class="s">${sdTxt}<span>${escapeHtml(j.vtype || '-')}</span>${a.m.sl != null ? `<span>SL ${j.sl == null ? '-' : _mpNum(j.sl)}</span>` : ''}${a.m.fa && a.m.fa.length ? `<span>FA ${mpFaTxt(j.fa)}</span>` : ''}<span>${sD === eD ? _mpDW(sD) : `${_mpDW(sD)} → ${_mpDW(eD)}`}</span></span>
     <span class="mpv-st ${sc}">${st}</span>
@@ -30598,9 +30989,13 @@ function _mpvWhereLine(j) {
   const b = [];
   const f = j.front != null && j.steps ? j.steps[j.front] : null;
   if (f) b.push(`📍 ${TT('อยู่ที่', 'at')} <b>${escapeHtml(f.proc)}</b> (${nn(f.done)} ${TT('ชิ้น', 'pcs')})${j.passedN ? ` · ${TT('ขั้นก่อนหน้า', 'earlier')} ${j.passedN} ${TT('ขั้นถือว่าผ่านแล้ว', 'steps count as passed')}` : ''}${j.from < j.front ? ` · ${TT('ล็อตทยอยผลิต — ยังวางตั้งแต่', 'batch lot — planned from')} ${escapeHtml(j.steps[j.from].proc)}` : ''}`);
+  // ★ v4.09 ขั้นที่ถูกข้ามไป → แผนให้กลับมาทำก่อน (ทำแล้วแต่ไม่ได้ลงยอด = Admin เติมยอดที่หน้าค้นหา Process)
+  if (j.holes && j.holes.length) b.push(`<span class="mpv-holel">⏪ ${TT('ข้ามไป', 'skipped')} <b>${j.holes.map(escapeHtml).join(' · ')}</b> — ${TT('ยังไม่มียอด แผนให้กลับมาทำก่อน', 'no output yet, planned first')}</span>`);
   if (j.curZone) b.push(`🏭 ${TT('ลงยอดล่าสุดที่', 'last recorded on')} ${escapeHtml(j.curMc || '')} · ${escapeHtml(j.curZone)}`);
   return b.join(' · ');
 }
+// ★ v4.09 ป้ายในคิวเครื่อง: ขั้นนี้ของล็อตนี้ถูกข้ามไป (ขั้นหลังทำไปแล้ว) → กลับมาทำ
+const _mpvHoleTag = () => `<span class="mpv-hole" title="${escapeHtml(TT('ล็อตนี้ข้ามขั้นนี้ไปทำขั้นหลังก่อน (ขั้นนี้ยังไม่มียอด) — ต้องกลับมาทำ · ถ้าทำแล้วแต่ไม่ได้ลงยอด ให้ Admin เติมยอดที่หน้าค้นหา Process', 'This lot skipped this step (no output yet) — it has to come back · if it was done but not recorded, an Admin fills it in Process search'))}">⏪ ${TT('ย้อนทำ', 'go back')}</span>`;
 const _mpvSaleS = j => { const s = _mpvSale(j, _mpv && _mpv.S); return `<small class="sl ${s.cls}" title="${escapeHtml(s.ds.map(o => `${TT('ขาย', 'sale')} ${_mpD(o.date)} · ${nn(o.qty)} ${TT('ชิ้น', 'pcs')}${o.named ? ' · 🔒 ' + TT('แผนขายระบุ Lot นี้', 'lot named in sales plan') : ''}`).join('\n') || TT('ยังไม่มีแผนขายที่ใช้ Lot นี้', 'no sales plan uses this lot'))}">🛒 ${s.txt}</small>`; };
 const _mpvLotS = j => j.kind === 'order'
   ? `<span class="l no">${j.planLot ? `<b>${escapeHtml(j.planLot)}</b>` : ''}${TT('รอของเข้า', 'not in yet')}${_mpvSaleS(j)}</span>`
@@ -30623,7 +31018,7 @@ function _mpvCardS(m, o, res, filtering) {
 function _mpvRowS(a, i, n, res, multi) {
   const j = a.job, open = _mpv.openRows.has(_mpvRowKey(a));
   return `<div class="mpv-sr${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" data-act="row" data-ai="${i}" data-n="${n}"${multi ? ' data-p="1"' : ''}>
-    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${_mpvVmS(j, multi ? a.step.proc : '', a.m)}</span>${_mpvLotS(j)}<span class="q">${_mpvQHtml(a)}</span>
+    <span class="n">${n}</span><span class="v">${escapeHtml(j.valve)}${a.step.hole ? _mpvHoleTag() : ''}${_mpvVmS(j, multi ? a.step.proc : '', a.m)}</span>${_mpvLotS(j)}<span class="q">${_mpvQHtml(a)}</span>
     ${open ? _mpvRowDetailS(a, i, res) : ''}
   </div>`;
 }
@@ -31018,8 +31413,9 @@ function openMpvSettings() {
       ${num('mp_zone', S.zoneStick != null ? S.zoneStick : 40, TT('ย้าย Zone เมื่อจำเป็น: ยอมรอเครื่องใน Zone เดิมได้ถึง (ชม.)', 'Change zone only if the same-zone queue is later by more than (h)'), 1, TT('20 ชม. ≈ 1 วันทำงาน · 0 = ไม่สน Zone (แบบเดิม)', '20 h ≈ 1 working day · 0 = ignore zones (old way)'))}
       ${num('mp_batch', S.batchDays != null ? S.batchDays : 14, TT('ล็อตทยอยผลิต: ขั้นก่อนหน้ายังมีคนลงยอดภายใน (วัน) = ยังทำอยู่', 'Batch lots: earlier step recorded within (days) = still running'), 1)}
     </div>
-    <div class="hint">${TT('ล็อตอยู่ Zone ไหน (เครื่องล่าสุดที่ลงยอด) ทำขั้นต่อไปใน Zone นั้นก่อน · ล็อตใหม่เริ่มที่ Zone ที่ทำขั้นที่เหลือได้มากที่สุด · แบ่งล็อตลงหลายเครื่องเฉพาะใน Zone เดียวกัน<br>แผนเริ่มที่ Process ปัจจุบันของล็อต (ขั้นไกลสุดที่มียอดผลิต) — ขั้นก่อนหน้าถือว่าผ่านแล้ว ยกเว้นล็อตทยอยผลิต (ขั้นก่อนหน้ายังเหลือของมากกว่าที่ผ่านไปแล้ว และยังมีคนลงยอดในช่วงวันข้างบน)',
-      'A lot stays in the zone it is in (last machine recorded) · new lots start in the zone that can do most remaining steps · splits stay in one zone<br>The plan starts at the lot\'s current process (furthest step with output) — earlier steps count as passed, except batch lots (more left behind than already passed and recorded recently)')}</div>
+    <div class="mpv-cks">${ck('mp_holeBack', S.holeBack !== false, '⏪ ' + TT('ขั้นที่ถูกข้ามไป (ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด = ช่องสีเหลืองในค้นหา Process) → วางแผนกลับมาทำก่อน', 'A skipped step (a later step has output, this one none = the yellow cell in Process search) → plan it first'))}</div>
+    <div class="hint">${TT('ล็อตอยู่ Zone ไหน (เครื่องล่าสุดที่ลงยอด) ทำขั้นต่อไปใน Zone นั้นก่อน · ล็อตใหม่เริ่มที่ Zone ที่ทำขั้นที่เหลือได้มากที่สุด · แบ่งล็อตลงหลายเครื่องเฉพาะใน Zone เดียวกัน<br>แผนเริ่มที่ Process ปัจจุบันของล็อต (ขั้นไกลสุดที่มียอดผลิต) — ขั้นก่อนหน้าที่มียอดแล้วถือว่าผ่าน ยกเว้นล็อตทยอยผลิต (ขั้นก่อนหน้ายังเหลือของมากกว่าที่ผ่านไปแล้ว และยังมีคนลงยอดในช่วงวันข้างบน) · ขั้นก่อนหน้าที่ยังไม่มียอดเลย = ⏪ วางให้กลับมาทำ (ทำแล้วแต่ไม่ได้ลง → Admin เติมยอดที่ค้นหา Process) · ไม่วางซ้ำ (ขีดฆ่าในกล่องเส้นทาง): ขั้นที่ลงยอดที่ VSM3 / แผนกอื่น · ขั้นก่อนขั้นแรกที่ล็อตมียอด · ขั้นที่ล็อตที่ผลิตจบแล้วของเบอร์นั้นส่วนใหญ่ไม่ทำ',
+      'A lot stays in the zone it is in (last machine recorded) · new lots start in the zone that can do most remaining steps · splits stay in one zone<br>The plan starts at the lot\'s current process (furthest step with output) — earlier steps with output count as passed, except batch lots (more left behind than already passed and recorded recently) · an earlier step with no output at all = ⏪ planned again (done but not recorded → an Admin fills it in Process search) · not re-planned (struck through in the route box): steps recorded at VSM3 / another dept · steps before the lot\'s first recorded step · steps most finished lots of that valve skip')}</div>
     <h4>🧷 ${TT('Valve เดียวกัน → เครื่องเดียวกัน', 'Same valve → same machine')}</h4>
     <div class="fg-auto">
       ${num('mp_vStick', S.valveStick != null ? S.valveStick : 80, TT('ล็อตของเบอร์เดียวกัน (Process เดียวกัน) ไปเครื่องเดียวกัน: ยอมรอได้ถึง (ชม.)', 'Lots of one valve (same process) on one machine: wait up to (h)'), 1, TT('20 ชม. ≈ 1 วันทำงาน · 0 = ไม่สน (แบบเดิม)', '20 h ≈ 1 working day · 0 = off (old way)'))}
@@ -31148,6 +31544,7 @@ function mpReadForm() {
   S.histStick = Math.max(0, Math.min(400, n('mp_hStick', S.histStick != null ? S.histStick : 40)));
   S.histCap = c('mp_hCap', S.histCap !== false);
   S.mcHours = c('mp_mcHours', S.mcHours !== false);
+  S.holeBack = c('mp_holeBack', S.holeBack !== false);   // ★ v4.09
   S.extLagH = S.hours;
   return S;
 }
@@ -31178,6 +31575,12 @@ function mpAlertText(x) {
   if (x.type === 'pinwarn') return `🔀 ${V}${L} · ${escapeHtml(x.st.proc)} ${TT('ย้ายไป', 'moved to')} <b>${escapeHtml(x.m)}</b> ${TT('แล้ว แต่ข้อมูลเครื่องยังไม่รับ', 'but the machine data does not allow it')} (${escapeHtml(MP_WHY[x.why] || x.why)}) → ${TT('แก้ช่วง SD / SL ของเครื่องที่ ⚙️ ตั้งค่า', 'fix the machine SD / SL range in Settings')}`;   // ★ v4.00
   if (x.type === 'pinlate') return `⏰ ${V}${L} · ${TT('งานที่วางเองเสร็จ', 'manual plan finishes')} <b>${_mpD(j.finish)}</b> ${TT('ช้ากว่า FG ต้องเสร็จ', 'after FG due')} +${j.lateDays} ${TT('วัน', 'd')} (${due}) → ${TT('ย้าย/กระจายไปเครื่องอื่น', 'move/spread to other machines')}`;
   if (x.type === 'pinshift') return `⏩ ${V}${L} · ${escapeHtml(x.a.step.proc)} @ ${escapeHtml(x.a.m.id)} ${TT('เลื่อน', 'shifted')} +${Math.round(x.a.shifted * 10) / 10} ${TT('ชม. — ขั้นก่อนหน้าเสร็จช้ากว่าคิวที่วางไว้', 'h — previous step finishes later than the queue assumed')}`;
+  if (x.type === 'hole') {   // ★ v4.09
+    const by = new Map();
+    for (const h of x.jobs) { const o = by.get(h.valve) || { n: 0, p: new Set() }; o.n++; h.holes.forEach(p => o.p.add(p)); by.set(h.valve, o); }
+    const vs = [...by].slice(0, 6).map(([v, o]) => `<b>${escapeHtml(v)}</b> ${escapeHtml([...o.p].join('·'))}${o.n > 1 ? ` (${o.n} Lot)` : ''}`).join(' · ');
+    return `⏪ ${nn(x.jobs.length)} ${TT('ล็อตข้ามขั้นไปทำขั้นหลังก่อน (ขั้นนั้นยังไม่มียอด) → แผนให้กลับมาทำก่อน', 'lots skipped a step (it has no output yet) → planned first')}: ${vs}${by.size > 6 ? ` +${by.size - 6} ${TT('เบอร์', 'valves')}` : ''} · <span class="muted">${TT('ทำแล้วแต่ไม่ได้ลงยอด → Admin เติมยอดที่ 🔍 ค้นหา Process แผนจะไม่วางอีก', 'done but not recorded → an Admin fills it in Process search and the plan drops it')}</span>`;
+  }
   return '';
 }
 function mpAlertsHtml(alerts, opts) {
@@ -31339,7 +31742,7 @@ async function mpExportExcel(res) {
       ['ย้าย Zone', +S.zoneStick > 0 ? `เมื่อจำเป็น — ยอมรอเครื่องใน Zone เดิมได้ถึง ${S.zoneStick} ชม. · แบ่งล็อตเฉพาะใน Zone เดียวกัน` : 'ไม่สน Zone (เครื่องที่เสร็จเร็วสุด)'],
       ['SL (SSG · SEMI · SRG · SFG)', `SL วาล์ว > SL เครื่อง = เข้าไม่ได้ · เลือกเครื่อง SL ใกล้ที่สุดก่อน${+S.slStick > 0 ? ` (ยอมรอได้ ${S.slStick} ชม. ต่อขั้น SL)` : ' (ปิด — ไม่สน SL ที่ใกล้ที่สุด)'} · เครื่องที่ตั้ง SL ${res.ctx.machines.filter(m => m.sl != null).length} เครื่อง`],   // ★ v3.94
       ['FA (ขั้น FG)', `เครื่องที่ตั้ง FA ไว้ รับเฉพาะวาล์วที่ FA ตรง · วาล์วไม่มี FA = ไม่ตัด · เครื่องที่ตั้ง FA ${res.ctx.machines.filter(m => m.fa && m.fa.length).length} เครื่อง`],   // ★ v4.07
-      ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้า = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน`],
+      ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้าที่มียอด = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน${S.holeBack !== false ? ' · ขั้นก่อนหน้าที่ยังไม่มียอดเลย = ⏪ วางให้กลับมาทำก่อน' : ''}`],
       ['งานที่รวม', [S.incIn ? 'WIP IN 1.5' : '', S.incWip ? 'กำลังผลิต' : '', S.incOrder ? 'Order ที่ยังไม่มีของ (ตามวันคาดว่าเข้า)' : '', S.onlyPlan ? '(เฉพาะที่มีแผนขาย)' : ''].filter(Boolean).join(' + ')],
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
       ['แผนที่ Admin วางเอง', S.usePins === false ? 'ไม่ใช้' : `ใช้ (${(res.pins && res.pins.size) || 0} รายการ · 📌 ในชีท 1–3)`],
@@ -32431,9 +32834,12 @@ function mpUpdateBadge() {
     mpManLoad(true).then(() => mpUpdateBadge()).catch(() => {});
   }
   const L = mpQuickAlerts();
-  el.style.display = L.length ? '' : 'none';
-  el.textContent = L.length ? '⚠️ ' + L.length : '';
-  el.title = L.length ? TT(`ต้องปรับแผน ${L.length} Order — ยังไม่มี WIP IN 1.5 (กดดูในตัววางแผน)`, `${L.length} orders need re-planning — no WIP IN 1.5 yet`) : '';
+  for (const b of [el, $('mpBadge2')]) {          // ★ v4.09 + การ์ด 🏭 แผนผลิตรายเครื่อง (โหมดดูง่าย)
+    if (!b) continue;
+    b.style.display = L.length ? '' : 'none';
+    b.textContent = L.length ? '⚠️ ' + L.length : '';
+    b.title = L.length ? TT(`ต้องปรับแผน ${L.length} Order — ยังไม่มี WIP IN 1.5 (กดดูในตัววางแผน)`, `${L.length} orders need re-planning — no WIP IN 1.5 yet`) : '';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
