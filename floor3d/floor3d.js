@@ -18,9 +18,9 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 // สีชุดเดียวกับแอป (ผัง 2D: เขียว #16a34a · ส้ม #ea580c · ปิด = เทาเข้ม) — สีที่ไม่ใช่สถานะเลี่ยงเขียว/ส้ม/แดงทั้งหมด
 const COL = {
   bg: 0xD9E3F0, floor: 0xF2F6FB, floorSide: 0xC5D3E6, grid: 0xDDE6F1, aisle: 0xE7EDF6, line: 0xF2C21B,
-  good: 0x16A34A, warn: 0xEA580C, off: 0x4B5563, pend: 0xCBD5E1,
-  lampGood: 0x4ADE80, lampWarn: 0xFB923C, lampOff: 0x1F2937, lampSos: 0xEF4444, lampPend: 0xE2E8F0,
-  body: 0xF8FAFC, bodyOff: 0x9CA3AF, blue: 0x1A56DB, blueOff: 0x64748B, steel: 0xCBD5E1, steelOff: 0x6B7280,
+  good: 0x16A34A, warn: 0xEA580C, off: 0x4B5563, pend: 0xCBD5E1, down: 0xDC2626,   // ★ v4.14 down = 🔧 เครื่องเสีย (แจ้งจากแอป)
+  lampGood: 0x4ADE80, lampWarn: 0xFB923C, lampOff: 0x1F2937, lampSos: 0xEF4444, lampPend: 0xE2E8F0, lampDown: 0xF87171,
+  body: 0xF8FAFC, bodyOff: 0x9CA3AF, bodyDown: 0xF87171, blue: 0x1A56DB, blueOff: 0x64748B, blueDown: 0xB91C1C, steel: 0xCBD5E1, steelOff: 0x6B7280,
   dark: 0x475569, glass: 0xBFDBFE, glassOff: 0x94A3B8, scr: 0x1E293B,
   lineLb: 0xFDE047, wood: 0xC69C63, kraft: 0xDDBE8E, cart: 0x1E40AF, steelProp: 0x94A3B8,
   vest: 0x1E3A8A, helmet: 0xFBBF24, sel: 0x1A56DB,
@@ -110,6 +110,10 @@ const CSS = `
 .f3d-pin b{min-width:22px;height:22px;border-radius:11px;background:#DC2626;border:2px solid #fff;box-shadow:0 2px 7px rgba(220,38,38,.5);color:#fff;font:900 12px/18px Arial,sans-serif;text-align:center;padding:0 3px}
 .f3d-pin i{width:2.5px;height:13px;background:linear-gradient(#DC2626,rgba(220,38,38,.25));margin-top:-1px}
 .f3d-pin.dim{opacity:.3}
+.f3d-pin.dn{padding-bottom:11px}
+.f3d-pin.dn .pn{animation:none}
+.f3d-pin.dn b{min-width:0;height:auto;border-radius:6px;border-width:1.5px;padding:1px 6px 2px;font:800 11px/1.3 'Sarabun',system-ui,sans-serif;white-space:nowrap}
+.f3d-pin.dn i{height:8px}
 @keyframes f3dBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .f3d-sos{width:0;height:0}
 .f3d-sos .ry{position:absolute;left:0;top:0;transform:scaleY(var(--sy,.6))}
@@ -141,7 +145,7 @@ const CSS = `
 .f3d-bot{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .f3d-w{flex:0 0 auto;height:34px;border-radius:10px;background:rgba(255,255,255,.96);border:1.5px solid #E2E8F0;display:flex;align-items:center;gap:6px;padding:0 9px 0 5px;font:800 11.5px 'Sarabun',system-ui,sans-serif;color:#0F172A;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(30,58,138,.12)}
 .f3d-w .ic{min-width:21px;height:21px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font:900 11px/1 Arial,sans-serif;color:#fff;background:#DC2626;padding:0 3px}
-.f3d-w.warn .ic{background:#EA580C}.f3d-w.off .ic{background:#4B5563}
+.f3d-w.warn .ic{background:#EA580C}.f3d-w.off .ic{background:#4B5563}.f3d-w.down{border-color:#FCA5A5;background:#FEF2F2}.f3d-w.down .x{color:#B91C1C}
 .f3d-w .m{font-family:'Courier New',monospace;font-weight:900}
 .f3d-w .x{font-size:10.5px;color:#64748B;font-weight:800}
 .f3d-w .s{font-size:12px}
@@ -295,12 +299,12 @@ function roleColors(st, sos, dim) {
   const key = st + (sos ? 's' : '') + (dim ? 'd' : '');
   let o = _rc.get(key);
   if (o) return o;
-  const off = st === 'off', pend = st === 'pend';
+  const off = st === 'off', pend = st === 'pend', down = st === 'down';
   const hex = {
-    st: st === 'good' ? COL.good : st === 'warn' ? COL.warn : off ? COL.off : COL.pend,
-    lamp: sos ? COL.lampSos : st === 'good' ? COL.lampGood : st === 'warn' ? COL.lampWarn : pend ? COL.lampPend : COL.lampOff,
-    body: off ? COL.bodyOff : COL.body,
-    blue: off ? COL.blueOff : pend ? COL.steel : COL.blue,
+    st: st === 'good' ? COL.good : st === 'warn' ? COL.warn : off ? COL.off : down ? COL.down : COL.pend,
+    lamp: sos ? COL.lampSos : st === 'good' ? COL.lampGood : st === 'warn' ? COL.lampWarn : pend ? COL.lampPend : down ? COL.lampDown : COL.lampOff,
+    body: off ? COL.bodyOff : down ? COL.bodyDown : COL.body,
+    blue: off ? COL.blueOff : pend ? COL.steel : down ? COL.blueDown : COL.blue,
     steel: off ? COL.steelOff : COL.steel,
     glass: off ? COL.glassOff : COL.glass,
     scr: off ? 0x111827 : COL.scr,
@@ -878,7 +882,7 @@ export function create(host, opts = {}) {
     const want = new Map();
     for (const m of machines) {
       if (m !== byId.get(m.id)) continue;
-      const d = P.mc[m.id]; const n = d && d.ppl ? Math.min(3, d.ppl.length) : 0;
+      const d = P.mc[m.id]; const n = d && d.ppl && d.st !== 'down' ? Math.min(3, d.ppl.length) : 0;   // ★ v4.14 เครื่องเสีย = ไม่มีคนยืนเดินเครื่อง
       for (let k = 0; k < n; k++) want.set(m.id + '#' + k, m.spots[k]);
     }
     const now = performance.now();
@@ -948,6 +952,7 @@ export function create(host, opts = {}) {
       case 'top': return !!(d.top || (d.ln && P.lineTop && P.lineTop[d.ln]));
       case 'warn': return d.st === 'warn';
       case 'off': return d.st === 'off';
+      case 'down': return d.st === 'down';
       case 'sos': return !!d.sos;
       case 'pend': return d.st === 'pend';
       default: return true;
@@ -963,7 +968,9 @@ export function create(host, opts = {}) {
       const d = m.data, dim = filter !== 'all' && !matchFilter(d, m.id);
       m.lblDirty = true;
       if (m.lblOn) paintLabel(m);                 // ป้ายที่โชว์อยู่ = เขียนใหม่ทันที · ที่เหลือเขียนตอนได้โชว์
-      if (d.top) { const e = el('div', 'f3d-pin' + (dim ? ' dim' : ''), `<div class="pn"><b>${d.top}</b><i></i></div>`); addCss(e, m.cx, m.ymax + 3, m.cz, 1); }
+      // ★ v4.14 🔧 เครื่องเสีย: ป้ายแดงเลขเครื่อง + "เสีย" ขึ้นเสมอทุกระดับซูม (แม้ซ่อนป้ายชื่อ) — แทนป้ายเลขเครื่องปกติและหมุด TOP
+      if (d.st === 'down') { const e = el('div', 'f3d-pin dn' + (dim ? ' dim' : ''), `<div class="pn"><b>${esc(m.id)} · ${esc(S.downShort || 'down')}</b><i></i></div>`); addCss(e, m.cx, m.ymax + 2, m.cz, 1); }
+      else if (d.top) { const e = el('div', 'f3d-pin' + (dim ? ' dim' : ''), `<div class="pn"><b>${d.top}</b><i></i></div>`); addCss(e, m.cx, m.ymax + 3, m.cz, 1); }
       if (d.sos) {
         const e = el('div', 'f3d-sos', '<div class="ry"><div class="r"></div><div class="r r2"></div></div>'); e._m = m;
         addCss(e, m.cx, .6, m.cz); lay.sos.push(e);
@@ -1014,6 +1021,7 @@ export function create(host, opts = {}) {
     for (const m of machines) {
       if (!m.label) continue;
       const d = m.data || {};
+      if (d.st === 'down' && m.id !== selId) continue;                 // ★ v4.14 มีป้ายแดงอยู่แล้ว (renderOverlays)
       let pr = m.id === selId ? 0 : d.top ? 1 : d.sos ? 2 : d.st === 'warn' ? 3 : d.st === 'good' ? 4 : d.st === 'off' ? 5 : 6;
       if (!showLbl && pr) continue;                                    // 📛 ซ่อนป้ายชื่อ: เหลือแค่เครื่องที่แตะเลือก
       if (filter !== 'all') { if (!matchFilter(d, m.id) && pr) continue; if (pr) pr = 2.5; }
@@ -1101,12 +1109,12 @@ export function create(host, opts = {}) {
 
   /* ── ตัวกรองสถานะ + ค้นหาเลขเครื่อง ── */
   function counts() {
-    const c = { all: 0, top: 0, warn: 0, off: 0, sos: 0, pend: 0 };
+    const c = { all: 0, down: 0, top: 0, warn: 0, off: 0, sos: 0, pend: 0 };
     const seen = new Set();
     for (const m of machines) {
       if (seen.has(m.id)) continue; seen.add(m.id);
       const d = m.data || {}; c.all++;
-      if (d.st === 'warn') c.warn++; else if (d.st === 'off') c.off++; else if (d.st === 'pend') c.pend++;
+      if (d.st === 'warn') c.warn++; else if (d.st === 'off') c.off++; else if (d.st === 'pend') c.pend++; else if (d.st === 'down') c.down++;
       if (d.sos) c.sos++;
       if (d.top) c.top++;
     }
@@ -1115,7 +1123,7 @@ export function create(host, opts = {}) {
   }
   function renderChips() {
     const c = counts(), F_ = S.filters || {};
-    const defs = [['all', '🏭'], ['top', '🔥'], ['warn', '🟠'], ['off', '⚫'], ['sos', '🆘'], ['pend', '⏳']];
+    const defs = [['all', '🏭'], ['down', '🔧'], ['top', '🔥'], ['warn', '🟠'], ['off', '⚫'], ['sos', '🆘'], ['pend', '⏳']];
     if (filter !== 'all' && !c[filter]) filter = 'all';
     chipsEl.innerHTML = defs.filter(([k]) => k === 'all' || c[k] || filter === k).map(([k, ic]) =>
       `<button type="button" class="f3d-c${filter === k ? ' on' : ''}" data-f="${k}">${ic} ${esc(F_[k] || k)} <span class="n">${c[k]}</span></button>`).join('');
@@ -1154,13 +1162,14 @@ export function create(host, opts = {}) {
     for (const m of machines) {
       if (seen.has(m.id)) continue; seen.add(m.id);
       const d = m.data || {};
-      if (d.top) items.push({ id: m.id, cls: '', ic: d.top, x: d.oae == null ? '' : (d.oae * 100).toFixed(1) + '%', ord: d.top, sos: d.sos });
+      if (d.st === 'down') items.push({ id: m.id, cls: 'down', ic: '🔧', x: S.downShort || 'down', ord: -1, sos: d.sos });   // ★ v4.14 ขึ้นก่อน TOP
+      else if (d.top) items.push({ id: m.id, cls: '', ic: d.top, x: d.oae == null ? '' : (d.oae * 100).toFixed(1) + '%', ord: d.top, sos: d.sos });
     }
     const rest = [];
     for (const m of machines) {
       if (!seen.delete(m.id)) continue;
       const d = m.data || {};
-      if (d.top) continue;
+      if (d.top || d.st === 'down') continue;
       if (d.st === 'warn') rest.push({ id: m.id, cls: 'warn', ic: '!', x: d.oae == null ? '' : (d.oae * 100).toFixed(1) + '%', ord: 100 + (d.oae || 0), sos: d.sos });
       else if (d.st === 'off') rest.push({ id: m.id, cls: 'off', ic: '■', x: S.offShort || 'off', ord: 1000 });
     }
@@ -1516,7 +1525,7 @@ export function create(host, opts = {}) {
     if (p.layoutKey !== layoutKey || !lay) {
       if (tl) { tlPlay(false); tl = null; tlEl.classList.remove('on'); tlEl.innerHTML = ''; }
       const had = !!lay, tok = ++relayTok;
-      const go = async () => {
+      const run = async () => {
         if (tok !== relayTok || disposed) return;
         filter = 'all'; qIn.value = '';
         building = true;
@@ -1531,6 +1540,8 @@ export function create(host, opts = {}) {
         if (had) setTimeout(() => fadeEl.classList.remove('on'), 60);
         kick();
       };
+      // ★ v4.14 สร้างฉากล้ม (เช่น context หายกลางทาง) = ให้แอปสร้างใหม่ — เดิมเป็น Promise ค้าง: แถบแดงบนหน้าแอป + ผังหมุนรอตลอดไป
+      const go = () => run().catch(e => { console.warn('[3d] build', e); building = false; if (!disposed && opts.onFail) opts.onFail('fail'); });
       layoutKey = p.layoutKey;
       if (had) { fadeEl.classList.add('on'); setTimeout(go, 200); } else go();
       return;
