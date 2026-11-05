@@ -1332,6 +1332,7 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mpv-rz.dns{background:#F8FAFC;box-shadow:none;border-style:dashed;padding:3px 9px}
 .mpv-rz.dns b{font-size:12.5px;font-weight:800;color:#475569}
 .mpv-rz.dns small{color:#15803D;font-weight:800}
+.mpv-rz.dns small.cq{color:#475569;font-weight:700}
 .mpv-rz.dn.grp{flex-direction:row;flex-wrap:wrap;gap:0 4px}
 .mbd-dt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font-size:12px;color:#334155;line-height:1.6}
 /* ป๊อปอัปเครื่อง: ข้อมูลเครื่อง + ลงยอดวันนี้ + คิวทั้งหมด */
@@ -3347,7 +3348,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.14</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.15</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11718,7 +11719,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.14":"Production Record + KPI · v4.14",
+"ระบบบันทึกผลิต + KPI · v4.15":"Production Record + KPI · v4.15",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -29555,6 +29556,7 @@ function mpDefaults() {
     mcHours: true, mcHoursDays: 28,   // ★ v4.00 ชั่วโมงเดินจริงของแต่ละเครื่อง (WT ที่ลงยอด N วันล่าสุด) — เครื่องที่แทบไม่มีคนเดินได้งานน้อยลง
     batchDays: 14,               // ★ v3.89 ล็อตทยอยผลิต: ขั้นก่อนหน้าที่ยังมีคนลงยอดในกี่วัน = ยังทำอยู่ (ไม่ข้าม)
     holeBack: true,              // ★ v4.09 ขั้นที่ถูกข้ามไป (ยังไม่มียอดเลย ทั้งที่ขั้นหลังมียอดแล้ว) = วางแผนกลับมาทำก่อน
+    closePct: 90,                // ★ v4.15 ผลิตได้ + Scrap ถึงกี่ % ของยอด Lot = ถือว่าจบ Process นั้น แผนไปขั้นถัดไป (100 = ปิด)
     learnOrder: true,            // ★ v4.14 ลำดับ Process ตามการผลิตจริงล่าสุดของเบอร์นั้น (ไม่มีประวัติ = ตาม Master valve)
     finDays: PLAN_FIN_DAYS };    // ★ v3.84 Lot ที่เสร็จก่อนวันขายเกินกี่วัน = ขายรอบก่อนไปแล้ว (ดู planLotAlloc)
 }
@@ -29850,20 +29852,33 @@ function mpJobs(S, ctx) {
       if (d >= nowCut) { const vf = k.slice(0, k.indexOf('::')) + '|' + f, x = vfNow.get(vf); if (!x || key >= x.key) vfNow.set(vf, { key, m: mm.id }); }
     }
   };
-  for (const r of filterVsmPeer(_wipProdSrc())) {
+  const prodRows = filterVsmPeer(_wipProdSrc());
+  for (const r of prodRows) {
     const v = String(r.valve_no || r.valveNo || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
     const f = mpFam(r.current_process || r.currentProcess); if (!f) continue;
     const o = recsByJob[k] = recsByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.quantity) || 0);
     seen(k, f, String(r.shift_date || r.timestamp || '').slice(0, 10), r.machine_id || r.machineId, r.shift_type);
   }
+  const scrapRows = new Map();   // ★ v4.15 แถว KPI ที่มี Scrap → Process ที่แถวนั้นลงยอด (ดู scrapByJob)
   for (const r of filterVsmPeer(_wipKpiSrc())) {
     const v = String(r.valve_no || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
-    const f = mpFam(r.last_process); if (!f) continue;
+    const f = mpFam(r.last_process), sc = Number(r.scrap) || 0;
+    if (sc > 0) scrapRows.set(r.record_id || r, { k, sc, fams: new Set(f ? [f] : []) });
+    if (!f) continue;
     const o = kpiByJob[k] = kpiByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.opr) || 0);
     seen(k, f, String(r.shift_date || r.record_date || '').slice(0, 10), r.machine_id, r.shift_type);
   }
+  /* ★ v4.15 Scrap ต่อ ล็อต × Process — แถว KPI 1 แถวผูกกับ Process จริงผ่าน prod record (kpi_record_id):
+     KPI ลง "TOP&HOD" แต่ prod ลง HOD (วัดจริง 6/11: 504 แถว) · เลือกหลาย Process ในการลงครั้งเดียว (22 แถว) → นับ Scrap ให้ทุก Process ของแถวนั้น */
+  for (const r of prodRows) {
+    const x = r.kpi_record_id && scrapRows.get(r.kpi_record_id); if (!x) continue;
+    const f = mpFam(r.current_process || r.currentProcess); if (f) x.fams.add(f);
+  }
+  const scrapByJob = {};
+  for (const x of scrapRows.values()) { const o = scrapByJob[x.k] = scrapByJob[x.k] || {}; for (const f of x.fams) o[f] = (o[f] || 0) + x.sc; }
+  const closeP = S.closePct != null && S.closePct !== '' ? +S.closePct : 90, closeF = closeP > 0 && closeP < 100 ? closeP / 100 : 0;
   const batchCut = _mpAddDays(S.start, -Math.max(0, +S.batchDays || 0));
   /* ★ v4.09 ล็อตอื่นของเบอร์เดียวกันที่ "ผลิตจบแล้ว" (มียอด FG / ขั้นสุดท้ายของ VSM4 หรือกดจบงาน) — ใช้ตัดสินว่าขั้นที่ว่างเป็นขั้นที่หน้างานไม่ทำอยู่แล้วหรือเปล่า
      คิดเฉพาะเบอร์ที่มีช่องว่างให้ตัดสิน (สร้างดัชนีครั้งเดียวต่อรอบ) · ไม่นับล็อตตัวเอง */
@@ -29889,7 +29904,7 @@ function mpJobs(S, ctx) {
   };
   const raw = [];
   if (S.incWip) for (const it of (b.wip.items || [])) {
-    raw.push({ kind: 'wip', valve: it.valve, lot: it.lot, customer: it.customer, qty: +it.qty || 0,
+    raw.push({ kind: 'wip', valve: it.valve, lot: it.lot, customer: it.customer, qty: +it.qty || 0, base: +it.wipIn || +it.qty || 0,   // ★ v4.15 base = ยอดของล็อตก่อนหัก Scrap
       total: Math.max(0, (+it.wipIn || +it.qty || 0) - (+it.scrap || 0)), recv: String(it.date || '').slice(0, 10), curProc: it.curProc || '' });
   }
   if (S.incIn) {
@@ -29929,9 +29944,10 @@ function mpJobs(S, ctx) {
     /* ★ v4.11 (ผู้ใช้ 4/11 ข้อ 1 · VV4690A0) ยอด 🔑 Admin = Admin ยืนยันว่าขั้นนั้นผลิตแล้ว (พนักงานไม่ได้ลงยอด) → แผนนับเป็นยอดผลิตของขั้นนั้น
        เดิม: นับเฉพาะยอดพนักงาน → VV4690A0 Lot 2606S070043 มี FG / QC ยอด Admin ครบ แต่แผนยังวาง FG 547 บน G-262
        พนักงานลงยอดขั้นนั้นเมื่อไหร่ = ใช้ยอดพนักงาน (กติกาเดียวกับหน้าค้นหา Process) · KPI / Output / Dashboard ยังไม่นับยอด Admin เหมือนเดิม */
-    const admQ = pfAdmOfJob(j.valve, j.lot);
+    const admQ = pfAdmOfJob(j.valve, j.lot), scrF = scrapByJob[j.k] || {};
     for (const st of j.steps) {
       st.done = Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
+      st.scrap = scrF[st.fam] || 0;
       const aq = st.done > 0 ? null : admQ[_procCanon(String(st.proc).trim())];
       if (aq && aq.qty > 0) { st.done = aq.qty; st.adm = true; }
     }
@@ -29946,9 +29962,26 @@ function mpJobs(S, ctx) {
     }
     /* ★ v3.87 (ผู้ใช้ 18/10) เศษที่เหลือ ≤ max(5, 2%) ของล็อต = ถือว่าจบขั้นนั้นแล้ว — กติกาเดียวกับแผนขาย (planTol)
        เดิม < max(5, 1%) → V77868A0 Lot 2607S070425 รับเข้า 595 · VET 586 → วาง VET 9 ตัวบน G-2029 (วัดจริง 18/10: 40 ขั้นแบบนี้) */
+    /* ★ v4.15 (ผู้ใช้ 6/11) "ยอดที่ผลิตได้น้อยกว่า Order ไม่เกิน 10% = ถือว่า Process นั้นจบ วางแผน Process ถัดไปเลย · คิด Scrap ด้วย: 920 Scrap 20 = ผลิตไปแล้ว 940"
+       VF1345 ยอด 1,000: SSG 950 จบ · TOP 930 จบ · แผนเริ่มที่ HOD (ยอดดี + Scrap ของขั้นนั้นเอง เทียบกับยอด Lot ก่อนหัก Scrap · ถึง 90% พอดี = จบ)
+       เดิม: เหลือเกิน max(5, 2%) ยังวางเศษนั้นต่อ → VV1908A0 COT 1,000 จาก 1,065 ยังวาง COT 64 ชิ้นบน G-235
+       ขั้นถัดไปวางเท่าที่ผ่านมาจริง (cut = ส่วนที่ตัดทิ้ง): VV7240M0 รับเข้า 1,451 · FG 1,370 จบ → ขั้นถัดไป 1,370 ไม่ใช่ 1,451
+       — ไม่งั้นของที่ไม่มีอยู่จริงค้างเป็นเศษขั้นท้าย ๆ ของล็อตที่เสียทีละนิดหลายขั้นจนรวมเกิน 10%
+       ขั้นที่มียอดไม่ถึงเกณฑ์เอง แต่ขั้นหลังถึงแล้ว = ผ่านแล้ว ตามกติกา v3.89 ด้านล่าง · closePct 100 = ปิดกติกานี้ (แผนเท่าเดิมทุกล็อต) */
+    const tolJ = planTol(j.total), baseJ = +j.base || j.total;
+    let cut = 0, later = 0;
+    const scrSeen = new Set();
+    for (const st of j.steps) if (!scrSeen.has(st.fam)) { scrSeen.add(st.fam); later += st.scrap || 0; }
+    scrSeen.clear();
     for (const st of j.steps) {
-      let need = Math.max(0, Math.round(j.total - st.effDone));
-      if (need <= planTol(j.total)) need = 0;
+      if (!scrSeen.has(st.fam)) { scrSeen.add(st.fam); later -= st.scrap || 0; }   // later = Scrap ของขั้นถัดจากนี้ (j.total หักไปแล้ว แต่ยังไม่ได้เสียที่ขั้นนี้)
+      st.avail = Math.max(0, Math.round(j.total - cut));
+      let need = Math.max(0, Math.round(j.total - cut - st.effDone));
+      const made = st.done + (st.scrap || 0);
+      if (closeF && made > 0 && made >= baseJ * closeF - 1e-9) {
+        if (need > 0) { cut += Math.max(0, Math.round(j.total + later - cut - st.effDone)); need = 0; }
+        if (baseJ - made > tolJ) st.closed = { made, base: baseJ, pct: closeP };   // ขาดจากยอด Lot ชัดเจน = บอกบนหน้าแผน (ขาดแค่เศษ max(5, 2%) ไม่ต้องบอก)
+      } else if (need <= tolJ) need = 0;
       st.need = need;
     }
     /* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 4) แผนเริ่มที่ "Process ปัจจุบัน" ของล็อต = ขั้นไกลสุดที่มียอดผลิตแล้ว (ตัวเดียวกับที่หน้าติดตามงาน/ตารางแผนบอก)
@@ -29980,7 +30013,6 @@ function mpJobs(S, ctx) {
              'opt'  ล็อตที่ผลิตจบแล้วของเบอร์เดียวกันส่วนใหญ่ไม่ได้ทำขั้นนี้ (≥ MP_HOLE_MIN ล็อต) = Master มีขั้นนี้แต่หน้างานไม่ทำ เช่น VF1161M0 UND (ทำ 1 จาก 74 ล็อต)
            วัดจริง 3/11: 225 ล็อตที่กำลังผลิต → วางกลับมาทำ 56 ล็อต (VV1908A0 · VV4661A0 COPY ฯลฯ) · ช่องว่างแบบอื่น 59 ล็อต (แผนเท่าเดิม) */
         if (S.holeBack !== false && Math.round(j.total) > tol) {
-          const need = Math.round(j.total);
           let ev = null;
           for (let i = 0; i < front; i++) {
             const s = j.steps[i];
@@ -29993,14 +30025,14 @@ function mpJobs(S, ctx) {
             ev = ev || finOf(j);
             const did = ev.did(s.fam);
             if (ev.n >= MP_HOLE_MIN && did < ev.n * 0.5) { s.gap = 'opt'; s.gapN = [did, ev.n]; continue; }
-            if (mugSw) { s.need = need; delete s.passed; continue; }
-            s.hole = true; s.need = need; delete s.passed;
+            if (mugSw) { s.need = s.avail; delete s.passed; continue; }   // ★ v4.15 s.avail = ทั้งล็อต หักส่วนที่ตัดทิ้งของขั้นก่อนหน้า
+            s.hole = true; s.need = s.avail; delete s.passed;
           }
           const hs = j.steps.filter(s => s.hole);
           if (hs.length) j.holes = hs.map(s => s.proc);
         }
         j.front = front; j.from = from;
-        j.passedN = j.steps.slice(0, from).filter(s => s.passed > 0).length;
+        j.passedN = j.steps.slice(0, from).filter(s => s.passed > 0 || s.closed).length;
       }
     }
     const lm = mcByJob[j.k];
@@ -31295,6 +31327,9 @@ function _mpvRouteBox(res, W, qn) {
     <div class="mpv-rbh"><b>🧭 ${TT('เส้นทางผลิต', 'Production route')}</b><small>${nn(jobs.length)} ${TT('ล็อต', 'lots')}${zs.size ? ` · ${TT('ผ่าน', 'across')} ${[...zs].sort().map(escapeHtml).join(' · ')}` : ''}${W.day != null ? ` · ${TT('กรอบหนา = ทำ', 'bold = runs')} ${escapeHtml(W.label)}` : ''}${split ? ` · ${TT('แบ่ง 1/2 + 2/2 = ล็อตใหญ่ ทำพร้อมกัน 2 เครื่อง แบ่งจำนวนกัน', 'split 1/2 + 2/2 = a big lot run on 2 machines at once')}` : ''} · ${TT('แตะเครื่อง = ไปที่การ์ด', 'tap a machine to jump')}</small></div>
     ${rows}${btn}</section>`;
 }
+/* ★ v4.15 ขั้นที่ถือว่าจบตามกติกา ผลิตได้ + Scrap ≥ % ของยอด Lot (ดู st.closed ใน mpJobs) — ตัวเลขสั้นบนชิป + ข้อความเต็ม */
+const _mpvCloseQ = s => `${nn(s.closed.made)}/${nn(s.closed.base)}`;
+const _mpvCloseTip = s => `${TT('ผลิต', 'made')} ${nn(s.done)}${s.scrap ? ` + Scrap ${nn(s.scrap)} = ${nn(s.closed.made)}` : ''} ${TT('จาก', 'of')} ${nn(s.closed.base)} ${TT('ชิ้น', 'pcs')} (≥ ${s.closed.pct}%) — ${TT('ถือว่าจบ แผนไม่วางส่วนที่เหลือ', 'counts as done, the rest is not planned')}`;
 /* opt.actual = ขั้นที่ผ่านแล้วบอกเครื่องที่ลงยอดจริงด้วย · opt.cur = งานที่เลือก (กรอบหนา) — ★ v4.13 กล่องเส้นทางบนกระดาน */
 function _mpvRouteZ(j, res, W, zOf, opt) {
   const cal = res.cal, out = [], dd = t => _mpDW(cal.dateAt(t));
@@ -31307,7 +31342,7 @@ function _mpvRouteZ(j, res, W, zOf, opt) {
   const bySi = new Map();
   for (const a of (j.assign || [])) { if (!bySi.has(a.si)) bySi.set(a.si, []); bySi.get(a.si).push(a); }
   let done = [];
-  const flush = () => { if (done.length) out.push(`<span class="mpv-rz dn" title="${TT('ทำครบแล้ว', 'done')}">✓ ${done.join(' · ')}</span>`); done = []; };
+  const flush = () => { if (done.length) out.push(`<span class="mpv-rz dn" title="${TT('ทำครบแล้ว', 'done')}"><span>✓ ${done.join(' · ')}</span></span>`); done = []; };   // ★ v4.15 ห่อ span เดียว: ชิปเป็น flex แนวตั้ง — ขั้นที่มีป้ายย่อยไม่แยกบรรทัด
   // ★ v4.09 ขั้นที่ถูกข้ามไป (ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด) = ⏪ กลับมาทำ — แผนวางให้ทำก่อนขั้นที่เหลือ
   const hTip = s => s.hole ? ' · ⏪ ' + TT('ข้ามไป — ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด ต้องกลับมาทำก่อน', 'skipped — a later step has output but this one has none, so it is done first') : '';
   const hPre = s => s.hole ? '⏪ ' : s.mugSw ? '🔁 ' : '';   // ★ v4.11 🔁 = สลับลำดับตามคิวเครื่อง MUG
@@ -31327,10 +31362,10 @@ function _mpvRouteZ(j, res, W, zOf, opt) {
     if (!(s.need > 0) && doneM && !s.gap && !s.adm) {
       flush();
       const L = [...(doneM.get(_procCanon(String(s.proc).trim())) || [])];
-      out.push(`<span class="mpv-rz dns" title="${escapeHtml(s.proc + ' · ' + TT('ผ่านแล้ว · เครื่องที่ลงยอดจริง', 'done · machines that recorded it') + (L.length ? ': ' + L.join(', ') : ''))}"><small>✓ ${escapeHtml(s.proc)}</small><b>${L.length ? L.slice(0, 2).map(escapeHtml).join(' + ') + (L.length > 2 ? ` +${L.length - 2}` : '') : TT('ผ่านแล้ว', 'done')}</b></span>`);
+      out.push(`<span class="mpv-rz dns" title="${escapeHtml(s.proc + ' · ' + TT('ผ่านแล้ว · เครื่องที่ลงยอดจริง', 'done · machines that recorded it') + (L.length ? ': ' + L.join(', ') : '') + (s.closed ? ' · ' + _mpvCloseTip(s) : ''))}"><small>✓ ${escapeHtml(s.proc)}</small><b>${L.length ? L.slice(0, 2).map(escapeHtml).join(' + ') + (L.length > 2 ? ` +${L.length - 2}` : '') : TT('ผ่านแล้ว', 'done')}</b>${s.closed ? `<small class="cq">${_mpvCloseQ(s)}</small>` : ''}</span>`);
       return;
     }
-    if (!(s.need > 0)) { done.push(s.gap ? `<s title="${escapeHtml(gTip(s))}">${escapeHtml(s.proc)}</s>` : (s.adm ? `<span title="${TT('Admin เติมยอด — ถือว่าผลิตแล้ว', 'filled by Admin — counts as produced')}">🔑 ${escapeHtml(s.proc)}</span>` : escapeHtml(s.proc))); return; }
+    if (!(s.need > 0)) { done.push(s.gap ? `<s title="${escapeHtml(gTip(s))}">${escapeHtml(s.proc)}</s>` : (s.adm ? `<span title="${TT('Admin เติมยอด — ถือว่าผลิตแล้ว', 'filled by Admin — counts as produced')}${s.closed ? ' · ' + escapeHtml(_mpvCloseTip(s)) : ''}">🔑 ${escapeHtml(s.proc)}${s.closed ? ' ' + _mpvCloseQ(s) : ''}</span>` : s.closed ? `<span class="nw" title="${escapeHtml(_mpvCloseTip(s))}">${escapeHtml(s.proc)} ${_mpvCloseQ(s)}</span>` : escapeHtml(s.proc))); return; }
     flush();
     const A = (bySi.get(i) || []).slice().sort((x, y) => (x.part - y.part) || (x.s - y.s));   // แบ่งล็อต = 1/2 ก่อน 2/2
     if (A.length) {
@@ -32047,6 +32082,9 @@ function _mpvWhereLine(j) {
   if (f) b.push(`📍 ${TT('อยู่ที่', 'at')} <b>${escapeHtml(f.proc)}</b> (${nn(f.done)} ${TT('ชิ้น', 'pcs')})${j.passedN ? ` · ${TT('ขั้นก่อนหน้า', 'earlier')} ${j.passedN} ${TT('ขั้นถือว่าผ่านแล้ว', 'steps count as passed')}` : ''}${j.from < j.front ? ` · ${TT('ล็อตทยอยผลิต — ยังวางตั้งแต่', 'batch lot — planned from')} ${escapeHtml(j.steps[j.from].proc)}` : ''}`);
   // ★ v4.09 ขั้นที่ถูกข้ามไป → แผนให้กลับมาทำก่อน (ทำแล้วแต่ไม่ได้ลงยอด = Admin เติมยอดที่หน้าค้นหา Process)
   if (j.holes && j.holes.length) b.push(`<span class="mpv-holel">⏪ ${TT('ข้ามไป', 'skipped')} <b>${j.holes.map(escapeHtml).join(' · ')}</b> — ${TT('ยังไม่มียอด แผนให้กลับมาทำก่อน', 'no output yet, planned first')}</span>`);
+  // ★ v4.15 ขั้นที่ผลิตได้ + Scrap ถึงเกณฑ์ = ถือว่าจบ แผนไปขั้นถัดไป
+  const cl = (j.steps || []).filter(s => s.closed);
+  if (cl.length) b.push(`✓ ${TT('ถือว่าจบ', 'Counted as done')} <b>${cl.map(s => `${escapeHtml(s.proc)} ${_mpvCloseQ(s)}`).join(' · ')}</b> — ${TT('ผลิตได้ + Scrap', 'made + scrap')} ≥ ${cl[0].closed.pct}% ${TT('ของยอด Lot', 'of the lot')}`);
   if (j.curZone) b.push(`🏭 ${TT('ลงยอดล่าสุดที่', 'last recorded on')} ${escapeHtml(j.curMc || '')} · ${escapeHtml(j.curZone)}`);
   return b.join(' · ');
 }
@@ -32897,6 +32935,7 @@ function openMpvSettings() {
     <div class="fg-auto">
       ${num('mp_zone', S.zoneStick != null ? S.zoneStick : 40, TT('ย้าย Zone เมื่อจำเป็น: ยอมรอเครื่องใน Zone เดิมได้ถึง (ชม.)', 'Change zone only if the same-zone queue is later by more than (h)'), 1, TT('20 ชม. ≈ 1 วันทำงาน · 0 = ไม่สน Zone (แบบเดิม)', '20 h ≈ 1 working day · 0 = ignore zones (old way)'))}
       ${num('mp_batch', S.batchDays != null ? S.batchDays : 14, TT('ล็อตทยอยผลิต: ขั้นก่อนหน้ายังมีคนลงยอดภายใน (วัน) = ยังทำอยู่', 'Batch lots: earlier step recorded within (days) = still running'), 1)}
+      ${num('mp_closePct', S.closePct != null ? S.closePct : 90, TT('ถือว่าจบ Process เมื่อผลิตได้ + Scrap ถึง (% ของยอด Lot)', 'A process counts as done when made + scrap reaches (% of the lot)'), 1, TT('ยอด Lot = ยอดรับเข้า WIP IN 1.5 · เช่น รับเข้า 1,000 ผลิต 920 + Scrap 20 = 940 จบแล้ว แผนไปขั้นถัดไป · 100 = ปิดกติกานี้', 'Lot = WIP IN 1.5 intake · e.g. intake 1,000, made 920 + scrap 20 = 940 is done, the plan moves on · 100 = off'))}
     </div>
     <div class="mpv-cks">${ck('mp_learnOrder', S.learnOrder !== false, '🧠 ' + TT('ลำดับ Process ตามการผลิตจริงล่าสุดของเบอร์นั้น (ต้องมีอย่างน้อย 2 ล็อต · ไม่มีประวัติ = ตาม Master valve)', 'Process order follows the latest real runs of that valve (needs 2+ lots · no history = Master valve)'))}</div>
     <div class="mpv-cks">${ck('mp_holeBack', S.holeBack !== false, '⏪ ' + TT('ขั้นที่ถูกข้ามไป (ขั้นหลังมียอดแล้ว แต่ขั้นนี้ยังไม่มียอด = ช่องสีเหลืองในค้นหา Process) → วางแผนกลับมาทำก่อน', 'A skipped step (a later step has output, this one none = the yellow cell in Process search) → plan it first'))}</div>
@@ -33043,6 +33082,7 @@ function mpReadForm() {
   S.histCap = c('mp_hCap', S.histCap !== false);
   S.mcHours = c('mp_mcHours', S.mcHours !== false);
   S.holeBack = c('mp_holeBack', S.holeBack !== false);   // ★ v4.09
+  S.closePct = Math.max(50, Math.min(100, Math.round(n('mp_closePct', S.closePct != null ? S.closePct : 90))));   // ★ v4.15
   S.learnOrder = c('mp_learnOrder', S.learnOrder !== false);   // ★ v4.14
   S.extLagH = S.hours;
   return S;
@@ -33244,7 +33284,7 @@ async function mpExportExcel(res) {
       ['SL (SSG · SEMI · SRG · SFG)', `SL วาล์ว > SL เครื่อง = เข้าไม่ได้ · เลือกเครื่อง SL ใกล้ที่สุดก่อน${+S.slStick > 0 ? ` (ยอมรอได้ ${S.slStick} ชม. ต่อขั้น SL)` : ' (ปิด — ไม่สน SL ที่ใกล้ที่สุด)'} · เครื่องที่ตั้ง SL ${res.ctx.machines.filter(m => m.sl != null).length} เครื่อง`],   // ★ v3.94
       ['เครื่อง MUG', `${MP_MUG_PAIRS.map(p => p.join(' + ')).join(' · ')} — ล็อตที่มีหลายขั้นของ MUG ลงคู่เครื่องข้างกัน เครื่องละ Process (ยอมรอได้ ${S.mugStick != null ? S.mugStick : 80} ชม.) สลับลำดับตามคิว · แบบ COT เดียวกันติดกัน (${S.cotStick != null ? S.cotStick : 16} ชม.) · Type COT = Carbide ทำขั้น COT ที่ MUG ไม่ได้`],   // ★ v4.11
       ['ความจำเส้นทางจริง', `ลำดับ Process ${S.learnOrder !== false ? 'ตามการผลิตจริงของเบอร์นั้น (ตั้งแต่ 2 ล็อต · ไม่มีประวัติ = Master valve)' : 'ตาม Master valve'} · เครื่องที่เคยผลิตเบอร์นี้ ยอมรอได้ ${S.histStick} ชม. · เบอร์ที่ไม่เคยผลิต ดูเบอร์ SD ใกล้กัน ${S.simStick} ชม.`],
-      ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้าที่มียอด = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน${S.holeBack !== false ? ' · ขั้นก่อนหน้าที่ยังไม่มียอดเลย = ⏪ วางให้กลับมาทำก่อน' : ''}`],
+      ['เริ่มวางแผนที่', `Process ปัจจุบันของล็อต (ขั้นก่อนหน้าที่มียอด = ผ่านแล้ว) · ยกเว้นล็อตทยอยผลิตที่ยังลงยอดใน ${S.batchDays} วัน${S.holeBack !== false ? ' · ขั้นก่อนหน้าที่ยังไม่มียอดเลย = ⏪ วางให้กลับมาทำก่อน' : ''}${+S.closePct > 0 && +S.closePct < 100 ? ` · ผลิตได้ + Scrap ถึง ${S.closePct}% ของยอด Lot = จบขั้นนั้น` : ''}`],
       ['งานที่รวม', [S.incIn ? 'WIP IN 1.5' : '', S.incWip ? 'กำลังผลิต' : '', S.incOrder ? 'Order ที่ยังไม่มีของ (ตามวันคาดว่าเข้า)' : '', S.onlyPlan ? '(เฉพาะที่มีแผนขาย)' : ''].filter(Boolean).join(' + ')],
       ['ลูกค้า', S.cust || 'ทุกลูกค้า'],
       ['แผนที่ Admin วางเอง', S.usePins === false ? 'ไม่ใช้' : `ใช้ (${(res.pins && res.pins.size) || 0} รายการ · 📌 ในชีท 1–3)`],
