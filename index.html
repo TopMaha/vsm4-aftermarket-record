@@ -3348,7 +3348,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.16</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.17</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11719,7 +11719,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.16":"Production Record + KPI · v4.16",
+"ระบบบันทึกผลิต + KPI · v4.17":"Production Record + KPI · v4.17",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -29040,6 +29040,24 @@ function mpList(s) {
   const a = Array.isArray(s) ? s : String(s == null ? '' : s).split(/[\s,;]+/);
   return [...new Set(a.map(x => String(x).trim().toUpperCase()).filter(Boolean))];
 }
+/* ★ v4.17 รายการ Process ของเครื่อง — ชื่อ Process มีช่องว่างได้ (IND P' · TIP C" · COPY CUP · F. IND) จึงใช้ mpList ไม่ได้ (mpList ตัดทุกช่องว่าง)
+   ผู้ใช้ 6/11: H-221 กรอก IND P' แล้วขึ้นเป็น "IND, P'" · TIP C" จะแตกเป็น TIP + C" = ไม่มีเครื่องรับขั้น TIPC
+   ตัดที่ , ; ขึ้นบรรทัด · ก้อนที่มีช่องว่าง: ชื่อที่รู้จัก = คงทั้งก้อน · ทุกคำเป็นชื่อที่รู้จัก ("COT VET" ลืมใส่ ,) = แยก · นอกนั้นคงตามที่พิมพ์ */
+function mpProcList(s) {
+  const out = [];
+  let vocab = null;
+  for (const raw of String(s == null ? '' : s).split(/[,;\n]+/)) {
+    const t = raw.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').trim().replace(/\s+/g, ' ').toUpperCase();   // มือถือพิมพ์ ’ ” แทน ' "
+    if (!t) continue;
+    if (t.includes(' ')) {
+      vocab = vocab || new Set([...buildProcVocab()].map(p => String(p).toUpperCase()));
+      const words = t.split(' ');
+      if (!vocab.has(t) && words.every(w => vocab.has(w))) { out.push(...words); continue; }
+    }
+    out.push(t);
+  }
+  return [...new Set(out)];
+}
 function mpPatMatch(valve, pat) {
   const v = vKey(valve), p = String(pat || '').toUpperCase();
   if (!p) return false;
@@ -29660,7 +29678,7 @@ function mpContext(S) {
   const machines = [];
   for (const mc of mpVsm4Machines()) {
     const cap = capBy.get(mc.id) || null;
-    const explicit = cap ? mpList(cap.procs).map(mpFam).filter(Boolean) : [];
+    const explicit = cap ? mpProcList(cap.procs).map(mpFam).filter(Boolean) : [];
     const auto = mpAutoFams(mc, hist);
     const fams = new Set(explicit.length ? explicit : auto);
     const he = hist.effM.get(mc.id);
@@ -31998,7 +32016,7 @@ async function mpFloorApplySd(id, txt) {
 async function mpFloorAddProc(id, fam) {
   if (!state.adminUnlocked) { toast(TT('เฉพาะ Admin — ปลดล็อกที่หน้าตั้งค่าก่อน', 'Admin only — unlock in Settings first'), 'orange'); return; }
   const mc = _mpFloor && _mpFloor.res.ctx.mById.get(id), cap = _mcCaps.find(c => c.machine_id === id);
-  const cur = cap && mpList(cap.procs).length ? mpList(cap.procs) : (mc ? [...mc.fams] : []);
+  const cur = cap && mpProcList(cap.procs).length ? mpProcList(cap.procs) : (mc ? [...mc.fams] : []);
   if (!cur.map(mpFam).includes(fam)) cur.push(fam);
   const r = await mcCapsUpsert([{ ...(cap || { machine_id: id, zone: mc ? mc.zone : '' }), procs: cur.join(', ') }]);
   const [msg, col] = _mcCapSyncMsg(r);
@@ -35122,7 +35140,7 @@ function renderMcCaps() {
   const rows = list.map(c => {
     const mc = mcs.find(m => m.id === c.machine_id);
     const auto = mc ? mpAutoFams(mc, hist) : [];
-    const procs = mpList(c.procs).length ? `<b>${escapeHtml(mpList(c.procs).join(', '))}</b>` : `<span class="muted" title="${TT('อัตโนมัติ = Process ของเครื่อง + ที่เคยผลิตจริง', 'auto')}">⚙️ ${escapeHtml(auto.join(', ') || '-')}</span>`;
+    const procs = mpProcList(c.procs).length ? `<b>${escapeHtml(mpProcList(c.procs).join(', '))}</b>` : `<span class="muted" title="${TT('อัตโนมัติ = Process ของเครื่อง + ที่เคยผลิตจริง', 'auto')}">⚙️ ${escapeHtml(auto.join(', ') || '-')}</span>`;
     const rng = mpParseRanges(c.sd_ranges);
     return `<tr style="${c.active && !offSet.has(c.machine_id) ? '' : 'opacity:.55'}">
       <td><b>${escapeHtml(c.machine_id)}</b>${offTag(c.machine_id)}${dnTag(c.machine_id)}${mpIsMug(c.machine_id) ? ` <span class="tag tag-blue" style="font-size:9.5px" title="${TT('คู่เครื่องข้างกัน', 'neighbouring machine')} ${escapeHtml(_mpMugMate.get(c.machine_id))}">MUG</span>` : ''}${c.label ? ` <span class="tag tag-blue" style="font-size:9.5px">${escapeHtml(c.label)}</span>` : ''}${mc ? '' : ` <span class="tag tag-orange" style="font-size:9.5px" title="${TT('ไม่มีในรายการเครื่อง VSM4', 'not a VSM4 machine')}">?</span>`}${c._local ? ' <span title="ยังไม่ขึ้น Cloud">💾</span>' : ''}</td>
@@ -35168,7 +35186,7 @@ function openMcCapModal(id) {
     <div class="fr"><label>📐 SL ${TT('สูงสุดที่รับได้', 'max')} (SSG · SEMI · SRG · SFG)</label><input type="number" id="mcc_sl" step="0.01" min="0" inputmode="decimal" value="${(() => { const s = mpMcSl(c && c.machine_id, c); return s.sl != null ? s.sl : ''; })()}" placeholder="${TT('เช่น 100 · ว่าง = ไม่จำกัด', 'e.g. 100 · blank = no limit')}" oninput="_mccTest()">
       <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('วาล์ว SL มากกว่าค่านี้เข้าไม่ได้ (เท่ากันได้) · ว่าง = ไม่จำกัด', 'Valves with SL above this cannot run here (equal is OK) · blank = no limit')}${c && MP_SL_DEFAULT[c.machine_id] ? ` · ${TT('ค่าตั้งต้น', 'default')} ${MP_SL_DEFAULT[c.machine_id]}` : ''}</div></div>
     <div class="fr"><label>Process ${TT('ที่ทำได้', 'it can do')}</label><input type="text" id="mcc_procs" value="${v('procs')}" placeholder="${escapeHtml(TT('ว่าง = อัตโนมัติ', 'blank = auto') + (auto.length ? ' (' + auto.join(', ') + ')' : ''))}">
-      <div class="muted" style="font-size:10.5px;margin-top:2px">${TT('คั่นด้วย , เช่น COT, VET, RED · ว่าง = Process ของเครื่อง + ที่เคยผลิตจริง', 'comma separated · blank = machine process + history')}${auto.length ? ` → <b>${escapeHtml(auto.join(', '))}</b>` : ''}</div></div>
+      <div class="muted" style="font-size:10.5px;margin-top:2px">${TT(`คั่นด้วย , เช่น COT, VET, IND P' · ว่าง = Process ของเครื่อง + ที่เคยผลิตจริง`, `comma separated, e.g. COT, VET, IND P' · blank = machine process + history`)}${auto.length ? ` → <b>${escapeHtml(auto.join(', '))}</b>` : ''}</div></div>
     <div class="fr"><label>${TT('ผลิตเฉพาะเบอร์ (ถ้ามี)', 'Only these valves')}</label><textarea id="mcc_only" rows="2" placeholder="VF1349M0, VF1350M0 · ${TT('ใช้ * ได้ เช่น VF13*', '* wildcard ok')}" oninput="_mccTest()">${v('only_valves')}</textarea></div>
     <div class="fr"><label>${TT('ยกเว้นเบอร์', 'Except valves')}</label><textarea id="mcc_exc" rows="2" placeholder="VV7295M0, VV7296M1" oninput="_mccTest()">${v('except_valves')}</textarea></div>
     <div class="fg" style="gap:8px">
@@ -35220,7 +35238,7 @@ async function saveMcCap() {
   const mc = mpVsm4Machines().find(m => m.id === id);
   const c = {
     machine_id: id, zone: mc ? mc.zone : '', label: ($('mcc_label') || {}).value || '',
-    sd_ranges: mpRangesText(mpParseRanges(rngTxt)), procs: mpList(($('mcc_procs') || {}).value).join(', '),
+    sd_ranges: mpRangesText(mpParseRanges(rngTxt)), procs: mpProcList(($('mcc_procs') || {}).value).join(', '),
     only_valves: mpList(($('mcc_only') || {}).value).join(', '), except_valves: mpList(($('mcc_exc') || {}).value).join(', '),
     ct: parseFloat(($('mcc_ct') || {}).value) || null, remark: ($('mcc_rem') || {}).value || '', active: ($('mcc_on') || {}).checked ? 1 : 0,
   };
