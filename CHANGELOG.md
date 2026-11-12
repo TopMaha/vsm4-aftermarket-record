@@ -1,6 +1,6 @@
 # CHANGELOG — VSM Aftermarket / KPI Record
 
-## v4.20 — 2026-11-12 — ⛔ กัน Process ซ้ำใน Master Valve · ⏳ ผ่าน FG ≠ จบงาน (วางขั้นหลัง FG ต่อ) · 🆘 OAE < 75% ต้องกรอกสาเหตุ  ⏳ ยังไม่ deploy
+## v4.20 — 2026-11-12 — ⛔ กัน Process ซ้ำใน Master Valve · ⏳ ผ่าน FG ≠ จบงาน (วางขั้นหลัง FG ต่อ) · 🆘 OAE < 75% ต้องกรอกสาเหตุ  ✅ deployed (Pages 74973f2 · Worker ไม่เปลี่ยน)
 
 **ที่มา (ผู้ใช้ 12/11 + รูป V76827A0 Lot 2607S080067)**
 1. "เช็คระบบที่มี Process ซ้ำกัน 2 อัน เช่น SSG → TOP → HOD → VET → COPY → SSG — ขอรายการ Valve" → ตามมา: "ข้อ 1 ไม่ต้องแก้อะไร แค่เช็ค · หลังจากนี้ถ้ามีการเพิ่ม Master Valve ให้มีระบบป้องกัน · 12 Valve นี้จะแก้เอง"
