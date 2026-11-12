@@ -495,10 +495,26 @@ tr.hv-detail.hv-done>td{opacity:.55}
 /* ── ปุ่มพิมพ์ด้วยเสียง (ใช้ในกล่องขอความช่วยเหลือ OAE ต่ำ ตอนสรุปก่อนบันทึก) ── */
 .mic-btn{flex:0 0 auto;width:46px;min-height:38px;border:1.5px solid var(--blue-soft);background:var(--blue-light);border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .mic-btn:active{transform:scale(.95)}
+/* ★ v4.20 OAE < 75% — กล่องสาเหตุ (ต้องกรอก) + ปุ่มลัดปัญหา */
+.oae-help{margin-top:8px;background:#fff;border:1.5px dashed #FCA5A5;border-radius:8px;padding:8px}
+.oae-help.err{border:2px solid #DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.15)}
+.oae-hqs{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.oae-hq{font:inherit;font-size:12px;font-weight:700;line-height:1.25;min-height:32px;padding:5px 10px;border-radius:999px;border:1.5px solid #FECACA;background:#FFF5F5;color:#991B1B;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:left}
+.oae-hq[aria-pressed="true"]{background:#DC2626;border-color:#DC2626;color:#fff}
+.oae-hq[aria-pressed="true"]::before{content:'✓ '}
+.oae-hq:active{transform:scale(.97)}
+.oae-help-err{display:none;margin-top:5px;font-size:11.5px;font-weight:800;color:#DC2626}
+.oae-help.err .oae-help-err{display:block}
 .mic-btn.rec{background:#fee2e2;border-color:#ef4444;animation:micPulse 1s infinite}
 @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
 /* ── ตัวแก้ลำดับ Process ใน modal Valve (v3.7) — เปลี่ยน/ย้าย/ลบทีละตำแหน่ง ไม่ต้องลบทำใหม่ ── */
 .mseq-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+/* ★ v4.20 Process ซ้ำใน Master Valve */
+.mseq-row.dup .mseq-sel{border-color:#DC2626;background:#FEF2F2}
+.mseq-row.dup .mseq-n{background:#DC2626;color:#fff}
+.mseq-dupw{margin:0 0 8px;padding:8px 10px;border:1.5px solid #FCA5A5;background:#FEF2F2;color:#991B1B;border-radius:9px;font-size:12px;font-weight:700;line-height:1.55}
+.vm-dupw{margin-top:6px;padding:7px 10px;border:1.5px solid #FCA5A5;background:#FEF2F2;color:#991B1B;border-radius:9px;font-size:12px;font-weight:700;line-height:1.7}
+.vm-dupw button{font:inherit;font-size:11.5px;font-weight:800;margin:2px 3px 0 0;padding:2px 8px;border-radius:999px;border:1px solid #FCA5A5;background:#fff;color:#991B1B;cursor:pointer}
 .mseq-n{flex:0 0 auto;min-width:26px;height:26px;border-radius:50%;background:var(--blue-light);color:var(--blue);
   font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 .mseq-sel{flex:1;min-width:0;min-height:40px;padding:6px 8px;border:1.5px solid var(--border);border-radius:9px;
@@ -3365,7 +3381,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.19</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.20</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7591,14 +7607,17 @@ function planLotAlloc(b) {
     if (!q && isDone) q = jobFgQty(it.valve, it.lot);   // ★ v4.06 ผ่าน FG ทุกวัน (เดิม = ยอดตอนกดจบ)
     // date = วันที่ผ่าน FG จริง (ไม่ใช่วันที่ Admin กดจบ — กดย้อนหลังทีละมาก ๆ ได้)
     const f = String(it.date || it.moveDate || '').slice(0, 10);
+    /* ★ v4.20 (ผู้ใช้ 12/11 ข้อ 2) ผ่าน FG แต่ Master ยังมีขั้นผลิตต่อ (V76827A0: … FG › T/T › IND T" › COT › TL › SFG*2) = ยังไม่พร้อมขาย → กำลังผลิต อยู่ที่ขั้นแรกที่ยังไม่มียอด */
+    const left = isDone ? null : postFgLeft(it.valve, it.lot);
+    if (left && left.length) { add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: q, proc: procOccName(left[0]), prog: 1 + progOf(it.valve, procOccName(left[0])), recv: f, postFg: left }); continue; }
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: isDone ? 'done' : 'fg', qty: q, fin: f, proc: isDone ? 'DONE' : (it.curProc || 'FG'), prog: 2, recv: f });
   }
   const wipAll = (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || []);
   for (const it of wipAll) {
     const vk = vKey(it.valve); if (!byV.has(vk)) continue;
     // ★ v4.11 Admin เติมยอด FG ให้ล็อตนี้แล้ว = ผ่าน FG ตามแผน (ตรงกับตัววางแผนเครื่อง ที่ไม่วาง FG ให้ล็อตนี้อีก) — ไม่ใช่ยอด WIP OUT / Dashboard
-    const af = pfAdmOfJob(it.valve, it.lot).FG;
-    if (af) { add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'fg', qty: Number(it.qty) || 0, fin: af.date, proc: 'FG', prog: 2, recv: af.date }); continue; }
+    const af = pfAdmOfJob(it.valve, it.lot).FG;   // ★ v4.20 ยังมีขั้นผลิตหลัง FG (postFgLeft) = ยังกำลังผลิต ไม่ใช่ผ่าน FG
+    if (af && !postFgLeft(it.valve, it.lot).length) { add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'fg', qty: Number(it.qty) || 0, fin: af.date, proc: 'FG', prog: 2, recv: af.date }); continue; }
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: Number(it.qty) || 0, proc: it.curProc || '', prog: progOf(it.valve, it.curProc),
               recv: String(it.date || '').slice(0, 10), noIntake: it.basis === 'produced' });
   }
@@ -11736,7 +11755,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.19":"Production Record + KPI · v4.19",
+"ระบบบันทึกผลิต + KPI · v4.20":"Production Record + KPI · v4.20",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11807,6 +11826,7 @@ const I18N_X = {
 "รหัสไม่ถูกต้อง":"Wrong code","❌ รหัสไม่ถูกต้อง":"❌ Wrong code","❌ รหัสผ่านไม่ถูกต้อง":"❌ Wrong password",
 "📅 วันที่:":"📅 Date:","กะ:":"Shift:","เวลา:":"Time:","พนักงาน:":"Employee:","-- เวลา --":"-- time --",
 "🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)":"🆘 OAE below 75% — need any help? (optional)",
+"🆘 OAE ต่ำกว่า 75% — สาเหตุ / ต้องการให้ช่วยอะไร":"🆘 OAE below 75% — cause / help needed","* ต้องกรอก":"* required","⚠️ กรุณาเลือกหรือกรอกสาเหตุก่อนบันทึก":"⚠️ Pick or type a cause before saving","ปัญหาที่เกิดซ้ำๆ":"Recurring problem","วาล์วติดขัด":"Valve jammed","รองาน":"Waiting for work","แก้ไขเครื่องจักรเกี่ยวกับคุณภาพงาน":"Machine fix for part quality","เปลี่ยนรุ่น":"Model change","เปลี่ยน Tooling":"Tooling change","ปัญหาชุดโหลด":"Loader problem",
 "เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ / ต้องการกำลังคนเพิ่ม":"e.g. machine down waiting for technician / material shortage / need more manpower",
 "ตรวจสอบข้อมูลก่อนบันทึก":"Review before saving","✅ ยืนยันบันทึก":"✅ Confirm save",
 "กรุณากรอกชื่อผู้บันทึก":"Please enter the recorder's name","เลือกวันที่":"Pick a date",
@@ -22220,6 +22240,24 @@ function updShiftDetect() {
    FIX 9: SUBMIT SUMMARY MODAL — แสดงสรุปก่อน submit
    ============================================================ */
 const OAE_HELP_THRESHOLD = 0.75; // OAE ต่ำกว่านี้ → เปิดกล่องขอความช่วยเหลือ
+/* ★ v4.20 (ผู้ใช้ 12/11 ข้อ 3) OAE ต่ำกว่า 75% = ต้องกรอกสาเหตุ / ขอความช่วยเหลือก่อนบันทึก (เดิม "ไม่บังคับ")
+   + ปุ่มลัดตามปัญหาที่ผู้ใช้กำหนด: แตะ = เติมลงช่อง (คั่นด้วย " / ") · แตะซ้ำ = เอาออก · เลือกได้หลายข้อ · พิมพ์เอง / 🎤 พูดเพิ่มได้
+   เก็บเหมือนเดิมใน shifts[0].help (text) + tags = ปุ่มที่เลือก (นับสถิติปัญหาได้) */
+const OAE_HELP_QUICK = ['ปัญหาที่เกิดซ้ำๆ', 'วาล์วติดขัด', 'รองาน', 'แก้ไขเครื่องจักรเกี่ยวกับคุณภาพงาน', 'เปลี่ยนรุ่น', 'เปลี่ยน Tooling', 'ปัญหาชุดโหลด'];
+const _oaeHelpSegs = txt => String(txt || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
+function _oaeHelpSync(box) {     // สถานะปุ่มลัด = มีข้อความนั้นในช่องหรือยัง
+  const ta = box && box.querySelector('textarea'); if (!ta) return;
+  const segs = new Set(_oaeHelpSegs(ta.value));
+  box.querySelectorAll('.oae-hq').forEach(b => b.setAttribute('aria-pressed', segs.has(b.dataset.t) ? 'true' : 'false'));
+  if (ta.value.trim()) box.classList.remove('err');
+}
+function _oaeHelpPick(btn) {
+  const box = btn.closest('.oae-help'), ta = box && box.querySelector('textarea'); if (!ta) return;
+  const t = btn.dataset.t, segs = _oaeHelpSegs(ta.value), i = segs.indexOf(t);
+  if (i >= 0) segs.splice(i, 1); else segs.push(t);
+  ta.value = segs.join(' / ');
+  _oaeHelpSync(box);
+}
 function _showSubmitSummary(records, prodDate) {
   return new Promise(resolve => {
     const lowCount = records.filter(r => (+r.oae||0) < OAE_HELP_THRESHOLD).length;
@@ -22245,16 +22283,21 @@ function _showSubmitSummary(records, prodDate) {
           ${rec.lot ? `<span>Lot: <b>${escapeHtml(rec.lot)}</b></span>` : ''}
           ${(rec._linkProcs && rec._linkProcs.length) || rec.last_process ? `<span style="grid-column:1/-1">Process: <b>${escapeHtml(rec._linkProcs && rec._linkProcs.length ? rec._linkProcs.join(', ') : rec.last_process)}</b></span>` : ''}
         </div>
-        ${low ? `<div style="margin-top:8px;background:#fff;border:1.5px dashed #FCA5A5;border-radius:8px;padding:8px">
+        ${low ? `<div class="oae-help" id="_helpbox_${i}">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <label style="flex:1;font-size:11px;font-weight:800;color:#B91C1C;margin:0">🆘 OAE ต่ำกว่า 75% — ต้องการให้ช่วยอะไรไหม? (ไม่บังคับ)</label>
+            <label for="_help_${i}" style="flex:1;font-size:11px;font-weight:800;color:#B91C1C;margin:0">🆘 OAE ต่ำกว่า 75% — สาเหตุ / ต้องการให้ช่วยอะไร <span style="color:#DC2626">* ต้องกรอก</span></label>
             <button type="button" class="mic-btn" id="_help_${i}_mic"
               onpointerdown="voiceHoldStart(event,'_help_${i}','_help_${i}_mic')"
               onpointerup="voiceHoldEnd()" onpointerleave="voiceHoldEnd()" onpointercancel="voiceHoldEnd()"
               oncontextmenu="return false" style="touch-action:none;user-select:none;-webkit-user-select:none"
               title="กดค้างเพื่อพูด · ปล่อยมือ = หยุดและบันทึก (Push-to-Talk)" aria-label="พิมพ์ด้วยเสียง (กดค้างเพื่อพูด)">🎤</button>
           </div>
-          <textarea id="_help_${i}" rows="2" placeholder="เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ / ต้องการกำลังคนเพิ่ม" style="width:100%;padding:8px;border:1.5px solid #FCA5A5;border-radius:7px;font-family:inherit;font-size:13px;resize:vertical">${escapeHtml(existingHelp)}</textarea>
+          <div class="oae-hqs" role="group" aria-label="เลือกปัญหา (แตะได้หลายข้อ)">${OAE_HELP_QUICK.map(t => {
+            const on = _oaeHelpSegs(existingHelp).includes(t);
+            return `<button type="button" class="oae-hq" data-t="${escapeHtml(t)}" aria-pressed="${on}" onclick="_oaeHelpPick(this)">${escapeHtml(t)}</button>`;
+          }).join('')}</div>
+          <textarea id="_help_${i}" rows="2" placeholder="แตะเลือกด้านบน หรือพิมพ์เอง เช่น เครื่องเสีย รอช่าง / ขาดวัตถุดิบ" oninput="_oaeHelpSync(this.closest('.oae-help'))" style="width:100%;padding:8px;border:1.5px solid #FCA5A5;border-radius:7px;font-family:inherit;font-size:13px;resize:vertical">${escapeHtml(existingHelp)}</textarea>
+          <div class="oae-help-err" role="alert">⚠️ กรุณาเลือกหรือกรอกสาเหตุก่อนบันทึก</div>
         </div>` : ''}
       </div>`;
     }).join('');
@@ -22267,7 +22310,7 @@ function _showSubmitSummary(records, prodDate) {
         <span style="font-size:15px;font-weight:800">ตรวจสอบข้อมูลก่อนบันทึก</span>
         <span style="margin-left:auto;font-size:12px;opacity:.8">${records.length} record</span>
       </div>
-      ${lowCount ? `<div style="background:#FEF2F2;color:#B91C1C;font-size:12px;font-weight:700;padding:8px 16px;border-bottom:1px solid #FECACA">⚠️ มี ${lowCount} เครื่อง OAE ต่ำกว่า 75% — กรอกขอความช่วยเหลือได้ด้านล่าง</div>` : ''}
+      ${lowCount ? `<div style="background:#FEF2F2;color:#B91C1C;font-size:12px;font-weight:700;padding:8px 16px;border-bottom:1px solid #FECACA">⚠️ มี ${lowCount} เครื่อง OAE ต่ำกว่า 75% — ต้องกรอกสาเหตุ / ขอความช่วยเหลือก่อนบันทึก</div>` : ''}
       <div style="padding:14px;max-height:58vh;overflow-y:auto">
         ${rows}
       </div>
@@ -22284,17 +22327,36 @@ function _showSubmitSummary(records, prodDate) {
         const txt = ta.value.trim();
         if (!rec.shifts || !rec.shifts[0]) rec.shifts = [{}];
         if (txt) {
+          const segs = _oaeHelpSegs(txt), tags = OAE_HELP_QUICK.filter(t => segs.includes(t));   // ★ v4.20 ปุ่มลัดที่เลือก
           rec.shifts[0].help = {
             text: txt, status: 'open',
             by: (CURRENT_USER && CURRENT_USER.id) || OP || '',
             at: new Date().toISOString(),
+            ...(tags.length ? { tags } : {}),
           };
         }
       });
     };
+    // ★ v4.20 OAE < 75% ต้องมีสาเหตุทุกเครื่อง — ว่าง = ไม่บันทึก ชี้กล่องแรกที่ยังว่าง (✏️ แก้ไข ยังกดกลับไปแก้ได้เสมอ)
+    const missingHelp = () => {
+      let first = null;
+      records.forEach((rec, i) => {
+        const box = overlay.querySelector('#_helpbox_' + i), ta = overlay.querySelector('#_help_' + i);
+        if (!box || !ta) return;
+        const bad = !ta.value.trim();
+        box.classList.toggle('err', bad);
+        if (bad && !first) first = { box, ta };
+      });
+      if (first) {
+        first.box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        try { first.ta.focus({ preventScroll: true }); } catch (e) {}
+        toast('⚠️ OAE ต่ำกว่า 75% — กรุณาเลือกหรือกรอกสาเหตุก่อนบันทึก', 'orange');
+      }
+      return !!first;
+    };
     let _done = false;   // กัน double-tap/ghost-click บนปุ่มยืนยัน → resolve ครั้งเดียว
     const _ok = overlay.querySelector('#_sumOk');
-    _ok.onclick = () => { if (_done) return; _done = true; _ok.disabled = true; collectHelp(); overlay.remove(); resolve(true); };
+    _ok.onclick = () => { if (_done) return; if (missingHelp()) return; _done = true; _ok.disabled = true; collectHelp(); overlay.remove(); resolve(true); };
     overlay.querySelector('#_sumEdit').onclick = () => { if (_done) return; _done = true; overlay.remove(); resolve(false); };
   });
 }
@@ -26567,6 +26629,9 @@ function renderValveList() {
   if (hint) hint.innerHTML = grp === 'shared'
     ? `📦 ${TT('Valve Master รวม','Shared Valve Master')} · <b>VSM3 + VSM4</b> ${TT('ใช้ร่วมกัน','shared')} · <b>${inMaster.length}</b> ${TT('วาล์ว','valves')}`
     : `🔒 ${TT('Valve Master เฉพาะ','Valve Master for')} <b>${VSM_LABEL[grp] || grp}</b> · <b>${inMaster.length}</b> ${TT('วาล์ว','valves')}`;
+  /* ★ v4.20 (ผู้ใช้ 12/11) เบอร์ที่มี Process ซ้ำอยู่แล้วใน Master (ก่อนมีตัวกัน) — แตะเพื่อเปิดแก้ · แก้ครบแล้วแถบนี้หายเอง */
+  const vDup = inMaster.map(v => ({ v, d: procDupList(procsOf(v)) })).filter(x => x.d.length);
+  if (hint && vDup.length) hint.innerHTML += `<div class="vm-dupw">⛔ ${TT('Process ซ้ำในเส้นทาง', 'Repeated process in the route')} ${nn(vDup.length)} ${TT('เบอร์ — แก้ให้ชื่อไม่ซ้ำ (เช่น SSG*2) แล้วบันทึก · แตะเพื่อเปิด', 'valves — rename the later pass (e.g. SSG*2) and save · tap to open')}<br>${vDup.map(x => `<button type="button" onclick="openValveModal('${escapeHtml(x.v.valveNo)}')" title="${escapeHtml(procDupText(x.d))}">${escapeHtml(x.v.valveNo)} · ${escapeHtml(x.d.map(o => o.name).join(', '))}</button>`).join('')}</div>`;
   // นับจำนวน ID ต่อ valve
   const idCounts = {};
   for (const r of state.ids || []) {
@@ -26972,17 +27037,23 @@ let _mProcStore = { std: [], v1: [], v2: [] };
 function _mSeqRender() {
   const host = document.getElementById('m_seq'); if (!host) return;
   const isStd = _mProcTab === 'std';
-  host.innerHTML = _mProcSeq.length ? _mProcSeq.map((p, i) => {
+  // ★ v4.20 ตัวกัน Process ซ้ำ — แถวที่ซ้ำกรอบแดง + ข้อความเตือน · บันทึกไม่ได้จนกว่าจะแก้ (saveValve)
+  const dups = procDupList(_mProcSeq), dupAt = new Set(dups.flatMap(o => o.at));
+  // รอบที่ 2 ขึ้นไปของชื่อที่ซ้ำ → ใส่ชื่อ "ชื่อ*2" ไว้บนสุดของรายการ (แก้ได้ในแตะเดียว แม้ชื่อนั้นไม่มีในรายการมาตรฐาน เช่น TG*2)
+  const fixOf = {}; for (const o of dups) o.at.slice(1).forEach((pos, k) => { fixOf[pos] = `${o.name}*${k + 2}`; });
+  const warn = dups.length ? `<div class="mseq-dupw" role="alert">⛔ ${TT('Process ซ้ำ', 'Repeated process')}: <b>${escapeHtml(procDupText(dups))}</b> — ${TT('บันทึกไม่ได้', 'cannot be saved')} · ${procDupHint(dups)}</div>` : '';
+  host.innerHTML = warn + (_mProcSeq.length ? _mProcSeq.map((p, i) => {
     // std = เลือกจากลิสต์มาตรฐาน (VSM3/4) · VSM1/2 = พิมพ์ชื่อเองอิสระ (process ก่อนเข้า VSM3/4 คนละชุด)
     let ctrl;
     if (isStd) {
-      const all = PROCS_ALL.includes(p) ? PROCS_ALL : [p, ...PROCS_ALL];   // process เก่านอกลิสต์ → คงให้เลือกได้
+      const base = PROCS_ALL.includes(p) ? PROCS_ALL : [p, ...PROCS_ALL];   // process เก่านอกลิสต์ → คงให้เลือกได้
+      const fx = fixOf[i + 1], all = fx && !base.includes(fx) ? [p, fx, ...base.filter(o => o !== p)] : base;   // ★ v4.20
       const opts = all.map(o => `<option value="${escapeHtml(o)}" ${o === p ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('');
       ctrl = `<select class="mseq-sel" onchange="mSeqReplace(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">${opts}</select>`;
     } else {
       ctrl = `<input type="text" class="mseq-sel" value="${escapeHtml(p)}" onchange="mSeqSetText(${i},this.value)" aria-label="Process ลำดับ ${i + 1}">`;
     }
-    return `<div class="mseq-row">
+    return `<div class="mseq-row${dupAt.has(i + 1) ? ' dup' : ''}">
       <span class="mseq-n">${i + 1}</span>
       ${ctrl}
       <button type="button" class="mseq-btn" onclick="mSeqMove(${i},-1)" ${i === 0 ? 'disabled' : ''} aria-label="ย้ายขึ้น">↑</button>
@@ -26990,7 +27061,7 @@ function _mSeqRender() {
       <button type="button" class="mseq-btn mseq-del" onclick="mSeqDel(${i})" aria-label="ลบ">✕</button>
     </div>`;
   }).join('')
-    : `<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">${isStd ? 'ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม' : 'ยังไม่มี process — พิมพ์ชื่อด้านล่างแล้วกด ➕ เพิ่ม'}</div>`;
+    : `<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">${isStd ? 'ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม' : 'ยังไม่มี process — พิมพ์ชื่อด้านล่างแล้วกด ➕ เพิ่ม'}</div>`);
   document.querySelectorAll('#m_procs .proc-pill').forEach(el =>
     el.classList.toggle('done', _mProcSeq.includes(el.dataset.proc)));
 }
@@ -27162,6 +27233,15 @@ async function saveValve(orig) {
   if (document.getElementById('m_seq')) _mProcStore[_mProcTab] = _mProcSeq.filter(Boolean).slice();
   const procs = (_mProcStore.std || []).filter(Boolean).slice();
   if (!valveNo) { toast('กรอก Valve No', 'orange'); return; }
+  /* ★ v4.20 (ผู้ใช้ 12/11) ตัวกัน Process ซ้ำ — เดิม upsertValve ตัดตัวซ้ำทิ้งเงียบ ๆ (เส้นทางเปลี่ยนโดยไม่มีใครรู้) · ตอนนี้ไม่บันทึก + พาไปที่แท็บ/แถวที่ซ้ำ */
+  for (const [tab, lb] of [['std', 'VSM 3/4'], ['v1', 'VSM 1'], ['v2', 'VSM 2']]) {
+    const d = procDupList(_mProcStore[tab]);
+    if (!d.length) continue;
+    if (_mProcTab !== tab) mProcSwitchTab(tab); else _mSeqRender();
+    const box = document.getElementById('m_seq'); if (box) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    toast(`⛔ ${lb} · ${TT('Process ซ้ำ', 'repeated process')} ${procDupText(d)} — ${TT('บันทึกไม่ได้ · รอบถัดไปให้ตั้งชื่อต่าง เช่น', 'not saved · name the later pass differently, e.g.')} ${d[0].name}*2`, 'red');
+    return;
+  }
   const sdRaw = String(($('m_sd') && $('m_sd').value) || '').trim();
   const sd = sdRaw === '' ? null : Number(sdRaw);
   if (sd !== null && !(sd > 0 && sd < 60)) { toast('SD ไม่ถูกต้อง (ใส่เลข มม. เช่น 6 หรือ 9.5)', 'orange'); return; }
@@ -27234,6 +27314,10 @@ async function importValves(ev) {
         return o; })(),
     })).filter(v => v.valveNo);
     if (!valves.length) { toast('ไม่พบข้อมูล', 'orange'); return; }
+    // ★ v4.20 ตัวกัน Process ซ้ำ — แถวที่มี Process ชื่อเดียวกัน 2 ครั้งไม่นำเข้า (เดิมตัดตัวซ้ำทิ้งเงียบ ๆ) · แถวอื่นนำเข้าตามปกติ
+    const dupRows = _valveDupRows(valves, v => v.processes);
+    if (dupRows.length) { const bad = new Set(dupRows.map(x => x.row)); for (let i = valves.length - 1; i >= 0; i--) if (bad.has(valves[i])) valves.splice(i, 1); _valveDupReport(dupRows, 'Import Excel'); }
+    if (!valves.length) return;
     // merge into local — valveNo ซ้ำ (ไม่สนตัวพิมพ์) ใช้ข้อมูลใหม่แทนที่
     for (const v of valves) upsertValve(v);
     _mpVIdx = null;
@@ -27408,11 +27492,14 @@ function previewPasteValves() {
   var res = document.getElementById('pasteValvesResult');
   if (!rows.length) { res.innerHTML = '<span class="tag tag-red">ไม่พบข้อมูลที่อ่านได้</span>'; return; }
   var m = rows._meta || {};
+  var pdup = _valveDupRows(rows, function(r){ return r.procs; });   // ★ v4.20 Process ซ้ำ = ไม่บันทึกแถวนั้น
+  var pdupSet = new Set(pdup.map(function(x){ return x.row; }));
   var dups = rows.filter(function(r){return state.valves.find(function(v){return v.valveNo === r.valveNo;});});
   var preview = rows.slice(0, 8).map(function(r) {
     var isDup = state.valves.find(function(v){return v.valveNo === r.valveNo;});
     return '<tr><td><b>' + escapeHtml(r.valveNo) + '</b>' +
       (isDup ? ' <span class="tag tag-orange" style="font-size:10px">ซ้ำ→แทนที่</span>' : '') +
+      (pdupSet.has(r) ? ' <span class="tag tag-red" style="font-size:10px">⛔ Process ซ้ำ</span>' : '') +
       '</td><td>' + escapeHtml(r.customer) + '</td><td style="font-size:11px">' +
       r.procs.map(function(p){return '<span class="tag tag-blue" style="font-size:10px;padding:1px 5px">' + escapeHtml(p) + '</span>';}).join(' ') +
       '</td></tr>';
@@ -27423,13 +27510,21 @@ function previewPasteValves() {
     '<span class="tag tag-green">✨ ใหม่ ' + (rows.length - dups.length) + '</span>' +
     (dups.length ? '<span class="tag tag-orange">⚠️ ซ้ำ ' + dups.length + ' รายการ (จะแทนที่ Process)</span>' : '') +
     (m.skipped ? '<span class="tag tag-red">✗ Skip ' + m.skipped + '</span>' : '') +
-    '</div>' +
+    (pdup.length ? '<span class="tag tag-red">⛔ Process ซ้ำ ' + pdup.length + ' แถว (ไม่บันทึก)</span>' : '') +
+    '</div>' + _valveDupListHtml(pdup) +
     '<table style="font-size:12px;width:100%"><thead><tr><th>Valve No</th><th>Customer</th><th>Processes</th></tr></thead><tbody>' + preview + '</tbody></table>' +
     '<div class="muted mt-8" style="font-size:11px">แสดง ' + Math.min(8, rows.length) + ' แถวแรก — กด <b>บันทึกลงระบบ</b> เพื่อบันทึกทั้งหมด</div>';
 }
 async function commitPasteValves() {
   var rows = _parsePasteValveRows();
   if (!rows.length) { toast('ไม่มีข้อมูล', 'orange'); return; }
+  var pdup = _valveDupRows(rows, function(r){ return r.procs; });   // ★ v4.20 แถวที่ Process ซ้ำ = ไม่บันทึก (แถวอื่นบันทึกตามปกติ)
+  var resBox = document.getElementById('pasteValvesResult');
+  if (pdup.length) {
+    var bad = new Set(pdup.map(function(x){ return x.row; })); rows = rows.filter(function(r){ return !bad.has(r); });
+    toast('⛔ ไม่บันทึก ' + pdup.length + ' เบอร์ — Process ซ้ำ', 'red');
+  }
+  if (!rows.length) { if (resBox) resBox.innerHTML = _valveDupListHtml(pdup); return; }
   var added = 0, replaced = 0;
   var pushed = [];
   for (var i = 0; i < rows.length; i++) {
@@ -27447,7 +27542,7 @@ async function commitPasteValves() {
   lsSave(LS.VALVES, state.valves);
   renderValveList();
   var res = document.getElementById('pasteValvesResult');
-  if (res) res.innerHTML = '<span class="tag tag-green">✅ บันทึกแล้ว — ใหม่ ' + added + ' · แทนที่ Process ' + replaced + '</span>';
+  if (res) res.innerHTML = '<span class="tag tag-green">✅ บันทึกแล้ว — ใหม่ ' + added + ' · แทนที่ Process ' + replaced + '</span>' + _valveDupListHtml(pdup);
   toast('✅ Valve ใหม่ ' + added + ' · แทนที่ Process ' + replaced, 'green');
   if (replaced > 0) toast('⚠️ ' + replaced + ' Valve ซ้ำ — แทนที่ Process แล้ว', 'orange');
   if (typeof API !== 'undefined' && API) {
@@ -27683,6 +27778,110 @@ function _valveProcList(valve) {
 }
 // คีย์เทียบชื่อ process แบบไม่สนเครื่องหมาย: 'P/T'→'PT' · 'T/T'→'TT' · 'HOD/REM.'→'HODREM'
 function _pfKey(p) { return String(p || '').trim().toUpperCase().replace(/[^A-Z0-9&]/g, ''); }
+/* ═══ ★ v4.20 ขั้นที่ซ้ำในเส้นทางของวาล์ว — ใช้ในการวางแผนเท่านั้น (ข้อ 2) ═══
+   ชื่อซ้ำตรงตัว (SSG … SSG · 12 เบอร์ ณ 12/11): ผู้ใช้แก้ Master เอง → ทุกจุดทำงานแบบเดิม (ยอดตามชื่อ)
+     และตั้งแต่ v4.20 บันทึก Master Valve ที่มีชื่อซ้ำไม่ได้ (procDupList — ดูตัวกันซ้ำที่ฟอร์ม / Import / วางจาก Excel)
+   คีย์ช่อง: ครั้งแรก = ชื่อเดิม · ครั้งที่ 2 ขึ้นไป = "ชื่อ#2" (ใช้ภายในเพื่อแยกตำแหน่งเท่านั้น — ไม่โชว์ ไม่เก็บ) */
+const _PROC_OCC_RE = /^(.+)#(\d+)$/;
+function procOccKeys(seq) {
+  const n = {};
+  return (seq || []).map(p => { const c = _procCanon(String(p || '').trim()); n[c] = (n[c] || 0) + 1; return n[c] > 1 ? c + '#' + n[c] : c; });
+}
+function procOccName(k) { const m = _PROC_OCC_RE.exec(String(k || '')); return m ? m[1] : String(k || ''); }
+function procOccHasDup(keys) { return (keys || []).some(k => _PROC_OCC_RE.test(k)); }
+/* ขนาด Lot ที่ใช้แบ่งยอดระหว่างขั้นกลุ่มเดียวกัน = มากกว่าระหว่าง ใบรับเข้า กับ ค่ากลาง (median) ของยอด Process อื่นของล็อต
+   ใบรับเข้าบางล็อตลงไม่ครบ · median ไม่โดนขั้นที่ลงยอดผิดปกติดึง */
+function procOccBase(keys, tot, recv) {
+  const cnt = {}; for (const k of keys) { const n = procOccName(k); cnt[n] = (cnt[n] || 0) + 1; }
+  const v = []; for (const n in cnt) if (cnt[n] === 1 && Number(tot[n]) > 0) v.push(Number(tot[n]));
+  v.sort((a, b) => a - b);
+  const med = v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : 0;
+  return Math.max(+recv || 0, Math.round(med));
+}
+/* ═══ ★ v4.20 (ผู้ใช้ 12/11 ข้อ 1) ตัวกัน Process ซ้ำใน Master Valve ═══
+   "หลังจากนี้ ถ้ามีการเพิ่ม Master Valve ให้เพิ่มระบบป้องกัน" — ชื่อเดียวกัน 2 ครั้งในเส้นทาง = ยอดที่พนักงานลงแยกไม่ได้ว่ารอบไหน
+   เดิม: upsertValve ตัดตัวซ้ำทิ้งเงียบ ๆ (เส้นทางเปลี่ยนโดยไม่มีใครรู้) · ตอนนี้: ไม่ให้บันทึก + บอกว่าซ้ำที่ลำดับไหน → ตั้งชื่อรอบถัดไปให้ต่าง เช่น SSG*2
+   เทียบแบบไม่สนตัวพิมพ์ / ช่องว่าง / จุด (T.IND = T. IND · TIP IND = TIP IND.) · คืน [{ name, at: [ลำดับเริ่ม 1] }] */
+function procDupList(procs) {
+  const m = new Map();
+  (procs || []).forEach((p, i) => {
+    const raw = String(p == null ? '' : p).trim(); if (!raw) return;
+    const k = _pfKey(_procCanon(raw)) || raw.toUpperCase();
+    let o = m.get(k); if (!o) m.set(k, o = { name: raw, at: [] }); o.at.push(i + 1);
+  });
+  return [...m.values()].filter(o => o.at.length > 1);
+}
+const procDupText = d => d.map(o => `${o.name} (${TT('ลำดับ', 'steps')} ${o.at.join(', ')})`).join(' · ');
+const procDupHint = d => `${TT('รอบถัดไปให้ตั้งชื่อต่าง เช่น', 'name the later pass differently, e.g.')} ${escapeHtml(String((d[0] || {}).name || 'SSG'))}*2`;
+// แถว Master Valve (Import / วางจาก Excel) ที่มี Process ซ้ำ → [{ row, valveNo, d }] — เช็กหลังยุบ TOP + HOD เป็น TOP&HOD แบบที่ upsertValve ทำ
+function _valveDupRows(rows, procsOfRow) {
+  const out = [];
+  for (const r of (rows || [])) {
+    const raw = procsOfRow(r) || [], d0 = procDupList(raw);   // ลำดับตามที่วาง/ในไฟล์ · ซ้ำเฉพาะหลังยุบ TOP + HOD = ลำดับหลังยุบ
+    const d = d0.length ? d0 : procDupList(normalizeValveProcesses(raw));
+    if (d.length) out.push({ row: r, valveNo: vKey(r.valveNo), d });
+  }
+  return out;
+}
+function _valveDupListHtml(list) {
+  if (!list || !list.length) return '';
+  return `<div class="vm-dupw" role="alert">⛔ ${TT('ไม่บันทึก', 'Not saved')} ${nn(list.length)} ${TT('เบอร์ — Process ซ้ำในเส้นทาง (ยอดที่ลงแยกไม่ได้ว่ารอบไหน)', 'valves — repeated process in the route')}:<br>${list.slice(0, 30).map(x => `<b>${escapeHtml(x.valveNo)}</b> ${escapeHtml(procDupText(x.d))}`).join('<br>')}${list.length > 30 ? `<br>… +${nn(list.length - 30)}` : ''}<br>💡 ${procDupHint(list[0].d)} ${TT('แล้วบันทึกใหม่', 'then save again')}</div>`;
+}
+function _valveDupReport(list, src) {
+  if (!list || !list.length) return;
+  toast(`⛔ ${src}: ${TT('ไม่บันทึก', 'not saved')} ${nn(list.length)} ${TT('เบอร์ — Process ซ้ำ', 'valves — repeated process')}`, 'red');
+  openModal(`⛔ ${src} — ${TT('Process ซ้ำ', 'Repeated process')}`, `${_valveDupListHtml(list)}<button class="btn btn-outline btn-block mt-12" onclick="closeModal()">${TT('ปิด', 'Close')}</button>`);
+}
+/* ═══ ★ v4.20 (ผู้ใช้ 12/11 ข้อ 2 · V76827A0 Lot 2607S080067) ผ่าน FG ≠ จบงาน ═══
+   Master ของบางเบอร์มีขั้นผลิตต่อหลัง FG: … SFG › FG › T/T › IND T" › COT › TL › SFG*2 › QC
+   ขั้นผลิตที่ยังเหลือหลัง FG = ขั้นหลัง FG ที่ไม่ใช่งานปลายทาง (P/T · T/T · QC · POL · BUFF — กติกาเดียวกับปุ่มจบงานหลัง FG)
+     และยังไม่มียอด (ยอดผลิตจริง VSM3+4 ชุดเดียวกับหน้าค้นหา Process + ยอด 🔑 Admin · ขั้นกลุ่มเดียวกันคนละชื่อแบ่งยอดแบบตัววางแผน)
+   ใช้: ตัววางแผนเครื่อง (วางขั้นหลัง FG ต่อ) · แผนขาย (ยังไม่พร้อมขาย = กำลังผลิต) · กล่องผลิตจบแล้วในหน้าแผน
+   ยอด WIP / WIP OUT / Output / Dashboard ไม่เปลี่ยน (กติกา "Output ของ Process ที่ FG = WIP OUT" คงเดิม) */
+let _jpqIdx = null, _jpqKey = null;
+function _jobProcQty() {          // jobKey → { ชื่อ Process: ยอด } (VSM3+4)
+  const src = _wipProdSrc(), vsm = viewVsm();
+  if (_jpqIdx && _jpqKey && _jpqKey.src === src && _jpqKey.fv === _fvVer && _jpqKey.vsm === vsm) return _jpqIdx;
+  const m = new Map();
+  for (const r of filterVsmPeer(src)) {
+    const v = String(r.valve_no || r.valveNo || '').trim(); if (!v) continue;
+    const p = _procCanon(String(r.current_process || r.currentProcess || '').trim()), q = Number(r.quantity) || 0;
+    if (!p || !q) continue;
+    const k = jobKey(v, r.lot || ''); let o = m.get(k); if (!o) m.set(k, o = {});
+    o[p] = (o[p] || 0) + q;
+  }
+  _jpqIdx = m; _jpqKey = { src, fv: _fvVer, vsm };
+  return m;
+}
+let _slipQIdx = null, _slipQKey = '';
+function _jobSlipQty(valve, lot) {   // ยอดใบรับเข้า WIP IN 1.5 ของล็อต (VSM3+4 แบบเดียวกับหน้าค้นหา Process)
+  const sig = ((typeof _wipinVer !== 'undefined') ? _wipinVer : 0) + '|' + viewVsm();
+  if (!_slipQIdx || _slipQKey !== sig) {
+    _slipQIdx = new Map(); _slipQKey = sig;
+    let L = []; try { L = _wipinListPeer(); } catch (e) {}
+    for (const e of L) { const k = jobKey(e.valve, e.lot); _slipQIdx.set(k, (_slipQIdx.get(k) || 0) + (Number(e.qty) || 0)); }
+  }
+  return _slipQIdx.get(jobKey(valve, lot)) || 0;
+}
+// ยอดรายขั้นของล็อต (คีย์ช่อง → ยอด) ตามเส้นทาง names — ไม่รวมยอด Admin
+//   ชื่อซ้ำตรงตัว = ยอดตามชื่อแบบเดิม (ทุกตำแหน่งได้ยอดชื่อนั้น) · กลุ่มเดียวกันคนละชื่อ = กติกาเดียวกับตัววางแผน (procOccAlloc)
+function jobOccQty(valve, lot, names) {
+  const keys = procOccKeys(names), tot = _jobProcQty().get(jobKey(valve, lot)) || {};
+  if (procOccHasDup(keys)) return { keys, q: Object.fromEntries(keys.map(k => [k, Number(tot[procOccName(k)]) || 0])) };
+  return { keys, q: procOccAlloc(names, keys, tot, procOccBase(keys, tot, _jobSlipQty(valve, lot)), true) };
+}
+function postFgLeft(valve, lot) {
+  const names = _valveProcList(valve).map(p => _procCanon(String(p).trim()));
+  const fi = names.indexOf('FG'); if (fi < 0) return [];
+  const { keys, q } = jobOccQty(valve, lot, names), adm = pfAdmOfJob(valve, lot), out = [];
+  for (let i = fi + 1; i < keys.length; i++) {
+    const k = keys[i];
+    const a = adm[k] || adm[procOccName(k)];
+    if (POST_FG_OK_AFTER.has(_pfTermKey(procOccName(k))) || q[k] > 0 || (a && a.qty > 0)) continue;
+    out.push(k);
+  }
+  return out;
+}
 /* ลำดับขั้นหลัง FG ของงานหนึ่ง ๆ
    ★ 2026-08-19: ส่ง lot มาด้วย → "ข้าม" ขั้นที่ลงยอดไปแล้ว เพราะของเดินผ่านจริงแล้ว
      ไม่ใช่ handoff ที่ต้องรอกดยืนยัน (V76053A0: FG · SFG · P/T · POL · QC → SFG
@@ -27697,7 +27896,7 @@ function postFgFlowFor(valve, lot, keep) {
       let tail = procs.slice(i + 1);
       if (lot != null) {
         const q = postFgQtyOf(valve, lot);
-        tail = tail.filter(p => POST_FG_OK_AFTER.has(_pfKey(p))
+        tail = tail.filter(p => POST_FG_OK_AFTER.has(_pfTermKey(p))
                              || (keep && _pfKey(p) === _pfKey(keep))
                              || !(Number(q[_procCanon(String(p).trim())]) > 0));
       }
@@ -27718,6 +27917,8 @@ function postFgFlowFor(valve, lot, keep) {
    ⚠️ 2026-08-19 — ตารางตัวอย่างข้างบนคือ "กฎชื่อ process ล้วน" ซึ่งผ่อนแล้ว:
       ตัว ✗ ที่ process นั้น "ลงยอดครบแล้ว" ถือว่าเข้าข่ายจบ (ดู postFgEligibility) */
 const POST_FG_OK_AFTER = new Set(['PT', 'TT', 'QC', 'POL', 'BUFF']);
+// ★ v4.20 รอบถัดไปที่ตั้งชื่อ "ชื่อ*2" (ตามตัวกัน Process ซ้ำ) = งานแบบเดียวกัน เช่น T/T*2 = งานปลายทางเหมือน T/T
+function _pfTermKey(p) { return _pfKey(String(p || '').replace(/\*\s*\d+\s*$/, '')); }
 // process ที่อยู่ "หลัง FG" ตาม Master ของวาล์วเบอร์นี้ (ไม่รวม FG เอง) — [] = ไม่รู้/ไม่มี
 function postFgTail(valve) {
   const procs = _valveProcList(valve);
@@ -27767,16 +27968,23 @@ function postFgQtyOf(valve, lot) {
 }
 // คืน { ok, bad[] } — bad = process หลัง FG ที่ทำให้ยังจบไม่ได้ (ยังไม่มียอด + ไม่ใช่งานปลายทาง)
 //   qtyByProc = ยอดผลิตรายชื่อ process ของงานนั้น (จาก postFgQtyOf) · ไม่ส่ง = ตัดสินด้วยชื่อล้วนแบบเดิม
-function postFgEligibility(valve, qtyByProc) {
+function postFgEligibility(valve, qtyByProc, lot) {
   const procs = _valveProcList(valve);
   if (!procs.length) return { ok: true, bad: [] };                 // ไม่มี Master → ไม่ตัดสิน
   if (procs.findIndex(p => _pfKey(p) === 'FG') < 0) return { ok: true, bad: [] };   // ไม่มี FG ในสาย → ปล่อยตามเดิม
   const q = qtyByProc || {};
+  /* ★ v4.20 รู้ Lot = ตัดสินตามช่องในหน้าค้นหา Process (ยอดที่ลงตามชื่อ Process แบ่งรอบ + 🔑 Admin = postFgLeft — กติกาเดียวกับแผน)
+     ยอดตามเครื่องยังนับด้วย (มีอย่างใดอย่างหนึ่ง = ทำแล้ว) · เดิมดูแค่ Process ของเครื่อง: V76755A0 2609S100045 ลง TL ที่ G-2075 (เครื่อง TG) → ฟ้องว่ายังไม่ลง TL
+*/
+  if (lot != null) {
+    const bad = [...new Set(postFgLeft(valve, lot).map(procOccName))].filter(n => !(Number(q[n]) > 0));
+    return { ok: bad.length === 0, bad };
+  }
   const bad = postFgTail(valve).filter(p =>
-    !POST_FG_OK_AFTER.has(_pfKey(p)) && !(Number(q[_procCanon(String(p).trim())]) > 0));
+    !POST_FG_OK_AFTER.has(_pfTermKey(p)) && !(Number(q[_procCanon(String(p).trim())]) > 0));
   return { ok: bad.length === 0, bad };
 }
-function postFgEligible(valve, lot) { return postFgEligibility(valve, postFgQtyOf(valve, lot)).ok; }
+function postFgEligible(valve, lot) { return postFgEligibility(valve, postFgQtyOf(valve, lot), lot).ok; }
 const JOBPROC_PREFIX  = 'jobproc.';    // process code ที่ขยับไป
 const JOBPROCD_PREFIX = 'jobprocd.';   // วันที่ขยับ/จบ (เลข YYYYMMDD)
 const JOBPROCQ_PREFIX = 'jobprocq.';   // ยอดชิ้น (OPR ที่ FG) สแน็ปช็อตตอนขยับ — ใช้รวมยอด "ผลิตเสร็จ" ได้โดยไม่ต้องพึ่ง KPI ย้อนหลัง
@@ -28022,7 +28230,7 @@ function computePostFgJobs(recs) {
   // กล่องจัดการงานหลัง FG = เฉพาะวาล์วที่มีใน Master (วาล์วผิด → ไปแก้ที่กล่อง Unknown ก่อน)
   return computePostFgAll(recs)
     .filter(j => !j.unknown && j.cur !== 'DONE')
-    .map(j => { const el = postFgEligibility(j.valve, qm[jobKey(j.valve, j.lot)]); return { ...j, eligible: el.ok, badProcs: el.bad }; })
+    .map(j => { const el = postFgEligibility(j.valve, qm[jobKey(j.valve, j.lot)], j.lot); return { ...j, eligible: el.ok, badProcs: el.bad }; })
     .sort((a, b) => b.qty - a.qty);
 }
 // เฉพาะงานที่ "เข้าข่ายจบได้" — ใช้กับปุ่มจบงานทั้งหมด/รายการหลัก
@@ -28302,7 +28510,7 @@ async function advanceJobAt(i, dir) {
   const to = flow[ni];
   // กันจบงานที่หลัง FG ยังมี process ผลิตต่อ "ที่ยังไม่มียอด" — กฎเดียวกับกล่อง "ยังไม่เข้าข่ายจบ"
   if (to === 'DONE') {
-    const el = postFgEligibility(j.valve, postFgQtyOf(j.valve, j.lot));
+    const el = postFgEligibility(j.valve, postFgQtyOf(j.valve, j.lot), j.lot);
     if (!el.ok) { toast(`⛔ ${j.valve} ยังจบไม่ได้ — หลัง FG ยังไม่ลงยอด ${el.bad.join(', ')}`, 'orange'); return; }
   }
   if (!API) {
@@ -29024,6 +29232,7 @@ function mpLoadOldKpi(days) {
 /* ---------- ชื่อ Process → กลุ่ม (ใช้จับคู่ flow ของวาล์ว ↔ Process ของเครื่อง) ---------- */
 function mpFam(p) {
   let s = String(p == null ? '' : p).toUpperCase().replace(/\s+/g, '').replace(/\.+$/, '');
+  s = s.replace(/\*\d+$/, '');   // ★ v4.20 รอบถัดไป "VET*2" = กลุ่ม VET (ชื่อที่มีอยู่แล้ว SSG*2 · SFG*2 · SRG*3 ได้กลุ่มเดิมอยู่แล้ว)
   if (!s) return '';
   if (s === 'TOP&HOD' || s === 'TOPHOD' || s === 'TOP+HOD' || s === 'TOP/HOD') return 'TOP&HOD';
   if (/^(F\.?|T\.?|FACE|TIP)?IND/.test(s) || s === 'LND' || s === 'I.N.D') return 'IND';
@@ -30015,6 +30224,58 @@ function mpRouteMemory() {
   return (_mpRmCache = out);
 }
 /* ลำดับ Process ของเบอร์นี้ตามของจริง — เรียงใหม่เฉพาะขั้นที่เคยมียอด · ขั้นที่ไม่เคยมียอด (แผนกอื่น / ยังไม่เคยทำ) อยู่ตำแหน่งเดิมตาม Master */
+/* ★ v4.20 ขั้นที่ใช้วัดวันเสร็จของล็อต (🏁) — ปกติ FG · ขั้นเครื่อง VSM4 สุดท้ายอยู่หลัง FG (IND T" › COT › TL › SFG*2) = ชื่อขั้นนั้น */
+function _mpEndName(j) {
+  const S = j.steps || [], L = S[j.lastInt], fi = S.findIndex(s => s.fam === 'FG');
+  return L && fi >= 0 && j.lastInt > fi && L.need > 0 ? L.proc : 'FG';
+}
+/* ★ v4.20 Master ของเบอร์นี้มี Process กลุ่มเดียวกันมากกว่า 1 ขั้น แต่คนละชื่อไหม (SFG + SFG*2 · T.IND + F.IND · RED/R + RED — 50 เบอร์ใน Master 12/11)
+   ชื่อซ้ำตรงตัว (SSG … SSG) = false → ทำงานแบบเดิม (ผู้ใช้แก้ Master เอง · บันทึกชื่อซ้ำใหม่ไม่ได้แล้ว) */
+function _mpDupFam(v) {
+  const p = v ? procsOf(v, MP_VSM).map(x => _procCanon(String(x).trim())).filter(Boolean) : [], f = p.map(mpFam).filter(Boolean);
+  return new Set(f).size < f.length && new Set(p).size === p.length;
+}
+/* ★ v4.20 ยอดรายขั้นของเบอร์ที่มี Process กลุ่มเดียวกันหลายขั้น — tot = { ชื่อที่ลงยอด: ยอด } → { คีย์ช่อง: ยอด }
+   ใช้กับเบอร์ที่ชื่อไม่ซ้ำตรงตัว (_mpDupFam) — ① ชื่อตรงกับขั้นใน Master → ขั้นนั้น
+   ② ชื่อไม่ตรงขั้นไหนแต่กลุ่มเดียวกัน (เช่น ลง "IND" ของเบอร์ที่มี T.IND + F.IND) → เติมขั้นของกลุ่มนั้นตามลำดับ ขั้นละไม่เกินขนาด Lot
+   ③ ขั้นไหนได้ยอดเกินขนาด Lot (เกินเศษ max(5, 2%)) = อีกขั้นของกลุ่มเดียวกันลงยอดด้วยชื่อนี้ → ส่วนเกินไปเติมขั้นที่ยังไม่เต็ม (ขั้นหลังก่อน)
+      วัดจริง 12/11: VF1534M0 ลงแต่ "IND" ทั้ง 2 รอบ (IND › … › F.IND) เช่น 2609S090221 IND 2,004 ของล็อต ~1,000 → IND 1,0xx + F.IND ส่วนที่เหลือ
+   เดิม: ทุกขั้นในกลุ่มได้ยอดรวมของกลุ่ม → ขั้นหลัง (SFG*2 · F.IND · RED) ถือว่าทำแล้วตั้งแต่ทำขั้นแรกเสร็จ */
+function procOccAlloc(names, keys, tot, base, famFill) {
+  const inR = new Set(names), exact = {}, fam = {};
+  for (const n in tot) {
+    if (!(tot[n] > 0)) continue;
+    if (inR.has(n)) exact[n] = tot[n];
+    else { const f = mpFam(n); if (f) fam[f] = (fam[f] || 0) + tot[n]; }
+  }
+  const out = {}, byF = {};
+  keys.forEach(k => { const q = exact[procOccName(k)]; if (q > 0) out[k] = (out[k] || 0) + q; });
+  keys.forEach((k, i) => { const f = mpFam(names[i]); if (f) (byF[f] = byF[f] || []).push(k); });
+  if (famFill) for (const f in fam) {
+    const ks = byF[f]; if (!ks) continue;
+    let rem = fam[f];
+    for (let i = 0; i < ks.length && rem > 0; i++) {
+      const room = (i === ks.length - 1 || !(base > 0)) ? rem : Math.max(0, base - (out[ks[i]] || 0));
+      const take = Math.min(rem, room);
+      if (take > 0) { out[ks[i]] = (out[ks[i]] || 0) + take; rem -= take; }
+    }
+  }
+  if (base > 0) {
+    const tol = planTol(base);
+    for (const f in byF) {
+      const ks = byF[f]; if (ks.length < 2) continue;
+      ks.forEach((k, i) => {
+        let over = (out[k] || 0) - base; if (over <= tol) return;
+        for (const t of ks.slice(i + 1).concat(ks.slice(0, i).reverse())) {
+          const room = base - (out[t] || 0); if (room <= tol) continue;
+          const mv = Math.min(over, room); out[t] = (out[t] || 0) + mv; out[k] -= mv; over -= mv;
+          if (over <= tol) break;
+        }
+      });
+    }
+  }
+  return out;
+}
 function mpLearnFlow(vk, flow, S) {
   if (flow.length < 2 || (S && S.learnOrder === false)) return flow;
   const lots = mpRouteMemory().get(vk); if (!lots || !lots.length) return flow;
@@ -30078,12 +30339,17 @@ function mpJobs(S, ctx) {
   };
   const prodRows = filterVsmPeer(_wipProdSrc());
   const rawName = {};   // ★ v4.18 ชื่อเบอร์ + Lot ตามที่ลงยอด (ล็อตที่ไม่มีใบรับเข้าไม่มีที่อื่นให้อ่าน)
+  /* ★ v4.20 เบอร์ที่ Master มี Process กลุ่มเดียวกันมากกว่า 1 ขั้น (SSG…SSG · SFG + SFG*2 · T.IND + F.IND) → เก็บยอดตามชื่อที่ลง แบ่งให้ทีละขั้นด้วย procOccAlloc */
+  const dupMemo = new Map(), dupOf = vk => { let d = dupMemo.get(vk); if (d === undefined) dupMemo.set(vk, d = _mpDupFam(mpValve(vk))); return d; };
+  const occP = {}, occK = {}, scrT = {};
+  const occAdd = (o, k, p, q) => { const n = _procCanon(String(p || '').trim()); if (!n || !q) return; const x = o[k] = o[k] || {}; x[n] = (x[n] || 0) + q; };
   for (const r of prodRows) {
     const v = String(r.valve_no || r.valveNo || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
     const f = mpFam(r.current_process || r.currentProcess); if (!f) continue;
     if (!rawName[k]) rawName[k] = [v, String(r.lot || '').trim()];
     const o = recsByJob[k] = recsByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.quantity) || 0);
+    if (dupOf(k.slice(0, k.indexOf('::')))) occAdd(occP, k, r.current_process || r.currentProcess, Number(r.quantity) || 0);
     seen(k, f, String(r.shift_date || r.timestamp || '').slice(0, 10), r.machine_id || r.machineId, r.shift_type, r.timestamp);
   }
   const scrapRows = new Map();   // ★ v4.15 แถว KPI ที่มี Scrap → Process ที่แถวนั้นลงยอด (ดู scrapByJob)
@@ -30091,9 +30357,10 @@ function mpJobs(S, ctx) {
     const v = String(r.valve_no || '').trim(); if (!v) continue;
     const k = jobKey(v, r.lot || '');
     const f = mpFam(r.last_process), sc = Number(r.scrap) || 0;
-    if (sc > 0) scrapRows.set(r.record_id || r, { k, sc, fams: new Set(f ? [f] : []) });
+    if (sc > 0) { scrapRows.set(r.record_id || r, { k, sc, fams: new Set(f ? [f] : []) }); scrT[k] = (scrT[k] || 0) + sc; }
     if (!f) continue;
     const o = kpiByJob[k] = kpiByJob[k] || {}; o[f] = (o[f] || 0) + (Number(r.opr) || 0);
+    if (dupOf(k.slice(0, k.indexOf('::')))) occAdd(occK, k, r.last_process, Number(r.opr) || 0);
     seen(k, f, String(r.shift_date || r.record_date || '').slice(0, 10), r.machine_id, r.shift_type, r.saved_at);
   }
   /* ★ v4.15 Scrap ต่อ ล็อต × Process — แถว KPI 1 แถวผูกกับ Process จริงผ่าน prod record (kpi_record_id):
@@ -30156,9 +30423,24 @@ function mpJobs(S, ctx) {
   const minDue = _mpAddDays(S.start, -120);
   const silentDays = Math.max(0, +S.silentDays || 0), recentCut = _mpAddDays(S.start, -(silentDays || 14));
   const noSlipCut = _mpAddDays(S.start, -Math.max(0, S.noSlipDays != null ? +S.noSlipDays || 0 : 3));
-  const slipLast = {};
-  for (const e of _wipinList()) { const k = jobKey(e.valve, e.lot), d = String(e.ts || '').slice(0, 10); if (d > (slipLast[k] || '')) slipLast[k] = d; }
+  const slipLast = {}, slipQ = {};
+  for (const e of _wipinList()) { const k = jobKey(e.valve, e.lot), d = String(e.ts || '').slice(0, 10); if (d > (slipLast[k] || '')) slipLast[k] = d; slipQ[k] = (slipQ[k] || 0) + (Number(e.qty) || 0); }
   const lastActOf = k => { let d = slipLast[k] || ''; const o = lastByJob[k]; if (o) for (const f in o) if (o[f] > d) d = o[f]; return d; };
+  /* ★ v4.20 (ผู้ใช้ 12/11 ข้อ 2 · V76827A0 Lot 2607S080067 "ระบบเข้าใจว่าจบ FG แล้วคือจบงาน ทำให้ไม่วางแผนต่อ")
+     เดิม: ล็อตเข้าแผนจากยอด WIP (รับเข้า − ผ่าน FG − Scrap) → FG ครบล็อต = WIP 0 = หลุดจากแผน ทั้งที่ Master ยังมี IND T" › COT › TL › SFG*2 หลัง FG
+     ตอนนี้: ผ่าน FG แล้ว + ยังไม่จบงาน (DONE) + ยังมีขั้นผลิตหลัง FG ที่ไม่มียอด (postFgLeft) = งานในไลน์ → วางขั้นหลัง FG ต่อ · ขั้นก่อน FG ถือว่าผ่านแล้ว
+     ยอด = ใบรับเข้า (ไม่มีใบ = ยอดผ่าน FG) − Scrap · วัดจริง 12/11: 31 ล็อต 18 เบอร์ · ล็อตเงียบเกิน silentDays ไปอยู่รายการ 💤 เหมือนล็อตอื่น */
+  if (S.incWip && S.postFgLots !== false) {
+    const have = new Set(raw.map(x => jobKey(x.valve, x.lot)));
+    for (const it of (b.wipOut.items || [])) {
+      const k = jobKey(it.valve, it.lot);
+      if (have.has(k) || it.unknown || !lotKey(it.lot) || isExtraLot(lotKey(it.lot)) || !isKnownValve(it.valve) || getJobProc(it.valve, it.lot) === 'DONE') continue;
+      const left = postFgLeft(it.valve, it.lot); if (!left.length) continue;
+      have.add(k);
+      const base = slipQ[k] > 0 ? slipQ[k] : (+it.qty || 0), total = Math.max(0, base - (scrT[k] || 0));
+      raw.push({ kind: 'wip', postFg: left, valve: it.valve, lot: it.lot, customer: it.customer, qty: total, base, total, recv: String(it.date || '').slice(0, 10), curProc: it.curProc || 'FG' });
+    }
+  }
   if (S.incWip && S.noSlipLots !== false) {
     const have = new Set(raw.map(x => jobKey(x.valve, x.lot)));
     for (const k in recsByJob) {
@@ -30189,23 +30471,33 @@ function mpJobs(S, ctx) {
     const v = mpValve(j.vk);
     j.sd = mpValveSd(j.vk); j.vtype = mpValveType(j.vk); j.sl = mpValveSl(j.vk);   // ★ v3.94 SL
     _mpSetCot(j, v);                                                                 // ★ v4.11 แบบ COT · Carbide
-    const flowM = v ? procsOf(v, MP_VSM) : [], flow = mpLearnFlow(j.vk, flowM, S);
+    const dupF = dupOf(j.vk);   // ★ v4.20 Process กลุ่มเดียวกันหลายขั้น = ใช้ลำดับตาม Master (ลำดับที่เรียนมาจับคู่ตามกลุ่ม แยกขั้นที่ซ้ำไม่ได้)
+    const flowM = v ? procsOf(v, MP_VSM) : [], flow = dupF ? flowM : mpLearnFlow(j.vk, flowM, S);
     if (flow !== flowM) j.flowLearned = true;
     const doneP = recsByJob[j.k] || {}, doneK = kpiByJob[j.k] || {};
     j.steps = stepsOf(j.vk, flow, flowM);
+    let occD = null;
+    if (dupF) {   // ★ v4.20 ยอดรายขั้น (ไม่ใช่รายกลุ่ม) — ขั้นหลังของกลุ่มเดียวกันไม่ได้ยอดของขั้นแรก
+      const names = flowM.map(p => _procCanon(String(p).trim())), keys = procOccKeys(names), tP = occP[j.k] || {}, tK = occK[j.k] || {};
+      const lotB = procOccBase(keys, tP, j.noSlip ? 0 : +j.base || 0);   // ใบรับเข้า vs ค่ากลางของขั้นที่ไม่ซ้ำ (กติกาเดียวกับหน้าค้นหา Process)
+      const dP = procOccAlloc(names, keys, tP, lotB, true), dK = procOccAlloc(names, keys, tK, lotB, true);
+      occD = { keys, f: k => Math.max(dP[k] || 0, dK[k] || 0) };
+      for (const st of j.steps) st.occ = keys[st.mi];
+    }
     /* ★ v4.11 (ผู้ใช้ 4/11 ข้อ 1 · VV4690A0) ยอด 🔑 Admin = Admin ยืนยันว่าขั้นนั้นผลิตแล้ว (พนักงานไม่ได้ลงยอด) → แผนนับเป็นยอดผลิตของขั้นนั้น
        เดิม: นับเฉพาะยอดพนักงาน → VV4690A0 Lot 2606S070043 มี FG / QC ยอด Admin ครบ แต่แผนยังวาง FG 547 บน G-262
        พนักงานลงยอดขั้นนั้นเมื่อไหร่ = ใช้ยอดพนักงาน (กติกาเดียวกับหน้าค้นหา Process) · KPI / Output / Dashboard ยังไม่นับยอด Admin เหมือนเดิม */
     const admQ = pfAdmOfJob(j.valve, j.lot), scrF = scrapByJob[j.k] || {};
     for (const st of j.steps) {
-      st.done = Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
+      st.done = occD ? occD.f(st.occ) : Math.max(doneP[st.fam] || 0, doneK[st.fam] || 0);
       st.scrap = scrF[st.fam] || 0;
       const aq = st.done > 0 ? null : admQ[_procCanon(String(st.proc).trim())];
       if (aq && aq.qty > 0) { st.done = aq.qty; st.adm = true; }
     }
-    /* ★ v4.18 ล็อตไม่มีใบรับเข้า: ยอดล็อต = ขั้นที่ลงยอดมากสุด · เบอร์ที่มี Process กลุ่มเดียวกัน 2 ขั้น (IND P' + F.IND) ยอดกลุ่มนั้นหารจำนวนขั้น ไม่งั้นยอดล็อตเบิ้ล */
+    /* ★ v4.18 ล็อตไม่มีใบรับเข้า: ยอดล็อต = ขั้นที่ลงยอดมากสุด · เบอร์ที่มี Process กลุ่มเดียวกัน 2 ขั้น (IND P' + F.IND) ยอดกลุ่มนั้นหารจำนวนขั้น ไม่งั้นยอดล็อตเบิ้ล
+       ★ v4.20 เบอร์แบบนี้ได้ยอดรายขั้นแล้ว (occD) — ไม่ต้องหาร */
     if (j.noSlip) {
-      const nF = {}; for (const st of j.steps) nF[st.fam] = (nF[st.fam] || 0) + 1;
+      const nF = {}; for (const st of j.steps) nF[st.fam] = occD ? 1 : (nF[st.fam] || 0) + 1;
       let top = 0; for (const st of j.steps) top = Math.max(top, (st.done || 0) / nF[st.fam]);
       top = Math.round(top);
       if (!(top > 0)) { skipped.done++; skipK.set(j.k, 'done'); continue; }
@@ -30296,6 +30588,15 @@ function mpJobs(S, ctx) {
         j.passedN = j.steps.slice(0, from).filter(s => s.passed > 0 || s.closed).length;
       }
     }
+    /* ★ v4.20 ล็อตที่ผ่าน FG แล้ว: ขั้นที่อยู่ก่อน FG ในเส้นทางไม่วางซ้ำ — ช่องว่างก่อน FG = ไม่ได้ลงยอด ไม่ใช่ของที่ต้องย้อนกลับไปทำ
+       วางเฉพาะขั้นหลัง FG ที่ยังไม่มียอด (⏪ ขั้นหลัง FG ที่ถูกข้าม เช่น IND T" ว่างแต่ COT มียอดแล้ว = ยังวางตามกติกา v4.09)
+       ใช้ลำดับในเส้นทาง ไม่ใช่ mi — ชื่อซ้ำตรงตัว (VV7324M2 TG … FH › TG) mi ของ TG ตัวหลังชี้ TG ตัวแรก */
+    if (j.postFg) {
+      const fgI = j.steps.findIndex(s => s.fam === 'FG');
+      j.steps.forEach((s, i) => { if (i <= fgI && s.need > 0) { s.passed = (s.passed || 0) + s.need; s.need = 0; delete s.hole; } });
+      const hs = j.steps.filter(s => s.hole);
+      if (hs.length) j.holes = hs.map(s => s.proc); else delete j.holes;
+    }
     const lm = mcByJob[j.k];
     if (lm) { j.curZone = lm.zone; j.curMc = lm.m; }      // ★ v3.89 ล็อตอยู่ Zone ไหนตอนนี้ (เครื่องล่าสุดที่ลงยอด)
     const jf = mcByJobFam[j.k];                              // ★ v4.00 ขั้นที่ทำค้างไว้ (ภายใน batchDays) → เครื่องที่ทำอยู่
@@ -30372,7 +30673,7 @@ function mpJobs(S, ctx) {
         order: r.order, got: r.got, planId: r.id || '', note: (p && p.note) || '', expIn: mpExpOf(vk),
         planLot: planLotNorm(p && p.lot) };     // ★ v3.89 Lot ที่แผนขายระบุ (ยังไม่เข้า VSM4) — แสดงอย่างเดียว ไม่ใช่ Lot จริงของงาน
       j.sd = mpValveSd(vk); j.vtype = mpValveType(vk); j.sl = mpValveSl(vk); _mpSetCot(j, v);   // ★ v4.11 แบบ COT · Carbide
-      const flowM = v ? procsOf(v, MP_VSM) : [], flow = mpLearnFlow(vk, flowM, S);
+      const flowM = v ? procsOf(v, MP_VSM) : [], flow = dupOf(vk) ? flowM : mpLearnFlow(vk, flowM, S);   // ★ v4.20
       if (flow !== flowM) j.flowLearned = true;
       j.steps = stepsOf(vk, flow, flowM);
       for (const st of j.steps) { st.done = 0; st.effDone = 0; st.need = r.missing; }
@@ -31832,21 +32133,37 @@ function _mpvDoneBox(res, qn, others) {
       x.q += q; if (d && (!x.d0 || d < x.d0)) x.d0 = d; if (d > x.d1) x.d1 = d;
       if (d >= last) { last = d; lastP = p; last3 = v3; }
     }
-    // ★ v4.11 ขั้นที่ Admin เติมยอด (พนักงานไม่ได้ลง) = ผลิตแล้วตามแผน → ชิป 🔑 Admin แทนชื่อเครื่อง
-    const admQ = pfAdmOfJob(g.valve, g.lot);
-    for (const p in admQ) {
-      if (P.has(p) && P.get(p).q > 0) continue;
-      const A = admQ[p], d = A.date || '';
-      P.set(p, { p, q: A.qty, d, ms: new Map([['ADM', { id: '🔑 Admin', q: A.qty, d0: d, d1: d, v3: false, zone: '' }]]) });
-      if (d >= last) { last = d; lastP = p; last3 = false; }
-    }
+    /* ★ v4.20 (ผู้ใช้ 12/11 ข้อ 2 "กระบวนการที่แสดงในการวางแผนไม่ตรงกับ Master และหน้าติดตามงาน") ชิป = ทุกขั้นตาม Master เรียงเหมือนคอลัมน์หน้าค้นหา Process
+       เดิม: เฉพาะขั้นที่มียอด → V76827A0 เห็นแค่ SSG … FG › T/T ไม่เห็น IND T" › COT › TL › SFG*2 › QC ที่ยังไม่ได้ทำ
+       ยอดตามชื่อ Process แบบเดียวกับหน้าค้นหา Process · ขั้นที่ไม่อยู่ใน Master ต่อท้ายเหมือนเดิม */
     const flow = procsOf(mpValve(g.valve), MP_VSM).map(p => _procCanon(String(p).trim()));
-    const rk = p => { const i = flow.indexOf(p); return i >= 0 ? i : 1000 + _procRank(p); };
-    const steps = [...P.values()].filter(o => o.q > 0).sort((a, b) => rk(a.p) - rk(b.p) || a.d.localeCompare(b.d));
-    if (!steps.length) continue;
+    const keys = procOccKeys(flow);
+    // ★ v4.11 ขั้นที่ Admin เติมยอด (พนักงานไม่ได้ลง) = ผลิตแล้วตามแผน → ชิป 🔑 Admin แทนชื่อเครื่อง
+    const admQ = pfAdmOfJob(g.valve, g.lot), admS = (k, A) => ({ p: procOccName(k), q: A.qty, d: A.date || '', ms: new Map([['ADM', { id: '🔑 Admin', q: A.qty, d0: A.date || '', d1: A.date || '', v3: false, zone: '' }]]) });
+    const steps = [];
+    keys.forEach(k => {
+      const n = procOccName(k), o = P.get(n), A = admQ[n];
+      if (o && o.q > 0) steps.push({ ...o, k });
+      else if (A && A.qty > 0) { steps.push({ ...admS(k, A), k }); if ((A.date || '') >= last) { last = A.date || ''; lastP = n; last3 = false; } }
+      else steps.push({ p: n, q: 0, k, pend: true });
+    });
+    const inFlow = new Set(flow);
+    for (const [p, o] of P) if (!inFlow.has(p) && o.q > 0) steps.push(o);                          // ลงชื่อที่ไม่อยู่ใน Master = ต่อท้าย
+    for (const p in admQ) if (!inFlow.has(p) && !P.has(p) && admQ[p].qty > 0) steps.push(admS(p, admQ[p]));
+    if (!steps.some(o => o.q > 0)) continue;
     const jp = getJobProc(g.valve, g.lot), fg = P.get('FG'), lastF = flow[flow.length - 1];
+    const left = jp === 'DONE' ? [] : postFgLeft(g.valve, g.lot), leftS = new Set(left);   // ★ v4.20 ผ่าน FG แต่ยังมีขั้นผลิตต่อ
     let st = 'ok', lbl, sd = last, why = '';
     if (jp === 'DONE') { lbl = TT('✅ จบงาน', '✅ Finished'); sd = getJobProcDate(g.valve, g.lot) || last; }
+    else if (left.length) {
+      st = 'idle';
+      lbl = `⏳ ${TT('ผ่าน FG แล้ว · ยังเหลือ', 'past FG · still to do')} ${[...new Set(left.map(procOccName))].map(escapeHtml).join(' › ')}`;
+      const sk = skipK.get(g.k);
+      why = `<span class="nw">${TT('ลงยอดล่าสุด', 'last recorded')} <b>${escapeHtml(lastP)}</b> ${_mpD(last).slice(0, 5)}</span> · ` + (sk === 'silent'
+        ? `💤 <span class="nw">${TT('ไม่มีคนลงยอดเกิน', 'nothing recorded for over')} ${nn(+res.S.silentDays || 14)} ${TT('วัน', 'days')}</span> — <span class="nw">${TT('อยู่ในรายการ 💤 ให้เช็กหน้างาน', 'listed under 💤 for a floor check')}</span> (<span class="nw">${TT('ลงยอดใหม่ = กลับเข้าแผนเอง', 'new output brings it back')}</span>)`
+        : sk === 'cust' || sk === 'onlyPlan' ? TT('<span class="nw">ไม่อยู่ในตัวกรองของแผน</span>', 'outside the plan filter')
+        : TT('<span class="nw">ขั้นที่เหลือไม่ใช้เครื่อง VSM4</span> <span class="nw">(VSM3 / แผนกอื่น)</span> — <span class="nw">แผนเครื่องไม่วางให้</span>', 'the remaining steps do not use VSM4 machines (VSM3 / other dept) — not on the machine plan'));
+    }
     else if (jp) { lbl = `✅ ${TT('ผ่าน FG → อยู่', 'past FG → at')} ${escapeHtml(jp)}`; sd = getJobProcDate(g.valve, g.lot) || (fg && fg.d) || last; }
     else if (fg && fg.q > 0) { lbl = TT('✅ ผ่าน FG แล้ว', '✅ Past FG'); sd = fg.d; }
     else if (skipK.get(g.k) === 'done' || (lastF && P.has(lastF))) lbl = TT('✅ ทำครบทุกขั้นที่ VSM4', '✅ All VSM4 steps done');
@@ -31858,9 +32175,17 @@ function _mpvDoneBox(res, qn, others) {
           : TT('<span class="nw">ไม่มีใบรับเข้า WIP IN 1.5</span> <span class="nw">และไม่มีคนลงยอดต่อ</span> — <span class="nw">แผนไม่วางให้</span> (<span class="nw">ลงยอดใหม่ = กลับเข้าแผนเอง</span>)', 'no WIP IN slip and nothing recorded since — not planned (new output brings it back)'))}`;
     }
     // ★ v4.06 ยอด = ผ่าน FG รวมทุกวัน (ชิป FG ชุดเดียวกัน) · เดิมงานที่กดส่งต่อ/จบแล้ว = ยอด FG ตอนกดครั้งเดียว
-    const qty = fg && fg.q > 0 ? fg.q : (jp && jobFgQty(g.valve, g.lot)) || steps[steps.length - 1].q;
+    const qty = fg && fg.q > 0 ? fg.q : (jp && jobFgQty(g.valve, g.lot)) || steps.filter(o => o.q > 0).pop().q;
     // ชิปละ 1 เครื่อง (สีตาม Zone ปัจจุบันของเครื่อง · VSM3 สีชมพู) · หลายเครื่องในขั้นเดียว = คั่นด้วย + และบอกยอดของแต่ละเครื่อง
+    // ★ v4.20 ขั้นที่ยังไม่มียอด = ชิปเทา: ⏳ รอทำ (ขั้นผลิตหลัง FG ที่ยังเหลือ) · ✓ จบงาน (QC ของล็อตที่จบแล้ว — แบบเดียวกับหน้าค้นหา Process) · ไม่มียอด
+    const pendC = o => {
+      const t = leftS.has(o.k) ? ['⏳ ' + TT('รอทำ', 'to do'), TT('ขั้นผลิตหลัง FG ที่ยังไม่มียอด — ยังไม่จบงาน', 'a production step after FG with no output yet — not finished')]
+        : jp === 'DONE' && o.k === 'QC' ? ['✓ ' + TT('จบงาน', 'finished'), TT('จบงานแล้ว', 'finished')]
+        : ['–', TT('ไม่มียอดของ Lot นี้', 'no output for this lot')];
+      return `<span class="mpv-rz lx${leftS.has(o.k) ? ' bad' : ''}" title="${escapeHtml(o.p + ' · ' + t[1])}"><small>${escapeHtml(o.p)}</small><b>${t[0]}</b></span>`;
+    };
     const chips = () => steps.map(o => {
+      if (o.pend) return pendC(o);
       const ms = [...o.ms.values()].sort((a, b) => a.d0.localeCompare(b.d0) || b.q - a.q);
       return ms.map(x => {
         const z = x.v3 ? 'VSM3' : zOf.get(x.id) || x.zone, [zc, zl] = x.v3 ? ['#BE185D', '#FDF2F8'] : MP_ZCOL[z] || ['#475569', '#F8FAFC'];
@@ -31931,7 +32256,9 @@ function mpNotPlanned(res) {
   // เหตุผลสั้นของขั้นที่ไม่มีเครื่องรับ (ข้อความเต็มมีรายชื่อเครื่อง — ยาวเกินสำหรับรายการ)
   const why1 = w => { const s = String(w || '').split(' · ')[0]; return /^SD -/.test(s) ? TT('วาล์วไม่มี SD', 'valve has no SD') : /^SD \d/.test(s) ? `${s} ${TT('ไม่มีเครื่องรับ', 'no machine fits')}` : s; };
   const stepWhy = L => L.map(x => `${x.proc ? x.proc + ': ' : ''}${why1(x.why)}`).join(' · ');
-  for (const it of (b.wipIn.items || []).filter(x => !x.started).concat(b.wip.items || [])) {
+  // ★ v4.20 + ล็อตที่ผ่าน FG แล้วแต่ยังมีขั้นผลิตหลัง FG (เข้าแผนจาก mpJobs ไม่ได้มาจากยอด WIP)
+  const pfIt = (res.jobs || []).concat(res.v3jobs || [], res.silent || []).filter(j => j.postFg).map(j => ({ valve: j.valve, lot: j.lot, qty: j.qty }));
+  for (const it of (b.wipIn.items || []).filter(x => !x.started).concat(b.wip.items || [], pfIt)) {
     const k = jobKey(it.valve, it.lot); if (seen.has(k)) continue; seen.add(k);
     if (it.unknown) { push(it, 'bad', (it.bad || []).join(' · ')); continue; }
     if (it.orphan) { push(it, 'orphan'); continue; }
@@ -32511,7 +32838,7 @@ function _mpvRowDetail(a, res) {
   if (hasV3) out.push(`🔀 ${TT('เส้นทาง', 'Route')} (③ VSM3 · ④ VSM4): ${_mpRouteHtml(j, cal)}`);      // ★ v3.83
   else if (path.length > 1) out.push(`🧭 ${TT('เส้นทางล็อต', 'Lot route')}: ${path.join(' → ')}`);
   const fgAt3 = j.fgT != null && (j.steps || []).some(s => s.fam === 'FG' && s.v3 && s.need > 0);
-  if (j.finish) out.push(`🏁 FG${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
+  if (j.finish) out.push(`🏁 ${escapeHtml(_mpEndName(j))}${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
   if (hasV3) out.push(`<button type="button" class="mpv-chip" data-act="route" data-vk="${escapeHtml(j.vk)}">✎ ${TT('แก้เส้นทาง VSM3/VSM4 ของเบอร์นี้', 'Edit this valve\'s VSM3/VSM4 route')}</button>`);
   if (j.kind === 'order') out.push(`📭 ${TT('ยังไม่มี WIP IN 1.5 · คาดว่าเข้า', 'no WIP IN 1.5 yet · expected')} ${_mpD(j.expIn) || '-'}`);
   if (a.pin) out.push(a.pin.mv ? `🔀 ${TT('ย้ายเครื่อง', 'Moved')} ${escapeHtml(a.pin.mv.from || '?')} → ${escapeHtml(a.m.id)} · ${escapeHtml(a.pin.mv.by || '')} ${escapeHtml(a.pin.mv.byName || '')}${a.pin.mv.why ? ' · ' + mpMoveWhyLbl(a.pin.mv.why) : ''}`
@@ -33184,7 +33511,7 @@ function _mpvV3Detail(x, res) {
   if (p && p.internal && p.start != null) out.push(`⬅️ ${TT('ก่อนส่ง', 'before')}: <b>${escapeHtml(p.proc)} ④</b> ${escapeHtml((p.machines || []).join('/'))} ${_mpDW(cal.dateAt(p.start + 1e-6))} → ${_mpDW(cal.dateAt(p.end))}`);
   else if (x.b.started) out.push(`📍 ${TT('ล็อตอยู่ที่ VSM3 แล้ว (เริ่มทำบาง Process แล้ว) — คิดเวลาเหลือ', 'already at VSM3 — remaining time')} ${_mpNum(+res.S.v3RunDays)} ${TT('วัน', 'd')}`);
   const fgAt3 = j.fgT != null && (j.steps || []).some(s => s.fam === 'FG' && s.v3 && s.need > 0);
-  if (j.finish) out.push(`🏁 FG${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
+  if (j.finish) out.push(`🏁 ${escapeHtml(_mpEndName(j))}${fgAt3 ? ' (' + TT('ที่ VSM3', 'at VSM3') + ')' : ''} ${TT('เสร็จตามแผน', 'done by plan')} <b>${_mpD(j.finish)}</b>${j.due ? ` · ${TT('วันขาย', 'sale')} ${_mpD(j.due)} (${TT('FG ต้องเสร็จ', 'FG due')} ${_mpD(j.dueFg)})` : ''}`);
   const mixed = (j.steps || []).filter(s => s.mixed && s.lineSrc !== 'admin');
   if (mixed.length) out.push(`⚖️ ${TT('ทำได้ทั้ง 2 สาย', 'made on both lines')}: ${mixed.map(s => `${escapeHtml(s.proc)} (VSM3 ${nn(s.q3)} / VSM4 ${nn(s.q4)})`).join(', ')} — ${TT('ระบบเลือกสายที่ผลิตมากกว่า', 'the plan uses the line that made more')}`);
   out.push(`<button type="button" class="mpv-chip" data-act="route" data-vk="${escapeHtml(j.vk)}">✎ ${TT('แก้เส้นทาง VSM3/VSM4 ของเบอร์นี้', 'Edit this valve\'s VSM3/VSM4 route')}</button>`);

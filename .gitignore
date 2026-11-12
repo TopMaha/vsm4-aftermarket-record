@@ -28,3 +28,6 @@ Requisition System/
 # Deploy build (tools/build.mjs) — generated, never commit
 node_modules/
 _site/
+
+# Reports for the user (Excel with lot data) — do not publish
+reports/
