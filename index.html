@@ -3136,7 +3136,12 @@ tr.s-short .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .iah-tbl thead th.iah-zhh{left:0;z-index:5;text-align:left;box-shadow:1px 0 0 #CBD5E1}
 .iah-tbl thead th.iah-toth{background:#DBEAFE;color:#1E3A8A}
 .iah-zh{position:sticky;left:0;z-index:2;background:#fff;text-align:left!important;font-weight:700;color:#0F172A;
-  max-width:210px;overflow:hidden;text-overflow:ellipsis;box-shadow:1px 0 0 #E2E8F0}
+  max-width:260px;overflow:hidden;text-overflow:ellipsis;box-shadow:1px 0 0 #E2E8F0}
+/* ★ v4.21 👷 ชื่อ Group Leader ข้างชื่อ Zone — ตัวหนังสือเทาเบา ๆ (ตารางยังสงบ) · ชื่อยาวตัด … ชี้ดูเต็มได้ */
+.iah-zin{display:flex;align-items:baseline;gap:7px;min-width:0;max-width:246px}
+.iah-zn{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.iah-gl{flex:0 1 auto;min-width:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-weight:700;color:#64748B}
+.iah-glh{font-weight:700;color:#64748B}
 .iah-cell{font-variant-numeric:tabular-nums;font-weight:800;border-bottom:1px solid #F1F5F9}
 .iah-good{background:#DCFCE7;color:#14532D}
 .iah-warn{background:#FFEDD5;color:#7C2D12}
@@ -3381,7 +3386,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.20</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.21</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3927,6 +3932,17 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="zoneTargetsWrap"></div>
     <button class="btn btn-blue btn-sm" onclick="saveTargets()">💾 บันทึก Targets ทั้งหมด</button>
     <div class="muted mt-8" style="font-size:11px">หมายเหตุ: PPLH ของ Zone 2 (INDUCTION) สูงกว่า Zone อื่นเพราะเครื่อง induction มีรอบเร็วกว่า</div>
+  </div>
+
+  <!-- ★ v4.21 (ผู้ใช้ 12/11) 👷 Group Leader ประจำ Zone — ตั้งราย VSM / QC ตามแถบสลับด้านบน · แสดงข้างชื่อ Zone ในหน้า IOT รวมทุกสาย -->
+  <div class="section-title">👷 Group Leader ประจำ Zone</div>
+  <div class="card">
+    <div class="muted mb-8" style="font-size:12px;line-height:1.6">ชื่อนี้แสดงในหน้า 🏭 IOT รวมทุกสาย ข้างชื่อ Zone (ตาราง KPI รายชั่วโมง) · ตั้งของ VSM / QC ที่เลือกอยู่ที่แถบด้านบน · เว้นว่าง = ไม่แสดง</div>
+    <div id="zoneGlWrap"></div>
+    <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+      <button class="btn btn-blue btn-sm" onclick="saveZoneGl()">💾 บันทึกชื่อ Group Leader</button>
+      <span id="zoneGlState" class="muted" style="font-size:11px"></span>
+    </div>
   </div>
 
   <div class="section-title">🗂️ Master Data: Valves</div>
@@ -11755,7 +11771,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.20":"Production Record + KPI · v4.20",
+"ระบบบันทึกผลิต + KPI · v4.21":"Production Record + KPI · v4.21",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11970,6 +11986,8 @@ const I18N_X = {
 "💾 ข้อมูลในเครื่อง (Local)":"💾 Local data","👥 พนักงาน":"👥 Employees","🔄 รีเซ็ต Master Data":"🔄 Reset master data",
 "🗑️ ล้าง Records ทั้งหมด":"🗑️ Clear all records","🎯 ค่าเป้าหมาย KPI (แยกตาม Zone)":"🎯 KPI targets (per zone)",
 "💾 บันทึก Targets ทั้งหมด":"💾 Save all targets",
+"👷 Group Leader ประจำ Zone":"👷 Zone Group Leaders","💾 บันทึกชื่อ Group Leader":"💾 Save Group Leader names",
+"ชื่อนี้แสดงในหน้า 🏭 IOT รวมทุกสาย ข้างชื่อ Zone (ตาราง KPI รายชั่วโมง) · ตั้งของ VSM / QC ที่เลือกอยู่ที่แถบด้านบน · เว้นว่าง = ไม่แสดง":"Shown next to the zone name on the 🏭 All-line IOT page (hourly KPI table) · set for the VSM / QC selected in the bar above · leave blank to hide",
 "หมายเหตุ: PPLH ของ Zone 2 (INDUCTION) สูงกว่า Zone อื่นเพราะเครื่อง induction มีรอบเร็วกว่า":"Note: Zone 2 (INDUCTION) has a higher PPLH because induction machines cycle faster",
 "🔎 ค้นหา Valve":"🔎 Search valve","📋 วางจาก Excel":"📋 Paste from Excel","รหัส":"Code","ชื่อ":"Name",
 "ชื่อ-นามสกุล":"Full name","➕ เพิ่ม/แก้ไข":"➕ Add/Edit","คน · กรอง:":"people · filter:","ทุก VSM":"All VSM",
@@ -15615,6 +15633,11 @@ function _iotAllData(){
   return {per,dFrom,dTo,shiftF,rangeLabel:`${dFrom===dTo?dFrom:dFrom+' → '+dTo} · ${shiftLabel}`};
 }
 async function _iotAllSync(){
+  // ★ v4.21 👷 ชื่อ Group Leader ราย Zone อยู่ใน mp_manual (ตารางเล็ก) → ดึงคู่กับ KPI ทุกรอบ (เปิดหน้า + ทุก 5 นาที) · ล่มก็ใช้ชื่อเดิมในเครื่อง
+  const mp=API?mpManLoad().catch(()=>null):null;
+  try{ await _iotAllSyncKpi(); } finally { await mp; }
+}
+async function _iotAllSyncKpi(){
   if(_iaGhost){ await _iaGhostSync(); return; }   // ghost: โหลดวันย้อนหลังเก็บแยก ไม่แตะ state.kpiRecords
   if(!API||_iotAllSyncing) return;
   _iotAllSyncing=true;
@@ -16351,7 +16374,7 @@ function _iotAllRenderHourly(){
   }).join('');
   const rangeLabel=`${_iahP2(hours[0])}:00–${_iahP2(hours[hours.length-1]+1)}:00`;
   const hourTh=hours.map(h=>`<th>${_iahP2(h)}–${_iahP2(h+1)}</th>`).join('');
-  let rows='';
+  let rows='', anyGl=false;
   for(const v of VSM_KEYS){
     const P=_iotAllD.per[v]; if(!P) continue;
     const mt=_IA_VSM_META[v];
@@ -16382,8 +16405,12 @@ function _iotAllRenderHourly(){
         return `<td class="iah-cell ${_iahCls(val,metric,z)}"${tip?` title="${escapeHtml(tip)}"`:''}>${_iahFmt(val,metric)}</td>`;
       }).join('');
       const tot=_iahVal(zr,metric,z);
-      rows+=`<tr class="iah-zrow" role="button" tabindex="0" aria-label="${escapeHtml(ZONE_LABEL[z]||z)} — ${mt.label}" onclick="iotAllVsmPop('${v}')" ${kd}>`
-        +`<td class="iah-zh" title="${TT('กดดูรายละเอียด','tap for details')} · ${escapeHtml(ZONE_LABEL[z]||z)}">${escapeHtml(ZONE_LABEL[z]||z)}</td>${cells}`
+      // ★ v4.21 👷 ชื่อ Group Leader ข้างชื่อ Zone (ตั้งในหน้าตั้งค่าของแต่ละ VSM / QC)
+      const zl=escapeHtml(ZONE_LABEL[z]||z), gl=zoneGlName(z), glE=escapeHtml(gl);
+      if(gl) anyGl=true;
+      rows+=`<tr class="iah-zrow" role="button" tabindex="0" aria-label="${zl}${gl?' · Group Leader '+glE:''} — ${mt.label}" onclick="iotAllVsmPop('${v}')" ${kd}>`
+        +`<td class="iah-zh" title="${TT('กดดูรายละเอียด','tap for details')} · ${zl}${gl?' · Group Leader: '+glE:''}"><div class="iah-zin"><span class="iah-zn">${zl}</span>`
+        +(gl?`<span class="iah-gl">👤 ${glE}</span>`:'')+`</div></td>${cells}`
         +`<td class="iah-cell iah-tot ${_iahCls(tot,metric,z)}" title="${TT('รวมทั้งวัน','whole day')}">${_iahFmt(tot,metric)}</td></tr>`;
     }
   }
@@ -16406,7 +16433,7 @@ function _iotAllRenderHourly(){
     </div>
     <div class="iah-scroll">
       <table class="iah-tbl">
-        <thead><tr><th class="iah-zhh">Zone</th>${hourTh}<th class="iah-toth">${TT('รวม','Total')}</th></tr></thead>
+        <thead><tr><th class="iah-zhh">Zone${anyGl?` <span class="iah-glh">· 👤 Group Leader</span>`:''}</th>${hourTh}<th class="iah-toth">${TT('รวม','Total')}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -25816,6 +25843,8 @@ async function renderSettings() {
   const steps = [
     ['เป้าหมาย + จำนวนข้อมูล', () => {
       renderZoneTargets();
+      renderZoneGl();                                                               // ★ v4.21 👷
+      if (API) mpManLoad().then(() => renderZoneGl(true)).catch(() => {});          // ชื่อที่เครื่องอื่นตั้งไว้ (mp_manual)
       if ($('lsKpiCount'))   $('lsKpiCount').textContent   = state.kpiRecords.length;
       if ($('lsProdCount'))  $('lsProdCount').textContent  = state.prodRecords.length;
       if ($('lsValveCount')) $('lsValveCount').textContent = state.valves.length;
@@ -26329,6 +26358,51 @@ function renderZoneTargets() {
       </div>
     </div>
   `).join('');
+}
+
+/* ===== ★ v4.21 👷 GROUP LEADER ประจำ Zone (ตาม VSM / QC ที่เลือกอยู่) =====
+   เก็บใน mp_manual (ดู zoneGlName) · 1 ช่อง / Zone · ช่องว่าง = ลบชื่อออก
+   fromCloud = วาดซ้ำหลังโหลดจาก Cloud → ถ้ากำลังพิมพ์อยู่ (_zglDirty) ไม่ทับสิ่งที่พิมพ์ */
+let _zglDirty = false;
+function renderZoneGl(fromCloud) {
+  const wrap = $('zoneGlWrap');
+  if (!wrap || (fromCloud && _zglDirty)) return;
+  const p2 = n => String(n).padStart(2, '0');
+  wrap.innerHTML = `<div class="fg-auto">${currentZones().map(z => {
+    const it = zoneGlItem(z), d = it && it.at ? new Date(it.at) : null;
+    const meta = !it ? ''
+      : it._local ? `⏳ ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud yet')}`
+      : (d && !isNaN(d) ? `${TT('อัปเดต', 'Updated')} ${d.getDate()}/${d.getMonth() + 1} ${p2(d.getHours())}:${p2(d.getMinutes())}${it.by ? ' · ' + escapeHtml(it.by) : ''}` : '');
+    return `<div class="fr" style="margin:0">
+      <label for="zgl-${z}">📍 ${escapeHtml(ZONE_LABEL[z] || z)}</label>
+      <input type="text" id="zgl-${z}" maxlength="60" autocomplete="off" value="${escapeHtml(zoneGlName(z))}"
+        placeholder="${TT('ชื่อ Group Leader', 'Group Leader name')}" oninput="_zglDirty=true">
+      ${meta ? `<div class="muted" style="font-size:10.5px;margin-top:3px">${meta}</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+  _zglDirty = false;
+}
+async function saveZoneGl() {
+  const put = [], rm = [];
+  for (const z of currentZones()) {
+    const el = $('zgl-' + z); if (!el) continue;
+    const name = el.value.replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (name === zoneGlName(z)) continue;
+    if (name) put.push({ id: MP_GL_PREFIX + z, kind: 'off', gl: 1, zone: z, name });
+    else if (zoneGlItem(z)) rm.push(MP_GL_PREFIX + z);
+  }
+  _zglDirty = false;
+  if (!put.length && !rm.length) { toast(TT('ชื่อ Group Leader ไม่มีการเปลี่ยนแปลง', 'No Group Leader changes'), 'blue'); return; }
+  if (put.length) mpManPut(put);
+  if (rm.length) mpManRemove(rm);
+  clearTimeout(_mpManTimer);                       // ส่งขึ้น Cloud ทันที (ไม่รอ 0.9 วิ) เพื่อบอกผลได้ตรง
+  const st = $('zoneGlState'); if (st) st.innerHTML = '<span class="spinner"></span>';
+  const r = await _mpManFlush();
+  renderZoneGl();
+  if (st) st.textContent = '';
+  if (r.ok) toast('👷 ' + TT('บันทึกชื่อ Group Leader แล้ว', 'Group Leader names saved'), 'green');
+  else toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (ส่งให้เองเมื่อออนไลน์)', 'Saved on this device — not on Cloud yet (will send when online)'), 'orange');
+  if (document.getElementById('iotAllOv')) _iotAllRenderHourly();
 }
 
 async function syncAllToCloud() {
@@ -29093,9 +29167,15 @@ function mpPinMap(movesOnly) {
 function mpExpOf(vk) { const x = _mpMan.find(i => i.kind === 'exp' && i.vk === vKey(vk)); return (x && x.date) || ''; }
 function mpOffSet() {
   const s = new Set(MP_OFF_DEFAULT);
-  for (const x of mpManItems('off')) { if (x.down || x.log) continue; if (+x.off) s.add(x.m); else s.delete(x.m); }
+  for (const x of mpManItems('off')) { if (x.down || x.log || x.gl) continue; if (+x.off) s.add(x.m); else s.delete(x.m); }
   return s;
 }
+/* ★ v4.21 (ผู้ใช้ 12/11) 👷 Group Leader ประจำ Zone — ตั้งในหน้าตั้งค่า (ราย VSM / QC) · แสดงข้างชื่อ Zone ในหน้า IOT รวมทุกสาย
+   เก็บใน mp_manual ชนิด 'off' แบบเดียวกับ 🔧 เครื่องเสีย — Worker รับแค่ pin / exp / off และ targets เก็บได้แต่ตัวเลข (ชื่อเป็นข้อความ)
+     id "gl|<ZONE>" { gl: 1, zone, name } — ไม่มี m / off → แอปรุ่นเก่าไม่ตีความเป็นเครื่องปิด / เปิด (s.delete(undefined) ไม่มีผล) */
+const MP_GL_PREFIX = 'gl|';
+function zoneGlItem(z) { const id = MP_GL_PREFIX + String(z || '').toUpperCase(); return _mpMan.find(x => x && x.id === id && x.gl) || null; }
+function zoneGlName(z) { const x = zoneGlItem(z); return x ? String(x.name || '').trim() : ''; }
 /* ═══════════════════════════════════════════════════════════════════════
    ★ v4.14 (ผู้ใช้ 5/11 "เพิ่มระบบบอกเครื่องเสียค้าง เพราะสำคัญต่อการวางแผน") 🔧 เครื่องเสีย
    เก็บใน mp_manual ชนิด 'off' — Worker ไม่ต้องแก้ (MPMAN_KINDS รับแค่ pin / exp / off) · ทุกเครื่องเห็นตรงกันผ่าน Cloud
