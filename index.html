@@ -3386,7 +3386,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.21</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.22</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4641,12 +4641,13 @@ function _lsFlush() {
     try { localStorage.setItem(k, JSON.stringify(_lsTrim(k, v))); } catch (e) {}
   }
 }
+let _idsVer = 0;   // ⚡ v4.22 รุ่นของ Valve IDs — ดัชนี Lot ที่ลงทะเบียน (_regLotIndex) สร้างใหม่เมื่อเลขนี้เปลี่ยน
 function lsSave(key, val) {
   _lsDirty[key] = val;                // อัปเดต state ใน memory เกิดที่ผู้เรียกแล้ว — ที่นี่แค่คิวเขียน disk
   // ข้อมูลเปลี่ยน → invalidate filterVsm cache ทันที
   // ⚡ v3.80 ยกเว้น Valve IDs: ไม่มี cache ตัวไหนที่ผูกกับ _fvVer อ่าน state.ids (ไล่ครบแล้ว) — เดิมดึง ID ชุดเต็มตอนเครื่องว่าง
   //   ทีไร ยอด WIP 3 ถังถูกคิดใหม่ทั้งก้อนตอนแตะหน้าถัดไปทุกครั้ง
-  if (key !== LS.IDS) _fvVer++;
+  if (key !== LS.IDS) _fvVer++; else _idsVer++;   // ทุกจุดที่แก้ state.ids (รวมแก้ในที่) เรียก lsSave(LS.IDS) ตามเสมอ
   if (!_lsTimer) _lsTimer = setTimeout(_lsFlush, 500);
 }
 // flush ทันทีก่อนหน้าปิด/ซ่อน — กันข้อมูลค้างใน buffer หาย (มือถือปิดแท็บมักยิงแค่ pagehide/visibilitychange)
@@ -6972,8 +6973,9 @@ function setPane(name) {
       state.adminUnlocked = true;
       toast('🔓 ปลดล็อก Admin Mode — เลือกดู VSM ได้ทุกสาย (ทีละสาย) ที่ปุ่มด้านบนหน้าตั้งค่า', 'green');
       // ★ v4.00 ปุ่ม 🔑 ในหน้าตั้งค่าต้องขึ้น "🔓 Admin" ด้วย (เดิมยังเขียน 🔑 Admin Mode → กดซ้ำ = ล็อกกลับโดยไม่รู้ตัว)
-      if (typeof _adminChanged === 'function') _adminChanged();   // อัปเดตหัวแอป + มุมมองตามสาย + ตารางค้นหา Process
+      // ⚡ v4.22 เปิดหน้าตั้งค่าก่อน แล้วค่อย _adminChanged → refreshVsmViews เห็นว่าอยู่หน้าตั้งค่า = วาดหน้าตั้งค่ารอบเดียวก่อนหน้าอื่น
       _doSetPane('settings');
+      if (typeof _adminChanged === 'function') _adminChanged();   // อัปเดตหัวแอป + มุมมองตามสาย + ตารางค้นหา Process
     });
     return;
   }
@@ -9160,11 +9162,9 @@ function _lotNorm(s) {
 function _lotAutoFix(valve, badLot) {
   const orig = (badLot || '').trim(); if (!orig) return null;
   const norm = _lotNorm(orig);
-  const reg = (state.ids || [])
-    .filter(r => (r.valve_no || '').trim().toLowerCase() === (valve || '').trim().toLowerCase())
-    .map(r => (r.lot || '').trim()).filter(Boolean);
-  const hit = reg.find(l => _lotNorm(l) === norm && l !== orig);
-  if (hit) return hit;                                                     // ตรง Lot ที่ลงทะเบียนไว้ (ต่างการสะกด/อักขระ)
+  const reg = _regLotIndex().byValve.get((valve || '').trim().toLowerCase()) || [];   // ⚡ v4.22 ดัชนีแทนไล่ทั้งก้อน · [Lot, Lot ที่ normalize แล้ว]
+  const hit = reg.find(([l, n]) => n === norm && l !== orig);
+  if (hit) return hit[0];                                                  // ตรง Lot ที่ลงทะเบียนไว้ (ต่างการสะกด/อักขระ)
   const hasGarble = Object.keys(_LOT_FIXMAP).some(bad => orig.includes(bad));
   if (hasGarble && norm !== orig) return norm;                            // ทำความสะอาดอักขระเสีย เช่น $→S
   return null;
@@ -11771,7 +11771,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.21":"Production Record + KPI · v4.21",
+"ระบบบันทึกผลิต + KPI · v4.22":"Production Record + KPI · v4.22",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -23018,11 +23018,29 @@ function lotsForValve(valveNo) {
   return [...set].filter(l => !lotPickHidden(valveNo, l))
                  .sort((a, b) => String(b).localeCompare(String(a), undefined, { numeric: true, sensitivity: 'base' }));
 }
+/* ⚡ v4.22 ดัชนี Valve IDs — เดิม isRegisteredLot ไล่ state.ids ทั้งก้อน (13,103 แถว) ทุกครั้งที่ถาม
+   แผง "Lot ยังไม่ลงทะเบียน" ถามครั้งละ record (23,203 ตัว) = ~300 ล้านรอบ → เข้าหน้าตั้งค่าค้าง ~10 วิ (มือถือ 30–40 วิ)
+   ตอนนี้สร้างดัชนีครั้งเดียว ใช้ซ้ำจนกว่า state.ids จะเปลี่ยน (ตัวใหม่ · จำนวนแถว · lsSave(LS.IDS) → _idsVer) */
+let _regLotIdx = null;
+function _regLotIndex() {
+  const ids = state.ids || [];
+  const c = _regLotIdx;
+  if (c && c.src === ids && c.n === ids.length && c.ver === _idsVer) return c;
+  const pairs = new Set(), byValve = new Map();
+  for (const r of ids) {
+    const vn = String(r.valve_no || '').trim().toLowerCase(), L = String(r.lot || '').trim();
+    if (!L) continue;
+    if (vn) pairs.add(vn + '\u0001' + L.toLowerCase());
+    let a = byValve.get(vn); if (!a) byValve.set(vn, a = []);
+    a.push([L, _lotNorm(L)]);                    // ลำดับเดียวกับ state.ids (ใช้หา Lot ที่ตรงตัวแรกใน _lotAutoFix) + ค่าที่ normalize แล้ว
+  }
+  return (_regLotIdx = { src: ids, n: ids.length, ver: _idsVer, pairs, byValve });
+}
 /* Lot ที่ "ลงทะเบียนใน Valve IDs (หน้าตั้งค่า)" เท่านั้น — ใช้แยกว่า lot ไหนพนักงานพิมพ์เพิ่มเอง (ยังไม่ลงทะเบียน) */
 function isRegisteredLot(valveNo, lot) {
   const vn = (valveNo || '').trim().toLowerCase(), L = (lot || '').trim().toLowerCase();
   if (!vn || !L) return false;
-  return (state.ids || []).some(r => (r.valve_no || '').trim().toLowerCase() === vn && (r.lot || '').trim().toLowerCase() === L);
+  return _regLotIndex().pairs.has(vn + '\u0001' + L);
 }
 /* ═══ ★ v4.14 (ผู้ใช้ 5/11 ข้อ 1 + รูป VV4704A0: ติดตามงานมี 3 Lot ปิดไป 2 เหลือ 1 แต่ Dropdown ขึ้น 4) ═══
    Dropdown ตอนบันทึกของ VSM3 / VSM4 = Lot ในหน้า ติดตามงาน → ค้นหา Process ที่ยังไม่จบ
@@ -26555,6 +26573,15 @@ async function refreshVsmViews() {
   const TITLE = TT('🔄 กำลังอัปเดตข้อมูลตามสายที่เลือก…', '🔄 Updating views for selected line…');
   loadOn('vsmviews', TITLE, { sub: `0/4` });
   try {
+    /* ⚡ v4.22 อยู่หน้าตั้งค่า → วาดหน้าตั้งค่าก่อน (หน้าที่ผู้ใช้กำลังดู) แล้วค่อยวาดหน้าอื่นตามหลัง
+       เดิม: วาดฟอร์ม/แผน/ประวัติ/Dashboard 4 ขั้นก่อน แล้วสั่ง renderSettings ซ้ำ → รอบที่ setPane เริ่มไว้ถูกทิ้งกลางทาง
+       (ปลดล็อก Admin ที่ประตูหน้าตั้งค่า = วาดหน้าตั้งค่า ~1.5 รอบ · สลับ VSM = เห็นหน้าตั้งค่าใหม่ช้าสุด) */
+    const setFirst = document.querySelector('section.pane.active')?.id === 'pane-settings';
+    if (setFirst) {
+      try { ensureValidZone(); } catch (e) {}
+      try { await renderSettings(); } catch (e) {}
+      if (seq !== _vsmViewSeq) return;
+    }
     const steps = [
       ['ฟอร์มบันทึก + Zone', () => { ensureValidZone(); renderZoneTabs(); renderZone(); populateZoneSelects(); }],
       ['แผนการผลิต',        () => { renderPlans(); }],
@@ -26569,7 +26596,7 @@ async function refreshVsmViews() {
       try { steps[i][1](); } catch (e) {}
     }
     if (seq !== _vsmViewSeq) return;
-    try { await renderSettings(); } catch (e) {}       // หน้าตั้งค่ามีป้ายความคืบหน้าของตัวเอง
+    if (!setFirst) { try { await renderSettings(); } catch (e) {} }   // หน้าตั้งค่ามีป้ายความคืบหน้าของตัวเอง (ไม่ได้เปิดอยู่ = ไม่วาด)
   } finally {
     if (seq === _vsmViewSeq) loadOff('vsmviews');
   }
