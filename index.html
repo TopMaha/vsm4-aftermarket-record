@@ -1566,6 +1566,77 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .ppg-warn{font-size:11px;font-weight:700;color:#B45309}
 @media (max-width:700px){ .ppg{gap:7px} .ppg-info{margin-left:0} .ppg-b{padding:6px 10px;font-size:12.5px} }
 #planTable tbody tr.sel{background:#EFF6FF!important;box-shadow:inset 3px 0 0 var(--blue)}
+/* ===== ★ v4.26 (ผู้ใช้ 13/11 "ช่องว่างห่างกันเกินไป ทำเป็นเหมือนตาราง Excel") ตารางแผนขาย = กริดแบบ Excel =====
+   แถวเดียวสูง 26px · เส้นตารางทุกช่อง · ช่องกรอกเต็มเซลล์ไม่มีกรอบมน (โฟกัส = กรอบน้ำเงินแบบเซลล์ที่เลือกใน Excel)
+   separate + spacing 0 (ไม่ใช่ collapse) — เส้นของหัวตารางที่ sticky ไม่หลุดตอนเลื่อน
+   รายละเอียด Lot ใต้สถานะพับไว้ กด ▸ ทีละแถว / "แสดง Lot ทุกแถว" */
+#planTable.xl-grid{--xl-grid:#DCE3ED;table-layout:fixed;width:100%;min-width:900px;border-collapse:separate;border-spacing:0;font-size:12px}
+/* padding !important — กฎมือถือ "table td,table th{padding:7px 6px!important}" (≤560px) ทำแถวสูง 47px */
+#planTable.xl-grid th,#planTable.xl-grid td{padding:0!important;height:26px;vertical-align:middle;border:0;
+  border-right:1px solid var(--xl-grid);border-bottom:1px solid var(--xl-grid);background-clip:padding-box}
+#planTable.xl-grid th:last-child,#planTable.xl-grid td:last-child{border-right:0}
+#planTable.xl-grid td[colspan]{padding:20px!important}                   /* แถว "ไม่พบแผน" */
+#planTable.xl-grid thead th{padding:0 5px!important;height:28px;background:#EEF2F8;color:#334155;font-size:11.5px;font-weight:800;letter-spacing:0;
+  z-index:2;box-shadow:inset 0 -1px 0 #C3CEDF}
+#planTable.xl-grid tbody tr:nth-child(even){background:#fff}               /* Excel ไม่มีลายสลับ — เส้นตารางพอแล้ว */
+#planTable.xl-grid tbody tr:hover{background:#F5F9FF}
+#planTable.xl-grid tbody tr.sel{background:#EAF2FF!important}
+#planTable.xl-grid .xl-rh{background:#F4F6FA;text-align:center}          /* คอลัมน์ติ๊ก = หัวแถวสีเทาแบบ Excel */
+#planTable.xl-grid tbody tr.sel .xl-rh{background:#DBEAFE}
+#planTable.xl-grid .pl-ck{width:14px;height:14px}
+#planTable.xl-grid .pl-thi{gap:3px}
+#planTable.xl-grid .pl-fb{width:16px;height:16px;border-radius:3px;font-size:10px}
+/* ช่องกรอก: เต็มเซลล์ ไม่มีกรอบ — ใช้ได้กับ date / text / number */
+#planTable.xl-grid .xl-in{display:block;width:100%;height:26px;margin:0;border:0;border-radius:0;background:transparent;
+  padding:0 6px;font-family:inherit;font-size:12px;color:var(--text);min-width:0;outline:none;box-shadow:none}
+#planTable.xl-grid .xl-in:hover{background:rgba(37,99,235,.05)}
+#planTable.xl-grid .xl-in:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue);outline:none}
+#planTable.xl-grid .xl-in::placeholder{color:#A3AFC2;font-weight:600}
+#planTable.xl-grid .pl-dt{font-weight:700;padding:0 2px 0 6px;font-variant-numeric:tabular-nums}
+#planTable.xl-grid .pl-dt::-webkit-calendar-picker-indicator{margin:0 0 0 2px;padding:0;width:12px;height:12px;opacity:.5;cursor:pointer}
+#planTable.xl-grid .pl-dt.bad{background:#FFFBEB;color:#B45309;box-shadow:inset 0 0 0 1px #F59E0B}
+#planTable.xl-grid .pl-vv{font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.1px}
+#planTable.xl-grid .pl-lot{text-overflow:ellipsis}
+#planTable.xl-grid .pl-lot.on{background:#F5F3FF;color:#5B21B6}
+#planTable.xl-grid .pl-lot.bad{background:#FEF2F2;color:#B91C1C;box-shadow:inset 0 0 0 1px #DC2626}
+#planTable.xl-grid .pl-lot:focus{box-shadow:inset 0 0 0 2px var(--blue)}
+#planTable.xl-grid .pl-qty{text-align:right;font-weight:800;padding:0 7px;font-variant-numeric:tabular-nums}   /* ตัวเลขชิดขวาแบบ Excel */
+#planTable.xl-grid .pl-note{color:var(--muted2);text-overflow:ellipsis}
+/* สถานะ: บรรทัดเดียว — ป้าย · ขั้นที่อยู่ · ขาดของ · ▸ Lot */
+#planTable.xl-grid td.pl-stc{padding:0 5px!important;overflow:hidden}
+.pl-st1{display:flex;align-items:center;gap:6px;min-width:0;height:25px;white-space:nowrap}
+.pl-tag{flex:none;font-size:11px;font-weight:800;line-height:18px;border-radius:4px;padding:0 6px}
+.pl-pr{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--muted2);font-size:11px;font-weight:700}
+.pl-sh{flex:none;color:#B91C1C;font-size:11px;font-weight:800}
+.pl-xb{flex:none;margin-left:auto;height:18px;line-height:16px;padding:0 5px;border:1px solid var(--blue-soft);border-radius:4px;
+  background:#fff;color:var(--blue-dark);font-family:inherit;font-size:10.5px;font-weight:800;cursor:pointer;
+  -webkit-tap-highlight-color:rgba(37,99,235,.2)}
+.pl-xb:hover{background:var(--blue-light)}
+.pl-xb.wn{border-color:#C4B5FD;background:#F5F3FF;color:#6D28D9}
+.pl-det{padding:0 0 4px;white-space:normal}
+.pl-det>div{max-width:none!important;margin-top:0!important}
+/* ปุ่มท้ายแถว: ไอคอนเล็กเรียงชิด สีขึ้นตอนชี้ */
+#planTable.xl-grid td.pl-act{padding:0 2px!important;text-align:center;white-space:nowrap}
+.pl-ab{display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;margin:0 1px;padding:0;vertical-align:middle;
+  border:1px solid transparent;border-radius:4px;background:transparent;font-size:12px;line-height:1;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:rgba(37,99,235,.2)}
+.pl-ab:hover{background:var(--blue-light);border-color:var(--blue-soft)}
+.pl-ab.x:hover{background:#FEF3C7;border-color:#FDE68A}
+.pl-ab.r:hover{background:#DCFCE7;border-color:#86EFAC}
+.pl-ab.d:hover{background:var(--red-bg);border-color:var(--red-bd)}
+.pl-ab:focus-visible,.pl-xb:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.pl-xall{border:1.5px solid var(--blue-soft);background:#fff;color:var(--blue-dark);border-radius:7px;padding:3px 9px;
+  font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.pl-xall:hover{background:var(--blue-light)}
+.pl-xall[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+/* จอสัมผัส: แถวสูงขึ้นนิดให้นิ้วแตะช่องถูก (ยังแน่นกว่าเดิมมาก) */
+@media (pointer:coarse){
+  #planTable.xl-grid th,#planTable.xl-grid td{height:32px}
+  #planTable.xl-grid .xl-in{height:32px}
+  .pl-st1{height:31px}
+  .pl-ab{width:28px;height:28px}
+  .pl-xb{height:24px;line-height:22px;padding:0 7px}
+}
 
 /* ===== ค้นหาหลาย Valve พร้อมกัน (วางจาก Excel) — ชิปสถานะ Process: เขียว=มียอด เหลือง=ขั้นถัดไป/ค้าง ขาว=ยังไม่ถึง ===== */
 .spm-v{border:1.5px solid var(--border);border-radius:11px;padding:8px 11px;margin-bottom:8px;background:var(--card)}
@@ -3412,7 +3483,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.25</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.26</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3847,17 +3918,19 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
            → กำหนดความกว้างให้พอดีเนื้อหาจริง (Lot = 11 ตัวอักษร) แล้วให้ทุกคอลัมน์แชร์ที่ว่างเท่า ๆ กัน
            ★ 2026-08-05 (req): หัวตาราง = ชื่อคอลัมน์ (กด = เรียง) + ปุ่ม ▾ (กด = ตัวกรองแบบ Excel)
            คอลัมน์แรก = ช่องติ๊กเลือกหลายรายการ (ติ๊กบนหัว = เลือกทุกแถวที่กรองอยู่) -->
-      <table id="planTable" style="min-width:1050px">
+      <!-- ★ v4.26 (ผู้ใช้ 13/11) กริดแบบ Excel — table-layout:fixed: คอลัมน์ที่กำหนดกว้างคงที่ · "สถานะ" รับที่เหลือ · แถวเดียวสูง 26px
+           (หัวคอลัมน์สั้นลง: "สถานะ (ระบบกำหนดเอง)" → "สถานะ" — คำอธิบายย้ายไป title) -->
+      <table id="planTable" class="xl-grid">
         <thead><tr>
-          <th class="center" style="width:36px"><input type="checkbox" class="pl-ck" id="planSelAll" onclick="planSelAll(this.checked)" title="เลือกทุกแถวที่กรองอยู่"></th>
-          <th class="pl-th" style="width:122px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('date')" title="กดเพื่อเรียงตามวันที่ขาย">📅 วันที่ขาย<span class="ps-ar" data-psk="date"></span></span><button type="button" class="pl-fb" data-pfc="date" onclick="openPlanFilter(event,'date')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:126px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง">▾</button></div></th>
+          <th class="center xl-rh" style="width:30px"><input type="checkbox" class="pl-ck" id="planSelAll" onclick="planSelAll(this.checked)" title="เลือกทุกแถวที่กรองอยู่" aria-label="เลือกทุกแถวที่กรองอยู่"></th>
+          <th class="pl-th" style="width:112px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('date')" title="กดเพื่อเรียงตามวันที่ขาย">วันที่ขาย<span class="ps-ar" data-psk="date"></span></span><button type="button" class="pl-fb" data-pfc="date" onclick="openPlanFilter(event,'date')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง วันที่ขาย">▾</button></div></th>
+          <th class="pl-th" style="width:104px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('valve')" title="กดเพื่อเรียงตาม Valve No">Valve No<span class="ps-ar" data-psk="valve"></span></span><button type="button" class="pl-fb" data-pfc="valve" onclick="openPlanFilter(event,'valve')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง Valve No">▾</button></div></th>
           <!-- ★ v3.89 (ผู้ใช้ 19/10) "Lot ที่จะขาย" กลับมา — ระบุ = ขายเฉพาะ Lot นั้น · ว่าง = ระบบเลือกให้ตามวันขาย -->
-          <th class="pl-th" style="width:130px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น · ว่าง = ระบบเลือก Lot ให้ตามวันขาย">Lot ที่จะขาย<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:110px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:158px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="กดเพื่อเรียงตามสถานะจริง">สถานะ (ระบบกำหนดเอง)<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="pl-th" style="width:150px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง">▾</button></div></th>
-          <th class="center" style="width:116px">จัดการ</th>
+          <th class="pl-th" style="width:128px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('lot')" title="Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น · ว่าง = ระบบเลือก Lot ให้ตามวันขาย">Lot ที่จะขาย<span class="ps-ar" data-psk="lot"></span></span><button type="button" class="pl-fb" data-pfc="lot" onclick="openPlanFilter(event,'lot')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง Lot ที่จะขาย">▾</button></div></th>
+          <th class="pl-th" style="width:72px"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('qty')" title="กดเพื่อเรียงตามจำนวน">Q'ty<span class="ps-ar" data-psk="qty"></span></span><button type="button" class="pl-fb" data-pfc="qty" onclick="openPlanFilter(event,'qty')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง Q'ty">▾</button></div></th>
+          <th class="pl-th"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('status')" title="สถานะ — ระบบกำหนดเองจากของจริง (รับเข้า WIP IN 1.5 / ยอดผลิต / จบงาน) · กดเพื่อเรียง">สถานะ<span class="ps-ar" data-psk="status"></span></span><button type="button" class="pl-fb" data-pfc="status" onclick="openPlanFilter(event,'status')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง สถานะ">▾</button></div></th>
+          <th class="pl-th" style="width:22%"><div class="pl-thi"><span class="pl-thl" onclick="setPlanSort('note')" title="กดเพื่อเรียงตามหมายเหตุ">หมายเหตุ<span class="ps-ar" data-psk="note"></span></span><button type="button" class="pl-fb" data-pfc="note" onclick="openPlanFilter(event,'note')" title="ตัวกรอง / เรียง" aria-label="ตัวกรอง หมายเหตุ">▾</button></div></th>
+          <th class="center" style="width:82px">จัดการ</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -3866,6 +3939,8 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="planPager"></div>
     <div class="row mt-8" style="justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11.5px">
       <span id="planCountLbl" class="muted" style="font-weight:700"></span>
+      <!-- ★ v4.26 รายละเอียด Lot ใต้สถานะ — ปกติพับ (แถวเตี้ยบรรทัดเดียว) · กด ▸ ทีละแถว หรือกางทุกแถวที่ปุ่มนี้ -->
+      <button type="button" class="pl-xall" id="planExpAllBtn" onclick="planExpAllToggle()" aria-pressed="false">📦 แสดง Lot ทุกแถว</button>
       <span class="muted">💡 ติ๊กช่องหน้าแถวเพื่อเลือกหลายรายการ · กด Shift ค้างเพื่อเลือกเป็นช่วง</span>
     </div>
       </div>
@@ -8421,6 +8496,9 @@ function renderPlanChips() {
    งานที่ทำพร้อมกันได้: ลบ · เลื่อนเดือน ±1 · ย้ายไปวันที่/เดือนที่ระบุ · ตั้งสถานะ · ยกเลิก/กู้คืน · Export */
 let _planSel = new Set();
 let _planSelAnchor = '';     // แถวล่าสุดที่ติ๊ก — ใช้ทำ Shift+คลิก เลือกเป็นช่วง
+// ★ v4.26 แถวที่กางรายละเอียด Lot (plan_id) · กางทุกแถว = จำในเครื่อง
+let _planExp = new Set();
+let _planExpAll = (() => { try { return localStorage.getItem('vsm4_plan_expall') === '1'; } catch (e) { return false; } })();
 /* id ของแถวที่ "เห็นอยู่บนตารางตอนนี้" ตามลำดับที่เห็น — อ่านจาก DOM ตรง ๆ
    (ถูกกว่าการ filter+sort ใหม่ทุกครั้งที่ติ๊ก และตรงกับสิ่งที่ผู้ใช้เห็นเป๊ะ ๆ) */
 function _planVisibleIds() {
@@ -8823,6 +8901,8 @@ function renderPlans() {
   }
   tbody.innerHTML = rows.length ? pageRows.map(p => planRowHtml(p)).join('')
     : `<tr><td colspan="8" class="center muted" style="padding:20px">${emptyMsg}</td></tr>`;
+  const _xab = $('planExpAllBtn');          // ★ v4.26 ปุ่ม "แสดง Lot ทุกแถว" ตามสถานะจริง
+  if (_xab) { _xab.setAttribute('aria-pressed', String(_planExpAll)); _xab.textContent = _planExpAll ? TT('📦 พับ Lot ทุกแถว', '📦 Fold all lots') : TT('📦 แสดง Lot ทุกแถว', '📦 Show lots on every row'); }
   // ลูกศรบอกคอลัมน์ที่กำลังเรียง (req #5)
   for (const el of document.querySelectorAll('#planTable .ps-ar')) {
     const on = el.dataset.psk === _planSort.key;
@@ -9454,12 +9534,23 @@ function planRowHtml(p) {
      ยกเลิกแผน = คนละเรื่อง (ลูกค้ายกเลิก) → ยังกดได้ที่ปุ่ม ❌ ท้ายแถวเหมือนเดิม */
   const stTitle = cancelled ? TT('แผนถูกยกเลิก — กด ↩️ เพื่อกู้คืน','Plan cancelled — tap ↩️ to restore')
                             : TT('ระบบกำหนดเองจากของจริง: รับเข้า WIP IN 1.5 / ยอดผลิต / จบงาน','Set automatically from real data: WIP IN 1.5 intake / production / completion');
-  const stBadge = cancelled
-    ? `<span style="display:inline-block;font-size:11px;font-weight:800;color:var(--red);background:var(--red-bg);border-radius:6px;padding:3px 8px;white-space:nowrap">${TT('❌ ยกเลิกแผน','❌ Cancelled')}</span>`
-    : (auto ? `<span title="${escapeHtml(stTitle)}" style="display:inline-block;font-size:11px;font-weight:800;color:${auto.color};background:${auto.bg};border-radius:6px;padding:3px 8px;white-space:nowrap">${auto.label}</span>
-               ${auto.proc && auto.proc!=='DONE'?`<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:2px">${escapeHtml(auto.proc)}</div>`:''}` : '');
-  // หมายเหตุ "ระบบกำหนดเอง" อยู่ที่หัวคอลัมน์ + tooltip แล้ว — ไม่ต้องซ้ำทุกแถวให้ตารางสูงขึ้นเปล่า ๆ
-  const autoBadge = `<div title="${escapeHtml(stTitle)}">${stBadge}${cancelled ? '' : _planLotsHtml(auto && auto.alloc)}</div>`;
+  /* ★ v4.26 (ผู้ใช้ 13/11) กริดแบบ Excel — สถานะบรรทัดเดียว: ป้าย · ขั้นที่อยู่ · 📭 ขาด · ▸ n Lot
+     รายการ Lot (เดิมกาง 1–4 บรรทัดทุกแถว ตารางสูงจนห่าง) พับไว้ กด ▸ ทีละแถว หรือ "แสดง Lot ทุกแถว" */
+  const A = (!cancelled && auto && auto.alloc) || null;
+  const det = cancelled ? '' : _planLotsHtml(A);
+  const nLot = A ? (A.lots || []).length : 0, nMiss = A ? (A.lotMiss || []).length : 0;
+  const ignN = A && !nLot && !(A.keys && A.keys.length) ? (A.ignored || []).length : 0;   // บรรทัด "↷ ไม่นับ" ของ _planLotsHtml
+  const hasDet = !!det && !!(nLot || nMiss || ignN);    // มีแค่ "ยังไม่มีของ" = โชว์ 📭 ในบรรทัดแล้ว ไม่ต้องมีปุ่ม
+  const exp = hasDet && (_planExpAll || _planExp.has(p.plan_id));
+  const procTxt = !cancelled && auto && auto.proc && auto.proc !== 'DONE' ? auto.proc : '';
+  const stTag = cancelled
+    ? `<span class="pl-tag" style="color:var(--red);background:var(--red-bg)">${TT('❌ ยกเลิกแผน','❌ Cancelled')}</span>`
+    : (auto ? `<span class="pl-tag" style="color:${auto.color};background:${auto.bg}">${auto.label}</span>` : '');
+  const xbTxt = nLot ? `${nMiss ? '🔒' : ''}${nLot} Lot` : nMiss ? `🔒 ${nMiss} Lot` : `↷ ${ignN}`;
+  const autoBadge = `<div class="pl-st1">${stTag}${procTxt ? `<span class="pl-pr" title="${escapeHtml(procTxt)}">${escapeHtml(procTxt)}</span>` : ''}`
+    + (A && A.shortSig ? `<span class="pl-sh" title="${escapeHtml(TT('ยังไม่มี Lot ไหนรองรับยอดนี้ — รอ WIP IN 1.5','No lot covers this qty yet — waiting for WIP IN 1.5'))}">📭 ${nn(A.short)}</span>` : '')
+    + (hasDet ? `<button type="button" class="pl-xb${nMiss ? ' wn' : ''}" onclick="planRowExp('${pid}')" aria-expanded="${exp}" title="${escapeHtml(TT('ดู Lot ที่ขายแผนนี้ · ยอด · อยู่ขั้นไหน','Show the lots for this plan · qty · where they are'))}">${exp ? '▾' : '▸'} ${xbTxt}</button>` : '')
+    + `</div>${exp ? `<div class="pl-det">${det}</div>` : ''}`;
   const sel = '';
   /* ★ v3.90 (ผู้ใช้ 21/10 ข้อ 1) ช่อง Lot ว่าง = โชว์ Lot ที่ระบบเลือกให้ (🤖 สีจาง) — เห็นทันทีว่าแผนนี้ขาย Lot ไหน ไม่ต้องเดา
      ระบุ Lot แล้วแต่เป็น Lot ของเบอร์อื่น = กรอบแดง (รายละเอียดใต้สถานะ) */
@@ -9471,19 +9562,34 @@ function planRowHtml(p) {
     ? TT(`ระบบเลือกให้: ${autoLots.join(', ')} — ถ้าจะขาย Lot อื่น พิมพ์ Lot ที่นี่ (หลาย Lot คั่นด้วย ,)`, `Picked by the system: ${autoLots.join(', ')} — type a lot here to sell a different one (comma for several)`)
     : TT('Lot ที่จะขาย — ระบุ = แผนนี้ขายเฉพาะ Lot นั้น (หลาย Lot คั่นด้วย ,) · ว่าง = ระบบเลือก Lot ให้ตามวันขาย','Lot to sell — set = this plan sells only that lot (comma for several) · blank = the system picks by sale date');
   return `<tr data-pid="${pid}" class="${picked?'sel':''}"${cancelled?' style="opacity:.55"':''}>
-    <td class="center"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้"></td>
-    <td><input type="date" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" style="border:1px solid ${dateBad?'#F59E0B':'var(--blue-soft)'};padding:5px 5px;border-radius:7px;font-weight:700;font-size:12px;width:100%">${dateBad?'<div style="font-size:9px;color:#B45309;font-weight:700;margin-top:2px" title="ค่าเดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน">⚠️ วันที่เดิมผิดรูป</div>':''}</td>
-    <td><input type="text" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." style="border:1px solid var(--blue-soft);padding:5px 6px;border-radius:7px;font-weight:800;color:var(--blue);font-size:12.5px;width:100%;text-transform:uppercase"></td>
-    <td><input type="text" class="pl-in pl-lot${lotSet?' on':''}${lotBad?' bad':''}" list="planLotDl" value="${escapeHtml(p.lot||'')}" onfocus="_planLotDlFill('${pid}')" onchange="updatePlanLot('${pid}',this.value)" placeholder="${escapeHtml(lotPh)}" title="${escapeHtml(lotTip)}" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></td>
-    <td><input type="number" class="pl-in pl-qty" value="${p.quantity||''}" oninput="updatePlan('${pid}','quantity',this.value)" min="0" placeholder="0"></td>
-    <td>${autoBadge}${sel}</td>
-    <td><input type="text" class="pl-in pl-note" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${pid}','note',this.value)" placeholder="หมายเหตุ" title="${escapeHtml(p.note||'')}"></td>
-    <td class="center" style="white-space:nowrap">
-      <button class="btn btn-sm btn-outline" style="padding:4px 6px;font-size:11px" title="เลื่อนไปขายเดือนหน้า (+1 เดือน)" onclick="reschedulePlan('${pid}')">📅⁺</button>
-      <button class="btn btn-sm" style="padding:4px 6px;font-size:11px;background:${cancelled?'var(--green-bg,#DCFCE7)':'#FEF3C7'};color:${cancelled?'#15803d':'#B45309'};border:1px solid ${cancelled?'#86EFAC':'#FDE68A'}" title="${cancelled?'กู้คืนแผน':'ยกเลิกแผน (ลูกค้ายกเลิก)'}" onclick="cancelPlan('${pid}')">${cancelled?'↩️':'❌'}</button>
-      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);padding:4px 6px;font-size:11px" title="ลบแผน" onclick="deletePlanRow('${pid}')">🗑️</button>
+    <td class="xl-rh"><input type="checkbox" class="pl-ck" ${picked?'checked':''} onclick="planSelToggle('${pid}',this.checked,event)" title="เลือกรายการนี้" aria-label="เลือกรายการนี้"></td>
+    <td><input type="date" class="xl-in pl-dt${dateBad?' bad':''}" value="${escapeHtml(dISO)}" onchange="updatePlan('${pid}','plan_date',this.value)" aria-label="วันที่ขาย"${dateBad?' title="⚠️ วันที่เดิมใน Cloud ผิดรูป — กด 🔧 ซ่อมวันที่ ด้านบน"':''}></td>
+    <td><input type="text" class="xl-in pl-vv" list="valveList" value="${escapeHtml(p.valve_no||'')}" oninput="updatePlan('${pid}','valve_no',this.value)" onchange="dedupePlanRow('${pid}')" placeholder="VF..." aria-label="Valve No"></td>
+    <td><input type="text" class="xl-in pl-in pl-lot${lotSet?' on':''}${lotBad?' bad':''}" list="planLotDl" value="${escapeHtml(p.lot||'')}" onfocus="_planLotDlFill('${pid}')" onchange="updatePlanLot('${pid}',this.value)" placeholder="${escapeHtml(lotPh)}" title="${escapeHtml(lotTip)}" autocomplete="off" spellcheck="false" style="text-transform:uppercase" aria-label="Lot ที่จะขาย"></td>
+    <td><input type="number" class="xl-in pl-in pl-qty" value="${p.quantity||''}" oninput="updatePlan('${pid}','quantity',this.value)" min="0" placeholder="0" aria-label="Q'ty"></td>
+    <td class="pl-stc" title="${escapeHtml(stTitle)}">${autoBadge}${sel}</td>
+    <td><input type="text" class="xl-in pl-in pl-note" value="${escapeHtml(p.note||'')}" oninput="updatePlan('${pid}','note',this.value)" title="${escapeHtml(p.note||'')}" aria-label="หมายเหตุ"></td>
+    <td class="pl-act">
+      <button type="button" class="pl-ab" title="เลื่อนไปขายเดือนหน้า (+1 เดือน)" aria-label="เลื่อนไปขายเดือนหน้า" onclick="reschedulePlan('${pid}')">📅</button><button type="button" class="pl-ab ${cancelled?'r':'x'}" title="${cancelled?'กู้คืนแผน':'ยกเลิกแผน (ลูกค้ายกเลิก)'}" aria-label="${cancelled?'กู้คืนแผน':'ยกเลิกแผน'}" onclick="cancelPlan('${pid}')">${cancelled?'↩️':'❌'}</button><button type="button" class="pl-ab d" title="ลบแผน" aria-label="ลบแผน" onclick="deletePlanRow('${pid}')">🗑️</button>
     </td>
   </tr>`;
+}
+/* ★ v4.26 กาง/พับรายละเอียด Lot ของแถวเดียว — วาดแถวนั้นแถวเดียว (ไม่วาดทั้งตาราง) · จำไว้ข้ามการวาดใหม่ (_planExp / _planExpAll ประกาศข้าง _planSel) */
+function planRowExp(pid) {
+  if (_planExpAll) {                              // กางทุกแถวอยู่ → พับแถวนี้ = ปิดโหมดกางทั้งหมด แต่แถวอื่นยังกางไว้ทีละแถว
+    _planExpAll = false; try { localStorage.setItem('vsm4_plan_expall', '0'); } catch (e) {}
+    _planExp = new Set(_planVisibleIds()); _planExp.delete(pid);
+    renderPlans(); return;
+  }
+  if (_planExp.has(pid)) _planExp.delete(pid); else _planExp.add(pid);
+  const p = (state.plans || []).find(x => x.plan_id === pid);
+  const tr = [...document.querySelectorAll('#planTable tbody tr[data-pid]')].find(t => t.dataset.pid === pid);
+  if (p && tr) tr.outerHTML = planRowHtml(p); else renderPlans();
+}
+function planExpAllToggle() {
+  _planExpAll = !_planExpAll; _planExp.clear();
+  try { localStorage.setItem('vsm4_plan_expall', _planExpAll ? '1' : '0'); } catch (e) {}
+  renderPlans();
 }
 
 /* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 1) ป้าย "Lot นี้ขายแผนไหน" ใต้เลข Lot (หน้าค้นหา Process) — ตัวจัดสรรเดียวกับตารางแผนขาย
@@ -11797,7 +11903,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.25":"Production Record + KPI · v4.25",
+"ระบบบันทึกผลิต + KPI · v4.26":"Production Record + KPI · v4.26",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
