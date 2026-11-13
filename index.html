@@ -668,6 +668,9 @@ span.lot-chk{cursor:default}
 button.pf-chk.lot-chk.on:hover{text-decoration:underline}
 button.pf-chk.lot-chk:not(.on){margin-top:3px;padding:0 7px;border:1px solid var(--blue-soft);border-radius:6px;background:#fff;color:var(--blue);line-height:18px}
 button.pf-chk.lot-chk:not(.on):hover{background:var(--blue-light)}
+/* ★ v4.25 🏁 งานส่วน VSM4 จบแล้ว (เขียวอมฟ้า) · ↩︎ Admin บอกยังไม่จบ (ส้ม) */
+.pf-chk.lot-chk.v4e{color:#0F766E}
+.pf-chk.lot-chk.v4o{color:#B45309}
 .spm-chip.lot-chk{margin:0;font-size:11px;padding:4px 9px;line-height:inherit;color:#fff;background:linear-gradient(135deg,#047857,#10B981);border:1.5px solid #047857}
 .spm-chip.lot-chk.on{color:#065F46;background:var(--green-bg);border-color:var(--green-bd)}
 .pfa-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px dashed #E2E8F0}
@@ -1368,6 +1371,10 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mbd-dock{position:absolute;left:12px;right:12px;bottom:10px;z-index:6;max-height:min(58%,380px);overflow:auto;overscroll-behavior:contain;background:#fff;border:1.5px solid #5EEAD4;border-radius:14px;box-shadow:0 10px 30px rgba(15,23,42,.24);padding:10px 44px 10px 14px;animation:mbdUp .18s ease-out}
 .mbd-dock[hidden]{display:none}
 .mbd-dock.top{bottom:auto;top:56px}
+/* ★ v4.25 (ผู้ใช้ 13/11 "หน้าต่างแสดงกระบวนการ บังรายการแผนงาน เลื่อนขึ้นลงไม่ได้") กล่องเปิดอยู่ = ท้ายกระดานมีที่ว่างเท่าความสูงกล่อง
+   → เลื่อนแถวล่างสุดขึ้นมาพ้นกล่องได้เสมอ (จอคอม: กระดาน #mpvZone · มือถือ: ทั้งหน้า .mpv-body) · กระดานไม่ขยับ ไม่จัดใหม่ */
+.mpv-ov.dk.bd #mpvZone::after,.mpv-ov.dk:not(.bd) .mpv-body::after{content:'';display:block;height:var(--dockH,0px)}
+.mpv-ov.dk.bd #mbdHost:not(.fit){padding-bottom:var(--dockH,0px)}   /* โหมดเลื่อน (ทั้งหมด 3 Zone): กระดานล้นกรอบหน้า → ที่ว่างต้องอยู่ท้ายตัวกระดานเอง · padding ไม่เปลี่ยนขนาดเนื้อหา = ไม่จัดกระดานใหม่ */
 @keyframes mbdUp{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.mbd-dock,.mbd-l.mpv-flash{animation:none}.mbd.lane .mbd-l,.mbd-j{transition:none}}
 .mbd-dx{position:absolute;top:6px;right:6px;width:36px;height:36px;border:0;border-radius:10px;background:#F1F5F9;color:#475569;font-size:15px;font-weight:900;cursor:pointer}
@@ -3405,7 +3412,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.24</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.25</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3977,7 +3984,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       <button class="btn btn-sm" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff" onclick="openPasteSdModal()" title="วาง Valve | TYPE | SD จาก Excel (ชีท Process) · SL / HD / TL / COT / Type COT = ก๊อปหัวคอลัมน์มาด้วย">📏 วาง SD / TYPE / SL</button>
       <button class="btn btn-sm" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:#fff" onclick="openPasteSdModal('ext')" title="วาง Valve | COT | Type COT จาก Excel (มีหรือไม่มีแถวหัวก็ได้)">📋 วาง COT / Type COT</button>
     </div>
-    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th title="COT · Type COT (Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้)">COT <span style="font-weight:600;opacity:.7">· Type</span></th><th>Process</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><table id="vTable"><thead><tr><th>Valve</th><th>ลูกค้า</th><th class="right">SD</th><th>TYPE</th><th class="right" title="SL · HD · TL (SL ใช้คัดเครื่อง SSG/SEMI/SRG/SFG)">SL <span style="font-weight:600;opacity:.7">· HD · TL</span></th><th title="COT · Type COT (Type COT = Carbide ทำขั้น COT ที่เครื่อง MUG ไม่ได้)">COT <span style="font-weight:600;opacity:.7">· Type</span></th><th>Process</th><th title="ขอบเขต VSM4 — VSM4 ผลิตขั้นไหน (ที่เหลือ VSM3) · แก้ที่ปุ่ม แก้">ขอบเขต VSM4</th><th>จำนวน ID</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div>
     <div id="vPagination"></div>
   </div>
 
@@ -11790,7 +11797,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.24":"Production Record + KPI · v4.24",
+"ระบบบันทึกผลิต + KPI · v4.25":"Production Record + KPI · v4.25",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -18560,7 +18567,12 @@ function* _wipGen(){
      ล็อตที่ผลิตอยู่จริงแต่ "ไม่มีใบรับเข้า" ไม่ถูกนับเข้ายอดรวม แต่ยังเก็บไว้ใน
      wip.noIntake เพื่อโชว์เป็นรายการให้ตามไปลงใบรับเข้าย้อนหลัง — ยอดที่ระบบเดาเอง
      ไม่ควรกลายเป็นตัวเลขที่ใครเอาไปตัดสินใจ แต่ก็ต้องไม่หายเงียบจนไม่มีใครรู้ว่ามีอยู่ */
-  const wip={total:0,byCust:{},items:[],noIntake:{total:0,items:[]}}; const alerts=[];
+  const wip={total:0,byCust:{},items:[],noIntake:{total:0,items:[]},v4end:{total:0,n:0,byCust:{}}}; const alerts=[];
+  /* ★ v4.25 🏁 งานส่วนของ VSM4 จบแล้ว (v4EndOf — ดูคำอธิบายที่ V4END_PREFIX) → ไม่นับในยอด WIP กำลังผลิตของ VSM4
+     ยังอยู่ใน wip.items (ติด v4end) — แผนขาย / ค้นหา / เช็คงานดัดแปลง ยังเห็นว่าล็อตอยู่ในไลน์ (ที่ VSM3) · ป๊อปอัป WIP แยกเป็นรายการ 🏁
+     เฉพาะตอนดู VSM4 · สายอื่นเหมือนเดิมทุกประการ */
+  const v4on = me === 'vsm4';
+  if (v4on) { yield* _v4IdxGen(); yield* _mpRouteHistGen(); yield* _mpRouteMemoryGen(); }
   for(const k of Object.keys(wipInByJob)){
     if ((++_n & 127) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
     const first=wipInFirst[k]; if(!first) continue;
@@ -18576,10 +18588,12 @@ function* _wipGen(){
     const pop=g?_wipPerProc(g.recs,valve):[];
     const last=pop.length?pop[pop.length-1]:null;
     const cust=custOf(vKey(valve));
-    wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty;
+    const ve=v4on?v4EndOf(valve,lot):null, v4d=!!(ve&&ve.done);   // ★ v4.25
+    if(v4d){ wip.v4end.total+=wipQty; wip.v4end.n++; wip.v4end.byCust[cust]=(wip.v4end.byCust[cust]||0)+wipQty; }
+    else { wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty; }
     wip.items.push({valve,lot,qty:wipQty,curProc:last?last.proc:'',customer:cust,date:last?last.date:String(first.ts||'').slice(0,10),
       scrap:scr,wipIn:inQty,fgOut:fg,basis:'wipin',machines:[...(mcByJob[k]||[])],
-      crossVsm:_peer && g && new Set(g.recs.map(vsmOf)).size>1});
+      crossVsm:_peer && g && new Set(g.recs.map(vsmOf)).size>1, v4end:v4d?ve:null});
   }
   /* รายการ "ผลิตอยู่แต่ไม่มีใบรับเข้า" — ไม่นับเข้ายอด แต่ต้องเห็นเพื่อตามไปลงย้อนหลัง */
   for(const k of Object.keys(groups)){
@@ -19723,6 +19737,7 @@ let _wipInFilter={month:null,customer:'',status:''};   // month:null = ยัง
 let _wipOutMonth=null;                        // WIP OUT: null = เดือนปัจจุบัน (default) · เปลี่ยนได้เฉพาะ Admin
 let _wipOutCust='';                           // ★ req #4: กรองกลุ่มลูกค้าใน WIP OUT ('' = ทุกกลุ่ม)
 let _wipNoIntakeView=false;                   // ★ 2026-08-15: สลับดู "ผลิตอยู่แต่ไม่มีใบรับเข้า" ในถัง WIP
+let _wipV4View=false;                         // ★ v4.25 สลับดู "🏁 งานส่วน VSM4 จบแล้ว" (ไม่นับในยอด)
 /* ★ 2026-08-16 (req) — ป๊อปอัป WIP IN 1.5: สถานะการพับ + กติกาการนับเดือน
    _wiFold : กล่องไหนกางอยู่ — ต้องเก็บไว้นอกฟังก์ชันวาด เพราะ _refreshWipDetail() วาดใหม่ทั้งก้อน
              ถ้าไม่เก็บ กล่องจะหุบเองทุกครั้งที่กดตัวกรอง (ค่าเริ่มต้น = พับหมด ตามที่ผู้ใช้ขอ)
@@ -20588,6 +20603,7 @@ function wipDetailBody(bucket){
   /* ★ 2026-08-15 — ถัง WIP มีสองชุด: ที่นับจริง (มีใบรับเข้า) กับที่ไม่นับ (ไม่มีใบรับเข้า)
      ชุดหลังต้องเปิดดูได้ ไม่งั้นของ 9 แสนชิ้นจะหายไปจากสายตาโดยไม่มีใครรู้ว่ามีอยู่ */
   let items=(!isOut && _wipNoIntakeView ? b.wip.noIntake.items : bucket2.items).slice();
+  if(!isOut && !_wipNoIntakeView) items=items.filter(i=>_wipV4View ? !!i.v4end : !i.v4end);   // ★ v4.25 🏁 งานส่วน VSM4 จบแล้ว = รายการแยก ไม่นับในยอด
   let monthCtrl='', extraTop='';
   if(isOut && _wipOutCust) items=items.filter(i=>(CUST_GROUPS.includes(i.customer)?i.customer:'Other')===_wipOutCust);   // ★ req #4
   if(isOut){
@@ -20634,8 +20650,15 @@ function wipDetailBody(bucket){
           <b>${nn(ni.items.length)}</b> ${TT('ล็อต','lots')} · ~<b>${nn(ni.total)}</b> ${TT('ชิ้น','pcs')}
           <span style="color:var(--muted)">(${TT('ยอดที่ระบบเดาจาก process ไกลสุด จึงไม่ถูกนับรวม','estimated from the furthest process, so not counted')})</span>
           <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B45309;border-color:#FCD34D"
-            onclick="_wipNoIntakeView=${_wipNoIntakeView?'false':'true'};_wipPg.page=1;_refreshWipDetail()">
+            onclick="_wipNoIntakeView=${_wipNoIntakeView?'false':'true'};_wipV4View=false;_wipPg.page=1;_refreshWipDetail()">
             ${_wipNoIntakeView?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
+        ${b.wip.v4end&&b.wip.v4end.n?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#0F766E">
+          🏁 ${TT('ไม่นับล็อตที่ <b>VSM4 ทำส่วนของตัวเองจบแล้ว</b> — ที่เหลือเป็นงานของ VSM3','Not counted: lots whose <b>VSM4 part is finished</b> — the rest is VSM3 work')} —
+          <b>${nn(b.wip.v4end.n)}</b> ${TT('ล็อต','lots')} · <b>${nn(b.wip.v4end.total)}</b> ${TT('ชิ้น','pcs')}
+          <span style="color:var(--muted)">(${TT('ขั้นสุดท้ายของ VSM4 ทำแล้ว ≥ 90% ของ Lot หรือ 🔑 Admin กด "VSM4 จบแล้ว" ที่ค้นหา Process','last VSM4 step ≥ 90% of the lot, or 🔑 Admin pressed "VSM4 finished" in Process search')})</span>
+          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#0F766E;border-color:#99F6E4"
+            onclick="_wipV4View=${_wipV4View?'false':'true'};_wipNoIntakeView=false;_wipPg.page=1;_refreshWipDetail()">
+            ${_wipV4View?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
       </div>`;
   }
   items.sort((a,c)=>c.qty-a.qty);
@@ -20651,7 +20674,7 @@ function wipDetailBody(bucket){
       ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
-      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
+      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
       <td class="center">${_wipMcCell(i.machines)}</td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
@@ -20677,6 +20700,7 @@ function showWipDetail(bucket, fromIot, keepCust){
   _wipPg={q:'',page:1};                        // เปิดป๊อปอัปใหม่ = เริ่มหน้า 1 คำค้นว่าง
   _wipInOnlyUnknown=false;                     // ล้างโหมด "ดูเฉพาะเบอร์ที่ไม่มีใน Master"
   _wipNoIntakeView=false;                      // เปิดใหม่ = เห็นยอด WIP จริงก่อนเสมอ
+  _wipV4View=false;
   // ★ 2026-08-16: เปิดใหม่ = พับทุกกล่อง (เห็นกราฟก่อน) + กลับไปใช้กติกา "เฉพาะเดือนที่มี Order"
   _wiFold={recon:false,np:false,nop:false,diag:false,plan:false,list:false};
   _wiAllMonths=false;
@@ -23997,7 +24021,7 @@ async function searchProcess() {
       const fillBtn = fillAll
         ? `<button type="button" class="pf-fillall" onclick="event.stopPropagation();spFillAll(${ri})" title="${TT('งานเข้า QC แล้ว — เติมทุกช่องที่ว่างในครั้งเดียว','Reached QC — fill every empty cell at once')}">🔑 ${TT('เติมให้ครบ','Fill all')}</button>`
         : '';
-      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot"><span class="pf-lotno">${escapeHtml(ld.lot)}</span>${recvTag}${saleTag}${_lotChkHtml(ld.valveNo, ld, `spLotChk(${ri},this)`, 'pf-chk')}${fillBtn}</td>${tds}${remarkTd}</tr>`;
+      return `<tr${ld.recvOnly?' class="pf-rowrecv"':''}><td class="pf-td-lot pf-click" onclick="editLotName(${ri})" title="แตะเพื่อแก้เลข Lot"><span class="pf-lotno">${escapeHtml(ld.lot)}</span>${recvTag}${saleTag}${_lotChkHtml(ld.valveNo, ld, `spLotChk(${ri},this)`, 'pf-chk')}${_v4EndHtml(ld.valveNo, ld, ri)}${fillBtn}</td>${tds}${remarkTd}</tr>`;
     }).join('');
     const _recvOnlyN = lotData.filter(l => l.recvOnly).length;
     const _chkBtnAny = admOn && lotData.some(l => !lotChkDate(l.valveNo, l.lk) && _lotChkCan(l.valveNo, l));   // ★ v4.12 ใช้โชว์คำอธิบาย
@@ -24013,7 +24037,8 @@ async function searchProcess() {
         ${TT('แถวสีอ่อนด้านล่าง · Process แรกเป็นสีเหลือง = รอผลิต','the pale rows below · first process in yellow = waiting')}
       </div>` : '';
     const legend = lotData.length ? `<div class="pf-legend"><span class="pf-lg pf-lg-done">มียอดแล้ว</span><span class="pf-lg pf-lg-next">ขั้นถัดไป / ค้าง</span>${_recvOnlyN ? `<span class="pf-lg pf-lg-recv">📥 ${TT('รับเข้าแล้ว · ยังไม่ลงยอดผลิต','received · no production yet')}</span>` : ''}${hasAutoQc ? '<span class="pf-lg pf-lg-auto">✓ จบงาน · QC อัตโนมัติ</span>' : ''}${hasAdm ? `<span class="pf-lg pf-lg-adm">🔑 ${TT('เพิ่มโดย Admin','added by Admin')}</span>` : ''}${hasRemark ? '<span class="pf-lg pf-lg-remark">พนักงานพิมพ์เอง</span>' : ''}${anyCross ? `<span class="pf-lg pf-lg-cross">${TT('ผลิตข้ามสาย','cross-VSM')}</span>` : ''}${_chkedAny ? `<span class="pf-lg pf-lg-done">${TT('ตรวจแล้ว · ไม่ขึ้นใน Dropdown ตอนบันทึก','verified · hidden from the recording dropdown')}</span>` : ''}</div>` : '';
-    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}${admOn ? ` · 🔑 ${TT('แตะ <b>ช่องว่าง (＋)</b> เพื่อเติมยอด Process ที่พนักงานไม่ได้ลง','tap an <b>empty cell (＋)</b> to fill a missing process')}` : ''}${hasFillAll ? ` · 🔑 ${TT('งานที่เข้า QC แล้ว กด <b>เติมให้ครบ</b> ใต้เลข Lot = เติมทุกช่องที่ว่าง + จบงานในครั้งเดียว','lots that reached QC: tap <b>Fill all</b> under the lot to fill every gap and finish it')}` : ''}${_chkBtnAny ? ` · 🔑 ${TT('งานที่จบแล้ว / มียอด QC กด <b>ยืนยันจบจริง</b> ที่เลข Lot = ตรวจสอบแล้ว Lot นี้ไม่ขึ้นใน Dropdown ตอนบันทึก','finished lots / lots with QC: tap <b>Confirm finished</b> at the lot to hide it from the recording dropdown')}` : ''}</div>` : '';
+    const _v4Any = lotData.some(l => !!_v4EndHtml(l.valveNo, l, 0));   // ★ v4.25 มีป้าย 🏁 / ปุ่ม VSM4 ในตาราง
+    const hint = lotData.length ? `<div class="muted" style="font-size:11px;margin:0 0 2px">💡 แตะ <b>Lot</b> เพื่อแก้เลข · แตะ <b>ตัวเลข</b> เพื่อดูเครื่อง/วันที่/ยอด${hasRemark ? ' · แตะ <b>หมายเหตุ</b> เพื่อแก้ process ที่พิมพ์เอง' : ''}${admOn ? ` · 🔑 ${TT('แตะ <b>ช่องว่าง (＋)</b> เพื่อเติมยอด Process ที่พนักงานไม่ได้ลง','tap an <b>empty cell (＋)</b> to fill a missing process')}` : ''}${hasFillAll ? ` · 🔑 ${TT('งานที่เข้า QC แล้ว กด <b>เติมให้ครบ</b> ใต้เลข Lot = เติมทุกช่องที่ว่าง + จบงานในครั้งเดียว','lots that reached QC: tap <b>Fill all</b> under the lot to fill every gap and finish it')}` : ''}${_chkBtnAny ? ` · 🔑 ${TT('งานที่จบแล้ว / มียอด QC กด <b>ยืนยันจบจริง</b> ที่เลข Lot = ตรวจสอบแล้ว Lot นี้ไม่ขึ้นใน Dropdown ตอนบันทึก','finished lots / lots with QC: tap <b>Confirm finished</b> at the lot to hide it from the recording dropdown')}` : ''}${_v4Any ? ` · 🏁 ${TT('<b>VSM4 จบแล้ว</b> = งานส่วนของ VSM4 เสร็จ ที่เหลือเป็นของ VSM3 (ขั้นสุดท้ายของ VSM4 ≥ 90% หรือ Admin กด) → ไม่นับใน WIP กำลังผลิต · ไม่อยู่ในแผน VSM4','<b>VSM4 finished</b> = the VSM4 part is done, the rest is VSM3 (last VSM4 step ≥ 90% or set by Admin) → out of WIP and the VSM4 plan')}${admOn ? ` · 🔑 ${TT('แตะใต้เลข Lot เพื่อกด VSM4 จบแล้ว / ยังไม่จบ','tap under the lot to set VSM4 finished / not finished')}` : ''}` : ''}</div>` : '';
     // ★ บอกให้ชัดว่าตารางนี้รวม VSM3+VSM4 (ต่างจากหน้าอื่นที่แยกสาย) เพื่อไม่ให้เข้าใจผิดว่ายอดปน
     const crossNote = hasVsmPeers()
       ? `<div style="font-size:11px;font-weight:700;color:#6D28D9;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:5px 9px;margin:0 0 6px;display:inline-block">🔗 ${TT('ค้นหานี้รวม','This search spans')} <b>VSM 3 + VSM 4</b> ${TT('(งานล็อตเดียวกันวิ่งข้ามสายได้) — หน้าอื่นยังแยกสายตามเดิม','(a lot can run across both) — other pages stay per-VSM')}${_qcLineAny ? ` · ${TT('ช่อง QC รวมยอดที่แผนก QC ลง','the QC column includes QC-department entries')}` : ''}</div>`
@@ -26895,6 +26920,15 @@ function _tagValveVsm(valveNo) {
   lsSave(LS.VVSM, state.valveVsm);
 }
 
+let _vScopeOnly = false;   // ★ v4.25 ดูเฉพาะเบอร์ที่มีขอบเขต VSM4
+// ★ v4.25 ช่อง "ขอบเขต VSM4" ในรายการ Valve (ตารางเดียวกับเส้นทาง 🔀 · ไม่กำหนด = ตามประวัติ)
+function _vScopeCell(vk) {
+  const o = mpLineAll()[vKey(vk)];
+  if (!o || !o.line) return '<span class="muted" style="font-size:11px">—</span>';
+  const mc = Object.keys(o.mcs || {}).length ? ` <span title="${escapeHtml(Object.entries(o.mcs).map(([f, l]) => `${f} ${l.join(' › ')}`).join(' · '))}">🛠️</span>` : '';
+  if (o.line === 'vsm34') return `<span class="tag" style="font-size:10px;background:#CCFBF1;color:#115E59">③④</span> <span style="font-size:11px;font-weight:700;color:#0F766E">${escapeHtml([...o.fams].join(' · ') || '-')}</span>${mc}`;
+  return o.line === 'vsm4' ? `<span class="tag" style="font-size:10px;background:#CCFBF1;color:#115E59">④ ${TT('VSM4 ทั้งหมด', 'all VSM4')}</span>${mc}` : `<span class="tag" style="font-size:10px;background:#F1F5F9;color:#475569">③ ${TT('VSM3 ทั้งหมด', 'all VSM3')}</span>${mc}`;
+}
 function renderValveList() {
   const q = ($('vSearch').value || '').toLowerCase();
   const grp = _valveMasterGroup(viewVsm());
@@ -26905,6 +26939,14 @@ function renderValveList() {
     : `🔒 ${TT('Valve Master เฉพาะ','Valve Master for')} <b>${VSM_LABEL[grp] || grp}</b> · <b>${inMaster.length}</b> ${TT('วาล์ว','valves')}`;
   /* ★ v4.20 (ผู้ใช้ 12/11) เบอร์ที่มี Process ซ้ำอยู่แล้วใน Master (ก่อนมีตัวกัน) — แตะเพื่อเปิดแก้ · แก้ครบแล้วแถบนี้หายเอง */
   const vDup = inMaster.map(v => ({ v, d: procDupList(procsOf(v)) })).filter(x => x.d.length);
+  /* ★ v4.25 📋 ขอบเขต VSM4 (เฉพาะ Master รวม VSM3 + VSM4): จำนวนเบอร์ · ดูเฉพาะเบอร์ที่มี · หน้าต่างจัดการทั้งชุด (เครื่องที่กำหนด / 🔧 / Excel) */
+  const _lnAll = grp === 'shared' ? mpLineAll() : {}, _lnN = Object.values(_lnAll).filter(o => o.line).length;
+  if (grp !== 'shared') _vScopeOnly = false;
+  if (hint && grp === 'shared') hint.innerHTML += `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--blue-soft)">
+    <span>📋 ${TT('ขอบเขต VSM4 (VSM4 ผลิตแค่บางขั้น · ที่เหลือ VSM3)', 'VSM4 scope (VSM4 makes some steps · the rest is VSM3)')} <b>${nn(_lnN)}</b> ${TT('เบอร์', 'valves')}</span>
+    <button type="button" class="mpv-chip${_vScopeOnly ? ' on' : ''}" aria-pressed="${_vScopeOnly}" onclick="_vScopeOnly=!_vScopeOnly;_listPage.valve=0;renderValveList()">${_vScopeOnly ? '✓ ' : ''}${TT('ดูเฉพาะเบอร์ที่กำหนด', 'only these')}</button>
+    <button type="button" class="mpv-chip" onclick="openMpRouteModal('', true)" title="${TT('เครื่องที่กำหนด · 🔧 VSM3 เครื่องเสีย · นำเข้า / ส่งออก Excel ทั้งชุด', 'Designated machines · 🔧 VSM3 machine down · import / export Excel')}">🔀 ${TT('เครื่องที่กำหนด · 📥 📤 Excel', 'Machines · 📥 📤 Excel')}</button>
+    <span class="muted" style="font-size:11px">${TT('แก้รายเบอร์ = กด แก้ → ขอบเขต VSM4', 'per valve = Edit → VSM4 scope')}</span></div>`;
   if (hint && vDup.length) hint.innerHTML += `<div class="vm-dupw">⛔ ${TT('Process ซ้ำในเส้นทาง', 'Repeated process in the route')} ${nn(vDup.length)} ${TT('เบอร์ — แก้ให้ชื่อไม่ซ้ำ (เช่น SSG*2) แล้วบันทึก · แตะเพื่อเปิด', 'valves — rename the later pass (e.g. SSG*2) and save · tap to open')}<br>${vDup.map(x => `<button type="button" onclick="openValveModal('${escapeHtml(x.v.valveNo)}')" title="${escapeHtml(procDupText(x.d))}">${escapeHtml(x.v.valveNo)} · ${escapeHtml(x.d.map(o => o.name).join(', '))}</button>`).join('')}</div>`;
   // นับจำนวน ID ต่อ valve
   const idCounts = {};
@@ -26913,7 +26955,8 @@ function renderValveList() {
     if (v) idCounts[v] = (idCounts[v] || 0) + 1;
   }
   const filtered = inMaster
-    .filter(v => !q || v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q) || String(v.vtype||'').toLowerCase() === q);
+    .filter(v => !q || v.valveNo.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q) || String(v.vtype||'').toLowerCase() === q)
+    .filter(v => !_vScopeOnly || !!(_lnAll[vKey(v.valveNo)] && _lnAll[vKey(v.valveNo)].line));   // ★ v4.25
   const _vpage = _clampPage('valve', filtered.length);
   const rows = filtered.slice(_vpage * LIST_PAGE, (_vpage + 1) * LIST_PAGE)
     .map(v => {
@@ -26929,12 +26972,13 @@ function renderValveList() {
         <td class="right" style="white-space:nowrap">${_vnum(v.sl) != null ? '<b>' + escapeHtml(String(v.sl)) + '</b>' : '<span class="muted" style="font-size:11px">—</span>'}${(_vnum(v.hd) != null || _vnum(v.tl) != null) ? `<span class="muted" style="font-size:10.5px"> · ${_vnum(v.hd) != null ? escapeHtml(String(v.hd)) : '—'} · ${_vnum(v.tl) != null ? escapeHtml(String(v.tl)) : '—'}</span>` : ''}</td>
         <td style="font-size:11px;white-space:nowrap">${_vextHas(v) ? `<b>${escapeHtml(_vtxt(v.cot) || '—')}</b><span class="muted" style="font-size:10.5px"> · ${escapeHtml(_vtxt(v.cot_type) || '—')}</span>` : '<span class="muted">—</span>'}</td>
         <td><span class="muted" style="font-size:11px">${escapeHtml(v.processes.join(' → '))}</span>${(() => { const r = vsmProcRec(v.valveNo); const b = []; if (r && (r.p1 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM1</span>'); if (r && (r.p2 || []).length) b.push('<span class="tag tag-blue" style="font-size:9px;padding:1px 5px">VSM2</span>'); return b.length ? '<div style="margin-top:3px;display:flex;gap:4px">' + b.join('') + '</div>' : ''; })()}</td>
+        <td style="white-space:nowrap">${grp === 'shared' ? _vScopeCell(v.valveNo) : '<span class="muted" style="font-size:11px">—</span>'}</td>
         <td class="center">${idCell}</td>
         <td><button class="btn btn-outline btn-sm" onclick="openValveModal('${escapeHtml(v.valveNo)}')">แก้</button>
             <button class="btn btn-sm" onclick="delValve('${escapeHtml(v.valveNo)}')" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)">ลบ</button></td>
       </tr>`;
     }).join('');
-  $('vTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="9" class="center muted">${q ? TT('ไม่พบวาล์วที่ค้นหา','No valve matches') : (grp==='shared' ? TT('ยังไม่มีข้อมูล','No data') : TT('ยังไม่มีวาล์วใน VSM นี้ — กด ➕ Valve เพื่อเพิ่ม','No valves for this VSM yet — tap ➕ Valve to add'))}</td></tr>`;
+  $('vTable').querySelector('tbody').innerHTML = rows || `<tr><td colspan="10" class="center muted">${q ? TT('ไม่พบวาล์วที่ค้นหา','No valve matches') : (grp==='shared' ? TT('ยังไม่มีข้อมูล','No data') : TT('ยังไม่มีวาล์วใน VSM นี้ — กด ➕ Valve เพื่อเพิ่ม','No valves for this VSM yet — tap ➕ Valve to add'))}</td></tr>`;
   if ($('vPagination')) $('vPagination').innerHTML = _listPagerHtml('valve', filtered.length, 'vGoPage');
 }
 
@@ -27338,6 +27382,62 @@ function _mSeqRender() {
     : `<div class="muted" style="font-size:12px;padding:10px;border:1px dashed #cbd5e1;border-radius:9px;text-align:center">${isStd ? 'ยังไม่มี process — แตะจากรายการด้านล่างเพื่อเพิ่ม' : 'ยังไม่มี process — พิมพ์ชื่อด้านล่างแล้วกด ➕ เพิ่ม'}</div>`);
   document.querySelectorAll('#m_procs .proc-pill').forEach(el =>
     el.classList.toggle('done', _mProcSeq.includes(el.dataset.proc)));
+  if (isStd) _mLnRender();   // ★ v4.25 ชิป "VSM4 ทำ" ตาม Process ที่กำลังแก้
+}
+/* ═══ ★ v4.25 (ผู้ใช้ 13/11 "valve บางอันที่ VSM4 ผลิตแค่บางกระบวนการ แสดงที่ Master Valve ด้วย จะได้เพิ่มเติมหรือแก้ไขเองได้") 📋 ขอบเขต VSM4 ในฟอร์ม Valve ═══
+   ตารางเดียวกับ v4.19 (ค่าเริ่มต้นจาก Excel ในโค้ด · แก้แล้วเก็บบน Cloud — targets vsmline.* ทุกเครื่องเห็นตรงกัน · ไม่ต้องแก้ Worker)
+   ใช้: เส้นทางแผน ③ / ④ · 🏁 งานส่วน VSM4 จบแล้ว (ยอด WIP · แผน · ค้นหา Process) — ขั้นสุดท้ายที่ VSM4 ทำ = ขั้นท้ายสุดที่ติ๊กไว้
+   เครื่องที่กำหนด / 🔧 VSM3 เครื่องเสีย / 📥📤 Excel ทั้งชุด = ปุ่ม 🔀 ในแถบเหนือรายการ Valve (หน้าต่างเดียวกับหน้าแผน) */
+let _mLn = null;
+function _v4CapSet() { _v4Scope(''); return _v4ScC.cap4; }
+function _mLnStdProcs() { return ((_mProcTab === 'std' ? _mProcSeq : (_mProcStore && _mProcStore.std)) || []).filter(Boolean); }
+function _mLnOpts() { try { return _mpLnProdFams(_mLnStdProcs().map(mpFam).filter(Boolean), _v4CapSet()); } catch (e) { return []; } }
+function _mLnInit(vk) {
+  const o = vk ? (mpLineAll()[vKey(vk)] || null) : null;
+  _mLn = { line: o ? (o.line || '') : '', fams: new Set(o ? [...o.fams] : []), mcs: o ? { ...o.mcs } : {}, src: o ? o.src : '', sig0: o && o.line ? _mpLnSig(o) : '' };
+}
+function _mLnRender() {
+  const host = document.getElementById('m_ln'); if (!host || !_mLn) return;
+  const L = _mLn, opts = _mLnOpts();
+  const seg = [['', TT('ตามประวัติ', 'history')], ['vsm4', '④ ' + TT('VSM4 ทั้งหมด', 'all VSM4')], ['vsm34', '③④ ' + TT('VSM4 ทำบางขั้น', 'VSM4 some steps')], ['vsm3', '③ ' + TT('VSM3 ทั้งหมด', 'all VSM3')]]
+    .map(([l, t]) => `<button type="button" data-ln="${l}" aria-pressed="${L.line === l}">${t}</button>`).join('');
+  const has = f => L.fams.has(f) || mpFamOK(f, L.fams);
+  const chips = L.line === 'vsm34'
+    ? `<div class="mp-lnr"><span class="lb">${TT('VSM4 ทำ', 'VSM4 does')}</span>${opts.length ? opts.map(f => `<button type="button" class="mpv-chip${has(f) ? ' on' : ''}" data-lnf="${escapeHtml(f)}" aria-pressed="${has(f)}">${escapeHtml(f)}</button>`).join('') : `<span class="mp-lnm">${TT('ใส่ Process ด้านล่างก่อน', 'add processes below first')}</span>`}</div>`
+      + (opts.some(has) ? '' : `<div class="mp-lnw">⚠️ ${TT('ยังไม่ได้เลือก Process — ระบบใช้ประวัติผลิตจริงไปก่อน', 'no process picked — production history is used')}</div>`)
+    : '';
+  const v4 = L.line === 'vsm4' ? opts : L.line === 'vsm34' ? opts.filter(has) : [];
+  const lastTxt = v4.length ? `🏁 ${TT('ขั้นสุดท้ายที่ VSM4 ทำ', 'last VSM4 step')} <b>${escapeHtml(v4[v4.length - 1])}</b> — ${TT('ทำครบ ≥ 90% ของ Lot = งานส่วน VSM4 จบ (ไม่นับใน WIP · ไม่อยู่ในแผน VSM4)', 'done ≥ 90% of the lot = VSM4 part finished (out of WIP and the VSM4 plan)')}` : '';
+  const mcTxt = Object.entries(L.mcs || {}).filter(([, l]) => l && l.length).map(([f, l]) => `${f} ${l.join(' › ')}`).join(' · ');
+  const srcTxt = L.src === 'seed' && L.line ? `Excel ${_mpD(MP_LINE_SEED_DATE).slice(0, 5)}` : L.src === 'cloud' ? TT('แก้แล้ว', 'edited') : '';
+  const note = L.line
+    ? (lastTxt || (L.line === 'vsm3' ? TT('VSM4 ไม่ลงเครื่องเบอร์นี้เลย — ล็อตที่รับเข้า VSM4 = งานส่วน VSM4 จบ', 'VSM4 never runs this valve — VSM4 lots count as VSM4-finished') : ''))
+    : TT('ไม่กำหนด = สายของแต่ละขั้นเดาจากประวัติผลิตจริง 90 วัน', 'not set = each step’s line comes from the last 90 days of production');
+  host.innerHTML = `<div class="mp-lnr"><span class="mp-lnseg" role="group" aria-label="${TT('ขอบเขต VSM4', 'VSM4 scope')}">${seg}</span>${srcTxt ? `<span class="mp-lnm">${srcTxt}</span>` : ''}</div>${chips}
+    <div class="muted" style="font-size:10.5px;line-height:1.55;margin-top:2px">${note}${mcTxt ? ` · 🛠️ ${TT('เครื่องที่กำหนด', 'machines')} ${escapeHtml(mcTxt)}` : ''}</div>`;
+}
+function mLnClick(ev) {
+  const t = ev.target.closest('button'); if (!t || !_mLn) return;
+  if (t.dataset.ln != null) {
+    const line = t.dataset.ln;
+    if (line === 'vsm34' && !_mLn.fams.size) {   // เพิ่งเลือกบางขั้น = เริ่มจากขั้นที่ตอนนี้ทำที่ VSM4 (แก้ต่อได้)
+      try { const fl = _mLnStdProcs().map(mpFam), vk = vKey(($('m_v') || {}).value || ''), rt = mpRouteFlow(vk, fl, _v4CapSet(), true); fl.forEach((f, i) => { if (f && rt[i].line === 'vsm4') _mLn.fams.add(f); }); } catch (e) {}
+    }
+    _mLn.line = line;
+  } else if (t.dataset.lnf != null) {
+    const f = t.dataset.lnf, F = _mLn.fams;
+    if (F.has(f) || mpFamOK(f, F)) { F.delete(f); if (f === 'TOP&HOD') { F.delete('TOP'); F.delete('HOD'); } } else F.add(f);
+  } else return;
+  _mLnRender();
+}
+// ขอบเขตที่แก้ในฟอร์ม → body ของ targets (null = ไม่เปลี่ยน)
+function _mLnBody(vk) {
+  if (!_mLn) return null;
+  const opts = _mLnOpts();
+  const fams = _mLn.line === 'vsm34' ? [..._mLn.fams].filter(f => !opts.length || opts.includes(f) || opts.some(o => mpFamOK(o, new Set([f])))) : [..._mLn.fams];
+  const sig = _mLn.line ? _mpLnSig({ line: _mLn.line, fams: new Set(fams), mcs: _mLn.mcs }) : '';
+  if (sig === _mLn.sig0) return null;
+  return _mpLineBody(vk, _mLn.line, _mLn.line ? fams : [], _mLn.line ? _mLn.mcs : {});
 }
 // สลับแท็บ Process Master (std/v1/v2) — เก็บชุดที่แก้อยู่ก่อน แล้วโหลดชุดใหม่มาแก้
 function mProcSwitchTab(tab) {
@@ -27396,6 +27496,7 @@ function openValveModal(valveNo) {
     v2:  (vp.p2 || []).filter(Boolean).slice(),
   };
   _mProcSeq = _mProcStore.std.slice();
+  _mLnInit(v ? v.valveNo : '');   // ★ v4.25 📋 ขอบเขต VSM4
   openModal(v ? 'แก้ไข Valve' : 'เพิ่ม Valve', `
     <div class="fr"><label>Valve No</label><input type="text" id="m_v" value="${escapeHtml(v?.valveNo||'')}" ${v?'readonly':''}></div>
     <div class="fr"><label>ลูกค้า</label>
@@ -27421,6 +27522,7 @@ function openValveModal(valveNo) {
       <div class="fr"><label>Type COT</label><input type="text" id="m_cott" maxlength="60" value="${escapeHtml(_vtxt(v && v.cot_type))}" autocomplete="off"></div>
     </div>
     <div class="muted" style="font-size:10.5px;margin:-4px 0 8px">${TT('COT = เรียงคิวเครื่อง MUG ให้แบบเดียวกันติดกัน · Type COT = Carbide → ขั้น COT ไปเครื่องที่ไม่ใช่ MUG', 'COT keeps the same form together on MUG machines · Type COT = Carbide → the COT step goes to a non-MUG machine')}</div>
+    ${_valveMasterGroup(viewVsm()) === 'shared' ? `<div class="fr"><label>📋 ${TT('ขอบเขต VSM4', 'VSM4 scope')} <span style="font-weight:600;color:var(--muted)">${TT('— VSM4 ผลิตขั้นไหนของเบอร์นี้ (ที่เหลือ VSM3)', '— which steps VSM4 makes (the rest is VSM3)')}</span></label><div id="m_ln" onclick="mLnClick(event)"></div></div>` : ''}
     <div class="fr"><label>Process Master (ลำดับการผลิต)</label>
       <div id="m_proc_tabs" style="display:flex;gap:6px;margin-bottom:8px">
         <button type="button" class="btn btn-sm" id="m_tab_std" style="flex:1;background:var(--blue);color:#fff" onclick="mProcSwitchTab('std')">VSM 3/4</button>
@@ -27533,6 +27635,7 @@ async function saveValve(orig) {
   // ★ v4.07 COT / Type COT (ข้อความ) — ว่าง = ไม่มี · ไม่มีช่องในฟอร์ม = คงค่าเดิม
   if ($('m_cot')) entry.cot = _vtxt($('m_cot').value);
   if ($('m_cott')) entry.cot_type = _vtxt($('m_cott').value);
+  const lnBody = _valveMasterGroup(viewVsm()) === 'shared' && document.getElementById('m_ln') ? _mLnBody(valveNo) : null;   // ★ v4.25 📋 ขอบเขต VSM4 (อ่านก่อนปิดฟอร์ม)
   const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
   _mpVIdx = null;                        // ★ v3.94 ดัชนีของตัววางแผนจำ object เดิมไว้ (จำนวนเบอร์ไม่เปลี่ยน = ไม่สร้างใหม่) → SD/SL ที่เพิ่งแก้ไม่เข้าแผน
   setVsmProc(valveNo, _mProcStore.v1, _mProcStore.v2);   // Process Master VSM1/VSM2 (เก็บ local แยกจาก valve)
@@ -27549,6 +27652,10 @@ async function saveValve(orig) {
   else {
     toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud','Saved locally — not on Cloud yet'), 'orange');
     offlineSaveDialog(`Master Valve ${entry.valveNo}`, (r.err && r.err.message) || 'network error');
+  }
+  if (lnBody) {   // ★ v4.25 ขอบเขต VSM4 เก็บใน targets (Cloud ต้องสำเร็จก่อน · ล้มเหลว = ยังไม่เปลี่ยน)
+    try { await _pfTargetsPut(lnBody); _wbCache = null; toast(`📋 ${entry.valveNo} · ${TT('ขอบเขต VSM4', 'VSM4 scope')}: ${_mpLnDesc(mpLineAll()[vKey(entry.valveNo)])} ✅`, 'green'); renderValveList(); }
+    catch (e) { toast('❌ ' + TT('บันทึกขอบเขต VSM4 ไม่สำเร็จ — ยังไม่เปลี่ยน กรุณาลองใหม่', 'Could not save the VSM4 scope — nothing changed, please retry'), 'red'); }
   }
 }
 async function delValve(valveNo) {
@@ -28399,6 +28506,71 @@ function spmLotChk(vi, li, el) {
   const V = _spmData?.[vi]; if (!V || !V.valve) return;
   const L = V.lots[li]; if (!L) return;
   _lotChkToggle(V.valve.valveNo, L, V.procSeq, el, `spmLotChk(${vi},${li},this)`, 'spm-chip');
+}
+/* ★ v4.25 🏁 ป้าย "งานส่วน VSM4 จบแล้ว" ใต้เลข Lot (หน้าค้นหา Process · เฉพาะ VSM3 / VSM4) — กติกาที่ v4EndOf
+   ทุกคนเห็นป้ายเมื่อจบ · 🔑 Admin แตะเพื่อกด "VSM4 จบแล้ว" / "ยังไม่จบ" / กลับตามระบบ · เบอร์ที่ VSM4 ไม่มีขั้นต้องทำ = ไม่แสดง */
+function _v4EndHtml(valve, L, ri) {
+  const vv = viewVsm();
+  if ((vv !== 'vsm3' && vv !== 'vsm4') || !L || L.lk === '(no lot)' || isExtraLot(L.lk) || getJobProc(valve, L.lk) === 'DONE') return '';
+  const sc = _v4Scope(valve); if (!sc || sc.last < 0) return '';
+  const e = v4EndOf(valve, L.lk), adm = !!state.adminUnlocked, click = `spV4End(${ri},this)`;
+  let cls = '', txt = '';
+  if (e && e.done) { cls = 'on v4e'; txt = e.src === 'admin' ? `🏁 VSM4 ${TT('จบแล้ว', 'finished')} 🔑${_mpD(e.date).slice(0, 5)}` : `🏁 VSM4 ${TT('จบแล้ว', 'finished')}`; }
+  else if (e && e.src === 'open') { cls = 'on v4o'; txt = `↩︎ VSM4 ${TT('ยังไม่จบ', 'not finished')} 🔑`; }
+  else if (adm) txt = `🔑 VSM4 ${TT('จบแล้ว', 'finished')}`;
+  else return '';
+  const tip = escapeHtml((e && (e.done || e.src === 'open') ? v4EndTxt(e) : (e && e.last ? v4EndTxt(e) + ' · ' : '') + TT('ขอบเขต VSM4', 'VSM4 scope') + ': ' + sc.v4.join(' · ')));
+  return adm
+    ? `<button type="button" class="pf-chk lot-chk ${cls}" onclick="event.stopPropagation();${click}" title="${tip}">${txt}</button>`
+    : `<span class="pf-chk lot-chk ${cls}" title="${tip}">${txt}</span>`;
+}
+let _v4EndBusy = false;
+async function spV4End(ri, el) {
+  const L = _spLotData[ri]; if (!L || !_spValve || _v4EndBusy) return;
+  if (!state.adminUnlocked) { toast(TT('ต้องปลดล็อก Admin ก่อน', 'Unlock Admin first'), 'orange'); return; }
+  const valve = _spValve.valveNo, mark = v4EndMark(valve, L.lk), e = v4EndOf(valve, L.lk), sc = _v4Scope(valve);
+  if (!sc) return;
+  const NL = '\n';
+  const head = `${valve} · Lot ${L.lot}${NL}📋 ${TT('ขอบเขต VSM4 ของเบอร์นี้', 'VSM4 scope of this valve')}: ${sc.v4.join(' · ') || '-'}`;
+  let val, title, yes, body, danger = false;
+  if (mark > V4END_OPEN || mark === V4END_OPEN) {   // ① / ③ ที่ Admin กดไว้ → กลับตามระบบ
+    const kk = V4END_PREFIX + jobKey(valve, L.lk), t0 = state.targets;
+    let a = null;
+    state.targets = { ...t0, [kk]: 0 };
+    try { a = v4EndOf(valve, L.lk); } finally { state.targets = t0; }
+    val = 0; title = '↺ ' + TT('กลับไปตามระบบ', 'Back to automatic'); yes = TT('กลับตามระบบ', 'Back to automatic'); danger = true;
+    const now = mark === V4END_OPEN ? TT('ตอนนี้: 🔑 Admin กดว่า VSM4 ยังไม่จบ', 'Now: 🔑 Admin marked VSM4 not finished') : `${TT('ตอนนี้', 'Now')}: ${v4EndTxt(e)}`;
+    const then = a && a.done ? '🏁 ' + TT('จบแล้ว', 'finished') + ' — ' + v4EndTxt(a) : (v4EndTxt(a) || TT('ยังไม่จบ', 'not finished'));
+    body = [now, `${TT('ถ้ากลับตามระบบ', 'If automatic')}: ${then}`].join(NL);
+  } else if (e && e.done) {                          // ② ระบบถือว่าจบ → Admin บอกว่ายังไม่จบ
+    val = V4END_OPEN; title = '🔑 ' + TT('VSM4 ยังไม่จบ', 'VSM4 not finished'); yes = TT('ยังไม่จบ', 'Not finished'); danger = true;
+    body = [`${TT('ระบบถือว่าจบ', 'Treated as finished')}: ${v4EndTxt(e)}`, '',
+      '• ' + TT('กลับมานับใน WIP กำลังผลิตของ VSM4', 'Counted again in VSM4 WIP'),
+      '• ' + TT('แผนวางขั้นของ VSM4 ที่ยังขาดให้ Lot นี้', 'The plan schedules the missing VSM4 steps'),
+      '• ' + TT('ยกเลิกได้ — แตะป้ายอีกครั้ง', 'Undo by tapping the tag again')].join(NL);
+  } else {                                           // ยังไม่จบ → Admin กดจบ
+    val = Number(todayISO().replace(/-/g, '')); title = '🏁 ' + TT('งานส่วนของ VSM4 จบแล้ว', 'VSM4 part finished'); yes = '✅ ' + TT('VSM4 จบแล้ว', 'VSM4 finished');
+    body = [e && e.last ? '⏳ ' + v4EndTxt(e) : '', '',
+      '• ' + TT('ไม่นับใน WIP กำลังผลิตของ VSM4', 'Not counted in VSM4 WIP'),
+      '• ' + TT('แผนไม่วางขั้นของ VSM4 ให้ Lot นี้อีก (ขั้นของ VSM3 ที่เหลือยังอยู่ในแท็บ 🔀)', 'The plan stops scheduling VSM4 steps for this lot (remaining VSM3 steps stay in the 🔀 tab)'),
+      '• ' + TT('ยอด / KPI / Dropdown ตอนบันทึก ไม่เปลี่ยน · ยกเลิกได้ — แตะป้าย 🏁 อีกครั้ง', 'Quantities, KPI and the recording dropdown are unchanged · undo by tapping the 🏁 tag')].join(NL);
+  }
+  const ok = await confirmModal(head + NL + body, { title, yes, no: TT('ปิด', 'Close'), danger });
+  if (!ok) return;
+  _v4EndBusy = true;
+  showBusy(TT('กำลังบันทึก…', 'Saving…'));
+  try {
+    await setV4End(valve, L.lk, val);   // Cloud ล้มเหลว → throw → local ไม่เปลี่ยน
+    hideBusy();
+    if (el && el.isConnected) el.outerHTML = _v4EndHtml(valve, L, ri) || '';
+    const msg = val > V4END_OPEN ? TT('VSM4 จบแล้ว · ไม่นับใน WIP · ไม่อยู่ในแผน VSM4', 'VSM4 finished · out of WIP and the VSM4 plan')
+      : val === V4END_OPEN ? TT('VSM4 ยังไม่จบ', 'VSM4 not finished') : TT('กลับตามระบบแล้ว', 'back to automatic');
+    toast(`${val > V4END_OPEN ? '🏁' : val === V4END_OPEN ? '↩︎' : '↺'} ${L.lot} — ${msg}${API ? '' : ' (local)'}`, 'green');
+    try { renderWipBuckets(); } catch (x) {}
+  } catch (x) {
+    hideBusy();
+    toast(TT('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — ยังไม่เปลี่ยน กรุณาลองใหม่', '❌ Cloud save failed — nothing changed, please retry'), 'red');
+  } finally { _v4EndBusy = false; }
 }
 function _pfAdmKey(valve, lot, proc) { return jobKey(valve, lot) + '@' + _procCanon(String(proc || '').trim()); }
 // ดัชนี { jobKey: { process: {qty, date} } } — สร้างใหม่เมื่อ state.targets ถูกแทนที่ (ทุกจุดแทนที่ทั้ง object)
@@ -30147,12 +30319,16 @@ function mpAll4Until(vk) {
 }
 /* ประวัติว่า "เบอร์ × Process" ผลิตที่สายไหน (ชิ้น) + Process ที่เครื่อง VSM3 ทำได้ */
 let _mpRhCache = null, _mpRhSig = '';
-function mpRouteHist() {
+function mpRouteHist() { return _runSync(_mpRouteHistGen()); }
+// ★ v4.25 แบบพักได้ — ยอด WIP (แบ่งช่วง ≤ 8 ms) เรียกตัวนี้ก่อนตัดสิน "งานส่วน VSM4 จบแล้ว" · ผลเหมือนเดิมทุกประการ
+function* _mpRouteHistGen() {
   const src = (typeof _allKpi !== 'undefined' && _allKpi) ? _allKpi : (state.kpiRecords || []);
   const today = todayISO(), sig = src.length + '/' + _fvVer + '/' + today;
   if (_mpRhCache && _mpRhSig === sig) return _mpRhCache;
   const recent = _mpAddDays(today, -90), famMemo = new Map(), vf = new Map();
+  let _n = 0;
   for (const r of src) {
+    if ((++_n & 255) === 0 && _sliceDue()) yield;
     const line = vsmOf(r); if (line !== 'vsm3' && line !== 'vsm4') continue;
     const q = +r.opr || 0; if (!(q > 0)) continue;
     const vk = vKey(r.valve_no); if (!vk) continue;
@@ -30228,6 +30404,177 @@ function _mpMarkV3(j) {
 function _mpKeepV3(j, lastInt) {
   const fgI = j.steps.findIndex(s => s.fam === 'FG');
   j.v3b = j.v3b.filter(b => b.i0 < lastInt || (fgI >= 0 && b.i0 <= fgI));
+}
+
+/* ═══ ★ v4.25 (ผู้ใช้ 13/11 + รูป VF1349M1 · WIP กำลังผลิต 976,957) 🏁 งานส่วนของ VSM4 จบแล้ว ═══
+   ผู้ใช้: "VSM3-4 ผลิตงานตัวเดียวกัน VSM4 ผลิตบางกระบวนการเท่านั้น — ระบบไม่รู้ว่า Lot ไหนผลิตสำหรับ VSM4 จบแล้ว ที่เหลือขึ้นกับ VSM3
+            ทำให้การวางแผนไม่ถูกต้อง · ยอด WIP ในพื้นที่ค้างเพิ่มขึ้นเรื่อย ๆ — ถ้าจบกระบวนการของ VSM4 แล้ว ตัดรายการออกจาก WIP"
+   วัดจริง 13/11 (WIP กำลังผลิต 976,247 ชิ้น 418 ล็อต):
+     • 174 ล็อต 567,619 ชิ้น ขั้นสุดท้ายของ VSM4 ทำครบแล้ว เหลือแต่ขั้นของ VSM3 (เช่น VV7295M0 IND ที่ VSM4 → SSG…FG ที่ VSM3)
+       เดิม WIP = รับเข้า − ผ่าน FG − Scrap → ค้างเป็น WIP ของ VSM4 จนกว่า VSM3 จะลง FG ด้วย Lot เดียวกัน (บางล็อตไม่มีวันลง)
+     • แผน: VF1349M1 2605S050398 BUFF (ขั้นสุดท้ายของ VSM4) ครบ 4,500 แล้ว แต่ยังวาง COT · TL ที่ช่องว่าง (⏪ ขั้นที่ถูกข้าม)
+   กติกา — ที่เดียว ใช้ร่วมกัน 3 ที่: ยอด WIP กำลังผลิต (VSM4) · ตัววางแผน · หน้าค้นหา Process (ป้ายใต้เลข Lot)
+     ① 🔑 Admin กด "VSM4 จบแล้ว" ที่เลข Lot = จบ (เช่น ล็อตนี้ VSM4 ทำแค่ IND ที่เหลือส่ง VSM3 ทั้งที่ขอบเขตบอก IND · COT · TL · BUFF)
+     ② อัตโนมัติ: ขั้นสุดท้ายที่ VSM4 ทำ (ขอบเขต VSM4 ของเบอร์ — ตารางเดียวกับเส้นทาง 🔀 / Master Valve) ผลิต + Scrap ≥ 90% ของ Lot
+        หรือ Lot ผ่านขั้นที่อยู่หลังจากนั้นแล้ว ≥ 90% · เบอร์ที่ VSM4 ไม่มีขั้นต้องทำเลย = จบ
+        ยอด Lot = ใบรับเข้า VSM4 (ไม่มีใบ = ขั้นที่ลงยอดมากสุด) · ยอดผลิต = VSM3 + VSM4 ทุกแถว (+ 🔑 ยอด Admin ในช่องที่พนักงานไม่ได้ลง)
+        ช่องว่างก่อนขั้นสุดท้าย = ไม่ได้ลงยอด / VSM3 ทำแทน (ไม่วางกลับมาทำ) · ขั้นสุดท้ายทำไปบางส่วน (ทยอยผลิต) = ยังไม่จบ
+     ③ 🔑 Admin กด "ยังไม่จบ" = ไม่ใช้กติกาอัตโนมัติกับ Lot นี้ (VSM4 ยังต้องทำต่อ)
+   ผล: ไม่นับในยอด WIP กำลังผลิต (ยังอยู่ในรายการ WIP สำหรับแผนขาย / ค้นหา — ล็อตยังอยู่ในไลน์ที่ VSM3) · แผนไม่วางขั้นของ VSM4
+       (ขั้นของ VSM3 ที่เหลืออยู่แท็บ 🔀 ตามเดิม) · Lot ยังเลือกได้ใน Dropdown · ยอด / KPI / สถานะ DONE ไม่เปลี่ยน
+   เก็บใน targets store: v4end.<VALVE::LOT> = YYYYMMDD (① จบ) · 1 (③ ยังไม่จบ) · 0 = ตามระบบ — ไม่ต้องแก้ Worker */
+const V4END_PREFIX = 'v4end.', V4END_OPEN = 1, V4END_PCT = 0.9;
+function v4EndMark(valve, lot) { return Number((state.targets || {})[V4END_PREFIX + jobKey(valve, lot)]) || 0; }
+/* ยอดต่อ Lot × Process จากแถว VSM3 + VSM4 ทั้งหมด (ชุดเดียวกับตัววางแผน) + สถิติเครื่อง VSM4 (Process ที่เครื่องทำจริง — แบบ mpHistory)
+   คิดครั้งเดียวต่อชุดข้อมูล · แบบพักได้ (ยอด WIP เรียกด้วย yield*) */
+let _v4Ix = null, _v4IxKey = null;
+function* _v4IdxGen() {
+  const P = _wipProdSrc(), K = _wipKpiSrc(), o0 = _v4IxKey;
+  if (_v4Ix && o0 && o0.P === P && o0.K === K && o0.np === P.length && o0.nk === K.length && o0.fv === _fvVer) return _v4Ix;
+  const key = { P, K, np: P.length, nk: K.length, fv: _fvVer };
+  let _n = 0;
+  const lots = new Map(), mach = new Map(), fm = new Map(), dupM = new Map(), scr = new Map();
+  const famOf = p => { let f = fm.get(p); if (f === undefined) fm.set(p, f = mpFam(p) || ''); return f; };
+  const dupOf = vk => { let d = dupM.get(vk); if (d === undefined) dupM.set(vk, d = !!_mpDupFam(mpValve(vk))); return d; };
+  const lotOf = (v, lot) => {
+    const k = jobKey(v, lot || ''); let o = lots.get(k);
+    if (!o) lots.set(k, o = { p: {}, k: {}, s: {}, pn: null, kn: null, d: dupOf(k.slice(0, k.indexOf('::'))) });
+    return o;
+  };
+  for (const r of K) {
+    if ((++_n & 255) === 0 && _sliceDue()) yield;
+    const f = famOf(r.last_process), q = +r.opr || 0;
+    if (MP_ZONES.includes(r.zone)) {   // Process ที่เครื่อง VSM4 ทำจริง (ตัวเดียวกับ mpHistory().mach → mpAutoFams)
+      const m = String(r.machine_id || '').trim().toUpperCase();
+      if (m) { let o = mach.get(m); if (!o) mach.set(m, o = { qty: 0, famQty: {}, famN: {} }); o.qty += q; if (f) { o.famQty[f] = (o.famQty[f] || 0) + q; o.famN[f] = (o.famN[f] || 0) + 1; } }
+    }
+    const ln = vsmOf(r); if (ln !== 'vsm3' && ln !== 'vsm4') continue;
+    const v = String(r.valve_no || '').trim(); if (!v) continue;
+    const o = lotOf(v, r.lot), sc = Number(r.scrap) || 0;
+    if (sc > 0) scr.set(r.record_id || r, { o, sc, fams: new Set(f ? [f] : []) });
+    if (!f) continue;
+    o.k[f] = (o.k[f] || 0) + q;
+    if (o.d && q) { const n = _procCanon(String(r.last_process || '').trim()); if (n) { const x = o.kn || (o.kn = {}); x[n] = (x[n] || 0) + q; } }
+  }
+  for (const r of P) {
+    if ((++_n & 255) === 0 && _sliceDue()) yield;
+    const ln = vsmOf(r); if (ln !== 'vsm3' && ln !== 'vsm4') continue;
+    const cp = r.current_process || r.currentProcess, f = famOf(cp);
+    const x = r.kpi_record_id && scr.get(r.kpi_record_id); if (x && f) x.fams.add(f);   // Scrap ของแถว KPI → Process จริง (กติกา v4.15)
+    const v = String(r.valve_no || r.valveNo || '').trim(); if (!v || !f) continue;
+    const o = lotOf(v, r.lot), q = Number(r.quantity) || 0;
+    o.p[f] = (o.p[f] || 0) + q;
+    if (o.d && q) { const n = _procCanon(String(cp || '').trim()); if (n) { const y = o.pn || (o.pn = {}); y[n] = (y[n] || 0) + q; } }
+  }
+  for (const x of scr.values()) for (const f of x.fams) x.o.s[f] = (x.o.s[f] || 0) + x.sc;
+  _v4Ix = { lots, mach }; _v4IxKey = key;
+  return _v4Ix;
+}
+// ใบรับเข้า VSM4 ต่อ Lot (ไม่ขึ้นกับสายที่กำลังดู)
+let _v4SlipC = null, _v4SlipRef = null, _v4SlipVer = -1;
+function _v4Slip() {
+  if (_v4SlipC && _v4SlipRef === _wipin && _v4SlipVer === _wipinVer) return _v4SlipC;
+  const m = new Map();
+  for (const e of Object.values(_wipin || {})) {
+    if (!e || e.deleted || _wipinVsm(e) !== 'vsm4') continue;
+    const k = jobKey(e.valve, e.lot); m.set(k, (m.get(k) || 0) + (Number(e.qty) || 0));
+  }
+  _v4SlipC = m; _v4SlipRef = _wipin; _v4SlipVer = _wipinVer;
+  return m;
+}
+// Process ที่เครื่อง VSM4 ทำได้ — ตัวเดียวกับ mpContext().famCap4 (ตั้งไว้ที่เครื่อง · ไม่ได้ตั้ง = Process ของเครื่อง + ที่ทำจริง ≥ 10%)
+function _v4Cap4(mach) {
+  const capBy = new Map((_mcCaps || []).map(c => [c.machine_id, c])), hist = { mach }, out = new Set();
+  for (const mc of mpVsm4Machines()) {
+    const cap = capBy.get(mc.id) || null, ex = cap ? mpProcList(cap.procs).map(mpFam).filter(Boolean) : [];
+    for (const f of (ex.length ? ex : mpAutoFams(mc, hist))) { out.add(f); if (f === 'TOP&HOD') { out.add('TOP'); out.add('HOD'); } }
+  }
+  return out;
+}
+/* ขอบเขตของเบอร์: เส้นทางตาม Master + ขั้นสุดท้ายที่ VSM4 ทำ (mpRouteFlow — 🔑 สลับเอง › 🔧 › 📋 ขอบเขต VSM4 › ประวัติ) · last = -1 → VSM4 ไม่มีขั้นต้องทำ */
+let _v4ScC = null;
+function _v4Scope(vk) {
+  const ix = _v4Ix || _runSync(_v4IdxGen()), RH = mpRouteHist(), t = state.targets, day = mpProdDay();
+  let C = _v4ScC;
+  if (!C || C.ix !== ix || C.rh !== RH || C.t !== t || C.caps !== _mcCaps || C.ms !== state.machines || C.vs !== state.valves || C.fv !== _fvVer || C.day !== day)
+    C = _v4ScC = { ix, rh: RH, t, caps: _mcCaps, ms: state.machines, vs: state.valves, fv: _fvVer, day, cap4: _v4Cap4(ix.mach), by: new Map() };
+  const key = vKey(vk);
+  let o = C.by.get(key);
+  if (o === undefined) {
+    const v = mpValve(key), flow = v ? procsOf(v, MP_VSM) : [];
+    o = null;
+    if (flow.length) {
+      const fams = flow.map(mpFam), rt = mpRouteFlow(key, fams, C.cap4), dup = !!_mpDupFam(v);
+      const isV4 = flow.map((p, i) => rt[i].line === 'vsm4' && C.cap4.has(fams[i]));
+      /* ลำดับ Process ตามของจริง (mpLearnFlow — ตัวเดียวกับตัววางแผน · เบอร์ที่ชื่อซ้ำใช้ Master) → pos = ลำดับของแต่ละขั้นในของจริง
+         VF1713M0: Master IND › … › TG แต่ของจริง TG (VSM3) ก่อน IND (VSM4) — ล็อตที่ผ่าน TG แล้วยังรอ IND ไม่ใช่ "ผ่านขั้นของ VSM4 ไปแล้ว" */
+      const fl = dup ? flow : mpLearnFlow(key, flow, { learnOrder: true }), pos = flow.map((p, i) => { const j = fl.indexOf(p); return j < 0 ? i : j; });
+      let last = -1, lastL = -1;
+      isV4.forEach((x, i) => { if (!x) return; last = i; if (lastL < 0 || pos[i] > pos[lastL]) lastL = i; });
+      o = { flow, fams, last, lastL, pos, isV4, names: flow.map(p => _procCanon(String(p).trim())), dup, v4: flow.filter((p, i) => isV4[i]) };
+    }
+    C.by.set(key, o);
+  }
+  return o;
+}
+/* 🏁 งานส่วนของ VSM4 ของ Lot นี้ → null (ตัดสินไม่ได้: ไม่มี Lot / Lot สมทบ / เบอร์ไม่มี Process / ยังไม่มียอดเลย)
+   หรือ { done, src: 'admin' | 'auto' | 'open' | '', why: 'last' | 'beyond' | 'none', proc, made, base, last, date, auto } */
+function v4EndOf(valve, lot) {
+  const lk = lotKey(lot); if (!lk || isExtraLot(lk)) return null;
+  const vk = vKey(valve), k = vk + '::' + lk, mark = Number((state.targets || {})[V4END_PREFIX + k]) || 0;
+  if (mark > V4END_OPEN) return { done: true, src: 'admin', date: _ymdToIso(mark) };
+  const sc = _v4Scope(vk);
+  let auto = null;
+  if (sc && sc.last < 0) auto = { why: 'none' };
+  else if (sc) {
+    const L = (_v4Ix || _runSync(_v4IdxGen())).lots.get(k), slip = _v4Slip().get(k) || 0, adm = pfAdmOfJob(valve, lot), E = {};
+    let doneAt;
+    if (sc.dup) {   // เบอร์ที่มี Process กลุ่มเดียวกันหลายขั้น → ยอดรายขั้นตามชื่อที่ลง (กติกา v4.20 เดียวกับตัววางแผน)
+      const keys = procOccKeys(sc.names), tP = (L && L.pn) || E, tK = (L && L.kn) || E, lotB = procOccBase(keys, tP, slip);
+      const dP = procOccAlloc(sc.names, keys, tP, lotB, true), dK = procOccAlloc(sc.names, keys, tK, lotB, true);
+      doneAt = i => Math.max(dP[keys[i]] || 0, dK[keys[i]] || 0);
+    } else doneAt = i => Math.max((L && L.p[sc.fams[i]]) || 0, (L && L.k[sc.fams[i]]) || 0);
+    const qAt = i => { const d = doneAt(i); if (d > 0) return d; const a = adm[sc.names[i]]; return a && a.qty > 0 ? a.qty : 0; };
+    const madeAt = i => qAt(i) + ((L && L.s[sc.fams[i]]) || 0);
+    let base = slip;
+    if (!(base > 0)) for (let i = 0; i < sc.flow.length; i++) base = Math.max(base, qAt(i));
+    if (base > 0) {
+      /* ขั้นสุดท้ายของ VSM4 = ท้ายสุดตาม Master และตามของจริง (ต่างกัน = ต้องครบทั้งคู่)
+         ผ่านไปแล้ว = ขั้นที่อยู่หลังทุกขั้นของ VSM4 ทั้งตาม Master และตามของจริง (กติกาเดียวกับ effDone ของตัววางแผน v4.14) */
+      const need = base * V4END_PCT - 1e-9, mL = madeAt(sc.last), mL2 = sc.lastL === sc.last ? mL : madeAt(sc.lastL);
+      if (mL >= need && mL2 >= need) auto = { why: 'last', proc: sc.flow[sc.last], made: mL, base };
+      else for (let i = sc.last + 1; i < sc.flow.length; i++) {
+        if (sc.isV4[i] || sc.pos[i] <= sc.pos[sc.lastL]) continue;
+        const m = madeAt(i); if (m >= need) { auto = { why: 'beyond', proc: sc.flow[i], made: m, base }; break; }
+      }
+      if (auto) auto.last = sc.flow[sc.last];
+      else auto = null;
+      if (!auto && mark !== V4END_OPEN) return { done: false, src: '', last: sc.flow[sc.last], made: mL, base };
+    }
+  }
+  if (mark === V4END_OPEN) return { done: false, src: 'open', auto };
+  return auto ? { done: true, src: 'auto', ...auto } : null;
+}
+// ขอบเขต VSM4 / เส้นทางถูกแก้ → ยอด WIP คิดใหม่ (คีย์ cache ไม่มี state.targets) + รายการ Master Valve ถ้าเปิดอยู่
+function _v4ScopeChanged() {
+  _wbCache = null;
+  try { if ($('vTable') && $('vTable').offsetParent !== null) renderValveList(); } catch (e) {}
+}
+// เหตุผลเป็นข้อความ — short = ป้ายสั้นในตาราง
+function v4EndTxt(e, short) {
+  if (!e) return '';
+  const pq = () => short ? `${e.proc} ✓` : `${e.proc} ${nn(Math.round(e.made || 0))} ${TT('จาก', 'of')} ${nn(Math.round(e.base || 0))}`;
+  if (e.src === 'admin') return short ? `🔑 ${_mpD(e.date).slice(0, 5)}` : `🔑 Admin ${TT('กด VSM4 จบแล้ว', 'marked VSM4 finished')} ${_mpD(e.date).slice(0, 5)}`;
+  if (e.src === 'open') return TT('🔑 Admin: VSM4 ยังไม่จบ', '🔑 Admin: VSM4 not finished');
+  if (e.why === 'none') return short ? TT('VSM4 ไม่มีขั้น', 'no VSM4 step') : TT('ขอบเขต VSM4 ของเบอร์นี้ไม่มีขั้นที่ VSM4 ทำ', 'this valve has no VSM4 step in its scope');
+  if (e.why === 'last') return short ? pq() : `${TT('ขั้นสุดท้ายของ VSM4', 'last VSM4 step')} ${pq()} (≥ 90%)`;
+  if (e.why === 'beyond') return short ? pq() : `${TT('ผ่าน', 'passed')} ${pq()} ${TT('แล้ว — หลังขั้นสุดท้ายของ VSM4', '— after the last VSM4 step')} (${e.last})`;
+  return e.last ? `${TT('VSM4 ยังเหลือ', 'VSM4 still to do')}: ${e.last} ${nn(Math.round(e.made || 0))}/${nn(Math.round(e.base || 0))}` : '';
+}
+// 🔑 Admin: กด VSM4 จบแล้ว / ยังไม่จบ / กลับตามระบบ — เขียน Cloud ให้สำเร็จก่อนแล้วค่อยเปลี่ยนในเครื่อง (กติกาเดียวกับ lotchk)
+async function setV4End(valve, lot, val) {
+  await _pfTargetsPut({ [V4END_PREFIX + jobKey(valve, lot)]: Number(val) || 0 });
+  _wbCache = null;   // ยอด WIP คิดใหม่ (คีย์ cache ไม่มี state.targets)
 }
 
 /* ---------- ตั้งค่าตัววางแผน ---------- */
@@ -30471,11 +30818,15 @@ function mpContext(S) {
    ═══════════════════════════════════════════════════════════════════════ */
 const MP_ROUTE_LOTS = 3;
 let _mpRmCache = null, _mpRmSig = '';
-function mpRouteMemory() {
+function mpRouteMemory() { return _runSync(_mpRouteMemoryGen()); }
+// ★ v4.25 แบบพักได้ — ยอด WIP (แบ่งช่วง) ใช้ลำดับ Process ตามของจริงตัดสิน "งานส่วน VSM4 จบแล้ว" · ผลเหมือนเดิมทุกประการ
+function* _mpRouteMemoryGen() {
   const src = filterVsmPeer(_wipProdSrc() || []), sig = src.length + '/' + _fvVer + '/' + viewVsm();
   if (_mpRmCache && _mpRmSig === sig) return _mpRmCache;
   const V = new Map();
+  let _n = 0;
   for (const r of src) {
+    if ((++_n & 255) === 0 && _sliceDue()) yield;
     const q = +r.quantity || 0; if (q <= 0) continue;
     const vk = vKey(r.valve_no || r.valveNo || ''), lk = lotKey(r.lot || ''), fam = mpFam(r.current_process || r.currentProcess);
     if (!vk || !lk || !fam || isExtraLot(lk) || /[,;]/.test(lk)) continue;
@@ -30877,6 +31228,15 @@ function mpJobs(S, ctx) {
       const hs = j.steps.filter(s => s.hole);
       if (hs.length) j.holes = hs.map(s => s.proc); else delete j.holes;
     }
+    /* ★ v4.25 🏁 งานส่วนของ VSM4 จบแล้ว (v4EndOf — กติกาเดียวกับยอด WIP กำลังผลิต · 🔑 Admin กดที่ค้นหา Process ได้) → ไม่วางขั้นของ VSM4 อีก
+       ช่องว่างก่อนหน้า (⏪) = ไม่ได้ลงยอด / VSM3 ทำแทน · ขั้นของ VSM3 ที่ยังเหลือ = ตามเดิม (แท็บ 🔀 ส่ง VSM3) · ไม่มีอะไรเหลือ = ไม่เข้าแผน (เหตุ 'v4end')
+       วัดจริง 13/11: VF1349M1 2605S050398 BUFF 4,500 ครบ → เลิกวาง COT · TL ที่ว่าง */
+    const ve = v4EndOf(j.valve, j.lot);
+    if (ve && ve.done) {
+      j.v4end = ve;
+      for (const s of j.steps) if (s.line === 'vsm4' && s.need > 0) { s.passed = (s.passed || 0) + s.need; s.need = 0; delete s.hole; }
+      if (j.holes) { const hs = j.steps.filter(s => s.hole); if (hs.length) j.holes = hs.map(s => s.proc); else delete j.holes; }
+    }
     const lm = mcByJob[j.k];
     if (lm) { j.curZone = lm.zone; j.curMc = lm.m; }      // ★ v3.89 ล็อตอยู่ Zone ไหนตอนนี้ (เครื่องล่าสุดที่ลงยอด)
     const jf = mcByJobFam[j.k];                              // ★ v4.00 ขั้นที่ทำค้างไว้ (ภายใน batchDays) → เครื่องที่ทำอยู่
@@ -30890,7 +31250,7 @@ function mpJobs(S, ctx) {
     _mpKeepV3(j, lastInt);
     /* ไม่เหลือขั้นที่ VSM4 แต่ยังมีขั้นที่ VSM3 → ล็อตของ VSM3 (ไม่ใช้เครื่อง VSM4) — ยังรับวันขายแบบ FIFO ตามเดิม
        แล้วแยกออกไปแสดงในแท็บ 🔀 VSM3 (ไม่ปนกับตัวเลขทัน/ไม่ทันของเครื่อง VSM4) */
-    if (lastInt < 0 && (j.noSlip || !j.v3b.length)) { skipped.done++; skipK.set(j.k, 'done'); continue; }   // ★ v4.18 ล็อตไม่มีใบที่เหลือแต่ขั้น VSM3 = งานของ VSM3 ไม่เพิ่มเข้าแท็บ 🔀
+    if (lastInt < 0 && (j.noSlip || !j.v3b.length)) { skipped.done++; skipK.set(j.k, j.v4end ? 'v4end' : 'done'); continue; }   // ★ v4.25 เหตุ 'v4end' = งานส่วน VSM4 จบแล้ว   // ★ v4.18 ล็อตไม่มีใบที่เหลือแต่ขั้น VSM3 = งานของ VSM3 ไม่เพิ่มเข้าแท็บ 🔀
     if (lastInt < 0) j.v3only = true;
     j.lastInt = lastInt;
     j.firstStep = j.steps.findIndex(s => s.need > 0);
@@ -31963,7 +32323,7 @@ function mpvDataChanged(msg) {
 }
 function closeMpPlan() {
   clearInterval(_mpvLive); _mpvLive = 0; clearInterval(_mpvLiveDn); _mpvLiveDn = 0; clearTimeout(_mpvAutoT);
-  const ov = $('mpvOv'); if (ov) { ov.classList.remove('open'); ov.innerHTML = ''; }
+  const ov = $('mpvOv'); if (ov) { ov.classList.remove('open', 'dk'); ov.innerHTML = ''; }
   document.body.classList.remove('mpv-lock');
   if (_mpv) { _mpv.open = false; _mpv.res = null; _mpvSaveUI(); }
   if (typeof mpUpdateBadge === 'function') mpUpdateBadge();
@@ -32434,7 +32794,12 @@ function _mpvDoneBox(res, qn, others) {
     const jp = getJobProc(g.valve, g.lot), fg = P.get('FG'), lastF = flow[flow.length - 1];
     const left = jp === 'DONE' ? [] : postFgLeft(g.valve, g.lot), leftS = new Set(left);   // ★ v4.20 ผ่าน FG แต่ยังมีขั้นผลิตต่อ
     let st = 'ok', lbl, sd = last, why = '';
+    const v4e = jp === 'DONE' ? null : v4EndOf(g.valve, g.lot);   // ★ v4.25
     if (jp === 'DONE') { lbl = TT('✅ จบงาน', '✅ Finished'); sd = getJobProcDate(g.valve, g.lot) || last; }
+    else if (v4e && v4e.done) {
+      lbl = '🏁 ' + TT('งานส่วน VSM4 จบแล้ว', 'VSM4 part finished');
+      why = `<span class="nw">${escapeHtml(v4EndTxt(v4e))}</span> — <span class="nw">${TT('ที่เหลือเป็นงานของ VSM3 / แผนกอื่น', 'the rest is VSM3 / other departments')}</span>`;
+    }
     else if (left.length) {
       st = 'idle';
       lbl = `⏳ ${TT('ผ่าน FG แล้ว · ยังเหลือ', 'past FG · still to do')} ${[...new Set(left.map(procOccName))].map(escapeHtml).join(' › ')}`;
@@ -33589,13 +33954,25 @@ function _mbdDockSync() {
   const V = _mpv, d = $('mbdDock'), host = $('mbdHost'); if (!V || !d) return;
   const res = V.res; let i = -1;
   if (V.selKey && res && _mpvSimple()) i = res.assigns.findIndex(x => _mpvRowKey(x) === V.selKey);
-  if (i < 0) { V.selKey = null; d.hidden = true; d.innerHTML = ''; if (host) _mbdTrace(host, null); return; }
+  const ov = $('mpvOv');
+  if (i < 0) { V.selKey = null; d.hidden = true; d.innerHTML = ''; if (ov) ov.classList.remove('dk'); if (host) _mbdTrace(host, null); return; }
   const a = res.assigns[i];
   d.innerHTML = `<button type="button" class="mbd-dx" data-act="bdx" aria-label="${TT('ปิด', 'Close')}">✕</button>${_mbdInfo(a, i, res, V.W || _mpvWin(res))}`;
   d.hidden = false; d.scrollTop = 0;
   if (host) _mbdTrace(host, a);
-  const lane = host && host.querySelector(`.mbd-l[data-mc="${CSS.escape(a.m.id)}"]`);
-  d.classList.toggle('top', !!lane && window.innerWidth >= 1024 && lane.getBoundingClientRect().bottom > window.innerHeight - d.offsetHeight - 16);
+  /* ★ v4.25 เดิม: กล่องลอยทับครึ่งล่างของกระดาน (จอคอมพลิกไปบนเฉพาะตอนแถวที่แตะอยู่ล่าง) — แถวใต้กล่องเลื่อนขึ้นมาดูไม่ได้ เพราะกระดานจบตรงขอบจอพอดี
+     ตอนนี้: กล่องอยู่ล่างเสมอ + ท้ายกระดานมีที่ว่างเท่าความสูงกล่อง (CSS .dk) → เลื่อนดู / แก้แผนทุกแถวได้ระหว่างเปิดกล่อง
+     งานที่แตะอยู่ใต้กล่อง → เลื่อนกระดานขึ้นให้พ้นกล่องเอง (ที่เหลือไม่ขยับ) */
+  d.classList.remove('top');
+  if (ov) { ov.style.setProperty('--dockH', (d.offsetHeight + 16) + 'px'); ov.classList.add('dk'); }
+  const sc = ov && ov.classList.contains('bd') ? $('mpvZone') : ov && ov.querySelector('.mpv-body');
+  const el = host && (host.querySelector(`[data-act="bjob"][data-ai="${i}"]`) || host.querySelector(`.mbd-l[data-mc="${CSS.escape(a.m.id)}"]`));
+  if (sc && el) {
+    // ขอบบนของกล่องตอนเลื่อนขึ้นเสร็จ (ตอนนี้ยังเลื่อนเข้าอยู่ — อ่านตำแหน่งตรง ๆ จะต่ำไป 10 px)
+    const r = el.getBoundingClientRect(), top = sc.getBoundingClientRect().top;
+    const lim = ov.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(d).bottom) || 0) - d.offsetHeight - 8;
+    if (r.bottom > lim) sc.scrollTop += Math.min(r.bottom - lim, Math.max(0, r.top - top - 8));
+  }
 }
 /* ป๊อปอัปของกระดาน — ทำงานได้ทั้งบนหน้าแผน และหน้า IOT (คนละที่แสดงผล จึงจับการแตะที่ตัวป๊อปอัปเอง) */
 const _mbdRes = () => (_mpv && _mpv.open && _mpv.res) || _mpi.res;
@@ -34027,6 +34404,7 @@ async function _mpRtClick(ev) {
   try {
     await _pfTargetsPut(body);
     toast(msg + ' ✅', 'green');
+    _v4ScopeChanged();   // ★ v4.25 ขอบเขตเปลี่ยน → ยอด WIP / รายการ Master Valve ตามทัน
   } catch (e) {
     toast('❌ ' + TT('บันทึกเส้นทางไม่สำเร็จ', 'Could not save the route') + ' — ' + ((e && e.message) || e), 'red');
   } finally { if (_mpRt) _mpRt.busy = false; }
@@ -34090,7 +34468,7 @@ async function _mpLnImport(ev) {
     const body = {};
     for (const d of ch) _mpLineBody(d.vk, d.line, [...d.fams], d.mcs, body);
     showBusy(TT('กำลังบันทึก…', 'Saving…'));
-    try { await _pfTargetsPut(body); hideBusy(); toast(`📥 ${TT('บันทึกขอบเขต VSM4', 'VSM4 scope saved')} ${nn(ch.length)} ${TT('เบอร์', 'valves')} ✅`, 'green'); _mpRtReplan(); }
+    try { await _pfTargetsPut(body); hideBusy(); toast(`📥 ${TT('บันทึกขอบเขต VSM4', 'VSM4 scope saved')} ${nn(ch.length)} ${TT('เบอร์', 'valves')} ✅`, 'green'); _mpRtReplan(); _v4ScopeChanged(); }
     catch (e) { hideBusy(); toast('❌ ' + TT('บันทึกไม่สำเร็จ — ยังไม่เปลี่ยน', 'Save failed — nothing changed'), 'red'); }
   }
   openMpRouteModal('', true);   // confirmModal ปิดหน้าต่างเดิมไปแล้ว → เปิดกลับที่รายการเบอร์ที่มีขอบเขต
