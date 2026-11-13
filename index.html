@@ -1362,6 +1362,7 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mbd-dh .onm{font-size:13px;font-weight:800;color:#0F766E;white-space:nowrap}
 .mbd-dh .mpv-chip{margin-left:auto;min-height:34px;padding:4px 12px;font-size:12.5px}
 .mbd-rt{margin-bottom:6px}
+.mbd-dq{margin:-2px 0 8px;font-size:12.5px;color:#334155;line-height:1.55;font-variant-numeric:tabular-nums}   /* ★ v4.23 ที่มาของจำนวน ใต้หัว (ถัดจาก "1,774 ชิ้น") */
 .mpv-rz.dns{background:#F8FAFC;box-shadow:none;border-style:dashed;padding:3px 9px}
 .mpv-rz.dns b{font-size:12.5px;font-weight:800;color:#475569}
 .mpv-rz.dns small{color:#15803D;font-weight:800}
@@ -3386,7 +3387,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.22</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.23</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11771,7 +11772,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.22":"Production Record + KPI · v4.22",
+"ระบบบันทึกผลิต + KPI · v4.23":"Production Record + KPI · v4.23",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -32932,6 +32933,7 @@ function _mpvRow(a, i, n, res) {
 function _mpvRowDetail(a, res) {
   const j = a.job, cal = res.cal, out = [];
   out.push(`${TT('ล็อต', 'Lot')} <b>${escapeHtml(j.lot || j.planLot || '-')}</b> · ${escapeHtml(custGroup(j.customer) || '-')} · ${TT('ทั้งล็อต', 'lot')} ${nn(j.qty)} ${TT('ชิ้น', 'pcs')}`);
+  out.push(_mpvQtyLine(a, res));                          // ★ v4.23 ที่มาของจำนวน: รับเข้า − ทำแล้ว = เหลือ → วันไหนเท่าไร
   const sp = _mpvSplitLine(a); if (sp) out.push(sp);     // ★ v4.05 แบ่งล็อต = ทำพร้อมกันกี่เครื่อง เครื่องละกี่ชิ้น
   out.push(_mpvSaleLine(j, res.S));        // ★ v3.89 ขายแผนไหน
   const wh = _mpvWhereLine(j); if (wh) out.push(wh);
@@ -32969,7 +32971,7 @@ function _mpvQHtml(a) {
   if (!W || W.day == null || q >= a.qty) return nn(a.qty);
   const dx = a.days.find(x => x.d === W.day);
   const head = q ? nn(q) : `<span class="qw">${dx && dx.setup && dx.ph <= 1e-9 ? TT('ตั้งเครื่อง', 'setup') : TT('เริ่ม', 'start')}</span>`;
-  return `${head}<small>${TT('จาก', 'of')} ${nn(a.qty)}</small>`;
+  return `${head}<small>${_mpvQSub(a, W)}</small>`;   // ★ v4.23
 }
 /* ★ v3.89 (ผู้ใช้ 19/10 ข้อ 1) ล็อตนี้ขายแผนไหน — ตัวจัดสรรเดียวกับตารางแผนขาย (planLotAlloc) · 🔒 = แผนขายระบุ Lot นี้เอง
    ok = มีแผนขาย · over = วันขายผ่านไปแล้ว · none = ยังไม่มีแผนขายรองรับ (ทำต่อท้ายคิว) */
@@ -33083,13 +33085,15 @@ function _mbdDoneMc(j) {
   }
   return M;
 }
-/* จำนวนของงาน: งานแรกของวัน = ชิ้นที่ทำวันนั้น + "จาก" ทั้งงาน · วันนั้นมีแต่ตั้งเครื่อง = บอกเป็นคำ */
+/* จำนวนของงาน: งานแรกของวัน = ชิ้นที่ทำวันนั้น + ทั้งงาน · วันนั้นมีแต่ตั้งเครื่อง = บอกเป็นคำ
+   ★ v4.23 (ผู้ใช้ 13/11 · VV1690A0 "จาก 1,774 คืออะไร") ป้ายเดิม "จาก" อ่านเป็น "ทำแล้ว 916 จาก 1,774" → ดูวันนี้ = "เหลือ" (ยอดที่ยังต้องทำบนเครื่องนี้นับจากตอนนี้) · ดูวันอื่น = "รวม" (ทั้งงาน) */
+const _mpvQSub = (a, W) => `${W.day === 0 ? TT('เหลือ', 'left') : TT('รวม', 'total')} ${nn(a.qty)}`;
 function _mbdQty(a, W, isNow) {
   if (!isNow || W.day == null) return { q: nn(a.qty), sub: '' };
   const q = _mpvQ(a, W);
   if (q >= a.qty) return { q: nn(a.qty), sub: '' };
   const dx = a.days.find(x => x.d === W.day);
-  return { q: q ? nn(q) : `<span class="qw">${dx && dx.setup && dx.ph <= 1e-9 ? TT('ตั้งเครื่อง', 'setup') : TT('เริ่ม', 'start')}</span>`, sub: `${TT('จาก', 'of')} ${nn(a.qty)}` };
+  return { q: q ? nn(q) : `<span class="qw">${dx && dx.setup && dx.ph <= 1e-9 ? TT('ตั้งเครื่อง', 'setup') : TT('เริ่ม', 'start')}</span>`, sub: _mpvQSub(a, W) };
 }
 /* ป้ายเล็กท้ายเบอร์ — มีเฉพาะงานที่ต้องสังเกต (ข้อความเต็มอยู่ใน title + กล่องเส้นทาง) */
 function _mbdTags(a, res) {
@@ -33115,7 +33119,7 @@ function _mbdJob(a, i, res, W, cls, multi) {
   return `<button type="button" class="mbd-j ${cls}" data-act="bjob" data-ai="${i}" data-jk="${escapeHtml(j.k)}" title="${escapeHtml(tip)}">
     <span class="g" aria-hidden="true">${isNow ? '▶' : '→'}</span>
     <span class="p">${escapeHtml(a.step.proc)}</span>
-    <span class="v"><b>${escapeHtml(j.valve)}</b>${_mpvVmS(j, multi ? a.step.proc : '', a.m, a)}</span>
+    <span class="v"><b>${escapeHtml(j.valve)}</b>${_mpvVmS(j, a.step.proc, a.m, a)}</span>
     <span class="l">${_mbdTags(a, res)}<span class="lt${order ? ' no' : ''}">${escapeHtml(lot)}</span>${sale}</span>
     <span class="q">${Q.q}</span>${sub ? `<small class="qs">${sub}</small>` : ''}${pct ? `<i class="pg" style="width:${pct}%" aria-hidden="true"></i>` : ''}
   </button>`;
@@ -33263,7 +33267,7 @@ function _mbdMeasure(B) {
   const tw = (t, wt, sc) => { const s = String(t), n = (s.match(/\d/g) || []).length; c.font = `${wt} 100px ${ff}`; return (c.measureText(s.replace(/\d/g, '')).width + n * digit(wt)) / 100 * (sc || 1); };
   const widest = (S, wt, sc) => Math.max(...[...S].map(t => tw(t, wt, sc)));
   const v = widest(B.vs, 700) + .1, pf = widest(B.ps, 600, .8) + .05, lot = tw('2610S110104', 500, .84) + .05, gi = .7;
-  const q = Math.max(tw(B.maxQ, 600), tw('ตั้งเครื่อง', 800, .8)) + .05, qs = tw('จาก 8,888', 500, .72), sale = tw('ขาย 31/10', 600, .84), dt = tw('พฤ. 05/11', 500, .72);
+  const q = Math.max(tw(B.maxQ, 600), tw('ตั้งเครื่อง', 800, .8)) + .05, qs = Math.max(tw(TT('เหลือ 8,888', 'left 8,888'), 500, .72), tw(TT('รวม 8,888', 'total 8,888'), 500, .72)), sale = tw('ขาย 31/10', 600, .84), dt = tw('พฤ. 05/11', 500, .72);
   const pv = pf + gi + v + gi;
   return { g: .9, gi, lp: .6, mc: tw(B.maxId, 700) + 1, pf, v, q, qm: Math.max(q, qs),
     ht: { m: 2.7, sl: 1.4, s: 1.4 },
@@ -33405,6 +33409,7 @@ function _mbdInfo(a, i, res, W) {
   const rows = [line.join(' · '), _mpvSplitLine(a), _mpvMugLine(a), _mpvSaleLine(j, res.S), _mpvWhereLine(j), _mpvVmLine(a, res), _mpvMemLine(j)].filter(Boolean);
   const mv = j.kind === 'order' ? '' : `<button type="button" class="mpv-chip" data-act="move" data-ai="${i}">🔀 ${TT('ย้ายไปเครื่องอื่น', 'Move to another machine')}</button>`;
   return `<div class="mbd-dh"><span class="mpv-pf" style="--pc:#${_mpPCol(a.step.fam)}">${escapeHtml(a.step.proc)}</span><b>${escapeHtml(j.valve)}</b><span class="l">${escapeHtml(lot)}</span><span class="q"><b>${nn(a.qty)}</b> ${TT('ชิ้น', 'pcs')}</span><span class="onm">${TT('ที่เครื่อง', 'on')} ${escapeHtml(a.m.id)}</span>${mv}</div>
+    <div class="mbd-dq">${_mpvQtyLine(a, res)}</div>
     <div class="mpv-rzs mbd-rt" aria-label="${TT('เส้นทางผลิตของล็อตนี้', 'Route of this lot')}">${_mpvRouteZ(j, res, W, zOf, { actual: true, cur: a })}</div>
     <div class="mbd-dt">${rows.map(x => `<div>${x}</div>`).join('')}</div>`;
 }
@@ -33461,6 +33466,31 @@ function openMbdMachine(res, id) {
 }
 /* ★ v4.05 (ผู้ใช้ 29/10 ข้อ 1 "COT 1/2 · COT 2/2 คืออะไร เปิด 2 เครื่องในการผลิตหรอ") แบ่งล็อต = ขั้นนี้ของล็อตนี้ทำพร้อมกันหลายเครื่อง แบ่งจำนวนกัน
    แผนแบ่งเองเมื่อเครื่องเดียวต้องใช้เกิน "แบ่งล็อตเมื่อเกิน" (⚙️ ตั้งค่า → 🛠️ ขั้นสูง · เริ่มต้น 20 ชม. · สูงสุด 3 เครื่อง · Zone เดียวกัน · ขั้นนั้น ≥ 200 ชิ้น) */
+/* ★ v4.23 (ผู้ใช้ 13/11 · VV1690A0 Lot 2610S110090 "เข้า 3000 กว่า ผลิตไปแค่ 1560 ต้องผลิตอีก ~1440 แต่แผนบอก จาก 1,774 คืออะไร")
+   ที่มาของจำนวนในแผน: ยอดล็อต (ใบรับเข้า) − Scrap − ส่วนที่ขั้นก่อนตัดจบ (closePct) − ที่ขั้นนี้ทำแล้ว = เหลือ → เครื่องนี้ทำวันไหนเท่าไร
+   ตัวอย่างจริง: SSG รับเข้า 3,334 − ทำแล้ว 1,560 = เหลือ 1,774 → G-220 วันนี้ 916 · พรุ่งนี้ 858 (แผนวางทั้งล็อต ไม่ใช่ยอดขาย 3,000)
+   ขั้นที่ยังไม่เริ่ม (TOP&HOD) = ทั้งล็อต 3,334 แบ่ง 2 เครื่อง เครื่องละ 1,667 · ตัวเลขชุดเดียวกับ mpJobs (st.avail / st.need) */
+function _mpvQtyLine(a, res) {
+  const j = a.job, s = a.step, S = res.S, cal = res.cal;
+  const sib = (j.assign || []).filter(x => x.si === a.si);
+  const need = Math.round(s.need > 0 ? s.need : sib.reduce((t, x) => t + x.qty, 0));
+  let calc;
+  if (j.kind === 'order') calc = `${TT('Order ที่ของยังไม่เข้า', 'ordered, not received yet')} <b>${nn(need)}</b>`;
+  else {
+    const tot = Math.round(+j.total || 0), base = Math.round(+j.base || tot), av = s.avail != null ? s.avail : tot;
+    const t = [`${j.noSlip ? TT('ยอดล็อต (ไม่มีใบรับเข้า = ขั้นที่ลงมากสุด)', 'lot size (no slip = largest step)') : TT('รับเข้า', 'received')} ${nn(base)}`];
+    if (base - tot > 0) t.push(`Scrap ${nn(base - tot)}`);
+    if (tot - av > 0) t.push(`${TT('ขั้นก่อนตัดจบ', 'closed short earlier')} ${nn(tot - av)}`);
+    if (av - need > 0) t.push(`${TT('ทำแล้ว', 'done')} ${nn(av - need)}`);
+    calc = `${t.join(' − ')} = ${TT('เหลือ', 'left')} <b>${nn(need)}</b>`;
+  }
+  const D = a.days.filter(d => d.qty > 0), dl = D.slice(0, 3).map(d => `${_mpvDayName(S, cal.days[d.d] || '')} ${nn(d.qty)}`);
+  if (D.length > 3) dl.push(`+${D.length - 3} ${TT('วัน', 'days')}`);
+  const sq = (j.plans || []).reduce((t, x) => t + (+x.qty || 0), 0), base = Math.round(+j.base || +j.total || 0);
+  const saleN = j.kind !== 'order' && sq > 0 && Math.abs(base - sq) > planTol(base)
+    ? ` <span class="muted">(${TT('แผนวางทั้งล็อตที่รับเข้า ไม่ใช่เฉพาะยอดขาย', 'the plan makes the whole lot received, not only the sale qty')} ${nn(sq)})</span>` : '';
+  return `🧮 <b>${escapeHtml(s.proc)}</b> ${TT('ของล็อตนี้', 'for this lot')}: ${calc} ${TT('ชิ้น', 'pcs')}${sib.length > 1 ? ` · ${TT('แบ่ง', 'split over')} ${sib.length} ${TT('เครื่อง', 'machines')}` : ''}${dl.length ? ` → ${escapeHtml(a.m.id)} ${dl.join(' · ')}` : ''}${saleN}`;
+}
 function _mpvSplitLine(a) {
   if (!(a.parts > 1)) return '';
   const sib = (a.job.assign || []).filter(x => x.si === a.si).sort((x, y) => x.part - y.part);
