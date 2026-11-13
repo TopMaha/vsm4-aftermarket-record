@@ -578,6 +578,24 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .cv-part{margin-top:12px}
 .cv-part summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#B45309;padding:4px 0}
 .cv-part summary span{font-size:11px;border-radius:999px;padding:1px 8px;background:#FEF3C7}
+/* ★ v4.24 สลับ 2 กรณี (แบบเดียวกับ .isl-seg ของแอป) · กรณี 2 = ทิศกลับ: บอกงานในสายของเบอร์ที่จะเอามาแปลง */
+.cv-mode{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;margin-bottom:10px;background:#E8EFFC;border:1.5px solid var(--blue-soft);border-radius:12px}
+.cv-mode button{border:0;background:transparent;border-radius:9px;padding:7px 8px;cursor:pointer;font-family:inherit;color:#334155;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;min-width:0;
+  transition:background .14s,color .14s,box-shadow .14s;-webkit-tap-highlight-color:transparent}
+.cv-mode button b{font-size:13.5px;font-weight:900;line-height:1.3;white-space:nowrap}
+.cv-mode button small{font-size:11px;font-weight:600;color:var(--muted);line-height:1.35}
+.cv-mode button:hover{background:rgba(255,255,255,.7)}
+.cv-mode button.on{background:#fff;color:var(--blue-dark);box-shadow:0 1px 4px rgba(30,66,159,.2)}
+.cv-mode button:focus-visible{outline:3px solid rgba(26,86,219,.35);outline-offset:1px}
+.cv-src .cv-ord{border-top:1px dashed #93C5FD;padding-top:5px}
+.cv-wip{display:flex;flex-direction:column;gap:2px;margin-top:5px;font-size:11.5px;color:#334155}
+.cv-wip .ok{color:#15803D}
+.cv-wip .short{color:#C2410C}
+.cv-wip .cv-lot{color:var(--muted);padding-left:21px}
+.cv-wip .cv-sil{color:#92400E}
+.cv-sec.busy{color:#B45309}
+@media (max-width:420px){.cv-mode button{padding:6px 5px}.cv-mode button b{font-size:12.5px}.cv-mode button small{font-size:10.5px}}
 /* ===== ผลค้นหา Process จาก Valve — ตาราง: คอลัมน์=Process แถว=Lot ช่อง=ยอด OPR ===== */
 .pf-legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
 .pf-lg{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
@@ -3387,7 +3405,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.23</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.24</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3624,7 +3642,7 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
        ★ v4.08 (ผู้ใช้ 2/11 "ออกแบบปุ่มใหม่ไม่สวย") แถบปุ่มเขียวเต็มความกว้าง → การ์ดปุ่มแบบเดียวกับการ์ดอื่นในแอป (ไอคอน · ชื่อ · คำอธิบาย · ตรวจสอบ ›) -->
   <div class="card cv-launch" role="button" tabindex="0" onclick="openConvertModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openConvertModal();}">
     <span class="cv-ic" aria-hidden="true">🔧</span>
-    <span class="cv-tx"><b>เช็คงานที่พอดัดแปลงได้</b><small>งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order</small></span>
+    <span class="cv-tx"><b>เช็คงานที่พอดัดแปลงได้</b><small>งานเสีย / ขาด → แปลงเบอร์นี้เป็นเบอร์อื่น หรือหาเบอร์อื่นมาแปลงเป็นเบอร์นี้ (TYPE เดียวกัน) พร้อมเช็ค Order</small></span>
     <span class="cv-go">ตรวจสอบ<i aria-hidden="true">›</i></span>
   </div>
 
@@ -11772,7 +11790,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.23":"Production Record + KPI · v4.23",
+"ระบบบันทึกผลิต + KPI · v4.24":"Production Record + KPI · v4.24",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -11803,7 +11821,7 @@ const I18N_X = {
 "🔎 ดูง่าย":"🔎 Simple","🛠️ จัดการแผน":"🛠️ Manage","แผนผลิตรายเครื่อง":"Machine production plan","เปิด":"Open",
 "วันนี้ผลิตอะไร เครื่องไหน · คิวเครื่องทีละ Zone":"What to make today, on which machine · queues by zone",
 "🔎 พิมพ์ Valve No หรือ Lot — เช่น 4796":"🔎 Type a Valve No or Lot — e.g. 4796",
-"งานขาด / ต้อง Scrap → หา Valve No ที่ TYPE เดียวกัน ขนาดเล็กกว่าเล็กน้อย พร้อมเช็ค Order":"Short / scrapped work → find valves of the same TYPE that are slightly smaller, with an Order check",
+"งานเสีย / ขาด → แปลงเบอร์นี้เป็นเบอร์อื่น หรือหาเบอร์อื่นมาแปลงเป็นเบอร์นี้ (TYPE เดียวกัน) พร้อมเช็ค Order":"Scrapped / short work → convert this valve into another, or find other valves to convert into this one (same TYPE), with an Order check",
 "📏 วาง SD / TYPE / SL":"📏 Paste SD / TYPE / SL","📋 วาง COT / Type COT":"📋 Paste COT / Type COT",
 "เช่น VF1349M0 (พิมพ์บางส่วนได้)":"e.g. VF1349M0 (partial ok)",
 "🔎 เลือก process ที่จะแสดง":"🔎 Choose processes to show","เลือกทั้งหมด":"Select all",
@@ -23385,8 +23403,16 @@ async function _saveSlotsImpl() {
         ไม่มี Order = บอกไว้เผื่อ Order มาวันหลัง · วัดจริง 2/11: แผนที่ยังไม่จบ 84 ใบ — 22 ใบเป็นของ ก.ค. (ค้างมา 3 เดือน ไม่ใช่ Order ที่รอของแล้ว)
    ข้อมูลไม่ครบ: ต้นทางไม่มี SL/HD = เทียบเท่าที่มี (บอกบนหัว) · ปลายทางขาดค่าที่ต้นทางมี = แยกกลุ่ม "เช็คขนาดเอง"
    อ่านอย่างเดียว — ไม่บันทึก/ไม่แก้ข้อมูลใด ๆ
+   ★ v4.24 (ผู้ใช้ 13/11) ค้นได้ 2 ทาง — ปุ่มสลับบนหัวป๊อปอัป (จำทางที่เลือกไว้ในเครื่อง LS_CV_MODE)
+     กรณี 1 'to'   เบอร์นี้ ➜ เบอร์อื่น  "งานเสียแล้ว จะแปลงเป็นอันอื่น" = แบบเดิมทุกอย่าง (ปลายทาง ≤ เบอร์นี้ · กลุ่มมี/ไม่มี Order)
+     กรณี 2 'from' เบอร์อื่น ➜ เบอร์นี้  "งานเสียแล้วจะเอาอันอื่นมาแปลงเป็นอันนี้" = ทิศกลับ: เบอร์อื่นที่ TYPE เดียวกัน SD · SL · HD ≥ เบอร์นี้ทุกค่า
+        (เอามาเจียร์ลดเป็นเบอร์นี้ได้) เรียง SD → SL → HD ใกล้สุดก่อนเหมือนเดิม · สิ่งที่ต้องรู้ = เบอร์นั้น "มีชิ้นงานให้เอามาไหม"
+        → งานในสาย (กำลังผลิต + รับเข้ารอผลิต · กติกาเดียวกับ planLotAlloc) แยกเป็น ว่าง (ไม่ได้ถูกจัดให้แผนขายใบไหน = planLotAlloc.spare)
+          กับ ติด Order ของตัวเอง (เอามาแล้ว Order นั้นจะขาด) · หัวป๊อปอัปบอก Order ของเบอร์นี้ (ขาดกี่ชิ้น)
    ════════════════════════════════════════════════════════════════════ */
 const CV_DIMS = [['sd', 'SD'], ['sl', 'SL'], ['hd', 'HD']];
+const LS_CV_MODE = 'vsm4_cv_mode';
+let _cvMode = (() => { try { return localStorage.getItem(LS_CV_MODE) === 'from' ? 'from' : 'to'; } catch (e) { return 'to'; } })();
 const CV_NONE_MAX = 30;      // กลุ่ม "ยังไม่มี Order" โชว์ใกล้สุดก่อน 30 เบอร์ (กดดูทั้งหมดได้)
 const CV_ORDER_BACK = 45;    // Order ที่วันขายเลยมาแล้วเกินกี่วัน = ไม่นับ (ค้างเก่า) · เลยมาไม่เกินนี้ = ยังนับ (ขึ้น "เลยกำหนด")
 const CV_SD_STEP = 0.05;     // SD ต่างกันไม่ถึงครึ่งขั้นนี้ = ถือว่าเท่ากันตอนเรียง (8.99 ≈ 9)
@@ -23415,12 +23441,80 @@ function cvOpenOrders() {
   for (const a of out.values()) a.sort((x, y) => String(x.due).localeCompare(String(y.due)));
   return out;
 }
-function cvFind(valveNo) {
+/* ★ v4.24 งานในสายตอนนี้ของเบอร์หนึ่ง = กำลังผลิต + รับเข้ารอผลิต (ไม่นับที่ผ่าน FG / จบแล้ว) — กติกาเดียวกับ planLotAlloc ทุกข้อ
+   (ผ่าน FG แต่ Master ยังมีขั้นต่อ = กำลังผลิต · Admin เติม FG แล้ว = ผ่าน FG · ใบรับเข้าที่เริ่มผลิตแล้ว/ค้าง/งานจบ = ไม่นับ)
+   ดัชนีรายการถังตามเบอร์ทำครั้งเดียวต่อชุดยอด WIP (b) แล้วคิดเฉพาะเบอร์ที่ขนาดเข้า */
+let _cvLwB = null, _cvLwIdx = null;
+function _cvLwIndex() {
+  const b = getWipBucketsView();
+  if (_cvLwB === b && _cvLwIdx) return _cvLwIdx;
+  const idx = new Map();
+  const put = (it, kind) => { const k = vKey(it && it.valve); if (!k) return; let o = idx.get(k); if (!o) idx.set(k, o = { out: [], wip: [], in: [] }); o[kind].push(it); };
+  for (const it of (b.wipOut.items || [])) put(it, 'out');
+  for (const it of (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || [])) put(it, 'wip');
+  for (const it of (b.wipIn.items || [])) put(it, 'in');
+  _cvLwB = b; _cvLwIdx = idx;
+  return idx;
+}
+function cvLineWork(vk) {
+  const o = _cvLwIndex().get(vk); if (!o) return [];
+  const out = [];
+  for (const it of o.out) {
+    const q = Number(it.qty) || 0;
+    if (it.curProc === 'DONE' || !(q > 0)) continue;
+    const left = postFgLeft(it.valve, it.lot);
+    if (left && left.length) out.push({ lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: q, proc: procOccName(left[0]) });
+  }
+  for (const it of o.wip) {
+    const q = Number(it.qty) || 0; if (!(q > 0)) continue;
+    if (pfAdmOfJob(it.valve, it.lot).FG && !postFgLeft(it.valve, it.lot).length) continue;
+    out.push({ lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: q, proc: it.curProc || '' });
+  }
+  const inBy = new Map();
+  for (const it of o.in) {
+    if (it.started || it.unknown || it.orphan || getJobProc(it.valve, it.lot) === 'DONE') continue;
+    const k = lotKey(it.lot); let x = inBy.get(k);
+    if (!x) inBy.set(k, x = { lot: it.lot, lk: k, st: 'in', qty: 0, proc: '' });
+    x.qty += Number(it.qty) || 0;
+  }
+  for (const x of inBy.values()) if (x.qty > 0) out.push(x);
+  return out;
+}
+const _cvSum = L => L.reduce((t, x) => t + (Number(x.qty) || 0), 0);
+/* ★ v4.24 💤 ล็อตที่เงียบ — กติกาเดียวกับตัววางแผน (mpJobs · v4.18): วันล่าสุด = ใบรับเข้า หรือยอด VSM3+4 ทุก Process
+   เงียบเกิน mpSettings().silentDays วัน (0 = ปิด) และไม่ได้ปักหมุด / Admin ไม่ได้ยืนยันว่ายังอยู่ (mpkeep) = ไม่นับเป็นงานว่าง
+   วัดจริง 13/11: VV7295M0 ยอดค้าง ~276,000 ชิ้น ส่วนใหญ่ค้างที่ IND ตั้งแต่ มิ.ย. — ถ้านับเป็น "ว่าง" จะชี้ให้ไปเอาของที่อาจไม่มีอยู่จริง */
+let _cvActB = null, _cvAct = null;
+function _cvLastAct() {
+  const b = getWipBucketsView();
+  if (_cvActB === b && _cvAct) return _cvAct;
+  const m = new Map(), up = (k, d) => { if (d && d > (m.get(k) || '')) m.set(k, d); };
+  for (const e of _wipinList()) up(jobKey(e.valve, e.lot), String(e.ts || '').slice(0, 10));
+  for (const r of filterVsmPeer(_wipProdSrc())) {
+    const v = String(r.valve_no || r.valveNo || '').trim();
+    if (v && mpFam(r.current_process || r.currentProcess)) up(jobKey(v, r.lot || ''), String(r.shift_date || r.timestamp || '').slice(0, 10));
+  }
+  for (const r of filterVsmPeer(_wipKpiSrc())) {
+    const v = String(r.valve_no || '').trim();
+    if (v && mpFam(r.last_process)) up(jobKey(v, r.lot || ''), String(r.shift_date || r.record_date || '').slice(0, 10));
+  }
+  _cvActB = b; _cvAct = m;
+  return m;
+}
+function _cvSilentTest() {
+  let d = 14; try { const S = mpSettings(); d = Math.max(0, +S.silentDays || 0); } catch (e) {}
+  if (!d) return { days: 0, is: () => false };
+  const cut = _mpAddDays(todayISO(), -d), act = _cvLastAct();
+  const pinK = new Set(mpManItems('pin').filter(p => p.vk && p.lk).map(p => p.vk + '::' + p.lk));
+  return { days: d, is: (vk, lot) => { const k = vk + '::' + lotKey(lot); return !pinK.has(k) && !mpLotKeep(k) && (act.get(k) || '') < cut; } };
+}
+function cvFind(valveNo, mode) {
+  const from = mode === 'from';
   const vk = vKey(valveNo);
   const src = valveByKey(vk);
-  if (!src) return { vk, err: 'nomaster' };
+  if (!src) return { vk, mode, err: 'nomaster' };
   const s = cvSpecOf(src);
-  if (!s.type || s.sd == null) return { vk, src, s, err: 'nospec' };
+  if (!s.type || s.sd == null) return { vk, mode, src, s, err: 'nospec' };
   const use = CV_DIMS.map(([k]) => k).filter(k => s[k] != null);   // ต้นทางมีค่าไหน เทียบค่านั้น
   const orders = cvOpenOrders();
   const EPS = 1e-6, out = [];
@@ -23433,26 +23527,70 @@ function cvFind(valveNo) {
     const miss = [], d = {};
     for (const k of use) {
       if (c[k] == null) { miss.push(k); continue; }
-      if (c[k] > s[k] + EPS) { ok = false; break; }
-      d[k] = Math.max(0, s[k] - c[k]);
+      // กรณี 1: ปลายทางต้องไม่ใหญ่กว่าเบอร์นี้ · กรณี 2: เบอร์ที่จะเอามาต้องไม่เล็กกว่าเบอร์นี้ (d = ส่วนที่ต้องเจียร์ออก)
+      if (from ? c[k] < s[k] - EPS : c[k] > s[k] + EPS) { ok = false; break; }
+      d[k] = Math.max(0, from ? c[k] - s[k] : s[k] - c[k]);
     }
     if (!ok) continue;
     out.push({ v, vk: ck, c, d, miss, ord: orders.get(ck) || [] });
   }
-  // SD → SL → HD (ค่าที่ไม่รู้ = ไว้ท้าย) · เท่ากันหมด = มี Order ก่อน แล้วเรียงเลข
+  // SD → SL → HD (ค่าที่ไม่รู้ = ไว้ท้าย) · เท่ากันหมด = มี Order ก่อน (กรณี 2: งานในสายที่ว่างมากก่อน) แล้วเรียงเลข
   const dv = (x, k) => x.d[k] == null ? Infinity : k === 'sd' ? Math.round(x.d[k] / CV_SD_STEP) : x.d[k];
-  out.sort((a, b) => (dv(a, 'sd') - dv(b, 'sd')) || (dv(a, 'sl') - dv(b, 'sl')) || (dv(a, 'hd') - dv(b, 'hd'))
-    || ((b.ord.length > 0) - (a.ord.length > 0)) || a.vk.localeCompare(b.vk));
+  const byDim = (a, b) => (dv(a, 'sd') - dv(b, 'sd')) || (dv(a, 'sl') - dv(b, 'sl')) || (dv(a, 'hd') - dv(b, 'hd'));
+  if (!from) {
+    out.sort((a, b) => byDim(a, b) || ((b.ord.length > 0) - (a.ord.length > 0)) || a.vk.localeCompare(b.vk));
+    const full = out.filter(x => !x.miss.length), part = out.filter(x => x.miss.length);
+    return { vk, mode: 'to', src, s, use, has: full.filter(x => x.ord.length), none: full.filter(x => !x.ord.length),
+      part: part.filter(x => x.ord.length), partN: part.length, nOrd: orders.size };
+  }
+  let A = null; try { A = planLotAlloc(); } catch (e) { console.warn('[cv]', e); }
+  const SIL = _cvSilentTest();
+  for (const x of out) {
+    const line = cvLineWork(x.vk);
+    // เบอร์ที่มีแผนขาย: ว่าง = Lot ที่เหลือหลังจัดให้แผนขายทุกใบแล้ว · ไม่มีแผนขายเลย = งานในสายว่างทั้งหมด
+    const spare = (A && A.spare.has(x.vk)) ? A.spare.get(x.vk).filter(l => l.st === 'wip' || l.st === 'in') : line;
+    // ล็อตที่จัดให้แผนขายแล้ว (แม้บางส่วน) ไม่นับว่าเงียบ — ตัววางแผนก็ยังวางล็อตที่มีแผนขาย · ล็อตว่างที่เงียบ = แยกไว้ ไม่นับเป็นงานว่าง
+    const sil = l => !(A && A.byLot.has(x.vk + '::' + l.lk)) && SIL.is(x.vk, l.lot);
+    x.free = spare.filter(l => !sil(l));
+    x.silent = spare.filter(sil);
+    x.freeQ = _cvSum(x.free); x.silentQ = _cvSum(x.silent);
+    const silK = new Set(x.silent.map(l => l.lk));
+    x.line = line.filter(l => !silK.has(l.lk));                // งานในสายที่ยังเดินอยู่ (ไม่รวมล็อตที่เงียบ)
+    x.lineQ = _cvSum(x.line);
+    x.tiedQ = Math.max(0, x.lineQ - x.freeQ);
+  }
+  out.sort((a, b) => byDim(a, b) || (b.freeQ - a.freeQ) || (b.lineQ - a.lineQ) || a.vk.localeCompare(b.vk));
   const full = out.filter(x => !x.miss.length), part = out.filter(x => x.miss.length);
-  return { vk, src, s, use, has: full.filter(x => x.ord.length), none: full.filter(x => !x.ord.length),
-    part: part.filter(x => x.ord.length), partN: part.length, nOrd: orders.size };
+  return { vk, mode: 'from', src, s, use, srcOrd: orders.get(vk) || [], silentDays: SIL.days,
+    free: full.filter(x => x.freeQ > 0), busy: full.filter(x => !(x.freeQ > 0) && x.lineQ > 0), none: full.filter(x => !(x.lineQ > 0)),
+    part: part.filter(x => x.lineQ > 0), partN: part.length, nOrd: orders.size };
 }
 let _cvLast = null;
-function openConvertModal(prefill) {
+function _cvInfoHtml() {
+  return _cvMode === 'from'
+    ? TT('ใส่ Valve No ที่งานเสีย / ขาด → ระบบหา Valve No อื่นที่ <b>TYPE เดียวกัน</b> และ <b>SD · SL · HD ไม่น้อยกว่าเบอร์นี้</b> (เอามาเจียร์ลดเป็นเบอร์นี้ได้) เรียงจากที่ต้องเจียร์น้อยสุด แล้วเช็คว่ามีงานอยู่ในสายที่ไม่ติด Order ไหม',
+        'Enter the valve that is scrapped / short → finds other valves with the <b>same TYPE</b> and <b>SD · SL · HD no smaller</b> (can be ground down into this one), least grinding first, and checks for free work in the line')
+    : TT('ใส่ Valve No ที่งานขาด / ต้อง Scrap → ระบบหา Valve No ที่ <b>TYPE เดียวกัน</b> และ <b>SD · SL · HD ไม่เกินของเดิม</b> (เจียร์ลดได้) เรียงจากที่ต้องเจียร์น้อยสุด แล้วเช็คว่ามี Order ไหม',
+        'Enter the valve that is short / scrapped → finds valves with the <b>same TYPE</b> and <b>SD · SL · HD no larger</b> (can be ground down), least grinding first, and checks for an Order');
+}
+function cvSetMode(m) {
+  _cvMode = m === 'from' ? 'from' : 'to';
+  try { localStorage.setItem(LS_CV_MODE, _cvMode); } catch (e) {}
+  document.querySelectorAll('.cv-mode button').forEach(b => { const on = b.dataset.m === _cvMode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  const info = $('cvInfo'); if (info) info.innerHTML = _cvInfoHtml();
+  const inp = $('cvValve'), box = $('cvRes');
+  if (inp && vKey(inp.value)) cvRun();
+  else { if (box) box.innerHTML = ''; inp?.focus(); }
+}
+function openConvertModal(prefill, mode) {
+  if (mode === 'to' || mode === 'from') _cvMode = mode;
+  const mb = (m, th, en, thS, enS) => `<button type="button" role="tab" data-m="${m}" class="${_cvMode === m ? 'on' : ''}" aria-selected="${_cvMode === m}" onclick="cvSetMode('${m}')"><b>${TT(th, en)}</b><small>${TT(thS, enS)}</small></button>`;
   openModal('🔧 ' + TT('เช็คงานที่พอดัดแปลงได้', 'Check convertible work'), `
-    <div class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:9px 11px;border-radius:9px;line-height:1.65">
-      ${TT('ใส่ Valve No ที่งานขาด / ต้อง Scrap → ระบบหา Valve No ที่ <b>TYPE เดียวกัน</b> และ <b>SD · SL · HD ไม่เกินของเดิม</b> (เจียร์ลดได้) เรียงจากที่ต้องเจียร์น้อยสุด แล้วเช็คว่ามี Order ไหม',
-        'Enter the valve that is short / scrapped → finds valves with the <b>same TYPE</b> and <b>SD · SL · HD no larger</b> (can be ground down), least grinding first, and checks for an Order')}</div>
+    <div class="cv-mode" role="tablist" aria-label="${TT('ทางที่จะแปลง', 'Convert direction')}">
+      ${mb('to', 'เบอร์นี้ ➜ เบอร์อื่น', 'This ➜ other valves', 'งานเสีย เอาไปแปลงเป็นเบอร์อื่น', 'scrapped — convert it into another')}
+      ${mb('from', 'เบอร์อื่น ➜ เบอร์นี้', 'Others ➜ this valve', 'งานเสีย เอาเบอร์อื่นมาแปลงแทน', 'scrapped — convert another into it')}
+    </div>
+    <div id="cvInfo" class="muted mb-8" style="font-size:12px;background:var(--blue-light);padding:9px 11px;border-radius:9px;line-height:1.65">${_cvInfoHtml()}</div>
     <div class="cv-q">
       <div class="fr"><label>Valve No</label>
         <input type="search" id="cvValve" value="${escapeHtml(prefill || '')}" placeholder="${TT('เช่น', 'e.g.')} VF1345A0" autocomplete="off" autocapitalize="characters" spellcheck="false"
@@ -23486,31 +23624,65 @@ function cvRun(showAll) {
   const q = vKey(inp.value);
   if (!q) { inp.focus(); return; }
   inp.value = q;
-  const R = _cvLast = cvFind(q);
+  const R = _cvLast = cvFind(q, _cvMode), from = R.mode === 'from';
   if (R.err === 'nomaster') { box.innerHTML = `<div class="cv-note bad">❓ ${TT(`ไม่พบ ${escapeHtml(q)} ใน Master valve — เช็คเลขอีกครั้ง หรือให้ Admin เพิ่มที่ ⚙️ ตั้งค่า`, `${escapeHtml(q)} is not in the valve master`)}</div>`; return; }
   const s = R.s;
   const specLine = (o, d) => CV_DIMS.map(([k, lb]) => {
     if (o[k] == null) return R.use && R.use.includes(k) ? `<span class="cv-d miss">${lb} ❓</span>` : '';
     const dk = d && d[k];
-    return `<span class="cv-d">${lb} <b>${_mpNum(o[k])}</b>${d ? (dk > 1e-9 ? `<i>−${_mpNum(dk)}</i>` : '<i class="eq">=</i>') : ''}</span>`;
+    // กรณี 1 ปลายทางเล็กกว่า "−" · กรณี 2 เบอร์ที่จะเอามาใหญ่กว่า "+" (สีแดง = ต้องเจียร์ออกทั้งสองทาง)
+    return `<span class="cv-d">${lb} <b>${_mpNum(o[k])}</b>${d ? (dk > 1e-9 ? `<i>${from ? '+' : '−'}${_mpNum(dk)}</i>` : '<i class="eq">=</i>') : ''}</span>`;
   }).join('');
   const extra = v => [_vnum(v.tl) != null ? `TL ${_mpNum(+v.tl)}` : '', _vtxt(v.cot) ? `COT ${_vtxt(v.cot)}` : '', _vtxt(v.cot_type) ? `Type COT ${_vtxt(v.cot_type)}` : ''].filter(Boolean);
-  const srcHtml = `<div class="cv-src"><div class="cv-h"><span>🎯 ${TT('ต้นทาง', 'From')}</span><b>${escapeHtml(R.vk)}</b><span class="cv-ty">${escapeHtml(s.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(R.src.customer))}</span></div>
-    <div class="cv-dims">${specLine(s)}${extra(R.src).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+  const ordList = L => {
+    if (!L || !L.length) return '';
+    const t = todayISO();
+    return `<div class="cv-ord">${L.slice(0, 3).map(o => `<span>🛒 ${o.due ? _mpDW(o.due) : '-'}${o.due && o.due < t ? ` <b class="late">${TT('เลยกำหนด', 'overdue')}</b>` : ''} · ${nn(o.order)} ${TT('ชิ้น', 'pcs')} · ${o.shortSig ? `<b class="short">${TT('ยังขาด', 'short')} ${nn(o.short)}</b>` : `<b class="ok">${TT('มีของครบแล้ว', 'covered')}</b>`}</span>`).join('')}${L.length > 3 ? `<span class="muted">+${L.length - 3} Order</span>` : ''}</div>`;
+  };
+  const srcHtml = `<div class="cv-src"><div class="cv-h"><span>🎯 ${from ? TT('เบอร์ที่ต้องการ', 'Wanted') : TT('ต้นทาง', 'From')}</span><b>${escapeHtml(R.vk)}</b><span class="cv-ty">${escapeHtml(s.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(R.src.customer))}</span></div>
+    <div class="cv-dims">${specLine(s)}${extra(R.src).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div>${from && !R.err ? ordList(R.srcOrd) : ''}</div>`;
   if (R.err === 'nospec') {
     box.innerHTML = srcHtml + `<div class="cv-note bad">⚠️ ${TT('เบอร์นี้ยังไม่มี SD / TYPE ใน Master valve — เทียบขนาดไม่ได้ · ให้ Admin เติมที่ ⚙️ ตั้งค่า → Master valve (📏 วาง SD / TYPE / SL)', 'This valve has no SD / TYPE in the valve master — cannot compare · ask an Admin to fill it in Settings → Master valve')}</div>`;
     return;
   }
   const noDim = CV_DIMS.filter(([k]) => s[k] == null).map(([, lb]) => lb);
-  const ordHtml = x => {
-    if (!x.ord.length) return '';
-    const t = todayISO();
-    return `<div class="cv-ord">${x.ord.slice(0, 3).map(o => `<span>🛒 ${o.due ? _mpDW(o.due) : '-'}${o.due && o.due < t ? ` <b class="late">${TT('เลยกำหนด', 'overdue')}</b>` : ''} · ${nn(o.order)} ${TT('ชิ้น', 'pcs')} · ${o.shortSig ? `<b class="short">${TT('ยังขาด', 'short')} ${nn(o.short)}</b>` : `<b class="ok">${TT('มีของครบแล้ว', 'covered')}</b>`}</span>`).join('')}${x.ord.length > 3 ? `<span class="muted">+${x.ord.length - 3} Order</span>` : ''}</div>`;
+  // กรณี 2: งานในสายของเบอร์ที่จะเอามา — ว่างกี่ชิ้น (ไม่ได้จัดให้แผนขาย) · Lot ไหน อยู่ Process อะไร
+  const wipHtml = x => {
+    if (!from) return '';
+    const live = x.lineQ > 0;
+    const sil = x.silentQ > 0 ? `<span class="cv-sil">💤 ${TT(`${live ? 'อีก' : 'ยอดค้าง'} ${nn(x.silentQ)} ชิ้น (${x.silent.length} Lot) ไม่มีคนลงยอดเกิน ${R.silentDays} วัน — เช็คหน้างานก่อน`,
+        `${live ? 'another ' : ''}${nn(x.silentQ)} pcs (${x.silent.length} lots) with no output for over ${R.silentDays} days — check on the floor`)}</span>` : '';
+    if (!live) return sil ? `<div class="cv-wip">${sil}</div>` : '';
+    const lots = (x.freeQ > 0 ? x.free : x.line).slice().sort((a, b) => b.qty - a.qty);
+    return `<div class="cv-wip"><span>🏭 ${TT('งานในสาย', 'In the line')} <b>${nn(x.lineQ)}</b> ${TT('ชิ้น', 'pcs')} · ${x.freeQ > 0
+        ? `<b class="ok">${TT('ว่าง', 'free')} ${nn(x.freeQ)}</b>${x.tiedQ > 0 ? ` · ${TT('ติด Order', 'tied to Orders')} ${nn(x.tiedQ)}` : ''}`
+        : `<b class="short">${TT('ติด Order ของตัวเองทั้งหมด', 'all tied to its own Orders')}</b>`}</span>
+      ${lots.slice(0, 3).map(l => `<span class="cv-lot">${escapeHtml(planLotTxt(l))}</span>`).join('')}${lots.length > 3 ? `<span class="cv-lot">+${lots.length - 3} Lot</span>` : ''}${sil}</div>`;
   };
   const row = (x, best) => `<div class="cv-row${best ? ' best' : ''}">
       <div class="cv-h">${best ? `<span class="cv-best">⭐ ${TT('ใกล้สุด', 'Closest')}</span>` : ''}<b>${escapeHtml(x.vk)}</b><span class="cv-ty">${escapeHtml(x.c.vtype || '-')}</span><span class="cv-cu">${escapeHtml(custGroup(x.v.customer))}</span></div>
-      <div class="cv-dims">${specLine(x.c, x.d)}${extra(x.v).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div>${ordHtml(x)}</div>`;
+      <div class="cv-dims">${specLine(x.c, x.d)}${extra(x.v).map(t => `<span class="cv-d x">${escapeHtml(t)}</span>`).join('')}</div>${wipHtml(x)}${ordList(x.ord)}</div>`;
   const noneShown = showAll ? R.none : R.none.slice(0, CV_NONE_MAX);
+  const noneMore = R.none.length > noneShown.length ? `<button type="button" class="btn btn-outline btn-sm btn-block" style="margin-top:6px" onclick="cvRun(true)">${TT('แสดงทั้งหมด', 'Show all')} ${R.none.length}</button>` : '';
+  const dimNote = noDim.length ? `<div class="cv-note">ℹ️ ${TT(`เบอร์${from ? 'นี้' : 'ต้นทาง'}ยังไม่มี ${noDim.join(' / ')} ใน Master — เทียบได้เฉพาะ TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')}`, `${from ? 'This valve' : 'The source'} has no ${noDim.join(' / ')} in the master — compared on TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')} only`)}</div>` : '';
+  const foot = `<div class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.6">${TT('เทียบจาก Master valve ของ', 'Compared within the valve master of')} ${escapeHtml(VSM_LABEL[viewVsm()] || viewVsm())}
+      · ${TT('เรียง SD ใกล้สุดก่อน → SL → HD', 'sorted by closest SD → SL → HD')} · ${TT('ตัวเลขสีแดง = ต้องเจียร์ออก', 'red = to grind off')}`;
+  if (from) {
+    box.innerHTML = srcHtml + dimNote
+      + `<div class="cv-sec has">✅ ${TT('มีงานในสายที่ว่าง — เอามาแปลงเป็นเบอร์นี้ได้', 'Free work in the line — can be converted into this valve')} <span>${R.free.length}</span></div>`
+      + (R.free.length ? `<div class="cv-grid">${R.free.map((x, i) => row(x, i === 0)).join('')}</div>` : `<div class="cv-empty">${TT('ไม่มีเบอร์ที่ขนาดพอแปลงได้และมีงานว่างอยู่ในสายตอนนี้', 'No convertible valve has free work in the line right now')}</div>`)
+      + (R.busy.length ? `<div class="cv-sec busy">⚠️ ${TT('มีงานในสาย แต่ติด Order ของตัวเอง — เอามาแล้ว Order นั้นจะขาด', 'In the line but tied to its own Orders — taking it makes that Order short')} <span>${R.busy.length}</span></div>
+          <div class="cv-grid">${R.busy.map(x => row(x, false)).join('')}</div>` : '')
+      + `<div class="cv-sec none">📋 ${TT('ยังไม่มีงานในสาย — เผื่อมีงานเข้าวันหลัง', 'No work in the line yet — in case some comes in later')} <span>${R.none.length}</span></div>`
+      + (R.none.length ? `<div class="cv-grid">${noneShown.map(x => row(x, false)).join('')}</div>` + noneMore : `<div class="cv-empty">${TT('ไม่มี', 'None')}</div>`)
+      + (R.part.length ? `<details class="cv-part"><summary>❓ ${TT('มีงานในสาย แต่ขนาดใน Master ยังไม่ครบ — เช็คขนาดเองก่อน', 'In the line but sizes are incomplete in the master — check by hand')} <span>${R.part.length}</span></summary>
+          <div class="cv-grid">${R.part.map(x => row(x, false)).join('')}</div></details>` : '')
+      + foot + `
+      · ${TT('งานในสาย = กำลังผลิต + รับเข้ารอผลิต · ว่าง = ยังไม่ได้ถูกจัดให้แผนขายใบไหน (หน้า 📋 วางแผน)', 'in the line = in production + received, waiting · free = not allocated to any sales plan (📋 Plan tab)')}
+      ${R.silentDays ? `· ${TT(`💤 = ล็อตที่ไม่มีคนลงยอดเกิน ${R.silentDays} วัน ไม่นับเป็นงานว่าง (กติกาเดียวกับรายการ 💤 หน้าแผน)`, `💤 = lots with no output for over ${R.silentDays} days, not counted as free (same rule as the 💤 list on the plan page)`)}` : ''}
+      ${R.partN > R.part.length ? `· ${TT(`อีก ${nn(R.partN - R.part.length)} เบอร์ TYPE / SD เข้าได้แต่ Master ยังไม่มี SL / HD (ไม่มีงานในสาย)`, `${nn(R.partN - R.part.length)} more match TYPE / SD but have no SL / HD in the master (nothing in the line)`)}` : ''}</div>`;
+    return;
+  }
   box.innerHTML = srcHtml
     + (noDim.length ? `<div class="cv-note">ℹ️ ${TT(`เบอร์ต้นทางยังไม่มี ${noDim.join(' / ')} ใน Master — เทียบได้เฉพาะ TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')}`, `The source has no ${noDim.join(' / ')} in the master — compared on TYPE + ${R.use.map(k => k.toUpperCase()).join(' / ')} only`)}</div>` : '')
     + `<div class="cv-sec has">✅ ${TT('มี Order — แปลงแล้วจบงานได้', 'Has an Order — convert and close the job')} <span>${R.has.length}</span></div>`
