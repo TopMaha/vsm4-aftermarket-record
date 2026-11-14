@@ -20725,8 +20725,8 @@ function wipDetailBody(bucket){
     const eff=_wipOutMonth||curMonth;
     /* ★ 2026-08-15 (req #1 ของ WIP OUT) — กราฟยอดผ่าน FG รายวันแยกลูกค้า + เฉลี่ยต่อวัน
        ตัดยอดด้วย fgByDate ชุดเดียวกับที่การ์ดใช้ → ผลรวมของกราฟ = ตัวเลขบนการ์ดเป๊ะ */
-    extraTop = dailyChartHtml(_dailyWipOut(b, eff), {title:TT('ผ่าน FG รายวัน','Passed FG per day')+` · 📅 ${eff}`})
-             + orderReconHtml('out',{open:true, key:'out'});
+    // ★ v4.29 (ผู้ใช้ 14/11 "เอาออก") ถอด 📊 เทียบกับรายการขาย — แยกตามเดือนของ Order (orderReconHtml('out')) ออกจากป๊อปอัป WIP OUT
+    extraTop = dailyChartHtml(_dailyWipOut(b, eff), {title:TT('ผ่าน FG รายวัน','Passed FG per day')+` · 📅 ${eff}`});
     const monthQty=i=>{ let s=0; const m=i.fgByDate||{}; for(const d in m) if(d.slice(0,7)===eff) s+=Number(m[d])||0; return s; };
     items=items.map(i=>({...i,qty:monthQty(i)})).filter(i=>i.qty>0);
     const isAdmin=(typeof canSeeAllVsm==='function' && canSeeAllVsm());
@@ -20748,41 +20748,10 @@ function wipDetailBody(bucket){
         ${CUST_GROUPS.map(g=>`<option value="${escapeHtml(g)}" ${_wipOutCust===g?'selected':''}>${escapeHtml(g)}</option>`).join('')}
       </select></div>`;
   } else {
-    /* ★ 2026-08-15 (req) — อธิบายสูตรใหม่ + ทางเข้าไปดูของที่ "ผลิตอยู่แต่ไม่มีใบรับเข้า"
-       ต้องเขียนสูตรไว้ตรงนี้ เพราะตัวเลขเพิ่งลดจาก 1.14 ล้าน เหลือ ~2.8 แสน
-       ถ้าไม่บอกว่าเปลี่ยนกติกาอะไร คนดูจะนึกว่าข้อมูลหาย */
-    const ni=b.wip.noIntake;
-    extraTop=`
-      <div style="background:var(--blue-light);border:1.5px solid var(--blue-soft);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-size:12px;line-height:1.7">
-        <div style="font-weight:800;color:var(--blue-dark)">▶ ${TT('WIP กำลังผลิต = ยอดรับเข้า WIP IN 1.5 − ผ่าน FG แล้ว − Scrap','WIP = received (WIP IN 1.5) − passed FG − scrap')}</div>
-        <div style="color:var(--muted)">${TT('พอของผ่าน FG (บางส่วนหรือทั้งล็อต) ยอดจะถูกหักลงทันที — ไม่ค้างเป็น WIP ตลอดกาลอีก','As soon as pieces pass FG (partly or fully) the figure drops — no more WIP stuck forever')}</div>
-        ${ni.total?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#B45309">
-          ⚠️ ${TT('มีงานที่กำลังผลิตอยู่แต่ <b>ไม่มีใบรับเข้า WIP IN 1.5</b>','Jobs in production with <b>no WIP IN 1.5 intake slip</b>')} —
-          <b>${nn(ni.items.length)}</b> ${TT('ล็อต','lots')} · ~<b>${nn(ni.total)}</b> ${TT('ชิ้น','pcs')}
-          <span style="color:var(--muted)">(${TT('ยอดที่ระบบเดาจาก process ไกลสุด จึงไม่ถูกนับรวม','estimated from the furthest process, so not counted')})</span>
-          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B45309;border-color:#FCD34D"
-            onclick="_wipNoIntakeView=${_wipNoIntakeView?'false':'true'};_wipV4View=false;_wipChkView=false;_wipPg.page=1;_refreshWipDetail()">
-            ${_wipNoIntakeView?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
-        ${b.wip.v4end&&b.wip.v4end.n?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#0F766E">
-          🏁 ${TT('ไม่นับล็อตที่ <b>VSM4 ทำส่วนของตัวเองจบแล้ว</b> — ที่เหลือเป็นงานของ VSM3','Not counted: lots whose <b>VSM4 part is finished</b> — the rest is VSM3 work')} —
-          <b>${nn(b.wip.v4end.n)}</b> ${TT('ล็อต','lots')} · <b>${nn(b.wip.v4end.total)}</b> ${TT('ชิ้น','pcs')}
-          <span style="color:var(--muted)">(${TT(`ขั้นสุดท้ายของ VSM4 ทำแล้ว ≥ 90% ของ Lot · หรือ VSM4 หยุดทำเกิน ${V4CHK_DAYS} วันและล็อตไปขั้นต่อไปแล้ว · หรือ 🔑 Admin กด "VSM4 จบแล้ว" ที่ค้นหา Process`,`last VSM4 step ≥ 90% of the lot · or VSM4 stopped for over ${V4CHK_DAYS} days and the lot moved on · or 🔑 Admin pressed "VSM4 finished" in Process search`)})</span>
-          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#0F766E;border-color:#99F6E4"
-            onclick="_wipV4View=${_wipV4View?'false':'true'};_wipNoIntakeView=false;_wipChkView=false;_wipPg.page=1;_refreshWipDetail()">
-            ${_wipV4View?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
-        ${_chk.length?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#B45309">
-          🔎 ${TT('ใบรับเข้า <b>มากกว่ายอดที่ VSM4 ทำจริง</b> และไม่มียอดเพิ่มเกิน','Intake slip <b>larger than what VSM4 actually made</b>, and no new output for over')} ${V4CHK_DAYS} ${TT('วัน','days')} —
-          <b>${nn(_chk.length)}</b> ${TT('ล็อต','lots')} · <b>${nn(_chk.reduce((s,i)=>s+i.qty,0))}</b> ${TT('ชิ้น','pcs')}
-          <span style="color:var(--muted)">(${TT('ยังนับใน WIP จนกว่าจะแก้ — ใบพิมพ์ผิด หรือของที่เหลือไม่ต้องทำที่ VSM4','still counted in WIP until fixed — a mistyped slip, or the rest needs no VSM4 work')})</span>
-          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B45309;border-color:#FCD34D"
-            onclick="_wipChkView=${_wipChkView?'false':'true'};_wipNoIntakeView=false;_wipV4View=false;_wipPg.page=1;_refreshWipDetail()">
-            ${_wipChkView?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ตรวจรายการนี้','check these')}</button></div>`:''}
-      </div>
-      ${_wipChkView&&_chk.length?`<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:11px;padding:8px 11px;margin-bottom:10px;font-size:12px;line-height:1.7;color:#92400E">
-        <b>🔎 ${TT('แก้ได้ 2 ทาง','Two ways to fix')}</b><br>
-        ✏️ ${TT('<b>ใบรับเข้าพิมพ์ผิด</b> (เช่น 12,000 แทน 2,200) → กดปุ่มจำนวนในช่อง "แก้ไข" แล้วแก้ให้ตรงของที่รับจริง','<b>Mistyped slip</b> (e.g. 12,000 instead of 2,200) → tap the qty button under "Fix" and correct it')}<br>
-        🏁 ${TT('<b>ของที่เหลือไม่ต้องทำที่ VSM4 แล้ว</b> (ส่ง VSM3 / ไม่มีของจริง) → 🔑 Admin กด 🏁 = VSM4 จบแล้ว','<b>The rest needs no VSM4 work</b> (sent to VSM3 / not really there) → 🔑 Admin taps 🏁 = VSM4 finished')}
-      </div>`:''}`;
+    /* ★ v4.29 (ผู้ใช้ 14/11 วงกล่องคำอธิบายแล้วบอก "เอาออก") ไม่มีกล่องบนหัวป๊อปอัป WIP กำลังผลิตแล้ว
+       (สูตร WIP · ⚠️ ไม่มีใบรับเข้า · 🏁 VSM4 จบแล้ว · 🔎 รายการตรวจ — พร้อมปุ่มสลับดูรายการ) — ยอดและกติกาเหมือนเดิม
+       ป้าย 🏁 / 🔎 ยังอยู่ในแถว · มุมมอง _wipNoIntakeView / _wipV4View / _wipChkView ยังมีในโค้ดแต่ไม่มีปุ่มเปิดแล้ว (เปิดใหม่ = false เสมอ) */
+    extraTop='';
   }
   items.sort((a,c)=>c.qty-a.qty);
   const total=items.reduce((s,i)=>s+i.qty,0);
@@ -20797,7 +20766,7 @@ function wipDetailBody(bucket){
       ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
-      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง — ดู 🔎 ตรวจรายการนี้ ด้านบน','Intake slip larger than what VSM4 made — see 🔎 check these above'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
+      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง และล็อตยังไม่ไปขั้นต่อ — แก้ใบด้วย ✏️ ที่ WIP IN 1.5 หรือ 🔑 Admin กด 🏁 ที่ค้นหา Process','Intake slip larger than what VSM4 made and the lot has not moved on — fix the slip with ✏️ in WIP IN 1.5, or 🔑 Admin taps 🏁 in Process search'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
       <td class="center">${_wipMcCell(i.machines)}</td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
