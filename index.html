@@ -1561,6 +1561,12 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .ppg-b:hover:not(:disabled){background:var(--blue-soft)}
 .ppg-b.cur{background:var(--blue);border-color:var(--blue);color:#fff}
 .wchk-b{padding:3px 7px;font-size:11.5px;margin:1px 2px;white-space:nowrap}   /* ★ v4.27 ปุ่มในรายการตรวจ 🔎 (ป๊อปอัป WIP) */
+/* ★ v4.29 ชิปกลุ่มลูกค้าในป๊อปอัป WIP กำลังผลิต = ปุ่มกรอง (หน้าตาแบบ tag-orange เดิม · เลือกอยู่ = ส้มทึบ) */
+.wcust{display:inline-flex;align-items:center;gap:3px;padding:4px 11px;border-radius:999px;border:1.5px solid #FDE68A;background:#FFFBEB;
+  color:#B45309;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:rgba(217,119,6,.2)}
+.wcust:hover{border-color:#F59E0B}
+.wcust.on{background:#D97706;border-color:#D97706;color:#fff}
+.wcust:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 .ppg-b:disabled{opacity:.4;cursor:default}
 .ppg-gap{color:var(--muted);font-weight:800;padding:0 2px}
 .ppg-info{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--muted)}
@@ -19845,6 +19851,7 @@ let _wipOutMonth=null;                        // WIP OUT: null = เดือน
 let _wipOutCust='';                           // ★ req #4: กรองกลุ่มลูกค้าใน WIP OUT ('' = ทุกกลุ่ม)
 let _wipNoIntakeView=false;                   // ★ 2026-08-15: สลับดู "ผลิตอยู่แต่ไม่มีใบรับเข้า" ในถัง WIP
 let _wipV4View=false;                         // ★ v4.25 สลับดู "🏁 งานส่วน VSM4 จบแล้ว" (ไม่นับในยอด)
+let _wipCust='';                              // ★ v4.29 กลุ่มลูกค้าที่เลือกในป๊อปอัป WIP กำลังผลิต ('' = ทั้งหมด · เปิดใหม่ = ทั้งหมด)
 let _wipChkView=false;                        // ★ v4.27 สลับดู "🔎 ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง" (wipV4Check)
 /* ★ 2026-08-16 (req) — ป๊อปอัป WIP IN 1.5: สถานะการพับ + กติกาการนับเดือน
    _wiFold : กล่องไหนกางอยู่ — ต้องเก็บไว้นอกฟังก์ชันวาด เพราะ _refreshWipDetail() วาดใหม่ทั้งก้อน
@@ -20754,9 +20761,13 @@ function wipDetailBody(bucket){
     extraTop='';
   }
   items.sort((a,c)=>c.qty-a.qty);
-  const total=items.reduce((s,i)=>s+i.qty,0);
   const byCustMap={}; for(const i of items) byCustMap[i.customer]=(byCustMap[i.customer]||0)+i.qty;
   const byCust=Object.entries(byCustMap).sort((a,c)=>c[1]-a[1]);
+  /* ★ v4.29 (ผู้ใช้ 14/11 "เพิ่มเลือกกลุ่มลูกค้าได้ ที่จะดูว่าวาล์วเบอร์ไหนที่ค้าง") WIP กำลังผลิต: ชิปกลุ่มลูกค้า = ปุ่มกรอง
+     ชิปคิดจากรายการทั้งหมดก่อนกรอง (เห็นทุกกลุ่มเสมอ) · ตัวเลขรายการ / รวม / ตาราง = เฉพาะกลุ่มที่เลือก */
+  const allQty=items.reduce((s,i)=>s+i.qty,0);
+  if(!isOut && _wipCust){ if(byCustMap[_wipCust]===undefined) _wipCust=''; else items=items.filter(i=>i.customer===_wipCust); }
+  const total=items.reduce((s,i)=>s+i.qty,0);
   // v3.8: แบ่งหน้า — วาดเฉพาะ 15 แถวของหน้าที่แสดง (รายการเยอะแล้วหน้าเว็บไม่ค้าง)
   const rowFn=i=>`
     <tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}">
@@ -20767,7 +20778,7 @@ function wipDetailBody(bucket){
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
       <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง และล็อตยังไม่ไปขั้นต่อ — แก้ใบด้วย ✏️ ที่ WIP IN 1.5 หรือ 🔑 Admin กด 🏁 ที่ค้นหา Process','Intake slip larger than what VSM4 made and the lot has not moved on — fix the slip with ✏️ in WIP IN 1.5, or 🔑 Admin taps 🏁 in Process search'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
-      <td class="center">${_wipMcCell(i.machines)}</td>
+      ${/* ★ v4.29 (ผู้ใช้ 14/11 "การแสดงเครื่องจักรไม่ต้องแล้ว เอาออก") ไม่มีคอลัมน์เครื่องจักรใน WIP กำลังผลิต / WIP OUT */''}
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
   /* ★ v4.27 🔎 แถวของรายการตรวจ — รับเข้า · VSM4 ทำแล้ว (ขั้นสุดท้ายของ VSM4) · ค้างใน WIP · VSM4 ลงยอดล่าสุด · ปุ่มแก้ */
@@ -20786,11 +20797,11 @@ function wipDetailBody(bucket){
     </tr>`;
   };
   const _chkMode=!isOut&&_wipChkView;
-  const _wipColspan=_chkMode?7:isOut?7:9;
+  const _wipColspan=_chkMode?7:isOut?6:8;
   _wipDet={items,rowFn:_chkMode?chkRowFn:rowFn,colspan:_wipColspan};
   const _thead=_chkMode
     ? `<th>Valve</th><th>Lot</th><th class="center">${TT('รับเข้า VSM4','VSM4 intake')}</th><th class="center">${TT('VSM4 ทำแล้ว','VSM4 made')}</th><th class="center">${TT('ค้างใน WIP','In WIP')}</th><th class="center">${TT('ลงยอดล่าสุด','Last output')}</th><th class="center">${TT('แก้ไข','Fix')}</th>`
-    : `<th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">-</th>`;
+    : `<th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">-</th>`;
   const s=_wipPgSlice();
   return `
    <div data-wipbody>
@@ -20798,7 +20809,9 @@ function wipDetailBody(bucket){
     ${monthCtrl}
     <div class="mb-8"><input type="search" placeholder="🔍 ${TT('ค้นหา Valve…','Search Valve…')}" value="${escapeHtml(_wipPg.q)}" oninput="_wipSearch(this)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
       style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
-    ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
+    ${!byCust.length?'':isOut?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag tag-green" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`
+      :`<div class="row mb-8" style="gap:6px;flex-wrap:wrap" role="group" aria-label="${TT('กลุ่มลูกค้า','Customer group')}">${[['',allQty],...byCust].map(([c,q])=>{ const on=_wipCust===c;
+          return `<button type="button" class="wcust${on?' on':''}" aria-pressed="${on}" data-c="${escapeHtml(c)}" onclick="_wipCust=(_wipCust===this.dataset.c?'':this.dataset.c);_wipPg.page=1;_refreshWipDetail()" title="${escapeHtml(c?TT(`ดูเฉพาะ ${c} — กดซ้ำ = ทั้งหมด`,`Only ${c} — tap again for all`):TT('ทุกกลุ่มลูกค้า','All customer groups'))}">${c?escapeHtml(c):TT('ทั้งหมด','All')}: <b>${nn(q)}</b></button>`; }).join('')}</div>`}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
     <div class="tbl-wrap"><table><thead><tr>${_thead}</tr></thead>
       <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
@@ -20813,6 +20826,7 @@ function showWipDetail(bucket, fromIot, keepCust){
   _wipNoIntakeView=false;                      // เปิดใหม่ = เห็นยอด WIP จริงก่อนเสมอ
   _wipV4View=false;
   _wipChkView=false;
+  _wipCust='';
   // ★ 2026-08-16: เปิดใหม่ = พับทุกกล่อง (เห็นกราฟก่อน) + กลับไปใช้กติกา "เฉพาะเดือนที่มี Order"
   _wiFold={recon:false,np:false,nop:false,diag:false,plan:false,list:false};
   _wiAllMonths=false;
