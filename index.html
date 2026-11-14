@@ -1560,6 +1560,7 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
   font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;min-width:30px}
 .ppg-b:hover:not(:disabled){background:var(--blue-soft)}
 .ppg-b.cur{background:var(--blue);border-color:var(--blue);color:#fff}
+.wchk-b{padding:3px 7px;font-size:11.5px;margin:1px 2px;white-space:nowrap}   /* ★ v4.27 ปุ่มในรายการตรวจ 🔎 (ป๊อปอัป WIP) */
 .ppg-b:disabled{opacity:.4;cursor:default}
 .ppg-gap{color:var(--muted);font-weight:800;padding:0 2px}
 .ppg-info{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--muted)}
@@ -3483,7 +3484,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.26</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.27</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11903,7 +11904,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.26":"Production Record + KPI · v4.26",
+"ระบบบันทึกผลิต + KPI · v4.27":"Production Record + KPI · v4.27",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -19844,6 +19845,7 @@ let _wipOutMonth=null;                        // WIP OUT: null = เดือน
 let _wipOutCust='';                           // ★ req #4: กรองกลุ่มลูกค้าใน WIP OUT ('' = ทุกกลุ่ม)
 let _wipNoIntakeView=false;                   // ★ 2026-08-15: สลับดู "ผลิตอยู่แต่ไม่มีใบรับเข้า" ในถัง WIP
 let _wipV4View=false;                         // ★ v4.25 สลับดู "🏁 งานส่วน VSM4 จบแล้ว" (ไม่นับในยอด)
+let _wipChkView=false;                        // ★ v4.27 สลับดู "🔎 ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง" (wipV4Check)
 /* ★ 2026-08-16 (req) — ป๊อปอัป WIP IN 1.5: สถานะการพับ + กติกาการนับเดือน
    _wiFold : กล่องไหนกางอยู่ — ต้องเก็บไว้นอกฟังก์ชันวาด เพราะ _refreshWipDetail() วาดใหม่ทั้งก้อน
              ถ้าไม่เก็บ กล่องจะหุบเองทุกครั้งที่กดตัวกรอง (ค่าเริ่มต้น = พับหมด ตามที่ผู้ใช้ขอ)
@@ -20710,6 +20712,10 @@ function wipDetailBody(bucket){
      ชุดหลังต้องเปิดดูได้ ไม่งั้นของ 9 แสนชิ้นจะหายไปจากสายตาโดยไม่มีใครรู้ว่ามีอยู่ */
   let items=(!isOut && _wipNoIntakeView ? b.wip.noIntake.items : bucket2.items).slice();
   if(!isOut && !_wipNoIntakeView) items=items.filter(i=>_wipV4View ? !!i.v4end : !i.v4end);   // ★ v4.25 🏁 งานส่วน VSM4 จบแล้ว = รายการแยก ไม่นับในยอด
+  // ★ v4.27 🔎 รายการตรวจ: ใบรับเข้า VSM4 มากกว่ายอดที่ VSM4 ทำจริง + เงียบ (ยังนับใน WIP จนกว่าจะแก้)
+  const _chk=(!isOut && viewVsm()==='vsm4') ? wipV4Check(b) : [];
+  const _chkSet=new Set(_chk.map(i=>jobKey(i.valve,i.lot)));
+  if(!isOut && _wipChkView) items=_chk.slice();
   let monthCtrl='', extraTop='';
   if(isOut && _wipOutCust) items=items.filter(i=>(CUST_GROUPS.includes(i.customer)?i.customer:'Other')===_wipOutCust);   // ★ req #4
   if(isOut){
@@ -20756,16 +20762,28 @@ function wipDetailBody(bucket){
           <b>${nn(ni.items.length)}</b> ${TT('ล็อต','lots')} · ~<b>${nn(ni.total)}</b> ${TT('ชิ้น','pcs')}
           <span style="color:var(--muted)">(${TT('ยอดที่ระบบเดาจาก process ไกลสุด จึงไม่ถูกนับรวม','estimated from the furthest process, so not counted')})</span>
           <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B45309;border-color:#FCD34D"
-            onclick="_wipNoIntakeView=${_wipNoIntakeView?'false':'true'};_wipV4View=false;_wipPg.page=1;_refreshWipDetail()">
+            onclick="_wipNoIntakeView=${_wipNoIntakeView?'false':'true'};_wipV4View=false;_wipChkView=false;_wipPg.page=1;_refreshWipDetail()">
             ${_wipNoIntakeView?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
         ${b.wip.v4end&&b.wip.v4end.n?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#0F766E">
           🏁 ${TT('ไม่นับล็อตที่ <b>VSM4 ทำส่วนของตัวเองจบแล้ว</b> — ที่เหลือเป็นงานของ VSM3','Not counted: lots whose <b>VSM4 part is finished</b> — the rest is VSM3 work')} —
           <b>${nn(b.wip.v4end.n)}</b> ${TT('ล็อต','lots')} · <b>${nn(b.wip.v4end.total)}</b> ${TT('ชิ้น','pcs')}
           <span style="color:var(--muted)">(${TT('ขั้นสุดท้ายของ VSM4 ทำแล้ว ≥ 90% ของ Lot หรือ 🔑 Admin กด "VSM4 จบแล้ว" ที่ค้นหา Process','last VSM4 step ≥ 90% of the lot, or 🔑 Admin pressed "VSM4 finished" in Process search')})</span>
           <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#0F766E;border-color:#99F6E4"
-            onclick="_wipV4View=${_wipV4View?'false':'true'};_wipNoIntakeView=false;_wipPg.page=1;_refreshWipDetail()">
+            onclick="_wipV4View=${_wipV4View?'false':'true'};_wipNoIntakeView=false;_wipChkView=false;_wipPg.page=1;_refreshWipDetail()">
             ${_wipV4View?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
-      </div>`;
+        ${_chk.length?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#B45309">
+          🔎 ${TT('ใบรับเข้า <b>มากกว่ายอดที่ VSM4 ทำจริง</b> และ VSM4 ไม่มียอดเพิ่มเกิน','Intake slip <b>larger than what VSM4 actually made</b>, and no new VSM4 output for over')} ${V4CHK_DAYS} ${TT('วัน','days')} —
+          <b>${nn(_chk.length)}</b> ${TT('ล็อต','lots')} · <b>${nn(_chk.reduce((s,i)=>s+i.qty,0))}</b> ${TT('ชิ้น','pcs')}
+          <span style="color:var(--muted)">(${TT('ยังนับใน WIP จนกว่าจะแก้ — ใบพิมพ์ผิด หรือของที่เหลือไม่ต้องทำที่ VSM4','still counted in WIP until fixed — a mistyped slip, or the rest needs no VSM4 work')})</span>
+          <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#B45309;border-color:#FCD34D"
+            onclick="_wipChkView=${_wipChkView?'false':'true'};_wipNoIntakeView=false;_wipV4View=false;_wipPg.page=1;_refreshWipDetail()">
+            ${_wipChkView?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ตรวจรายการนี้','check these')}</button></div>`:''}
+      </div>
+      ${_wipChkView&&_chk.length?`<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:11px;padding:8px 11px;margin-bottom:10px;font-size:12px;line-height:1.7;color:#92400E">
+        <b>🔎 ${TT('แก้ได้ 2 ทาง','Two ways to fix')}</b><br>
+        ✏️ ${TT('<b>ใบรับเข้าพิมพ์ผิด</b> (เช่น 12,000 แทน 2,200) → กดปุ่มจำนวนในช่อง "แก้ไข" แล้วแก้ให้ตรงของที่รับจริง','<b>Mistyped slip</b> (e.g. 12,000 instead of 2,200) → tap the qty button under "Fix" and correct it')}<br>
+        🏁 ${TT('<b>ของที่เหลือไม่ต้องทำที่ VSM4 แล้ว</b> (ส่ง VSM3 / ไม่มีของจริง) → 🔑 Admin กด 🏁 = VSM4 จบแล้ว','<b>The rest needs no VSM4 work</b> (sent to VSM3 / not really there) → 🔑 Admin taps 🏁 = VSM4 finished')}
+      </div>`:''}`;
   }
   items.sort((a,c)=>c.qty-a.qty);
   const total=items.reduce((s,i)=>s+i.qty,0);
@@ -20780,12 +20798,31 @@ function wipDetailBody(bucket){
       ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
-      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
+      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง — ดู 🔎 ตรวจรายการนี้ ด้านบน','Intake slip larger than what VSM4 made — see 🔎 check these above'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
       <td class="center">${_wipMcCell(i.machines)}</td>
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
-  const _wipColspan=isOut?7:9;
-  _wipDet={items,rowFn,colspan:_wipColspan};
+  /* ★ v4.27 🔎 แถวของรายการตรวจ — รับเข้า · VSM4 ทำแล้ว (ขั้นสุดท้ายของ VSM4) · ค้างใน WIP · VSM4 ลงยอดล่าสุด · ปุ่มแก้ */
+  const chkRowFn=i=>{
+    const c=i.chk, pct=c.base>0?Math.floor(c.made/c.base*100):0, ve=encodeURIComponent(i.valve), le=encodeURIComponent(i.lot||'');
+    const slipBtns=c.slips.map(s=>`<button type="button" class="btn btn-outline btn-sm wchk-b" onclick="editWipinEntry('${escapeHtml(s.id)}',true)"
+      title="${escapeHtml(TT(`แก้ใบรับเข้า ${String(s.ts||'').slice(0,10)} · ${nn(s.qty)} ชิ้น${s.byName||s.byId?' · ลงโดย '+(s.byName||s.byId):''}`,`Edit intake slip ${String(s.ts||'').slice(0,10)} · ${nn(s.qty)} pcs`))}">✏️ ${nn(s.qty)}</button>`).join('');
+    return `<tr data-v="${escapeHtml(String(i.valve||'').toLowerCase())}">
+      <td><b>${escapeHtml(i.valve)}</b></td>
+      <td>${escapeHtml(i.lot||'-')}</td>
+      <td class="center" style="color:var(--blue)">${nn(i.wipIn)}</td>
+      <td class="center" style="white-space:nowrap"><b style="color:#B45309">${escapeHtml(c.last)} ${nn(Math.round(c.made))}</b> <span class="muted">(${pct}%)</span></td>
+      <td class="center"><b>${nn(i.qty)}</b></td>
+      <td class="center" style="white-space:nowrap">${c.d?`${escapeHtml(_mpD(c.d).slice(0,5))} <span class="muted">· ${nn(c.age)} ${TT('วัน','d')}</span>`:`<span class="muted" title="${escapeHtml(TT('ยอดขั้นนี้มาจาก 🔑 Admin เติม ไม่มีวันที่ลงยอด','this step\'s qty is an 🔑 Admin fill, no output date'))}">—</span>`}</td>
+      <td class="center" style="white-space:nowrap">${slipBtns}<button type="button" class="btn btn-outline btn-sm wchk-b" style="color:#0F766E;border-color:#99F6E4" onclick="wipV4ChkEnd('${ve}','${le}')" title="${escapeHtml(TT('🔑 Admin: ของที่เหลือไม่ต้องทำที่ VSM4 แล้ว → VSM4 จบแล้ว','🔑 Admin: the rest needs no VSM4 work → VSM4 finished'))}">🏁</button><button type="button" class="btn btn-outline btn-sm wchk-b" onclick="showWipHistory('${ve}','${le}')" title="${escapeHtml(TT('ประวัติ','History'))}">🕘</button></td>
+    </tr>`;
+  };
+  const _chkMode=!isOut&&_wipChkView;
+  const _wipColspan=_chkMode?7:isOut?7:9;
+  _wipDet={items,rowFn:_chkMode?chkRowFn:rowFn,colspan:_wipColspan};
+  const _thead=_chkMode
+    ? `<th>Valve</th><th>Lot</th><th class="center">${TT('รับเข้า VSM4','VSM4 intake')}</th><th class="center">${TT('VSM4 ทำแล้ว','VSM4 made')}</th><th class="center">${TT('ค้างใน WIP','In WIP')}</th><th class="center">${TT('VSM4 ลงยอดล่าสุด','Last VSM4 output')}</th><th class="center">${TT('แก้ไข','Fix')}</th>`
+    : `<th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">-</th>`;
   const s=_wipPgSlice();
   return `
    <div data-wipbody>
@@ -20795,7 +20832,7 @@ function wipDetailBody(bucket){
       style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
     ${byCust.length?`<div class="row mb-8" style="gap:6px;flex-wrap:wrap">${byCust.map(([c,q])=>`<span class="tag ${isOut?'tag-green':'tag-orange'}" style="font-size:12px">${escapeHtml(c)}: <b>${nn(q)}</b></span>`).join('')}</div>`:''}
     <div class="muted mb-8" style="font-size:12px">${nn(items.length)} ${TT('รายการ','items')} · ${TT('รวม','total')} <b>${nn(total)}</b> ${TT('ชิ้น','pcs')}</div>
-    <div class="tbl-wrap"><table><thead><tr><th>Valve</th><th>${TT('ลูกค้า','Cust')}</th><th>Lot</th>${isOut?'':`<th class="center">${TT('รับเข้า','Intake')}</th><th class="center">Scrap</th>`}<th class="center">${TT('ยอด','Qty')}</th><th class="center">${TT('Process ล่าสุด','Latest process')}</th><th class="center">${TT('เครื่องจักร','Machine')}</th><th class="center">-</th></tr></thead>
+    <div class="tbl-wrap"><table><thead><tr>${_thead}</tr></thead>
       <tbody data-wiprows>${_wipRowsHtml(s.rows)}</tbody></table></div>
     <div class="wip-pager" data-wippager>${_wipPagerHtml(s)}</div>
    </div>`;
@@ -20807,6 +20844,7 @@ function showWipDetail(bucket, fromIot, keepCust){
   _wipInOnlyUnknown=false;                     // ล้างโหมด "ดูเฉพาะเบอร์ที่ไม่มีใน Master"
   _wipNoIntakeView=false;                      // เปิดใหม่ = เห็นยอด WIP จริงก่อนเสมอ
   _wipV4View=false;
+  _wipChkView=false;
   // ★ 2026-08-16: เปิดใหม่ = พับทุกกล่อง (เห็นกราฟก่อน) + กลับไปใช้กติกา "เฉพาะเดือนที่มี Order"
   _wiFold={recon:false,np:false,nop:false,diag:false,plan:false,list:false};
   _wiAllMonths=false;
@@ -30676,6 +30714,76 @@ function v4EndTxt(e, short) {
   if (e.why === 'last') return short ? pq() : `${TT('ขั้นสุดท้ายของ VSM4', 'last VSM4 step')} ${pq()} (≥ 90%)`;
   if (e.why === 'beyond') return short ? pq() : `${TT('ผ่าน', 'passed')} ${pq()} ${TT('แล้ว — หลังขั้นสุดท้ายของ VSM4', '— after the last VSM4 step')} (${e.last})`;
   return e.last ? `${TT('VSM4 ยังเหลือ', 'VSM4 still to do')}: ${e.last} ${nn(Math.round(e.made || 0))}/${nn(Math.round(e.base || 0))}` : '';
+}
+/* ★ v4.27 (ผู้ใช้ 14/11 "ทำไมเหลือเป็น WIP" — VV7295M0 Lot 2609S100164: ใบรับเข้า VSM4 12,000 แต่ IND ที่ VSM4 ลงยอด 2,200 · ล็อตอื่นที่รับวันเดียวกันใบ = ยอด IND ทุกล็อต)
+   🔎 รายการตรวจ: ล็อตใน WIP กำลังผลิตของ VSM4 ที่ขั้นสุดท้ายของ VSM4 ทำไปแล้วบางส่วน (> 0 แต่ < 90% ของใบรับเข้า) และขั้นนั้นไม่มียอดเพิ่ม (ทุกสาย) เกิน V4CHK_DAYS วัน
+   = ค้างใน WIP ไปตลอด · ส่วนใหญ่ใบรับเข้าพิมพ์ผิด หรือของที่เหลือไม่ต้องทำที่ VSM4 แล้ว — รายการนี้ไม่เปลี่ยนยอดเอง ให้คนตัดสิน: ✏️ แก้ใบ / 🔑 🏁 VSM4 จบแล้ว
+   ไม่รวม: Admin กด "ยังไม่จบ" ไว้ · ขั้นสุดท้ายยังไม่เริ่ม (💤 ล็อตเงียบ = อีกเรื่อง) · ล็อตที่ไม่มีใบรับเข้า (ไม่นับใน WIP อยู่แล้ว)
+   วัดจริง 13/11: 10 ล็อต 37,236 ชิ้น จาก WIP 377,728 (VV7295M0 10,698 · V77805M0 2 ล็อต 12,790 · VF1524M0/VF1534M0 F.IND ลง 1 ชิ้น 3 ล็อต) */
+const V4CHK_DAYS = 14;
+let _v4LastC = null, _v4LastKey = null;
+function _v4LastAt() {   // jobKey@family → วันล่าสุดที่มียอด (VSM3 + VSM4 · ชุดเดียวกับ _v4IdxGen)
+  const P = _wipProdSrc(), K = _wipKpiSrc(), o = _v4LastKey;
+  if (_v4LastC && o && o.P === P && o.K === K && o.np === P.length && o.nk === K.length && o.fv === _fvVer) return _v4LastC;
+  const m = new Map(), fm = new Map();
+  const famOf = p => { let f = fm.get(p); if (f === undefined) fm.set(p, f = mpFam(p) || ''); return f; };
+  const put = (v, lot, proc, d) => {
+    const f = famOf(proc); if (!f || !d) return;
+    const k = jobKey(String(v || '').trim(), lot || '') + '@' + f;
+    if (!(m.get(k) >= d)) m.set(k, d);
+  };
+  for (const r of K) { const ln = vsmOf(r); if (ln === 'vsm3' || ln === 'vsm4') put(r.valve_no, r.lot, r.last_process, String(r.shift_date || r.record_date || '').slice(0, 10)); }
+  for (const r of P) { const ln = vsmOf(r); if (ln === 'vsm3' || ln === 'vsm4') put(r.valve_no || r.valveNo, r.lot, r.current_process || r.currentProcess, String(r.shift_date || r.timestamp || '').slice(0, 10)); }
+  _v4LastC = m; _v4LastKey = { P, K, np: P.length, nk: K.length, fv: _fvVer };
+  return m;
+}
+function wipV4Check(b) {
+  if (viewVsm() !== 'vsm4' || !b || !b.wip) return [];
+  const today = todayISO(), out = [];
+  let last = null, slipsBy = null;
+  for (const it of (b.wip.items || [])) {
+    if (it.v4end || it.basis !== 'wipin') continue;
+    const e = v4EndOf(it.valve, it.lot);
+    if (!e || e.done || e.src || !(e.made > 0) || !(e.base > 0) || e.made >= e.base * V4END_PCT - 1e-9) continue;
+    const k = jobKey(it.valve, it.lot);
+    if (!last) last = _v4LastAt();
+    const d = last.get(k + '@' + mpFam(e.last)) || '';
+    const age = d ? _mpDayDiff(d, today) : 999;
+    if (age < V4CHK_DAYS) continue;
+    if (!slipsBy) {
+      slipsBy = new Map();
+      for (const s of _wipinList()) { if (_wipinVsm(s) !== 'vsm4') continue; const sk = jobKey(s.valve, s.lot); let a = slipsBy.get(sk); if (!a) slipsBy.set(sk, a = []); a.push(s); }
+    }
+    out.push({ ...it, chk: { last: e.last, made: e.made, base: e.base, d, age, slips: slipsBy.get(k) || [] } });
+  }
+  return out.sort((a, c) => c.qty - a.qty);
+}
+// 🏁 จากรายการตรวจ — กติกาเดียวกับป้าย 🏁 ใต้เลข Lot (spV4End) · กล่องยืนยันแนบ fullscreenElement (ใช้ได้ตอน IOT เต็มจอ)
+let _v4ChkBusy = false;
+async function wipV4ChkEnd(valveEnc, lotEnc) {
+  const valve = decodeURIComponent(valveEnc), lot = decodeURIComponent(lotEnc);
+  if (!state.adminUnlocked) { toast(TT('🔑 ต้องปลดล็อก Admin ก่อน — หรือถ้าใบรับเข้าพิมพ์ผิด กด ✏️ แก้จำนวนได้เลย', '🔑 Unlock Admin first — or if the slip is mistyped, tap ✏️ to fix the qty'), 'orange'); return; }
+  if (_v4ChkBusy) return;
+  const e = v4EndOf(valve, lot), sc = _v4Scope(valve), NL = '\n';
+  const msg = [`${valve} · Lot ${lot}`, `📋 ${TT('ขอบเขต VSM4', 'VSM4 scope')}: ${(sc && sc.v4.join(' · ')) || '-'}`, e ? '⏳ ' + v4EndTxt(e) : '', '',
+    '🏁 ' + TT('VSM4 จบแล้ว = ของที่เหลือไม่ต้องทำที่ VSM4', 'VSM4 finished = the rest needs no VSM4 work'),
+    '• ' + TT('ไม่นับใน WIP กำลังผลิตของ VSM4', 'Not counted in VSM4 WIP'),
+    '• ' + TT('แผนไม่วางขั้นของ VSM4 ให้ Lot นี้อีก', 'The plan stops scheduling VSM4 steps for this lot'),
+    '• ' + TT('ยกเลิกได้ที่ ค้นหา Process — แตะป้าย 🏁 ใต้เลข Lot', 'Undo in Find Process — tap the 🏁 tag under the lot'), '',
+    TT('ถ้าใบรับเข้าพิมพ์ผิด ให้กด ✏️ แก้จำนวนแทน', 'If the slip is mistyped, use ✏️ to fix the qty instead')].join(NL);
+  if (!(await _wipinConfirm(msg))) return;
+  _v4ChkBusy = true;
+  showBusy(TT('กำลังบันทึก…', 'Saving…'));
+  try {
+    await setV4End(valve, lotKey(lot), Number(todayISO().replace(/-/g, '')));   // Cloud ล้มเหลว → throw → local ไม่เปลี่ยน
+    hideBusy();
+    toast(`🏁 ${valve} · ${lot} — ${TT('VSM4 จบแล้ว · ไม่นับใน WIP', 'VSM4 finished · out of WIP')}${API ? '' : ' (local)'}`, 'green');
+    try { renderWipBuckets(); renderWipInSummary(); } catch (x) {}
+    if (_wipDetailOpen()) _refreshWipDetail();
+  } catch (x) {
+    hideBusy();
+    toast(TT('❌ บันทึกขึ้น Cloud ไม่สำเร็จ — ยังไม่เปลี่ยน กรุณาลองใหม่', '❌ Cloud save failed — nothing changed, please retry'), 'red');
+  } finally { _v4ChkBusy = false; }
 }
 // 🔑 Admin: กด VSM4 จบแล้ว / ยังไม่จบ / กลับตามระบบ — เขียน Cloud ให้สำเร็จก่อนแล้วค่อยเปลี่ยนในเครื่อง (กติกาเดียวกับ lotchk)
 async function setV4End(valve, lot, val) {
