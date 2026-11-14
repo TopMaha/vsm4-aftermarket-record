@@ -3484,7 +3484,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.28</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.29</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -11904,7 +11904,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.28":"Production Record + KPI · v4.28",
+"ระบบบันทึกผลิต + KPI · v4.29":"Production Record + KPI · v4.29",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -20766,7 +20766,7 @@ function wipDetailBody(bucket){
         ${b.wip.v4end&&b.wip.v4end.n?`<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--blue-soft);color:#0F766E">
           🏁 ${TT('ไม่นับล็อตที่ <b>VSM4 ทำส่วนของตัวเองจบแล้ว</b> — ที่เหลือเป็นงานของ VSM3','Not counted: lots whose <b>VSM4 part is finished</b> — the rest is VSM3 work')} —
           <b>${nn(b.wip.v4end.n)}</b> ${TT('ล็อต','lots')} · <b>${nn(b.wip.v4end.total)}</b> ${TT('ชิ้น','pcs')}
-          <span style="color:var(--muted)">(${TT('ขั้นสุดท้ายของ VSM4 ทำแล้ว ≥ 90% ของ Lot หรือ 🔑 Admin กด "VSM4 จบแล้ว" ที่ค้นหา Process','last VSM4 step ≥ 90% of the lot, or 🔑 Admin pressed "VSM4 finished" in Process search')})</span>
+          <span style="color:var(--muted)">(${TT(`ขั้นสุดท้ายของ VSM4 ทำแล้ว ≥ 90% ของ Lot · หรือ VSM4 หยุดทำเกิน ${V4CHK_DAYS} วันและล็อตไปขั้นต่อไปแล้ว · หรือ 🔑 Admin กด "VSM4 จบแล้ว" ที่ค้นหา Process`,`last VSM4 step ≥ 90% of the lot · or VSM4 stopped for over ${V4CHK_DAYS} days and the lot moved on · or 🔑 Admin pressed "VSM4 finished" in Process search`)})</span>
           <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#0F766E;border-color:#99F6E4"
             onclick="_wipV4View=${_wipV4View?'false':'true'};_wipNoIntakeView=false;_wipChkView=false;_wipPg.page=1;_refreshWipDetail()">
             ${_wipV4View?('← '+TT('กลับไปดูยอด WIP','back to WIP')):TT('ดูรายการนี้','show these')}</button></div>`:''}
@@ -30583,9 +30583,11 @@ function* _v4IdxGen() {
   const dupOf = vk => { let d = dupM.get(vk); if (d === undefined) dupM.set(vk, d = !!_mpDupFam(mpValve(vk))); return d; };
   const lotOf = (v, lot) => {
     const k = jobKey(v, lot || ''); let o = lots.get(k);
-    if (!o) lots.set(k, o = { p: {}, k: {}, s: {}, pn: null, kn: null, d: dupOf(k.slice(0, k.indexOf('::'))) });
+    if (!o) lots.set(k, o = { p: {}, k: {}, s: {}, t: {}, tl: '', pn: null, kn: null, d: dupOf(k.slice(0, k.indexOf('::'))) });
     return o;
   };
+  // ★ v4.29 วันล่าสุดที่ลงยอด: t[family] = ต่อขั้น · tl = ทั้งล็อต (VSM3 + VSM4) — กติกา "VSM4 หยุดแล้ว" ใน v4EndOf + รายการตรวจ 🔎
+  const dateAt = (o, f, d) => { if (!d) return; if (d > o.tl) o.tl = d; if (f && !(o.t[f] >= d)) o.t[f] = d; };
   for (const r of K) {
     if ((++_n & 255) === 0 && _sliceDue()) yield;
     const f = famOf(r.last_process), q = +r.opr || 0;
@@ -30596,6 +30598,7 @@ function* _v4IdxGen() {
     const ln = vsmOf(r); if (ln !== 'vsm3' && ln !== 'vsm4') continue;
     const v = String(r.valve_no || '').trim(); if (!v) continue;
     const o = lotOf(v, r.lot), sc = Number(r.scrap) || 0;
+    dateAt(o, f, String(r.shift_date || r.record_date || '').slice(0, 10));
     if (sc > 0) scr.set(r.record_id || r, { o, sc, fams: new Set(f ? [f] : []) });
     if (!f) continue;
     o.k[f] = (o.k[f] || 0) + q;
@@ -30608,6 +30611,7 @@ function* _v4IdxGen() {
     const x = r.kpi_record_id && scr.get(r.kpi_record_id); if (x && f) x.fams.add(f);   // Scrap ของแถว KPI → Process จริง (กติกา v4.15)
     const v = String(r.valve_no || r.valveNo || '').trim(); if (!v || !f) continue;
     const o = lotOf(v, r.lot), q = Number(r.quantity) || 0;
+    dateAt(o, f, String(r.shift_date || r.timestamp || '').slice(0, 10));
     o.p[f] = (o.p[f] || 0) + q;
     if (o.d && q) { const n = _procCanon(String(cp || '').trim()); if (n) { const y = o.pn || (o.pn = {}); y[n] = (y[n] || 0) + q; } }
   }
@@ -30692,6 +30696,25 @@ function v4EndOf(valve, lot) {
         if (sc.isV4[i] || sc.pos[i] <= sc.pos[sc.lastL]) continue;
         const m = madeAt(i); if (m >= need) { auto = { why: 'beyond', proc: sc.flow[i], made: m, base }; break; }
       }
+      /* ★ v4.29 (ผู้ใช้ 14/11 รูป VV7295M0 Lot 2609S100164 "VSM4 ทำแค่ IND ทำไมมีค่า WIP" + "ตรวจสอบระบบทั้งหมด")
+         VSM4 หยุดแล้ว + ล็อตไปต่อแล้ว = งานส่วน VSM4 จบ:
+           ① ขั้นหลังทุกขั้นของ VSM4 (Master + ของจริง — ตำแหน่งเดียวกับ 'beyond') มียอดแล้ว > 0 = ล็อตออกจาก VSM4 ไปแล้ว
+           ② ขั้นสุดท้ายของ VSM4 ไม่มียอดเพิ่ม (VSM3 + VSM4) เกิน V4CHK_DAYS วัน (VSM4 ยัง 0 = ดูวันล่าสุดของทั้งล็อตแทน)
+         → ส่วนที่ใบรับเข้ายังเกินอยู่ ไม่ได้อยู่ที่ VSM4 แล้ว (ใบพิมพ์เกิน · เช่น 12,000 แทน 2,200 / ไปทำที่อื่น / ไม่ได้ลงยอด)
+         ① ยังไม่เกิด (ล็อตยังไม่ไปต่อ) = ยังไม่จบ → อยู่ในรายการตรวจ 🔎 ให้คนตัดสิน · 🔑 Admin กด "ยังไม่จบ" ที่ป้าย 🏁 ได้ทุกเมื่อ */
+      if (!auto) {
+        let down = -1;
+        for (let i = sc.last + 1; i < sc.flow.length; i++) {
+          if (sc.isV4[i] || sc.pos[i] <= sc.pos[sc.lastL]) continue;
+          if (madeAt(i) > 0) { down = i; break; }
+        }
+        if (down >= 0) {
+          const T = (L && L.t) || E;
+          let d = (mL > 0 || mL2 > 0) ? [T[sc.fams[sc.last]] || '', T[sc.fams[sc.lastL]] || ''].sort().pop() : '';
+          if (!d) d = (L && L.tl) || '';
+          if (d && _mpDayDiff(d, todayISO()) >= V4CHK_DAYS) auto = { why: 'stop', proc: sc.flow[sc.last], made: mL, base, down: sc.flow[down], date: d };
+        }
+      }
       if (auto) auto.last = sc.flow[sc.last];
       else auto = null;
       if (!auto && mark !== V4END_OPEN) return { done: false, src: '', last: sc.flow[sc.last], made: mL, base };
@@ -30714,6 +30737,8 @@ function v4EndTxt(e, short) {
   if (e.why === 'none') return short ? TT('VSM4 ไม่มีขั้น', 'no VSM4 step') : TT('ขอบเขต VSM4 ของเบอร์นี้ไม่มีขั้นที่ VSM4 ทำ', 'this valve has no VSM4 step in its scope');
   if (e.why === 'last') return short ? pq() : `${TT('ขั้นสุดท้ายของ VSM4', 'last VSM4 step')} ${pq()} (≥ 90%)`;
   if (e.why === 'beyond') return short ? pq() : `${TT('ผ่าน', 'passed')} ${pq()} ${TT('แล้ว — หลังขั้นสุดท้ายของ VSM4', '— after the last VSM4 step')} (${e.last})`;
+  if (e.why === 'stop') return short ? `${e.proc} ${TT('หยุด', 'stopped')} ${_mpD(e.date).slice(0, 5)}`   // ★ v4.29
+    : `${TT('VSM4 หยุดทำ', 'VSM4 stopped')} ${e.proc} ${nn(Math.round(e.made || 0))}/${nn(Math.round(e.base || 0))} ${TT('ล่าสุด', 'last')} ${_mpD(e.date).slice(0, 5)} (${TT('เกิน', 'over')} ${V4CHK_DAYS} ${TT('วัน', 'days')}) · ${TT('ล็อตไปต่อที่', 'lot moved on to')} ${e.down} ${TT('แล้ว', '')}`.trim();
   return e.last ? `${TT('VSM4 ยังเหลือ', 'VSM4 still to do')}: ${e.last} ${nn(Math.round(e.made || 0))}/${nn(Math.round(e.base || 0))}` : '';
 }
 /* ★ v4.27 (ผู้ใช้ 14/11 "ทำไมเหลือเป็น WIP" — VV7295M0 Lot 2609S100164: ใบรับเข้า VSM4 12,000 แต่ IND ที่ VSM4 ลงยอด 2,200 · ล็อตอื่นที่รับวันเดียวกันใบ = ยอด IND ทุกล็อต)
@@ -30722,29 +30747,10 @@ function v4EndTxt(e, short) {
    ไม่รวม: Admin กด "ยังไม่จบ" ไว้ · ขั้นสุดท้ายยังไม่เริ่ม (💤 ล็อตเงียบ = อีกเรื่อง) · ล็อตที่ไม่มีใบรับเข้า (ไม่นับใน WIP อยู่แล้ว)
    วัดจริง 13/11: 10 ล็อต 37,236 ชิ้น จาก WIP 377,728 (VV7295M0 10,698 · V77805M0 2 ล็อต 12,790 · VF1524M0/VF1534M0 F.IND ลง 1 ชิ้น 3 ล็อต) */
 const V4CHK_DAYS = 14;
-let _v4LastC = null, _v4LastKey = null;
-function _v4LastAt() {   // jobKey@family → วันล่าสุดที่มียอด (VSM3 + VSM4 · ชุดเดียวกับ _v4IdxGen)
-  const P = _wipProdSrc(), K = _wipKpiSrc(), o = _v4LastKey;
-  if (_v4LastC && o && o.P === P && o.K === K && o.np === P.length && o.nk === K.length && o.fv === _fvVer) return _v4LastC;
-  const m = new Map(), fm = new Map();
-  const famOf = p => { let f = fm.get(p); if (f === undefined) fm.set(p, f = mpFam(p) || ''); return f; };
-  const put = (v, lot, proc, d) => {
-    if (!d) return;
-    const j = jobKey(String(v || '').trim(), lot || ''), f = famOf(proc);
-    if (!(m.get(j + '@*') >= d)) m.set(j + '@*', d);   // ★ v4.28 วันล่าสุดของทั้งล็อต (ทุกขั้น VSM3 + VSM4)
-    if (!f) return;
-    const k = j + '@' + f;
-    if (!(m.get(k) >= d)) m.set(k, d);
-  };
-  for (const r of K) { const ln = vsmOf(r); if (ln === 'vsm3' || ln === 'vsm4') put(r.valve_no, r.lot, r.last_process, String(r.shift_date || r.record_date || '').slice(0, 10)); }
-  for (const r of P) { const ln = vsmOf(r); if (ln === 'vsm3' || ln === 'vsm4') put(r.valve_no || r.valveNo, r.lot, r.current_process || r.currentProcess, String(r.shift_date || r.timestamp || '').slice(0, 10)); }
-  _v4LastC = m; _v4LastKey = { P, K, np: P.length, nk: K.length, fv: _fvVer };
-  return m;
-}
 function wipV4Check(b) {
   if (viewVsm() !== 'vsm4' || !b || !b.wip) return [];
   const today = todayISO(), out = [];
-  let last = null, slipsBy = null;
+  let ix = null, slipsBy = null;   // ★ v4.29 วันล่าสุดมาจากดัชนีเดียวกับ v4EndOf (_v4IdxGen · L.t / L.tl) — เลิกสแกนแยก
   for (const it of (b.wip.items || [])) {
     if (it.v4end || it.basis !== 'wipin') continue;
     const e = v4EndOf(it.valve, it.lot);
@@ -30755,8 +30761,8 @@ function wipV4Check(b) {
     const zero = !(e.made > 0);
     if (zero) { const L = mpLineOf(it.valve); if (!L || L.line !== 'vsm34') continue; }
     const k = jobKey(it.valve, it.lot);
-    if (!last) last = _v4LastAt();
-    const d = last.get(k + (zero ? '@*' : '@' + mpFam(e.last))) || '';
+    if (!ix) ix = (_v4Ix || _runSync(_v4IdxGen())).lots;
+    const L = ix.get(k), d = (L && (zero ? L.tl : L.t[mpFam(e.last)])) || '';
     const age = d ? _mpDayDiff(d, today) : 999;
     if (age < V4CHK_DAYS) continue;
     if (!slipsBy) {
