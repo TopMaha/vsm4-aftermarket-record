@@ -2399,6 +2399,10 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .pc-bw i{display:block;height:100%;max-width:100%;border-radius:99px}
 .pc-bv{flex:0 0 auto;font-size:12px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
 .pc-bp{flex:0 0 34px;font-size:10px;font-weight:800;color:var(--muted);text-align:right}
+/* ★ v4.30 WIP OUT แยก ผลิตทั้งหมด / ผลิตบางส่วน — การ์ดที่มีแถวย่อยใช้ช่องป้ายกว้างขึ้นทั้งการ์ด (แท่งยังตรงแนวกัน) */
+.pc-card.split .pc-bk{flex-basis:94px}
+.pc-bl.sub .pc-bk{font-weight:700;padding-left:6px;white-space:nowrap}
+.pc-bl.sub .pc-bv{font-weight:700}
 .pc-gap{margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);font-size:11px;font-weight:700}
 .pc-ws{margin-top:9px;display:flex;flex-direction:column;gap:6px}
 .pc-w{border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.6}
@@ -3490,7 +3494,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.29</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.30</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -7726,8 +7730,35 @@ function planLotAlloc(b) {
   const parts = new Map();
   const add = (vk, x) => { if (!(x.qty > 0)) return; let a = parts.get(vk); if (!a) parts.set(vk, a = []); a.push(x); };
   const progOf = (valve, proc) => { const f = _valveFlow(valve).map(_procCanon); const i = f.indexOf(_procCanon(proc || '')); return f.length ? (i + 1) / f.length : 0; };
-  for (const it of (b.wipOut.items || [])) {
+  /* ★ v4.30 (ผู้ใช้ 15/11 — เบอร์ที่ VSM4 ทำแค่บางขั้น · เลือก "จบเมื่อส่วน VSM4 จบ 🏁") ดู VSM4:
+     ① ล็อตใน WIP ที่ติด 🏁 (v4EndOf — กติกาเดียวกับยอด WIP กำลังผลิต) = จบแล้วสำหรับแผนขาย VSM4 (เดิม = กำลังผลิต ค้างจนกว่า VSM4 จะลง FG ซึ่งไม่เกิด)
+        วันจบ (ตัดล็อตเก่าตาม planFinDays) = วันล่าสุดที่ล็อตมียอด VSM3+VSM4 (_v4IdxGen L.tl) — ล็อตที่ VSM3 ยังทำต่ออยู่ = วันล่าสุด · ล็อตที่เงียบไปนาน = ขายรอบก่อน / ของหายจากไลน์
+     ② ส่วนที่ไปผ่าน FG ที่ VSM3 (wipOut.v4fg) = ผ่าน FG (เดิมหายไปจากแผนเลย — ไม่อยู่ทั้ง WIP และ WIP OUT ของ VSM4)
+     x.v4 / x.v3 ติดไปกับ Lot ที่จัดสรร (ป้าย 🏁 / VSM3) · ตัววางแผนเครื่องยังถือว่าล็อต 🏁 อยู่ในไลน์ (ขั้นของ VSM3 ที่เหลือได้วันขายตามเดิม) */
+  const v4on = viewVsm() === 'vsm4';
+  const tlOf = (valve, lot) => { const L = _v4Ix && _v4Ix.lots && _v4Ix.lots.get(jobKey(valve, lot)); return (L && L.tl) || ''; };
+  /* ผ่าน FG ที่ VSM3 นับว่า "ส่วน VSM4 จบ" ได้ก็ต่อเมื่อ FG อยู่หลังทุกขั้นของ VSM4 (ตำแหน่งเดียวกับ 'beyond' ใน v4EndOf) หรือ v4EndOf บอกจบแล้ว
+     VF1349M1: SSG…FG ที่ VSM3 ก่อน แล้วค่อย IND · COT · TL · BUFF ที่ VSM4 → ผ่าน FG ยังไม่ใช่จบ (ข้าม = เหมือนเดิม) */
+  const fgBeyond = new Map();
+  const peerOk = it => {
+    const vk = vKey(it.valve);
+    let ok = fgBeyond.get(vk);
+    if (ok === undefined) {
+      ok = false;
+      try {
+        const sc = _v4Scope(vk);
+        if (sc && sc.last < 0) ok = true;
+        else if (sc) for (let i = sc.last + 1; i < sc.flow.length; i++) if (sc.fams[i] === 'FG' && !sc.isV4[i] && sc.pos[i] > sc.pos[sc.lastL]) { ok = true; break; }
+      } catch (e) {}
+      fgBeyond.set(vk, ok);
+    }
+    if (ok) return true;
+    try { const ve = v4EndOf(it.valve, it.lot); return !!(ve && ve.done); } catch (e) { return false; }
+  };
+  for (const it of (b.wipOut.items || []).concat(v4on ? (b.wipOut.v4fg || []) : [])) {
     const vk = vKey(it.valve); if (!byV.has(vk)) continue;
+    if (it.peer && !peerOk(it)) continue;
+    if (it.peer) { const f = String(it.date || '').slice(0, 10); add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'done', v3: true, qty: Number(it.qty) || 0, fin: f, proc: 'FG', prog: 2, recv: f }); continue; }
     const isDone = it.curProc === 'DONE';
     let q = Number(it.qty) || 0;
     if (!q && isDone) q = jobFgQty(it.valve, it.lot);   // ★ v4.06 ผ่าน FG ทุกวัน (เดิม = ยอดตอนกดจบ)
@@ -7744,6 +7775,13 @@ function planLotAlloc(b) {
     // ★ v4.11 Admin เติมยอด FG ให้ล็อตนี้แล้ว = ผ่าน FG ตามแผน (ตรงกับตัววางแผนเครื่อง ที่ไม่วาง FG ให้ล็อตนี้อีก) — ไม่ใช่ยอด WIP OUT / Dashboard
     const af = pfAdmOfJob(it.valve, it.lot).FG;   // ★ v4.20 ยังมีขั้นผลิตหลัง FG (postFgLeft) = ยังกำลังผลิต ไม่ใช่ผ่าน FG
     if (af && !postFgLeft(it.valve, it.lot).length) { add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'fg', qty: Number(it.qty) || 0, fin: af.date, proc: 'FG', prog: 2, recv: af.date }); continue; }
+    // ★ v4.30 ① 🏁 ส่วน VSM4 จบแล้ว — ล็อตที่มีใบรับเข้า VSM4 ติดมาจาก _wipGen · ล็อตที่ VSM4 ทำโดยไม่มีใบ (เช่น VF1349M1 รับต่อจาก VSM3 หลัง FG) ตรวจที่นี่
+    const ve = !v4on ? null : it.v4end || (it.basis === 'produced' ? v4EndOf(it.valve, it.lot) : null);
+    if (ve && ve.done) {
+      const f = tlOf(it.valve, it.lot) || String(it.date || '').slice(0, 10);
+      add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'done', v4: true, qty: Number(it.qty) || 0, fin: f, proc: it.curProc || '', prog: 2, recv: f });
+      continue;
+    }
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: Number(it.qty) || 0, proc: it.curProc || '', prog: progOf(it.valve, it.curProc),
               recv: String(it.date || '').slice(0, 10), noIntake: it.basis === 'produced' });
   }
@@ -7768,7 +7806,7 @@ function planLotAlloc(b) {
     L.sort((a, c) => (RK[a.st] - RK[c.st]) || (a.st === 'wip' ? c.prog - a.prog : 0)
       || String(isFin(a) ? a.fin : a.recv).localeCompare(String(isFin(c) ? c.fin : c.recv)) || a.lk.localeCompare(c.lk));
     const R = ps.map(p => ({ p, vk, due: _planDateISO(p.plan_date), order: Number(p.quantity) || 0, need: Number(p.quantity) || 0, lots: [], keys: planLotKeys(p) }));
-    const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake }); };
+    const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake, v4: !!x.v4, v3: !!x.v3 }); };
     for (const r of R) {                                   // ① แผนที่ระบุ Lot → Lot นั้น (คนเลือกแล้ว ไม่ดูช่วงวัน) ตามลำดับที่พิมพ์
       if (!r.keys.length) continue;
       for (const k of r.keys) for (const x of L) { if (r.need <= 0) break; if (x.left > 0 && planLotHit([k], x.lk)) give(r, x, Math.min(r.need, x.left)); }
@@ -7800,10 +7838,10 @@ function planLotAlloc(b) {
       for (const l of r.lots) {
         const k = vk + '::' + l.lk;
         let a = byLot.get(k); if (!a) byLot.set(k, a = []);
-        a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order, named: r.keys.length > 0 });
+        a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order, named: r.keys.length > 0, v4: !!l.v4 });
       }
     }
-    spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, fin: x.fin || '' })));
+    spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, fin: x.fin || '', v4: !!x.v4, v3: !!x.v3 })));
   }
   _plaKey = key;
   return (_plaCache = { byPlan, byId, byLot, spare, fin, seq: ++_plaSeq, today });
@@ -7815,7 +7853,9 @@ function planAllocOf(p) {
 }
 /* ป้ายสั้นของ Lot ที่จัดสรรให้แผน — "2605S050346 · 1,000 · รอผลิต" (ใช้ในตาราง/ป๊อปอัป/บอร์ด) */
 function planLotTxt(l) {
+  if (l.v4) return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${TT('🏁 ส่วน VSM4 จบแล้ว', '🏁 VSM4 part done')}`;   // ★ v4.30
   const lb = _PLA_ST_LB[l.st] || ['', ''];
+  if (l.v3) return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${TT('✅ ผ่าน FG ที่ VSM3', '✅ passed FG at VSM3')}`;
   const where = l.st === 'wip' ? (l.proc || TT(lb[0], lb[1])) : l.st === 'fg' ? `${TT(lb[0], lb[1])}${l.proc && l.proc !== 'FG' ? ' · ' + l.proc : ''}` : TT(lb[0], lb[1]);
   return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${where}`;
 }
@@ -7888,22 +7928,32 @@ function selectPlanMonth(ym){
   }
   renderPlans();
 }
+/* ★ v4.30 (ผู้ใช้ 15/11 วง Order พ.ย. 855,084 "บางรายการเราผลิตแค่บางกระบวนการ ไม่ได้ผลิตทั้งหมด" · เลือก "นับเต็ม แต่แยกให้เห็น")
+   เบอร์ที่ VSM4 ทำแค่บางขั้น = ขอบเขต VSM4 ③④ VSM3-4 หรือ ③ VSM3 (ตารางเดียวกับ Master Valve 📋 / เส้นทาง 🔀) · ดู VSM4 เท่านั้น
+   ยอด Order ไม่เปลี่ยน — แค่บอกว่าส่วนไหนทำบางขั้น (ข้อมูล 15/11: พ.ย. 640,012 จาก 855,084 · VV7296M1 IND 199,927 · VV7295M0 IND 142,560) */
+function planPartValve(valve) {
+  if (viewVsm() !== 'vsm4') return false;
+  try { const L = mpLineOf(valve); return !!(L && (L.line === 'vsm34' || L.line === 'vsm3')); } catch (e) { return false; }
+}
 function renderPlanMonths(){
   const y = _planYear || new Date().getFullYear();
   if($('planYearLbl')) $('planYearLbl').textContent = y;
-  const tot = new Array(12).fill(0); let yTot = 0;
+  const tot = new Array(12).fill(0), part = new Array(12).fill(0); let yTot = 0, yPart = 0;
   for(const p of filterVsm(state.plans||[])){
     if(p.status==='cancelled') continue;
     const d = _planDateISO(p.plan_date); if(!d.startsWith(y+'-')) continue;
-    const mo = +d.slice(5,7); if(mo>=1&&mo<=12){ const q=Number(p.quantity)||0; tot[mo-1]+=q; yTot+=q; }
+    const mo = +d.slice(5,7); if(mo>=1&&mo<=12){ const q=Number(p.quantity)||0; tot[mo-1]+=q; yTot+=q;
+      if(q && planPartValve(p.valve_no)){ part[mo-1]+=q; yPart+=q; } }
   }
-  if($('planYearTotal')) $('planYearTotal').textContent = yTot ? `รวมทั้งปี ${nn(yTot)} ชิ้น` : 'ยังไม่มีแผนปีนี้';
+  if($('planYearTotal')) $('planYearTotal').textContent = yTot ? `รวมทั้งปี ${nn(yTot)} ชิ้น${yPart?` · ${TT('VSM4 ผลิตบางส่วน','VSM4 partial')} ${nn(yPart)}`:''}` : 'ยังไม่มีแผนปีนี้';
   const grid = $('planMonthGrid'); if(grid){
     grid.innerHTML = _TH_MON.map((_thMn,i)=>{ const mn = monName(i);
-      const ym = `${y}-${P(i+1)}`, q = tot[i], active = _planMonthSel===ym, has = q>0;
-      return `<button onclick="selectPlanMonth('${ym}')" style="text-align:center;border:1.5px solid ${active?'var(--blue)':has?'var(--blue-soft)':'#E5E7EB'};background:${active?'var(--blue)':has?'#fff':'#F9FAFB'};color:${active?'#fff':has?'var(--blue-dark)':'#9CA3AF'};border-radius:9px;padding:7px 4px;cursor:pointer;font-family:inherit;transition:.12s">
+      const ym = `${y}-${P(i+1)}`, q = tot[i], pq = part[i], active = _planMonthSel===ym, has = q>0;
+      const tip = pq ? ` title="${escapeHtml(`${TT('ผลิตทั้งหมด','full route')} ${nn(q-pq)} · ${TT('ผลิตบางส่วน','partial')} ${nn(pq)} — ${TT('VSM4 ทำแค่บางกระบวนการ (ขอบเขต VSM4 ③④)','VSM4 does only some processes (VSM4 scope ③④)')}`)}"` : '';
+      return `<button onclick="selectPlanMonth('${ym}')"${tip} style="text-align:center;border:1.5px solid ${active?'var(--blue)':has?'var(--blue-soft)':'#E5E7EB'};background:${active?'var(--blue)':has?'#fff':'#F9FAFB'};color:${active?'#fff':has?'var(--blue-dark)':'#9CA3AF'};border-radius:9px;padding:7px 4px;cursor:pointer;font-family:inherit;transition:.12s">
         <div style="font-size:11px;font-weight:800">${mn} ${String(y).slice(2)}</div>
         <div style="font-size:13.5px;font-weight:900;margin-top:1px">${has?nn(q):'—'}</div>
+        ${pq?`<div style="font-size:10px;font-weight:700;margin-top:1px;white-space:nowrap;opacity:.8">${TT('บางส่วน','partial')} ${nn(pq)}</div>`:''}
       </button>`;
     }).join('');
   }
@@ -8746,8 +8796,8 @@ function planQSInput(v) {
 // ป้ายสถานะของ Lot ที่จัดสรรให้แผน (คำเต็ม — โหมดดูง่ายไม่ใช้ตัวย่อ)
 const _PLS_LB = { done: ['✅', 'จบงานแล้ว', 'finished'], fg: ['✅', 'ผ่าน FG แล้ว', 'past FG'], wip: ['⚙️', 'กำลังผลิต', 'in production'], in: ['📥', 'รับเข้าแล้ว รอผลิต', 'received, waiting'] };
 function _plsLotHtml(l) {
-  const [ic, th, en] = _PLS_LB[l.st] || ['📦', '', ''];
-  const at = l.st === 'wip' && l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : (l.st === 'done' || l.st === 'fg') && l.fin ? ` · ${_mpD(l.fin).slice(0, 5)}` : '';
+  const [ic, th, en] = l.v4 ? ['🏁', 'ส่วน VSM4 จบแล้ว', 'VSM4 part done'] : l.v3 ? ['✅', 'ผ่าน FG ที่ VSM3', 'passed FG at VSM3'] : _PLS_LB[l.st] || ['📦', '', ''];   // ★ v4.30
+  const at = l.v4 ? (l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : '') : l.st === 'wip' && l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : (l.st === 'done' || l.st === 'fg') && l.fin ? ` · ${_mpD(l.fin).slice(0, 5)}` : '';
   return `<div class="pls-lot ${l.st}"><span class="lt">📦 ${escapeHtml(l.lot || TT('(ไม่มี Lot)', '(no lot)'))}</span><span class="lq">${nn(l.qty)}</span><span class="ls">${ic} ${TT(th, en)}${at}</span></div>`;
 }
 /* ของในไลน์ของเบอร์นี้ (ไม่ผูกแผน) — ใช้กับเบอร์ที่ยังไม่มีแผนขาย: กำลังผลิต + รับเข้ารอผลิต (กติกาเดียวกับ planLotAlloc) */
@@ -9030,15 +9080,18 @@ function renderPlanCompare(visibleRows){
   const outBy={}; for(const r of outRows) outBy[r.id]=r;
   const agg={};
   for(const r of inRows){
-    const a=agg[r.cust]||(agg[r.cust]={cust:r.cust,order:0,inQ:0,outQ:0});
+    const a=agg[r.cust]||(agg[r.cust]={cust:r.cust,order:0,inQ:0,outQ:0,part:0,outPart:0});
+    const o=outBy[r.id]?outBy[r.id].got:0, isPart=planPartValve(r.valve);   // ★ v4.30 เบอร์ที่ VSM4 ผลิตบางส่วน
     a.order+=r.order;
+    if(isPart){ a.part+=r.order; a.outPart+=o; }
     a.inQ+=r.got;                                  // รวมส่วนที่ผลิต/รับเกินยอดสั่งด้วย — ของมีอยู่จริงในไลน์
-    a.outQ+=(outBy[r.id]?outBy[r.id].got:0);
+    a.outQ+=o;
   }
   const list=CUST_GROUPS.filter(c=>agg[c]).map(c=>agg[c]);
   for(const c in agg) if(!CUST_GROUPS.includes(c)) list.push(agg[c]);
   if(!list.length){ box.innerHTML=''; return; }
-  const tot=list.reduce((a,r)=>({order:a.order+r.order,inQ:a.inQ+r.inQ,outQ:a.outQ+r.outQ}),{order:0,inQ:0,outQ:0});
+  const tot=list.reduce((a,r)=>({order:a.order+r.order,inQ:a.inQ+r.inQ,outQ:a.outQ+r.outQ,part:a.part+r.part,outPart:a.outPart+r.outPart}),{order:0,inQ:0,outQ:0,part:0,outPart:0});
+  const partTxt=q=>q?` · ${TT('ผลิตบางส่วน','partial')} ${nn(q)}`:'';
   // ── คำเตือนเทียบวันที่ขาย ──
   const today=todayISO();
   const soonCut=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
@@ -9054,20 +9107,27 @@ function renderPlanCompare(visibleRows){
   const sumQ=a=>a.reduce((s,x)=>s+x.short,0);
   const MAXB=280;   // ความกว้างแท่งสูงสุด (px) — ให้แถบสามชั้นเทียบกันด้วยสเกลเดียว
   const maxV=Math.max(1,...list.map(r=>Math.max(r.order,r.inQ,r.outQ)));
-  const barRow=(lb,v,col,base)=>{
+  const barRow=(lb,v,col,base,cls)=>{
     const w=Math.round(v/maxV*MAXB);
     const p=base>0?Math.round(v/base*100):(v>0?100:0);
-    return `<div class="pc-bl"><span class="pc-bk">${lb}</span>
+    return `<div class="pc-bl${cls?' '+cls:''}"><span class="pc-bk">${lb}</span>
       <span class="pc-bw"><i style="width:${w}px;background:${col}"></i></span>
       <b class="pc-bv">${nn(v)}</b>${base?`<small class="pc-bp">${p}%</small>`:''}</div>`;
   };
+  /* ★ v4.30 (ผู้ใช้ 15/11 "WIP OUT แยกชัดๆ เลยนะ ที่ผลิตทั้งหมด กับ ที่ผลิตบางส่วน") — ใต้แถว WIP OUT แยก 2 แถว
+     ผลิตทั้งหมด = ผ่าน FG (% เทียบ Order ของเบอร์ที่ผลิตทั้งหมด) · ผลิตบางส่วน = 🏁 ส่วน VSM4 จบ / ผ่าน FG ที่ VSM3 (% เทียบ Order ของเบอร์ที่ผลิตบางส่วน)
+     โชว์เฉพาะลูกค้าที่มี Order ผลิตบางส่วน (ไม่มี = WIP OUT ทั้งแถวคือผลิตทั้งหมดอยู่แล้ว) */
+  const outSplit=r=>r.part?
+      barRow(`↳ ${TT('ผลิตทั้งหมด','full route')}`,r.outQ-r.outPart,'#34D399',r.order-r.part,'sub')
+    + barRow(`↳ ${TT('ผลิตบางส่วน','partial')} 🏁`,r.outPart,'#0F766E',r.part,'sub'):'';
   const cards=list.map(r=>`
-    <div class="pc-card" style="border-left:4px solid ${custColor(r.cust)}">
+    <div class="pc-card${r.part?' split':''}" style="border-left:4px solid ${custColor(r.cust)}">
       <div class="pc-hd"><b style="color:${custColor(r.cust)}">${escapeHtml(r.cust)}</b>
-        <span class="muted" style="font-size:11px">Order ${nn(r.order)} ${TT('ชิ้น','pcs')}</span></div>
+        <span class="muted" style="font-size:11px">Order ${nn(r.order)} ${TT('ชิ้น','pcs')}${partTxt(r.part)}</span></div>
       ${barRow('Order',r.order,'#94A3B8',0)}
       ${barRow('WIP IN',r.inQ,'#1A56DB',r.order)}
       ${barRow('WIP OUT',r.outQ,'#059669',r.order)}
+      ${outSplit(r)}
       <div class="pc-gap">${r.order-r.outQ>planTol(r.order)
         ? `<span style="color:#DC2626">${TT('ยังต้องส่งอีก','still to ship')} <b>${nn(r.order-r.outQ)}</b></span>`
         : `<span style="color:#059669">✓ ${TT('ออกครบยอดสั่งแล้ว','shipped in full')}</span>`}
@@ -9083,11 +9143,11 @@ function renderPlanCompare(visibleRows){
   box.innerHTML=`
    <details class="pl-sec pc-sec" id="planCmpSec" ${_plSecGet('cmp',true)?'open':''} ontoggle="_plSecSave('cmp',this.open);_plFoldBtnSync()">
     <summary><span>📊 ${TT('Order / WIP IN / WIP OUT แยกลูกค้า','Order / WIP IN / WIP OUT by customer')}</span>
-      <span class="pl-secsum">Order <b>${nn(tot.order)}</b> · IN <b style="color:#1A56DB">${nn(tot.inQ)}</b> · OUT <b style="color:#059669">${nn(tot.outQ)}</b>${anyWarn?` · <b style="color:#DC2626">⚠️ ${nn(W.late.length+W.soon.length)}</b>`:''}</span></summary>
+      <span class="pl-secsum">Order <b>${nn(tot.order)}</b>${tot.part?` <small>(${TT('บางส่วน','partial')} ${nn(tot.part)})</small>`:''} · IN <b style="color:#1A56DB">${nn(tot.inQ)}</b> · OUT <b style="color:#059669">${nn(tot.outQ)}</b>${tot.part?` <small>(${TT('ผลิตทั้งหมด','full')} ${nn(tot.outQ-tot.outPart)} · ${TT('บางส่วน','partial')} ${nn(tot.outPart)})</small>`:''}${anyWarn?` · <b style="color:#DC2626">⚠️ ${nn(W.late.length+W.soon.length)}</b>`:''}</span></summary>
     <div class="pl-secbd">
       <div class="muted" style="font-size:11px;line-height:1.6;margin-bottom:8px">
         ${TT('คิดจากแถวที่กำลังกรองอยู่ในตารางข้างล่าง','Based on the rows currently filtered in the table below')}
-        (${nn(inRows.length)} ${TT('แผน','plans')}) · ${TT('WIP IN = ของที่รับเข้ามาแล้ว · WIP OUT = ของที่ผ่าน FG แล้ว','WIP IN = received · WIP OUT = passed FG')}
+        (${nn(inRows.length)} ${TT('แผน','plans')}) · ${TT('WIP IN = ของที่รับเข้ามาแล้ว · WIP OUT = ของที่ผ่าน FG แล้ว','WIP IN = received · WIP OUT = passed FG')}${viewVsm()==='vsm4'?TT(' หรือ 🏁 ส่วน VSM4 จบแล้ว (เบอร์ที่ VSM4 ผลิตบางส่วน)',' or 🏁 VSM4 part done (valves VSM4 only partly makes)'):''}
         · ${TT(`นับเฉพาะ Lot ที่จัดสรรให้แผนนั้น (Lot ที่เสร็จก่อนวันขายเกิน ${planFinDays()} วัน = ขายรอบก่อนไปแล้ว ไม่นับ)`,`only lots allocated to each plan (lots finished more than ${planFinDays()} days before the sale date count as already sold)`)}
       </div>
       <div class="pc-grid">${cards}</div>
@@ -11910,7 +11970,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.29":"Production Record + KPI · v4.29",
+"ระบบบันทึกผลิต + KPI · v4.30":"Production Record + KPI · v4.30",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -18738,6 +18798,20 @@ function* _wipGen(){
       date:it.fgDate||it.date||'', moveDate:it.date||'', fgByDate:it.fgByDate||{}, unknown:!!it.unknown,
       machines:[...(mcByJob[jobKey(it.valve,it.lot)]||[])]});
   }
+  /* ★ v4.30 (ผู้ใช้ 15/11 "ใน order จริงๆก็ไม่ถูกทั้งหมด เพราะบางรายการเราผลิตแค่บางกระบวนการ") — ดู VSM4:
+     ล็อตที่ VSM4 รับเข้า แต่ไปผ่าน FG ที่ VSM3 (เบอร์ ③④ เช่น VV7296M1 ทำแค่ IND) → wipOut.v4fg = ส่วนที่ VSM3 ลง FG
+     ใช้กับแผนขาย (planLotAlloc) เท่านั้น · ยอด WIP OUT / Output ของ Process ของ VSM4 ไม่เปลี่ยน (ไม่บวก total)
+     ล็อตที่ VSM4 กดจบ (DONE) ไว้แต่ไม่มียอด FG ของตัวเอง ใช้ยอด FG ทุกสาย (jobFgQty) ใน planLotAlloc อยู่แล้ว → ข้าม กันนับซ้ำ */
+  wipOut.v4fg=[];
+  if(v4on && _peer){
+    const own=new Map(); for(const it of fgItems) own.set(jobKey(it.valve,it.lot),it);
+    for(const it of fgItemsAny){
+      const k=jobKey(it.valve,it.lot); if(!wipInByJob[k] || it.unknown) continue;
+      const o=own.get(k); if(o && o.cur==='DONE' && !(Number(o.qty)>0)) continue;
+      const q=(Number(it.qty)||0)-(o?(Number(o.qty)||0):0); if(q<=0) continue;
+      wipOut.v4fg.push({valve:it.valve,lot:it.lot,qty:q,curProc:it.cur,customer:it.customer,date:it.fgDate||it.date||'',moveDate:it.date||'',peer:true});
+    }
+  }
 
   // ---- WIP IN 1.5 (รับเข้าที่ยังไม่เริ่มผลิต) ----
   const wipIn={total:0,byCust:{},items:[]};
@@ -23698,7 +23772,7 @@ function cvFind(valveNo, mode) {
   for (const x of out) {
     const line = cvLineWork(x.vk);
     // เบอร์ที่มีแผนขาย: ว่าง = Lot ที่เหลือหลังจัดให้แผนขายทุกใบแล้ว · ไม่มีแผนขายเลย = งานในสายว่างทั้งหมด
-    const spare = (A && A.spare.has(x.vk)) ? A.spare.get(x.vk).filter(l => l.st === 'wip' || l.st === 'in') : line;
+    const spare = (A && A.spare.has(x.vk)) ? A.spare.get(x.vk).filter(l => l.st === 'wip' || l.st === 'in' || l.v4) : line;   // ★ v4.30 🏁 ยังอยู่ในไลน์ (เหมือนเดิม)
     // ล็อตที่จัดให้แผนขายแล้ว (แม้บางส่วน) ไม่นับว่าเงียบ — ตัววางแผนก็ยังวางล็อตที่มีแผนขาย · ล็อตว่างที่เงียบ = แยกไว้ ไม่นับเป็นงานว่าง
     const sil = l => !(A && A.byLot.has(x.vk + '::' + l.lk)) && SIL.is(x.vk, l.lot);
     x.free = spare.filter(l => !sil(l));
@@ -31291,7 +31365,7 @@ function mpJobs(S, ctx) {
       const [v, lot] = rawName[k], lk = lotKey(lot);
       if (!lk || isExtraLot(lk) || /[,;]/.test(lk) || !isKnownValve(v)) continue;   // Lot สมทบ / หลาย Lot ในช่องเดียว = ไม่ใช่งาน 1 ล็อต
       if (getJobProc(v, lot) || pfAdmOfJob(v, lot).FG) continue;                     // จบแล้ว / Admin ขยับไปหลัง FG แล้ว
-      if (lastActOf(k) < noSlipCut && !mpLotKeep(k) && !(A.byLot.get(k) || []).some(x => (x.st === 'wip' || x.st === 'in') && x.date >= minDue)) continue;
+      if (lastActOf(k) < noSlipCut && !mpLotKeep(k) && !(A.byLot.get(k) || []).some(x => (x.st === 'wip' || x.st === 'in' || x.v4) && x.date >= minDue)) continue;
       raw.push({ kind: 'wip', noSlip: true, valve: v, lot, customer: custOfValve(v), qty: 0, base: 0, total: 0, recv: lastActOf(k), curProc: '' });
     }
   }
@@ -31477,7 +31551,7 @@ function mpJobs(S, ctx) {
   for (const j of jobs) {
     if (j.noflow) continue;
     for (const x of (A.byLot.get(j.k) || [])) {
-      if ((x.st !== 'wip' && x.st !== 'in') || x.date < minDue) continue;
+      if ((x.st !== 'wip' && x.st !== 'in' && !x.v4) || x.date < minDue) continue;   // ★ v4.30 🏁 = จบสำหรับแผนขาย VSM4 แต่ล็อตยังอยู่ในไลน์ (ขั้น VSM3 ที่เหลือได้วันขายตามเดิม)
       (j.plans = j.plans || []).push({ date: x.date, qty: x.qty, named: !!x.named });
       if (!j.due || x.date < j.due) j.due = x.date;
     }
