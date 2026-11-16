@@ -1348,6 +1348,15 @@ button.mpv-rz:focus-visible{outline:2px solid var(--zc);outline-offset:1px}
 .mpdn .mpdn-ds input[type=date]{width:auto;min-height:38px;padding:4px 8px;font-size:13px}
 .mpdn-note{margin-top:6px;font-size:11.5px;font-weight:500;color:var(--muted);line-height:1.55}
 .mpdn-go{position:sticky;bottom:-16px;z-index:1;padding:8px 0;background:#fff;border-top:1px solid #F1F5F9}
+.iotpop-bg.side .mpdn-go{bottom:-12px}
+/* ★ v4.31 แท็บสาย + รายการเลื่อนลง (แทนปุ่ม 65 เครื่อง) */
+.mpdn-vs{display:flex;flex-wrap:wrap;gap:4px}
+.mpdn-vs button{flex:1 1 auto;min-height:34px;padding:3px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;font:inherit;font-size:12px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.mpdn-vs button:hover{border-color:#BFDBFE;background:#F8FAFC}
+.mpdn-vs button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.mpdn-vs button b{color:#DC2626}
+.mpdn-vs button[aria-pressed="true"] b{color:#fff}
+.mpdn select{width:100%;min-height:40px;font-size:14px}
 .mpdn-hs summary{font-size:12px;font-weight:700;color:#64748B;cursor:pointer;min-height:28px;display:flex;align-items:center}
 .mpdn-hr{padding:5px 2px;border-top:1px solid #F1F5F9;font-size:12px;color:#475569;line-height:1.5}
 .mpdn-hr b{color:#0F172A;font-weight:800}
@@ -2020,6 +2029,13 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 @keyframes iotpopFade{from{opacity:0}to{opacity:1}}
 @keyframes iotpopIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.iotpop,.iotpop-bg{animation:none}}
+/* ★ v4.31 กล่องเล็กชิดขวาบน (🔧 แจ้งเครื่องเสีย) — ไม่มีฉากมืด · ผังข้างหลังยังเห็นและแตะได้ (ผู้ใช้ 16/11 "บังทั้งหน้าจอ") */
+.iotpop-bg.side{background:transparent;align-items:flex-start;justify-content:flex-end;padding:10px;pointer-events:none;animation:none}
+.iotpop-bg.side>.iotpop{pointer-events:auto;max-width:380px;max-height:calc(100% - 20px);box-shadow:0 10px 36px rgba(13,17,23,.38),0 0 0 1px rgba(13,17,23,.06)}
+.iotpop-bg.side .iotpop-hd{padding:9px 12px}
+.iotpop-bg.side .iotpop-cl{width:34px;height:34px;min-width:34px}
+.iotpop-bg.side .iotpop-bd{padding:12px}
+@media (max-width:480px){.iotpop-bg.side{padding:6px}.iotpop-bg.side>.iotpop{max-width:none}}
 
 /* ===== ต่อกะ (SHIFT HANDOVER) — แผง side ใน IOT เต็มจอ (ขยายอัตโนมัติตามปริมาณข้อมูล) ===== */
 /* side panel: ซ่อนปกติ → แสดงเฉพาะเต็มจอ · ปุ่มกางผัง: ใช้เฉพาะมือถือเต็มจอ (ดู media query ล่าง) */
@@ -2171,6 +2187,9 @@ section.pane > .card:not(#iotCard):not(:has(.ac, .ac-dd, .pcp)), section.pane > 
 .f3s-chip.top,.f3s-chip.sos{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5}
 .f3s-chip.down{background:#DC2626;color:#fff;border-color:#B91C1C}
 .f3s-go+.mpdn-rep{margin-top:8px}
+.f3s-acts{display:flex;gap:8px;align-items:stretch}
+.f3s-acts>.f3s-go{flex:1 1 auto;width:auto;margin:0}
+.f3s-acts>.mpdn-rep{flex:0 0 auto;width:auto;margin:0;padding:0 12px;font-size:13px;white-space:nowrap}
 .mpdn-rep{display:block;width:100%;min-height:42px;margin-top:10px;font-weight:800;color:#B91C1C;border-color:#FCA5A5}
 .f3s-g{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .f3s-g>div{background:#F8FAFC;border:1px solid #EEF2F7;border-radius:11px;padding:7px 4px;text-align:center;min-width:0}
@@ -3494,7 +3513,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.30</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.31</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -4786,8 +4805,7 @@ let state = {
   adminUnlocked: false,
 };
 
-// ยุบ TOP+HOD → TOP&HOD ตั้งแต่ boot (เผื่อ offline/ยังไม่โหลด cloud) — persist ถ้ามีการเปลี่ยน
-if (normalizeAllValves()) lsSave(LS.VALVES, state.valves);
+// ★ v4.31 ไม่ยุบ TOP+HOD ตอนเปิดแอปแล้ว — TOP ต่อด้วย HOD ที่ตั้งใจแยกในฟอร์ม Valve ต้องอยู่ตามนั้น (ดู upsertValve)
 // ★ v3.80 เริ่มอ่าน cache ก้อนใหญ่จาก IndexedDB ตั้งแต่ตอนนี้ (ทับซ้อนกับเวลารันสคริปต์ที่เหลือ) — init() วาดจอใหม่เมื่อได้มา
 const _bigHydP = _bigHydrate().catch(() => false);
 // ย้ายของเก่ามาจาก localStorage แล้ว → เขียนลง IndexedDB ไว้ใช้รอบหน้า (ครั้งเดียว · ทยอยเขียนตอนเครื่องว่าง)
@@ -6304,6 +6322,14 @@ async function apiSave(path, body, opts = {}) {
   if (!API) return { ok: false, offline: true };
   try {
     const res = await api(path, { body, silent: opts.silent });
+    /* ★ v4.31 ชิ้นเดียวกัน (path + key) ที่ค้างคิวจากรอบก่อน = ของเก่ากว่าที่เพิ่งส่งสำเร็จ → ทิ้ง
+       เดิมส่งตามหลังไป → Cloud กลับเป็นค่าเก่า (แก้ Valve 2 รอบ รอบแรกเน็ตหลุด = รอบที่ 2 หายเมื่อซิงก์) */
+    if (opts.key && _pendW.length) {
+      const dk = path + '|' + opts.key; let hit = false;
+      for (const w of _pendW) if ((w.path + '|' + (w.key || '')) === dk) { w.sup = 1; hit = true; }
+      // คิวกำลังส่งอยู่ = แค่ทำเครื่องหมาย (flushPendingWrites ข้ามให้เอง · ห้ามแทนที่ array ระหว่างที่มันไล่ index)
+      if (hit && !_pendWBusy) { _pendW = _pendW.filter(w => !w.sup); _savePendW(); renderSyncBar(); }
+    }
     // ส่งสำเร็จ = เน็ตใช้ได้ → เคลียร์คิวเก่าที่ค้างไปด้วยเลย (ไม่ต้องรอ heartbeat)
     if (_pendW.length && !opts.noFlush) flushPendingWrites();
     return { ok: true, res };
@@ -6346,6 +6372,7 @@ async function flushPendingWrites() {
   // ส่งเรียงตามลำดับที่เข้าคิว — สำคัญเมื่อมีทั้ง "แก้" และ "ลบ" ของชิ้นเดียวกัน
   for (let i = 0; i < _pendW.length; ) {
     const w = _pendW[i];
+    if (w.sup) { _pendW.splice(i, 1); _savePendW(); continue; }   // ★ v4.31 มีรอบใหม่กว่าส่งสำเร็จไปแล้ว (apiSave)
     try {
       await api(w.path, { body: w.body, silent: true });
       _pendW.splice(i, 1); done++; _savePendW();
@@ -10555,12 +10582,13 @@ async function _pfTake(key) {
     return await p;
   } catch (e) { return null; }
 }
-let _initCache = null, _initCacheAt = 0, _initInflight = null;
+let _initCache = null, _initCacheAt = 0, _initInflight = null, _initCacheReqAt = 0;   // ★ v4.31 _initCacheReqAt = เวลาที่ "ขอ" ชุดนี้ (ดู _vEditKeep)
 async function apiInit(maxAgeMs = 0) {
   if (_initCache && (Date.now() - _initCacheAt) < maxAgeMs) return _initCache;
   if (_initInflight) return _initInflight;   // มีคำขอค้างอยู่ → ใช้ตัวเดียวกัน (ไม่ยิงซ้ำ)
-  _initInflight = _pfTake('init').then(r => r || api('/api/init'))
-    .then(r => { _initCache = r; _initCacheAt = Date.now(); _initInflight = null; return r; })
+  let reqAt = Date.now();
+  _initInflight = _pfTake('init').then(r => { if (r) reqAt = Math.round((performance && performance.timeOrigin) || 0); return r || api('/api/init'); })
+    .then(r => { _initCache = r; _initCacheAt = Date.now(); _initCacheReqAt = reqAt; _initInflight = null; return r; })
     .catch(e => { _initInflight = null; throw e; });
   return _initInflight;
 }
@@ -10627,7 +10655,7 @@ async function reload() {
     // ★ 2026-07-30: รับเฉพาะชุดที่ "มีข้อมูลจริง" — เดิม `res.valves || state.valves` ยอมรับ [] ด้วย
     //   (array ว่างเป็น truthy) → ถ้า Worker คืน valves:[] ชั่วคราว Master Valve จะถูกล้างทั้งก้อน
     const _ok = a => Array.isArray(a) ? a.length > 0 : (a && typeof a === 'object' && Object.keys(a).length > 0);
-    if (_ok(res.valves))    state.valves    = _mpMergeValveSpec(res.valves, state.valves);   // ★ v3.74 SD/TYPE (Worker เก่า = คงค่าในเครื่อง)
+    if (_ok(res.valves))    state.valves    = _vEditKeep(_mpMergeValveSpec(res.valves, state.valves), _initCacheReqAt);   // ★ v3.74 SD/TYPE (Worker เก่า = คงค่าในเครื่อง) · ★ v4.31 Valve ที่เพิ่งแก้หลังยิงขอ = ของในเครื่องชนะ
     if (_ok(res.machines))  state.machines  = res.machines;
     if (_ok(res.employees)) { captureEmpVsmFromApi(res.employees); state.employees = res.employees; }   // ★ 2026-08-16: เก็บ vsm ที่ D1 ส่งมาก่อนถูกเขียนทับ
     if (_ok(res.targets))   state.targets   = res.targets;
@@ -10635,8 +10663,9 @@ async function reload() {
     ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
     ensureVsmZones();         // seed เครื่องทดสอบของ zone VSM1/2/3 (D1 ไม่มี)
     normalizeEmployeeVsm();   // ผูก VSM ให้พนักงานที่ดึงจาก API (เดิม = vsm4)
-    // ยุบ TOP+HOD ติดกัน → TOP&HOD ใน Master Valve; ถ้ามีการเปลี่ยน = push กลับ cloud ครั้งเดียว (idempotent)
-    if (normalizeAllValves() && API) { api('/api/valves/bulk', { body: { valves: state.valves } }).catch(()=>{}); }
+    /* ★ v4.31 เลิกยุบ TOP+HOD ทั้ง Master ทุกครั้งที่ซิงก์ — เดิมยุบแล้วดัน "ทั้งตาราง" กลับ Cloud
+       → TOP ต่อด้วย HOD ที่ Admin ตั้งใจแยก 2 ขั้นถูกยุบคืนทุกเครื่อง + ดันของเก่าในเครื่องทับของที่คนอื่นเพิ่งแก้ได้
+       (ข้อมูลบน Cloud ยุบครบไปตั้งแต่ v3.7 แล้ว — วัด 16/11: TOP ติด HOD = 0 เบอร์) */
     lsSave(LS.VALVES,    state.valves);
     lsSave(LS.MACHINES,  state.machines);
     lsSave(LS.EMPLOYEES, state.employees);
@@ -11970,7 +11999,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.30":"Production Record + KPI · v4.30",
+"ระบบบันทึกผลิต + KPI · v4.31":"Production Record + KPI · v4.31",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -14571,7 +14600,7 @@ function renderFloorPlan(activeMachines, oaeMap={}) {
   if (!wrap) return;
   const fpv = _fpVsm();
 
-  if (fpv === MP_VSM) _mpDownPollStart();   // ★ v4.14 🔧 เครื่องเสียจากเครื่องอื่น
+  _mpDownPollStart();   // ★ v4.14 🔧 เครื่องเสียจากเครื่องอื่น · ★ v4.31 ทุกสาย
   const dnMap = mpDownOnMap(fpv, _iotData && _iotData.dTo);
   const boxes = _fpBoxes(fpv);    // ★ v3.97 ย้ายไป _fpBoxes (ผัง 3D ใช้กล่องชุดเดียวกัน)
   const labels = fpv==='vsm3' ? FP3_LB : [];
@@ -14764,7 +14793,7 @@ function _iotLegendHtml(fpv, nOn, tot, v3d) {
       <span style="display:inline-flex;align-items:center;gap:4px;color:#B91C1C">
         <span style="width:13px;height:13px;background:#DC2626;border:1.5px solid #fff;box-shadow:0 0 0 1px #DC2626;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8.5px;font-weight:900">1</span>${TT('TOP ปัญหา','TOP issue')}
       </span>
-      <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>${fpv === MP_VSM ? _mpDownChip() : ''}${v3d ? `
+      <span style="display:inline-flex;align-items:center;gap:3px;color:#B91C1C">🆘 SOS</span>${_mpDownChip(fpv)}${v3d ? `
       <span style="display:inline-flex;align-items:center;gap:4px;color:#475569"><span class="lg-pend"></span>${TT('รอข้อมูลจบกะ','Awaiting shift data')}</span>` : ''}
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#1A56DB;background:#EBF4FF;border:1px solid #BFDBFE;padding:3px 9px;border-radius:999px">👆 ${TT('แตะที่เครื่องเพื่อดูงาน','Tap a machine for details')} · Valve / Lot / OPR</span>
       <span class="iot-hint" style="align-items:center;gap:4px;font-size:10px;font-weight:700;color:#475569;background:#F1F5F9;border:1px solid #E2E8F0;padding:3px 9px;border-radius:999px">✋ ${TT('ลากพื้นที่ว่าง = เลื่อนผัง · ล้อเมาส์ = ซูม','Drag empty space to pan · wheel to zoom')}</span>
@@ -15093,10 +15122,14 @@ function _f3dSheet(id, pl, goBtn) {
   const hb = helps.map(h => `<div class="f3s-help${h.status === 'done' ? ' done' : ''}">${h.status === 'done' ? '✅' : '🆘'} ${escapeHtml(String(h.text || '').replace(/\s+/g, ' ').trim())}</div>`).join('');
   return `<div class="f3s-h"><span class="f3s-id">${escapeHtml(id)}</span></div>
     <div class="f3s-sub">${escapeHtml(VSM_LABEL[pl.vsm] || pl.vsm)}${zn ? ' · ' + escapeHtml(zn.label) : ''} · ${escapeHtml(pl.range || '')}</div>
-    <div class="f3s-chips">${chips.join('')}</div>${pl.vsm === MP_VSM ? _mpDownPopHtml(id, '', true) : ''}
+    <div class="f3s-chips">${chips.join('')}</div>${_mpDownPopHtml(id, '', true)}
     <div class="f3s-g"><div><b>${nn(d.opr)}</b><span>${TT('ยอดงาน (OPR)', 'Output (OPR)')}</span></div><div><b>${nn(d.tgt)}</b><span>Target</span></div><div><b class="${oc}">${oaeTxt}</b><span>OAE</span></div></div>
     <div class="f3s-sec">👷 ${TT('คนที่เข้าผลิต', 'Operators')} (${d.ppl.length})</div>${ppl}${jt}${hb}
-    ${goBtn != null ? goBtn : `<button type="button" class="btn btn-blue f3s-go" data-f3d-act="rec" data-id="${escapeHtml(id)}">📥 ${TT('ไปหน้าบันทึก', 'Go to Record')}</button>`}${pl.vsm === MP_VSM && !mpDownMap().has(id) ? _mpDownRepBtn(id) : ''}`;
+    ${(() => {   // ★ v4.31 ทุกสาย · ปุ่มแจ้งเสียอยู่แถวเดียวกับปุ่มไปหน้าบันทึก (แผ่นไม่สูงขึ้น)
+      const go = goBtn != null ? goBtn : `<button type="button" class="btn btn-blue f3s-go" data-f3d-act="rec" data-id="${escapeHtml(id)}">📥 ${TT('ไปหน้าบันทึก', 'Go to Record')}</button>`;
+      const rep = mpDownMap().has(id) ? '' : _mpDownRepBtn(id);
+      return rep ? `<div class="f3s-acts">${go}${rep}</div>` : go;
+    })()}`;
 }
 // ป้ายไลน์ VSM3 (TOP ปัญหาของ VSM3 จัดอันดับรายไลน์)
 function _f3dLineSheet(id, pl) {
@@ -15439,7 +15472,7 @@ function iotShowMcPop(id){
   const card=document.getElementById('iotCard'); if(!card) return;
   iotCloseMcPop();
   const det=_iotMcDetail(id);
-  const dnO=_fpVsm()===MP_VSM?mpDownOnMap(MP_VSM,_iotData&&_iotData.dTo).get(id):null;   // ★ v4.14 🔧
+  const dnO=mpDownOnMap(_fpVsm(),_iotData&&_iotData.dTo).get(id)||null;   // ★ v4.14 🔧 · ★ v4.31 ทุกสาย
   const theme = dnO?{bg:'linear-gradient(135deg,#DC2626,#991B1B)',pill:'#FEE2E2',pt:'#7F1D1D',label:TT('เครื่องเสีย','Machine down')}
               : det.status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:TT('ทำงาน','Running')}
               : det.status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:TT('ต้องช่วยเหลือ','Needs help')}
@@ -15466,7 +15499,7 @@ function iotShowMcPop(id){
   }
   // ★ v3.84 (ข้อ 4) จากผัง → แผนของเครื่องนี้ (IOT หน้า 3 กรองเฉพาะเครื่องนี้)
   if(viewVsm()===MP_VSM) body+=`<button type="button" class="btn btn-outline btn-block" style="margin-top:10px;min-height:42px;font-weight:800" onclick="iotCloseMcPop();mpiOpenMachine('${escapeHtml(id)}')">📅 ${TT('ดูแผนผลิตของเครื่องนี้','See this machine’s plan')}</button>`;
-  if(_fpVsm()===MP_VSM) body=_mpDownPopHtml(id,body);   // ★ v4.14 🔧 กล่องเครื่องเสีย / ปุ่มแจ้งเสีย
+  body=_mpDownPopHtml(id,body);   // ★ v4.14 🔧 กล่องเครื่องเสีย / ปุ่มแจ้งเสีย · ★ v4.31 ทุกสาย
   const pop=document.createElement('div');
   pop.id='iotMcPop'; pop.className='iotpop-bg';
   _iotMcId=id;                                    // จำไว้ให้สลับภาษาแล้ววาดใหม่ได้ (iotCloseMcPop ล้างให้)
@@ -16830,7 +16863,7 @@ function _ia3dPayload() {
     if (mc[b.id]) continue;
     const v = _iaBoxVsm(b), P = D.per[v]; if (!P) continue;
     const rs = P.byMc[b.id] || [], on = P.active.has(b.id), oae = P.oae[b.id] || 0, pd = pendV[v];
-    const st = (v === MP_VSM && dnAll.has(b.id)) ? 'down' : on ? (oae >= 0.75 ? 'good' : 'warn') : (pd.all || pd.open ? 'pend' : 'off');   // สีเดียวกับผังรวม 2D (OAE ช่วงที่เลือก)
+    const st = dnAll.has(b.id) ? 'down' : on ? (oae >= 0.75 ? 'good' : 'warn') : (pd.all || pd.open ? 'pend' : 'off');   // สีเดียวกับผังรวม 2D (OAE ช่วงที่เลือก)
     let opr = 0, tgt = 0; for (const r of rs) { opr += (+r.opr || 0); tgt += (+r.target || 0); }
     const jobs = _mcJobList(rs), lr = v === 'vsm3' ? rs.find(r => r.line_key) : null;
     mc[b.id] = { st, oae: on ? oae : null, opr, tgt, ppl: _f3dPeople(rs, em), top: _iotAllTop.rank[_iaTopKey(v, b.id)] || 0, sos: P.sos.has(b.id),
@@ -16957,7 +16990,7 @@ function _iotAllRenderMap(keepScroll){
     const active=P.active.has(b.id);
     const oae=P.oae[b.id]||0;
     if(active) nOn++;
-    const dn=v===MP_VSM?dnAll.get(b.id):null;
+    const dn=dnAll.get(b.id)||null;   // ★ v4.31 ทุกสาย
     let border,fill,tc,sw;
     if(dn){ border='#7F1D1D'; fill='#DC2626'; tc='#FFFFFF'; sw=2; }
     else if(!active){ border='#475569'; fill='#cbd5e1'; tc='#334155'; sw=1; }
@@ -17081,7 +17114,7 @@ function iotAllMcTap(v,id){
   const helps=recs.map(r=>({h:_recHelp(r),r})).filter(x=>x.h);
   const det={active,oae,status,shifts,tot,valves,helps};
   const mt=_IA_VSM_META[v];
-  const dnO=v===MP_VSM?mpDownOnMap(MP_VSM,_iotAllD.dTo).get(id):null;   // ★ v4.14 🔧
+  const dnO=mpDownOnMap(v,_iotAllD.dTo).get(id)||null;   // ★ v4.14 🔧 · ★ v4.31 ทุกสาย
   const theme = dnO?{bg:'linear-gradient(135deg,#DC2626,#991B1B)',pill:'#FEE2E2',pt:'#7F1D1D',label:TT('เครื่องเสีย','Machine down')}
               : status==='good'?{bg:'linear-gradient(135deg,#16a34a,#15803d)',pill:'#dcfce7',pt:'#14532d',label:TT('ทำงาน','Running')}
               : status==='warn'?{bg:'linear-gradient(135deg,#ea580c,#c2410c)',pill:'#ffedd5',pt:'#7c2d12',label:TT('ต้องช่วยเหลือ','Needs help')}
@@ -17104,7 +17137,7 @@ function iotAllMcTap(v,id){
       ${noRows?`<div style="font-size:12px;color:#94a3b8;text-align:center;padding:6px">${TT('ไม่มีรายละเอียดงาน','No job details')}</div>`:''}
       ${_iotHelpBlock(det)}`;
   }
-  if(v===MP_VSM) body=_mpDownPopHtml(id,body);   // ★ v4.14 🔧
+  body=_mpDownPopHtml(id,body);   // ★ v4.14 🔧 · ★ v4.31 ทุกสาย
   const pop=document.createElement('div');
   pop.id='iotAllPop'; pop.className='iotpop-bg';
   pop.addEventListener('click',e=>{ if(e.target===pop) pop.remove(); });
@@ -21065,7 +21098,7 @@ function showWipHistory(valveEnc, lotEnc, anyLot){
 }
 // ป๊อปอัปแบบ iotpop (โชว์ได้ใน native fullscreen) — append เข้า #iotCard
 function _openIotPop(title, body, stack, wide, host){
-  const card=host||document.getElementById('iotCard'); if(!card){ openModal(title, body, {wide}); return; }
+  const card=host||document.getElementById('iotCard'); if(!card){ openModal(title, body, {wide}); return null; }
   if(!stack){ const ex=document.getElementById('wipIotPop'); if(ex) ex.remove(); }
   const pop=document.createElement('div');
   pop.id=stack?('wipIotPop2_'+Date.now()):'wipIotPop';
@@ -21079,6 +21112,7 @@ function _openIotPop(title, body, stack, wide, host){
     <div class="iotpop-bd">${body}</div>
   </div>`;
   card.appendChild(pop);
+  return pop;   // ★ v4.31 ผู้เรียกเติมคลาสได้ (เช่น side = กล่องชิดขวาบน)
 }
 
 /* ── Quick Win #1: Home เปิดจาก local ทันที แล้ว sync เบื้องหลัง ──
@@ -27560,7 +27594,10 @@ function _mSeqRender() {
   // รอบที่ 2 ขึ้นไปของชื่อที่ซ้ำ → ใส่ชื่อ "ชื่อ*2" ไว้บนสุดของรายการ (แก้ได้ในแตะเดียว แม้ชื่อนั้นไม่มีในรายการมาตรฐาน เช่น TG*2)
   const fixOf = {}; for (const o of dups) o.at.slice(1).forEach((pos, k) => { fixOf[pos] = `${o.name}*${k + 2}`; });
   const warn = dups.length ? `<div class="mseq-dupw" role="alert">⛔ ${TT('Process ซ้ำ', 'Repeated process')}: <b>${escapeHtml(procDupText(dups))}</b> — ${TT('บันทึกไม่ได้', 'cannot be saved')} · ${procDupHint(dups)}</div>` : '';
-  host.innerHTML = warn + (_mProcSeq.length ? _mProcSeq.map((p, i) => {
+  // ★ v4.31 TOP ต่อด้วย HOD บันทึกตามที่เห็นแล้ว (เดิมยุบเป็น TOP&HOD เงียบ ๆ) → บอกสั้น ๆ ว่าเป็น 2 ขั้น
+  const th = isStd ? _mProcSeq.findIndex((p, i) => String(p).trim().toUpperCase() === 'TOP' && String(_mProcSeq[i + 1] || '').trim().toUpperCase() === 'HOD') : -1;
+  const thNote = th >= 0 ? `<div class="muted" style="font-size:11px;margin:0 0 6px">ℹ️ TOP (${th + 1}) › HOD (${th + 2}) = ${TT('2 ขั้นแยกกัน · ถ้าทำเครื่องเดียวกันในครั้งเดียว ให้เลือก', '2 separate steps · if one machine does both at once, pick')} TOP&amp;HOD</div>` : '';
+  host.innerHTML = warn + thNote + (_mProcSeq.length ? _mProcSeq.map((p, i) => {
     // std = เลือกจากลิสต์มาตรฐาน (VSM3/4) · VSM1/2 = พิมพ์ชื่อเองอิสระ (process ก่อนเข้า VSM3/4 คนละชุด)
     let ctrl;
     if (isStd) {
@@ -27781,11 +27818,15 @@ function lotKey(s) {
 }
 // upsert วาล์ว: ถ้า valveNo ซ้ำ (ไม่สนตัวพิมพ์) → ใช้ข้อมูลใหม่แทนที่ + ลบรายการซ้ำที่ค้างอยู่ทั้งหมด
 // คืนค่า true ถ้าเป็นการแทนที่ของเดิม, false ถ้าเป็นการเพิ่มใหม่
-function upsertValve(entry) {
+function upsertValve(entry, opts) {
   const key = vKey(entry.valveNo);
   entry.valveNo = key;                                   // เก็บเป็นตัวพิมพ์ใหญ่เสมอ
-  entry.processes = normalizeValveProcesses(entry.processes);   // ยุบ TOP+HOD ติดกัน → TOP&HOD
-  entry.processes = [...new Set(entry.processes.filter(Boolean))]; // กัน process ซ้ำ
+  /* ★ v4.31 (ผู้ใช้ 16/11 "เพิ่ม TOP HOD พร้อมกัน ระบบไม่เพิ่มให้ · บางครั้งนำข้อมูลเดิมกลับมา")
+     ฟอร์มแก้ Valve (opts.asIs) = บันทึกตามที่เห็นบนจอทุกตัว — เดิมยุบ TOP ที่ตามด้วย HOD เป็น TOP&HOD เงียบ ๆ
+     (เพิ่ม TOP + HOD ต่อท้ายพร้อมกัน = ติดกัน → กลายเป็น TOP&HOD ตัวเดียว / ซ้ำกับ TOP&HOD เดิมแล้วถูกตัดทิ้ง = ได้ของเดิมคืน)
+     Process ซ้ำในฟอร์มถูกกันไว้ก่อนถึงที่นี่แล้ว (saveValve) · Import / วางจาก Excel ยังยุบเหมือนเดิม */
+  if (!(opts && opts.asIs)) entry.processes = normalizeValveProcesses(entry.processes);   // ยุบ TOP+HOD ติดกัน → TOP&HOD
+  entry.processes = [...new Set((entry.processes || []).filter(Boolean))]; // กัน process ซ้ำ
   const had = state.valves.some(v => vKey(v.valveNo) === key);
   /* ★ 2026-10-01 — คง SD/TYPE เดิมไว้ถ้าผู้เรียกไม่ได้ส่งมา (วาง Process จาก Excel / Import ไฟล์เก่า)
      ไม่งั้นแก้ Process ทีไร SD ที่ Admin ตั้งไว้หายทุกครั้ง */
@@ -27800,6 +27841,22 @@ function upsertValve(entry) {
   state.valves.push(entry);
   _tagValveVsm(key);                                     // ผูกเข้า Valve Master ของ VSM ที่กำลังดู (VSM1/2 แยก · VSM3/4 ร่วม)
   return had;
+}
+/* ★ v4.31 กัน "ข้อมูลเดิมกลับมาเอง" หลังกดบันทึก Valve — reload ที่ขอ /api/init ไปก่อนกดบันทึก แต่ผลมาถึงทีหลัง
+   จะเอา Master ชุดเก่าทับเบอร์ที่เพิ่งแก้ (แก้ต่อจากนั้น = แก้บนของเก่า แล้วบันทึกทับของใหม่บน Cloud ด้วย)
+   จำเบอร์ที่แก้ในเครื่องไว้ 10 นาที · ผลจาก Cloud ที่ "ขอ" ก่อนเวลาที่แก้ = ใช้ของในเครื่องแทนเฉพาะเบอร์นั้น */
+const _vEdits = new Map();
+function _vEditMark(entry) { try { _vEdits.set(vKey(entry.valveNo), { at: Date.now(), v: JSON.parse(JSON.stringify(entry)) }); } catch (e) {} }
+function _vEditKeep(list, reqAt) {
+  if (!_vEdits.size || !Array.isArray(list)) return list;
+  const now = Date.now();
+  for (const [k, e] of [..._vEdits]) {
+    if (now - e.at > 600000) { _vEdits.delete(k); continue; }
+    if (!(+reqAt < e.at)) continue;          // ชุดนี้ขอหลังกดบันทึก = Cloud มีของใหม่แล้ว
+    const i = list.findIndex(v => vKey(v.valveNo) === k);
+    if (i >= 0) list[i] = { ...list[i], ...e.v }; else list.push({ ...e.v });
+  }
+  return list;
 }
 async function saveValve(orig) {
   const valveNo  = $('m_v').value.trim();
@@ -27836,8 +27893,9 @@ async function saveValve(orig) {
   if ($('m_cot')) entry.cot = _vtxt($('m_cot').value);
   if ($('m_cott')) entry.cot_type = _vtxt($('m_cott').value);
   const lnBody = _valveMasterGroup(viewVsm()) === 'shared' && document.getElementById('m_ln') ? _mLnBody(valveNo) : null;   // ★ v4.25 📋 ขอบเขต VSM4 (อ่านก่อนปิดฟอร์ม)
-  const replaced = upsertValve(entry);   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่
-  _mpVIdx = null;                        // ★ v3.94 ดัชนีของตัววางแผนจำ object เดิมไว้ (จำนวนเบอร์ไม่เปลี่ยน = ไม่สร้างใหม่) → SD/SL ที่เพิ่งแก้ไม่เข้าแผน
+  const replaced = upsertValve(entry, { asIs: true });   // ซ้ำ → ใช้ข้อมูลใหม่แทนที่ · ★ v4.31 บันทึกตามที่เห็น (ไม่ยุบ TOP + HOD)
+  _vEditMark(entry);                     // ★ v4.31 กัน reload ที่ยิงก่อนกดบันทึกเอาของเก่ากลับมาทับ
+  _mpVIdx = null;                       // ★ v3.94 ดัชนีของตัววางแผนจำ object เดิมไว้ (จำนวนเบอร์ไม่เปลี่ยน = ไม่สร้างใหม่) → SD/SL ที่เพิ่งแก้ไม่เข้าแผน
   setVsmProc(valveNo, _mProcStore.v1, _mProcStore.v2);   // Process Master VSM1/VSM2 (เก็บ local แยกจาก valve)
   lsSave(LS.VALVES, state.valves);
   closeModal(); renderValveList(); renderUnknownValves(); renderUnknownProcs();
@@ -29765,11 +29823,27 @@ function mpDownMap() {
 }
 function mpDownNow(m) { return !!(m && m.down && !m.down.due); }
 function mpDownSig() { return mpManItems('off').filter(x => x.down).map(x => `${x.m}|${x.until || ''}|${x.note || ''}`).sort().join(','); }
-/* เครื่องที่ผังต้องแสดงว่าเสีย: เฉพาะผัง VSM4 · ถึงวันที่แจ้งไว้แล้ว = ไม่แดง (แผนกลับมาใช้แล้ว) · ดูช่วงก่อนวันที่แจ้งเสีย = ตามจริงตอนนั้น (ไม่แดง) */
+/* เครื่องที่ผังต้องแสดงว่าเสีย: ถึงวันที่แจ้งไว้แล้ว = ไม่แดง (แผนกลับมาใช้แล้ว) · ดูช่วงก่อนวันที่แจ้งเสีย = ตามจริงตอนนั้น (ไม่แดง)
+   ★ v4.31 (ผู้ใช้ 16/11 "เพิ่มให้ทุก VSM QC ด้วย") ทุกสาย — รหัสเครื่องไม่ซ้ำข้ามสาย (เช็ก 16/11 ทั้ง 349 เครื่อง) ผังแต่ละสายระบายเฉพาะกล่องของตัวเอง
+   fpv คงไว้ให้ผู้เรียกเดิม (ไม่ใช้กรองแล้ว — เครื่องที่ Admin ย้าย Zone ข้ามสายยังแดงบนผังที่มันอยู่จริง) */
 function mpDownOnMap(fpv, dTo) {
-  const M = new Map(); if (fpv !== MP_VSM) return M;
+  const M = new Map();
   for (const [id, x] of mpDownMap()) if (!x.due && (!dTo || !x.from || dTo >= mpProdDay(x.from))) M.set(id, x);
   return M;
+}
+/* ★ v4.31 เครื่องของสาย (VSM1–4 / QC) ตาม Zone บน Cloud · สายของเครื่อง 1 ตัว */
+function mpDnMachines(vsm) {
+  const out = [], seen = new Set(), ms = state.machines || {};
+  for (const z of (vsm === MP_VSM ? MP_ZONES : zonesForVsm(vsm))) for (const m of (ms[z] || [])) {
+    const id = String((m && m.id) || '').trim(); if (!id || seen.has(id.toUpperCase())) continue;
+    seen.add(id.toUpperCase()); out.push({ id, zone: z });
+  }
+  return out;
+}
+function mpDnVsmOf(id) {
+  const k = String(id || '').trim().toUpperCase(), ms = state.machines || {};
+  for (const z of Object.keys(ms)) if ((ms[z] || []).some(m => m && String(m.id || '').trim().toUpperCase() === k)) return MP_ZONES.includes(z) ? MP_VSM : zoneVsm(z);
+  return '';
 }
 /* วันผลิตล่าสุดที่มีคนลงยอดเครื่องนี้ หลังวันที่แจ้งเสีย = น่าจะซ่อมเสร็จแล้วแต่ยังไม่ได้กด (วันเดียวกันไม่นับ — อาจลงก่อนเครื่องเสีย) */
 function mpDownSeen(x) {
@@ -36394,13 +36468,15 @@ function _mpDownBox(x, noEdit) {
   return `<div class="mbd-ma dn${x.due ? ' due' : ''}"><b>🔧 ${TT('เครื่องเสีย', 'Machine down')}</b> · ${_mpDownHtml(x)}${ask ? `<div class="mpdn-ask">${escapeHtml(ask)}</div>` : ''}${_mpDownBtns(x, noEdit)}</div>`;
 }
 /* ปุ่มบนกระดาน: ไม่มีเครื่องเสีย = ปุ่มธรรมดา · มี = แดง · เหลือแต่รอยืนยัน = เหลือง */
-function _mpDownChip() {
-  const L = [...mpDownMap().values()];
+function _mpDownChip(vsm) {
+  /* ★ v4.31 ทุกสาย: นับเฉพาะเครื่องของสายที่ดูอยู่ (หน้าแผน / กระดาน = VSM4) · กดแล้วเปิดหน้าแจ้งของสายนั้น */
+  const v = vsm || MP_VSM, mine = new Set(mpDnMachines(v).map(m => m.id));
+  const L = [...mpDownMap().values()].filter(x => mine.has(x.m));
   const now = L.filter(x => !x.due).length, ask = L.filter(x => _mpDownAsk(x)).length;
   const tip = L.length ? L.map(x => `${x.m}: ${_mpDownParts(x).join(' · ')}`).join('\n') : TT('แจ้งว่าเครื่องเสีย แล้วแผนจะหลบเครื่องนั้นให้เอง', 'Report a breakdown and the plan avoids that machine');
   const lbl = now ? `${TT('เครื่องเสีย', 'Machines down')} <b>${now}</b>${ask ? ` · ${TT('รอยืนยัน', 'to confirm')} <b>${ask}</b>` : ''}`
     : ask ? `${TT('รอยืนยันซ่อมเสร็จ', 'Confirm repair')} <b>${ask}</b>` : TT('แจ้งเครื่องเสีย', 'Report breakdown');
-  return `<button type="button" class="mpv-chip mbd-dnc${now ? ' dn' : ask ? ' warn' : ''}" onclick="openMpDown()" title="${escapeHtml(tip)}">${lbl}</button>`;
+  return `<button type="button" class="mpv-chip mbd-dnc${now ? ' dn' : ask ? ' warn' : ''}" onclick="openMpDown('', '${escapeHtml(v)}')" title="${escapeHtml(tip)}">${lbl}</button>`;
 }
 function _mpDownClose() {
   document.querySelectorAll('#iotCard .iotpop-bg,#iotAllOv .iotpop-bg').forEach(p => { if (p.querySelector('.mpdn,.mbd-sheet')) p.remove(); });
@@ -36410,50 +36486,68 @@ function _mpDownClose() {
 }
 /* ป๊อปอัปเครื่องบนผัง: เสียอยู่ = กล่องสถานะอยู่บนสุด · ไม่เสีย = ปุ่มแจ้งเสียท้ายป๊อปอัป */
 function _mpDownRepBtn(id) {
-  if (mpOffSet().has(id) || !mpVsm4Machines().some(m => m.id === id)) return '';
+  const v = mpDnVsmOf(id);   // ★ v4.31 ทุกสาย · เครื่องที่ปิดไว้ในตัววางแผน (VSM4) ไม่ต้องแจ้งเสีย
+  if (!v || (v === MP_VSM && mpOffSet().has(id))) return '';
   return `<button type="button" class="btn btn-outline mpdn-rep" onclick="openMpDown('${escapeHtml(id)}')">🔧 ${TT('แจ้งเครื่องเสีย', 'Report breakdown')}</button>`;
 }
 function _mpDownPopHtml(id, body, boxOnly) {
   const x = mpDownMap().get(id);
   return x ? _mpDownBox(x) + body : boxOnly ? body : body + _mpDownRepBtn(id);
 }
-/* id = มาจากป๊อปอัปเครื่อง / แก้รายการเดิม (ไม่ต้องเลือกเครื่อง) · ไม่มี id = รายการที่เสียอยู่ + เลือกเครื่อง */
-function openMpDown(id) {
+/* id = มาจากป๊อปอัปเครื่อง / แก้รายการเดิม (ไม่ต้องเลือกเครื่อง) · ไม่มี id = รายการที่เสียอยู่ + เลือกเครื่อง
+   ★ v4.31 (ผู้ใช้ 16/11 "pop up ขึ้นมาเยอะเกินไปจนบังทั้งหน้าจอ และเพิ่มให้ทุก VSM QC ด้วย")
+     กล่องเล็กชิดขวาบน ไม่มีฉากมืด — ผังยังเห็นและกดได้ (_mpSheet side) · เลือกเครื่อง = แท็บสาย + รายการเลื่อนลงแยก Zone
+     (เดิมปุ่มครบ 65 เครื่องเต็มหน้าจอ) · รายการที่เสียอยู่ / ประวัติ = เฉพาะสายที่เลือก · vsm = สายเริ่มต้น (ไม่ส่ง = สายที่ดูอยู่) */
+function openMpDown(id, vsm) {
   document.querySelectorAll('#iotCard .iotpop-bg,#iotAllOv .iotpop-bg').forEach(p => { if (p.querySelector('.mpdn')) p.remove(); });
-  const map = mpDownMap(), cur = id ? map.get(id) || null : null, d0 = mpProdDay(), off = mpOffSet();
-  _mpDn = { m: id || '', until: cur ? cur.until || '' : '' };
-  const ms = mpVsm4Machines().filter(m => !off.has(m.id) && !map.has(m.id));
-  const zones = [...new Set([...MP_ZONES, ...ms.map(m => m.zone)])].filter(z => ms.some(m => m.zone === z));
-  const list = id ? '' : [...map.values()].sort((a, b) => String(a.from).localeCompare(String(b.from))).map(x => {
+  if (!id && document.querySelector('#modalBg.open .mpdn')) closeModal();
+  const map = mpDownMap(), cur = id ? map.get(id) || null : null, d0 = mpProdDay();
+  const V = (id && mpDnVsmOf(id)) || (VSM_KEYS.includes(vsm) ? vsm : '') || (VSM_KEYS.includes(viewVsm()) ? viewVsm() : MP_VSM);
+  _mpDn = { m: id || '', until: cur ? cur.until || '' : '', vsm: V };
+  const all = mpDnMachines(V), mine = new Set(all.map(m => m.id)), off = V === MP_VSM ? mpOffSet() : new Set();
+  const ms = all.filter(m => !off.has(m.id) && !map.has(m.id));
+  const zones = [...new Set([...(V === MP_VSM ? MP_ZONES : zonesForVsm(V)), ...ms.map(m => m.zone)])].filter(z => ms.some(m => m.zone === z));
+  const zName = (z, i) => V === MP_VSM ? mpZoneName(z) : `Zone ${i + 1} ${ZONE_LABEL[z] || z}`;
+  const downs = id ? [] : [...map.values()].filter(x => mine.has(x.m)).sort((a, b) => String(a.from).localeCompare(String(b.from)));
+  const list = downs.map(x => {
     const ask = _mpDownAsk(x);
     return `<div class="mpdn-i${x.due ? ' due' : ''}"><div class="tx"><b>${escapeHtml(x.m)}</b> ${_mpDownHtml(x)}${ask ? `<div class="mpdn-ask">${escapeHtml(ask)}</div>` : ''}</div>${_mpDownBtns(x)}</div>`;
   }).join('');
-  const picker = id ? '' : `<div class="fr"><label>${TT('เครื่องที่เสีย', 'Machine')}</label>${zones.map(z => `<div class="mpdn-zh">${escapeHtml(mpZoneName(z))}</div><div class="mpdn-ms">${mpMcGroups(z, ms).flat().map(m => `<button type="button" class="mpdn-m" data-m="${escapeHtml(m.id)}" aria-pressed="false" onclick="mpDownPick(this)">${escapeHtml(m.id)}</button>`).join('')}</div>`).join('')}</div>`;
+  const tabs = id ? '' : `<div class="mpdn-vs" role="group" aria-label="${TT('สาย', 'Line')}">${VSM_KEYS.map(k => {
+    const n = [...map.values()].filter(x => !x.due && mpDnVsmOf(x.m) === k).length;
+    return `<button type="button" aria-pressed="${k === V}" onclick="openMpDown('', '${k}')">${escapeHtml(VSM_LABEL[k] || k)}${n ? ` <b>${n}</b>` : ''}</button>`;
+  }).join('')}</div>`;
+  const opt = m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id)}</option>`;
+  const picker = id ? '' : `<div class="fr"><label for="mpdnMc">${TT('เครื่องที่เสีย', 'Machine')}</label>${ms.length
+    ? `<select id="mpdnMc" onchange="mpDownPickSel(this.value)"><option value="">${TT('— เลือกเครื่อง —', '— pick a machine —')}</option>${zones.map((z, i) => `<optgroup label="${escapeHtml(zName(z, i))}">${(V === MP_VSM ? mpMcGroups(z, ms).flat() : ms.filter(m => m.zone === z).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))).map(opt).join('')}</optgroup>`).join('')}</select>`
+    : `<div class="mpdn-note" style="margin:0">${TT('ไม่มีเครื่องให้เลือกในสายนี้', 'No machine to pick on this line')}</div>`}</div>`;
   const chips = [['', TT('ยังไม่ทราบ', 'Unknown')], [_mpAddDays(d0, 1), TT('พรุ่งนี้', 'Tomorrow')], [_mpAddDays(d0, 2), TT('+2 วัน', '+2 d')], [_mpAddDays(d0, 3), TT('+3 วัน', '+3 d')], [_mpAddDays(d0, 7), TT('+7 วัน', '+7 d')]];
   const inChips = chips.some(c => c[0] === _mpDn.until);
   const form = `<div class="fr"><label>${TT('คาดว่าซ่อมเสร็จ', 'Expected back')}</label>
       <div class="mpdn-ds">${chips.map(([d, lb]) => `<button type="button" class="mpv-chip${d === _mpDn.until ? ' on' : ''}" data-d="${d}" ${d ? `title="${_mpDW(d)}"` : ''} onclick="mpDownDate(this.dataset.d)">${lb}</button>`).join('')}
         <input type="date" id="mpdnDate" min="${_mpAddDays(d0, 1)}" value="${inChips ? '' : _mpDn.until}" aria-label="${TT('เลือกวันซ่อมเสร็จ', 'Pick the date')}" onchange="mpDownDate(this.value)"></div>
-      <div class="mpdn-note">${TT('ยังไม่ทราบ = แผนไม่ใช้เครื่องนี้จนกว่าจะกด ซ่อมเสร็จ · ใส่วัน = กลับมาใช้ได้ตั้งแต่วันนั้น', 'Unknown = not planned until marked repaired · a date = planned again from that day')}</div></div>
-    <div class="fr"><label>${TT('สาเหตุ (ไม่บังคับ)', 'Cause (optional)')}</label><input type="text" id="mpdnNote" maxlength="120" value="${escapeHtml(cur ? cur.note || '' : '')}" placeholder="${TT('เช่น มอเตอร์ไหม้ · รออะไหล่', 'e.g. motor burnt, waiting for parts')}" autocomplete="off"></div>`;
-  const hist = mpManItems('off').filter(x => x.log && (!id || x.mc === id)).sort((a, b) => String(b.to).localeCompare(String(a.to))).slice(0, 10);
+      ${V === MP_VSM ? `<div class="mpdn-note">${TT('ยังไม่ทราบ = แผนไม่ใช้เครื่องนี้จนกว่าจะกด ซ่อมเสร็จ', 'Unknown = not planned until marked repaired')}</div>` : ''}</div>
+    <div class="fr"><label for="mpdnNote">${TT('สาเหตุ (ไม่บังคับ)', 'Cause (optional)')}</label><input type="text" id="mpdnNote" maxlength="120" value="${escapeHtml(cur ? cur.note || '' : '')}" placeholder="${TT('เช่น มอเตอร์ไหม้ · รออะไหล่', 'e.g. motor burnt, waiting for parts')}" autocomplete="off"></div>`;
+  const hist = mpManItems('off').filter(x => x.log && (id ? x.mc === id : mine.has(x.mc))).sort((a, b) => String(b.to).localeCompare(String(a.to))).slice(0, 10);
   const histH = hist.length ? `<details class="mpdn-hs"><summary>${TT('ประวัติเครื่องเสีย', 'Breakdown history')} (${hist.length})</summary>${hist.map(x => {
     const h = (new Date(x.to) - new Date(x.from)) / 36e5;
     return `<div class="mpdn-hr"><b>${escapeHtml(x.mc)}</b> ${_mpDnWhen(x.from)} → ${_mpDnWhen(x.to)} · ${h < 24 ? `${Math.max(1, Math.round(h))} ${TT('ชม.', 'h')}` : `${(Math.round(h / 2.4) / 10)} ${TT('วัน', 'd')}`}${x.note ? ' · ' + escapeHtml(x.note) : ''}</div>`;
   }).join('')}</details>` : '';
   const title = id ? `🔧 ${escapeHtml(id)} — ${cur ? TT('แก้รายการเครื่องเสีย', 'edit breakdown') : TT('แจ้งเครื่องเสีย', 'report breakdown')}` : `🔧 ${TT('เครื่องเสีย', 'Machine breakdowns')}`;
+  const rp = V === MP_VSM;   // ตัววางแผนมีเฉพาะ VSM4 — สายอื่นแจ้งแล้วแดงบนผัง ไม่ต้องจัดแผน
   _mpSheet(title, `<div class="mpdn">
-    ${cur ? _mpDownBox(cur, true) : ''}
-    ${list ? `<div><div class="mpdn-h">${TT('เสียอยู่ตอนนี้', 'Down now')} (${map.size})</div>${list}</div>` : ''}
+    ${cur ? _mpDownBox(cur, true) : ''}${tabs}
+    ${list ? `<div><div class="mpdn-h">${TT('เสียอยู่ตอนนี้', 'Down now')} (${downs.length})</div>${list}</div>` : ''}
     ${!id && list ? `<div class="mpdn-h">${TT('แจ้งเครื่องเสียเพิ่ม', 'Report another')}</div>` : ''}
     ${picker}${form}
     ${histH}
     <div class="row mpdn-go" style="gap:8px">
       <button type="button" class="btn btn-outline" style="flex:1" onclick="_mpDownClose()">${TT('ปิด', 'Close')}</button>
-      <button type="button" class="btn ${cur ? 'btn-blue' : 'btn-red'}" style="flex:3" onclick="mpDownSave()">${cur ? `💾 ${TT('บันทึก แล้วจัดแผนใหม่', 'Save and re-plan')}` : `🔧 ${TT('แจ้งเสีย แล้วจัดแผนใหม่', 'Report and re-plan')}`}</button>
+      <button type="button" class="btn ${cur ? 'btn-blue' : 'btn-red'}" style="flex:2" onclick="mpDownSave()">${cur ? `💾 ${rp ? TT('บันทึก แล้วจัดแผนใหม่', 'Save and re-plan') : TT('บันทึก', 'Save')}` : `🔧 ${rp ? TT('แจ้งเสีย แล้วจัดแผนใหม่', 'Report and re-plan') : TT('แจ้งเสีย', 'Report')}`}</button>
     </div>
-  </div>`);
+  </div>`, { side: true });
 }
+function mpDownPickSel(v) { if (_mpDn) _mpDn.m = String(v || ''); }
 function mpDownPick(btn) {
   if (!_mpDn) return;
   _mpDn.m = _mpDn.m === btn.dataset.m ? '' : btn.dataset.m;
@@ -36513,7 +36607,9 @@ function _mpDownReplan(id, msgOf) {
   }).catch(_mpvErr);
 }
 function mpDownSave() {
-  const c = _mpDn, id = c && c.m;
+  const c = _mpDn, sel = document.getElementById('mpdnMc');
+  if (c && sel && sel.value) c.m = sel.value;   // ★ v4.31 รายการเลื่อนลง (เผื่อ onchange ไม่ทัน)
+  const id = c && c.m;
   if (!id) { toast(TT('เลือกเครื่องที่เสียก่อน', 'Pick the machine first'), 'orange'); return; }
   const di = document.getElementById('mpdnDate'), until = (di && di.value) || c.until || '', d0 = mpProdDay();
   if (until && until <= d0) { toast(TT('วันซ่อมเสร็จต้องเป็นวันหลังจากวันนี้', 'The date must be after today'), 'orange'); return; }
@@ -36524,6 +36620,8 @@ function mpDownSave() {
   _mpDownFlush();
   _mpDownClose();
   _mpDn = null;
+  // ★ v4.31 สายอื่น (VSM1–3 / QC) ไม่มีตัววางแผน → แค่แดงบนผัง
+  if (mpDnVsmOf(id) !== MP_VSM) { _mpDownMaps(); toast(`🔧 ${id} ${old ? TT('แก้ไขแล้ว', 'updated') : TT('แจ้งเสียแล้ว', 'reported down')}`, 'green'); return; }
   _mpDownReplan(id, (res, n0, wait) => {
     if (old) return `🔧 ${id} ${TT('แก้ไขแล้ว', 'updated')}${res ? ' — ' + TT('จัดแผนใหม่แล้ว', 're-planned') : ''}`;
     if (!res) return `🔧 ${id} ${TT('แจ้งเสียแล้ว — แผนจะหลบเครื่องนี้', 'reported down — the plan will avoid it')}`;
@@ -36542,6 +36640,7 @@ function mpDownFix(id) {
   _mpDownFlush();
   _mpDownClose();
   _mpDn = null;
+  if (mpDnVsmOf(id) !== MP_VSM) { _mpDownMaps(); toast(`✅ ${id} ${TT('ซ่อมเสร็จแล้ว', 'repaired')}`, 'green'); return; }   // ★ v4.31 สายอื่นไม่มีแผน
   _mpDownReplan(id, res => {
     const n = res ? res.assigns.filter(a => a.m.id === id).length : 0;
     return `✅ ${id} ${TT('ซ่อมเสร็จแล้ว', 'repaired')}${res ? ` — ${n ? `${TT('แผนวางงานให้', 'planned')} ${nn(n)} ${TT('งาน', 'jobs')}` : TT('ยังไม่มีงานในแผน', 'nothing planned yet')}` : ''}`;
@@ -36690,7 +36789,15 @@ function _mpMoveCheck(c, res) {
   toast(`⚠️ ${TT('ย้ายไม่สำเร็จ', 'Move not applied')}: ${(c.valve)} ${(c.proc)} → ${(c.to)} · ${why}`, 'orange');
 }
 /* เปิดหน้าต่างเลือกเครื่อง — อยู่บน IOT เต็มจอ = ป๊อปอัปในกรอบ IOT (modal ปกติมองไม่เห็นตอน native fullscreen) */
-function _mpSheet(title, body) {
+function _mpSheet(title, body, opts) {
+  /* ★ v4.31 opts.side = กล่องเล็กชิดขวาบน ไม่มีฉากมืด (ผังข้างหลังยังเห็น/แตะได้) — ใช้กับ 🔧 แจ้งเครื่องเสีย
+     นอกหน้า IOT = modal ขนาดปกติ (ไม่ wide) */
+  if (opts && opts.side) {
+    const ia0 = document.getElementById('iotAllOv'), card = document.getElementById('iotCard');
+    const host = ia0 || (card && card.classList.contains('iot-fs') ? card : null);
+    if (host) { const p = _openIotPop(title, body, true, false, host); if (p) p.classList.add('side'); return; }
+    openModal(title, body); return;
+  }
   /* ★ v4.14 หน้ารวม 4 VSM และ IOT เต็มจอ อยู่เหนือ modal (z-index สูงกว่า + อาจเต็มจอจริง) → ป๊อปอัปต้องเป็นลูกของหน้านั้น ไม่งั้นมองไม่เห็น */
   const ia = document.getElementById('iotAllOv');
   if (ia) { _openIotPop(title, body, true, true, ia); return; }
@@ -36858,7 +36965,7 @@ function _mpDownPollStart() {
   if (_mpDnT) return;
   const tick = () => {
     if (document.hidden || !API || (_mpv && _mpv.open)) return;   // หน้าแผนผลิตมีรอบของตัวเอง
-    if (!document.getElementById('iotAllOv') && !(viewVsm() === MP_VSM && document.querySelector('section.pane.active')?.id === 'pane-home')) return;
+    if (!document.getElementById('iotAllOv') && document.querySelector('section.pane.active')?.id !== 'pane-home') return;   // ★ v4.31 ทุกสาย (เดิม VSM4)
     const sig = mpDownSig();
     mpManLoad(true).then(() => {
       if (mpDownSig() === sig) return;
