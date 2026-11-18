@@ -3517,7 +3517,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.32</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.33</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -6320,6 +6320,53 @@ function queueWrite(path, body, label, key) {
   _savePendW(); renderSyncBar();
   return true;
 }
+/* ═══ ★ v4.33 (ผู้ใช้ 18/11 ข้อ 1) "ลบ / แก้ข้อมูลที่ Admin ลงไว้ บางครั้งระบบไม่แก้ให้" — ค้นหา Process · Master Process · งานหลัง FG
+   ต้นเหตุ: /api/init (ที่มี targets · valves · machines) ถูก cache ที่ Cloudflare 60 วิ (servedCached + Cache-Control max-age=60
+   — วัดจริง 18/11: cf-cache-status HIT · age 4) → ทุกเครื่องได้ "ภาพถ่าย" เดียวกันได้นานสุด ~60 วิ
+   แอปดึง /api/init ซ้ำหลังบันทึกหลายทาง (ค้นหาซ้ำ → pullJobProcTargets เมื่อ memo 15 วิหมด · กล่องงานหลัง FG · รีเฟรช Output · reload)
+   แล้วเอา targets ชุดนั้น "ทับ" ของในเครื่อง → ภาพถ่ายที่ถ่ายก่อนกดบันทึก = ค่าเก่ากลับมา (ยอด 🔑 ที่ลบแล้วโผล่คืน · DONE กลับเป็น FG ฯลฯ)
+   ทั้งที่ Cloud บันทึกค่าใหม่สำเร็จแล้ว — เลย "บางครั้ง": ขึ้นกับว่าดึงซ้ำภายใน 60 วิหลังบันทึกไหม
+   แก้: จำคีย์ที่เครื่องนี้เขียนขึ้น /api/targets สำเร็จ 3 นาที (เกินอายุ cache 60 วิ + เผื่อ) + ที่กำลังส่ง + ที่ค้างคิวออฟไลน์
+        ทุกจุดที่รับ targets จาก Cloud ผ่าน _tgtKeep → คีย์พวกนั้นใช้ค่าที่เครื่องนี้เพิ่งเขียน · คีย์อื่นใช้ของ Cloud ตามเดิม
+        เก็บใน localStorage ด้วย — ปิด/เปิดแอปใหม่ภายใน 3 นาทีก็ไม่กลับเป็นค่าเก่า
+   Master Valve (_vEditKeep) + เครื่องจักร (_mcEditKeep) ใช้กติกาเดียวกัน (เดิม v4.31 ดูแค่ "ขอก่อนกดบันทึก" — แต่ขอหลังกดก็ได้ภาพถ่ายเก่าจาก cache ได้) */
+const LS_TGT_EDITS = 'vsm4_tgt_edits';
+const EDIT_KEEP_MS = 180000;           // นานกว่าอายุ cache ของ /api/init (60 วิ) + เวลาที่เบราว์เซอร์ยังถือคำตอบเดิม
+let _tgtEdits = (() => { try { const o = JSON.parse(localStorage.getItem(LS_TGT_EDITS) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+const _tgtInfl = new Set();             // ก้อนที่กำลังส่ง (ยังไม่รู้ผล) — reload ที่ได้ภาพถ่ายเก่าระหว่างนี้ต้องไม่ทับค่าที่ตั้งในเครื่องไปแล้ว
+function _tgtEditMark(body) {
+  if (!body || typeof body !== 'object') return;
+  const now = Date.now();
+  for (const k in body) { const v = Number(body[k]); if (isFinite(v)) _tgtEdits[k] = { v, at: now }; }
+  for (const k in _tgtEdits) if (!(now - (+_tgtEdits[k].at || 0) < EDIT_KEEP_MS)) delete _tgtEdits[k];
+  try { localStorage.setItem(LS_TGT_EDITS, JSON.stringify(_tgtEdits)); } catch (e) {}
+}
+// ห่อ POST /api/targets (เรียกจาก api()) — สำเร็จ = จำ 3 นาที · ล้มเหลว = ไม่จำ (apiSave เข้าคิว → _pendW ดูแลต่อ)
+function _tgtTrack(body, p) {
+  const w = { body, at: Date.now() }; _tgtInfl.add(w);
+  return p.then(r => { _tgtInfl.delete(w); _tgtEditMark(body); return r; }, e => { _tgtInfl.delete(w); throw e; });
+}
+// targets จาก Cloud → คืนชุดที่คีย์ที่เครื่องนี้เพิ่งเขียน / กำลังส่ง / ค้างคิว = ค่าของเครื่องนี้ (ไม่แก้ object ที่ส่งเข้ามา — อาจเป็น _initCache)
+function _tgtKeep(cloud) {
+  if (!cloud || typeof cloud !== 'object') return cloud;
+  const now = Date.now(), at = {};
+  let out = cloud;
+  const put = (k, v, t) => {
+    if (!isFinite(v) || (at[k] != null && at[k] > t)) return;
+    at[k] = t;
+    if (out[k] === v) return;
+    if (out === cloud) out = { ...cloud };
+    out[k] = v;
+  };
+  for (const k in _tgtEdits) { const e = _tgtEdits[k]; if (e && now - (+e.at || 0) < EDIT_KEEP_MS) put(k, Number(e.v), +e.at || 0); }
+  for (const w of _pendW) {
+    if (w.sup || w.path !== '/api/targets' || !w.body || typeof w.body !== 'object') continue;
+    const t = Date.parse(w.ts) || 0;
+    for (const k in w.body) put(k, Number(w.body[k]), t);
+  }
+  for (const w of _tgtInfl) for (const k in w.body) put(k, Number(w.body[k]), w.at);
+  return out;
+}
 /* เขียนขึ้น Cloud แบบ "ไม่หายแน่นอน" — สำเร็จ → {ok:true} · ล้มเหลว → เข้าคิวแล้วคืน {ok:false,err}
    ใช้แทน `try{ await api(path,{body}) }catch(e){}` ทุกที่ที่ข้อมูลถูกเก็บ local ไปแล้ว */
 async function apiSave(path, body, opts = {}) {
@@ -6942,6 +6989,7 @@ async function api(path, opts = {}) {
     _apiInflight.set(path, p);
     return p;
   }
+  if (opts.body && path === '/api/targets') return _tgtTrack(opts.body, _apiRaw(path, opts));   // ★ v4.33 จำคีย์ที่เขียน (ดู _tgtKeep)
   return _apiRaw(path, opts);
 }
 async function _apiRaw(path, opts = {}) {
@@ -7613,7 +7661,7 @@ function _planAutoStatus(p){
     if (A.st === 'in_progress') {
       const s = A.slow;
       const proc = !s ? 'DONE' : s.st === 'in' ? TT('รับเข้า WIP IN 1.5 · รอผลิต','received (WIP IN 1.5) · waiting')
-                 : s.st === 'fg' ? TT('ผ่าน FG','passed FG') + (s.proc && s.proc !== 'FG' ? ' · ' + s.proc : '') : (s.proc || TT('เริ่มผลิตแล้ว','started'));
+                 : s.st === 'fg' ? TT('ผ่าน FG','passed FG') + (s.proc && s.proc !== 'FG' ? ' · ' + s.proc : '') : (lotWhereTxt(s) || TT('เริ่มผลิตแล้ว','started'));   // ★ v4.33 รอขึ้น IND
       return { ...base, code:'in_progress', label:TT('⚙️ กำลังผลิต','⚙️ In production'), proc, color:'#c2410c', bg:'#FFEDD5' };
     }
     return { ...base, code:'planned', label:TT('📋 วางแผน','📋 Planned'), proc:'', color:'#1d4ed8', bg:'#DBEAFE' };
@@ -7814,6 +7862,7 @@ function planLotAlloc(b) {
       continue;
     }
     add(vk, { lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: Number(it.qty) || 0, proc: it.curProc || '', prog: progOf(it.valve, it.curProc),
+              at: it.atProc || '', next: it.nextProc || '',   // ★ v4.33 ป้าย "รอขึ้น IND" (lotWhereTxt)
               recv: String(it.date || '').slice(0, 10), noIntake: it.basis === 'produced' });
   }
   const inBy = new Map();
@@ -7837,7 +7886,7 @@ function planLotAlloc(b) {
     L.sort((a, c) => (RK[a.st] - RK[c.st]) || (a.st === 'wip' ? c.prog - a.prog : 0)
       || String(isFin(a) ? a.fin : a.recv).localeCompare(String(isFin(c) ? c.fin : c.recv)) || a.lk.localeCompare(c.lk));
     const R = ps.map(p => ({ p, vk, due: _planDateISO(p.plan_date), order: Number(p.quantity) || 0, need: Number(p.quantity) || 0, lots: [], keys: planLotKeys(p) }));
-    const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake, v4: !!x.v4, v3: !!x.v3 }); };
+    const give = (r, x, q) => { if (q <= 0) return; x.left -= q; r.need -= q; r.lots.push({ lot: x.lot, lk: x.lk, st: x.st, qty: q, proc: x.proc, at: x.at || '', next: x.next || '', fin: x.fin || '', recv: x.recv || '', prog: x.prog, noIntake: !!x.noIntake, v4: !!x.v4, v3: !!x.v3 }); };   // ★ v4.33 at/next
     for (const r of R) {                                   // ① แผนที่ระบุ Lot → Lot นั้น (คนเลือกแล้ว ไม่ดูช่วงวัน) ตามลำดับที่พิมพ์
       if (!r.keys.length) continue;
       for (const k of r.keys) for (const x of L) { if (r.need <= 0) break; if (x.left > 0 && planLotHit([k], x.lk)) give(r, x, Math.min(r.need, x.left)); }
@@ -7872,7 +7921,7 @@ function planLotAlloc(b) {
         a.push({ date: r.due, qty: l.qty, st: l.st, planId: r.p.plan_id || '', order: r.order, named: r.keys.length > 0, v4: !!l.v4 });
       }
     }
-    spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, fin: x.fin || '', v4: !!x.v4, v3: !!x.v3 })));
+    spare.set(vk, L.filter(x => x.left > 0).map(x => ({ lot: x.lot, lk: x.lk, st: x.st, qty: x.left, proc: x.proc, at: x.at || '', next: x.next || '', fin: x.fin || '', v4: !!x.v4, v3: !!x.v3 })));   // ★ v4.33
   }
   _plaKey = key;
   return (_plaCache = { byPlan, byId, byLot, spare, fin, seq: ++_plaSeq, today });
@@ -7887,7 +7936,7 @@ function planLotTxt(l) {
   if (l.v4) return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${TT('🏁 ส่วน VSM4 จบแล้ว', '🏁 VSM4 part done')}`;   // ★ v4.30
   const lb = _PLA_ST_LB[l.st] || ['', ''];
   if (l.v3) return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${TT('✅ ผ่าน FG ที่ VSM3', '✅ passed FG at VSM3')}`;
-  const where = l.st === 'wip' ? (l.proc || TT(lb[0], lb[1])) : l.st === 'fg' ? `${TT(lb[0], lb[1])}${l.proc && l.proc !== 'FG' ? ' · ' + l.proc : ''}` : TT(lb[0], lb[1]);
+  const where = l.st === 'wip' ? (lotWhereTxt(l) || TT(lb[0], lb[1])) : l.st === 'fg' ? `${TT(lb[0], lb[1])}${l.proc && l.proc !== 'FG' ? ' · ' + l.proc : ''}` : TT(lb[0], lb[1]);
   return `${l.lot || TT('(ไม่มี Lot)', '(no lot)')} · ${nn(l.qty)} · ${where}`;
 }
 
@@ -8828,14 +8877,16 @@ function planQSInput(v) {
 const _PLS_LB = { done: ['✅', 'จบงานแล้ว', 'finished'], fg: ['✅', 'ผ่าน FG แล้ว', 'past FG'], wip: ['⚙️', 'กำลังผลิต', 'in production'], in: ['📥', 'รับเข้าแล้ว รอผลิต', 'received, waiting'] };
 function _plsLotHtml(l) {
   const [ic, th, en] = l.v4 ? ['🏁', 'ส่วน VSM4 จบแล้ว', 'VSM4 part done'] : l.v3 ? ['✅', 'ผ่าน FG ที่ VSM3', 'passed FG at VSM3'] : _PLS_LB[l.st] || ['📦', '', ''];   // ★ v4.30
-  const at = l.v4 ? (l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : '') : l.st === 'wip' && l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : (l.st === 'done' || l.st === 'fg') && l.fin ? ` · ${_mpD(l.fin).slice(0, 5)}` : '';
+  const at = l.v4 ? (l.proc ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.proc)}</b>` : '')
+    : l.st === 'wip' && l.next ? ` · ⏳ ${TT('รอขึ้น', 'waiting for')} <b>${escapeHtml(l.next)}</b>`   // ★ v4.33 ขั้นล่าสุดครบแล้ว (เดิม "อยู่ที่ COT" ทั้งที่รอ IND)
+    : l.st === 'wip' && (l.at || l.proc) ? ` · ${TT('อยู่ที่', 'at')} <b>${escapeHtml(l.at || l.proc)}</b>` : (l.st === 'done' || l.st === 'fg') && l.fin ? ` · ${_mpD(l.fin).slice(0, 5)}` : '';
   return `<div class="pls-lot ${l.st}"><span class="lt">📦 ${escapeHtml(l.lot || TT('(ไม่มี Lot)', '(no lot)'))}</span><span class="lq">${nn(l.qty)}</span><span class="ls">${ic} ${TT(th, en)}${at}</span></div>`;
 }
 /* ของในไลน์ของเบอร์นี้ (ไม่ผูกแผน) — ใช้กับเบอร์ที่ยังไม่มีแผนขาย: กำลังผลิต + รับเข้ารอผลิต (กติกาเดียวกับ planLotAlloc) */
 function _plsStock(vk, b) {
   const by = new Map();
-  const add = (lot, st, q, proc) => { if (!(q > 0)) return; const k = lotKey(lot) + '|' + st; const o = by.get(k) || { lot, st, qty: 0, proc }; o.qty += q; by.set(k, o); };
-  for (const it of (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, 'wip', Number(it.qty) || 0, it.curProc || '');
+  const add = (lot, st, q, proc, at, next) => { if (!(q > 0)) return; const k = lotKey(lot) + '|' + st; const o = by.get(k) || { lot, st, qty: 0, proc, at: at || '', next: next || '' }; o.qty += q; by.set(k, o); };
+  for (const it of (b.wip.items || []).concat((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, 'wip', Number(it.qty) || 0, it.curProc || '', it.atProc, it.nextProc);   // ★ v4.33
   for (const it of (b.wipIn.items || [])) {
     if (it.started || it.unknown || it.orphan || vKey(it.valve) !== vk || getJobProc(it.valve, it.lot) === 'DONE') continue;
     add(it.lot, 'in', Number(it.qty) || 0, '');
@@ -9829,8 +9880,8 @@ function _planLotChoices(valve) {
   };
   try {
     const b = getWipBucketsView();
-    for (const it of (b.wip.items || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${it.curProc || ''} · ${nn(it.qty)}`, it.date);
-    for (const it of ((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${it.curProc || ''} · ${nn(it.qty)}`, it.date);
+    for (const it of (b.wip.items || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${lotWhereTxt(it)} · ${nn(it.qty)}`, it.date);   // ★ v4.33 รอขึ้น IND
+    for (const it of ((b.wip.noIntake && b.wip.noIntake.items) || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('กำลังผลิต','in production')} ${lotWhereTxt(it)} · ${nn(it.qty)}`, it.date);
     for (const it of (b.wipIn.items || [])) if (vKey(it.valve) === vk && !it.orphan) add(it.lot, `${TT('รับเข้า รอผลิต','received, waiting')} · ${nn(it.qty)}`, String(it.ts || '').slice(0, 10));
     for (const it of (b.wipOut.items || [])) if (vKey(it.valve) === vk) add(it.lot, `${TT('ผ่าน FG','passed FG')} ${_fmtThDate(String(it.date || '').slice(0, 10))}`, String(it.date || '').slice(0, 10));
   } catch (e) {}
@@ -10660,9 +10711,9 @@ async function reload() {
     //   (array ว่างเป็น truthy) → ถ้า Worker คืน valves:[] ชั่วคราว Master Valve จะถูกล้างทั้งก้อน
     const _ok = a => Array.isArray(a) ? a.length > 0 : (a && typeof a === 'object' && Object.keys(a).length > 0);
     if (_ok(res.valves))    state.valves    = _vEditKeep(_mpMergeValveSpec(res.valves, state.valves), _initCacheReqAt);   // ★ v3.74 SD/TYPE (Worker เก่า = คงค่าในเครื่อง) · ★ v4.31 Valve ที่เพิ่งแก้หลังยิงขอ = ของในเครื่องชนะ
-    if (_ok(res.machines))  state.machines  = res.machines;
+    if (_ok(res.machines))  state.machines  = _mcEditKeep(res.machines);   // ★ v4.33 เครื่องที่เพิ่งแก้ในเครื่องนี้ = ของในเครื่องชนะ (cache 60 วิ)
     if (_ok(res.employees)) { captureEmpVsmFromApi(res.employees); state.employees = res.employees; }   // ★ 2026-08-16: เก็บ vsm ที่ D1 ส่งมาก่อนถูกเขียนทับ
-    if (_ok(res.targets))   state.targets   = res.targets;
+    if (_ok(res.targets))   state.targets   = _tgtKeep(res.targets);   // ★ v4.33 คีย์ที่เพิ่งเขียน = ค่าของเครื่องนี้ (ภาพถ่าย /api/init อาจเก่ากว่า)
     if (_ok(res.ids))       state.ids       = res.ids; else state.ids = state.ids || [];
     ensureSeedEmployees();    // เพิ่มพนักงานทดสอบ VSM1/2/3 (D1 ไม่มี)
     ensureVsmZones();         // seed เครื่องทดสอบของ zone VSM1/2/3 (D1 ไม่มี)
@@ -10675,7 +10726,7 @@ async function reload() {
     lsSave(LS.EMPLOYEES, state.employees);
     lsSave(LS.TARGETS,   state.targets);
     lsSave(LS.IDS,       state.ids);
-    syncMcProcFromCloud(res.targets);   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store)
+    syncMcProcFromCloud(_tgtKeep(res.targets));   // process ของเครื่องจักร = แชร์ข้ามทุกเครื่อง (เก็บใน targets store) · ★ v4.33 _tgtKeep
     migratePdacTarget();                 // เป้า PDAC 0.9 → 0.883 ครั้งเดียว (หลังได้ค่าจริงจาก cloud)
     migrateEmpVsmOvToCloud();            // ★ สาย VSM ที่ตั้งไว้เฉพาะเครื่องนี้ → ขึ้นส่วนกลางครั้งเดียว (หลังได้ targets จริงจาก cloud)
     // ดึง IDs ทั้งหมดแยกต่างหาก (init อาจมี server limit) — Quick Win #5: เลื่อนไป idle
@@ -10953,8 +11004,9 @@ async function refreshProcOutput(localOnly) {
         _syncKpiFromApi(k.records, f, t);
       }
       if (init?.targets) {
-        if (_targetsDiffer(init.targets)) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }   // ⚡ v3.80 เหมือนเดิม = ไม่ต้องบันทึก
-        syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → กัน machine ที่ตั้งค่าจากเครื่องอื่นตกไป SSG
+        const it = _tgtKeep(init.targets);   // ★ v4.33 ภาพถ่ายเก่าจาก cache ไม่ทับคีย์ที่เพิ่งเขียน
+        if (_targetsDiffer(it)) { state.targets = { ...state.targets, ...it }; lsSave(LS.TARGETS, state.targets); }   // ⚡ v3.80 เหมือนเดิม = ไม่ต้องบันทึก
+        syncMcProcFromCloud(it);   // process ของเครื่องล่าสุด → กัน machine ที่ตั้งค่าจากเครื่องอื่นตกไป SSG
       }
     } catch (e) {}
   }
@@ -10968,7 +11020,8 @@ async function pullJobProcTargets() {
   if (!API) return;
   try {
     const init = await apiInit(15000).catch(() => null);   // Quick Win #2: cache 15 วิ
-    if (init?.targets && _targetsDiffer(init.targets)) { state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets); }   // ⚡ v3.80 เหมือนเดิม = ไม่ต้องบันทึก
+    const it = init?.targets ? _tgtKeep(init.targets) : null;   // ★ v4.33 ภาพถ่ายเก่าจาก cache ไม่ทับคีย์ที่เพิ่งเขียน (ยอด 🔑 ที่ลบแล้วโผล่คืน)
+    if (it && _targetsDiffer(it)) { state.targets = { ...state.targets, ...it }; lsSave(LS.TARGETS, state.targets); }   // ⚡ v3.80 เหมือนเดิม = ไม่ต้องบันทึก
   } catch (e) {}
 }
 /* ⚡ v3.80 — targets จาก Cloud มีค่าที่ต่างจากในมือไหม (ค่าใน targets เป็นตัวเลขล้วน เทียบตรง ๆ ได้)
@@ -12003,7 +12056,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.32":"Production Record + KPI · v4.32",
+"ระบบบันทึกผลิต + KPI · v4.33":"Production Record + KPI · v4.33",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -14120,6 +14173,8 @@ function _islPop(valve, iso) {
         📍 ${TT('ตอนนี้อยู่ที่', 'Now at')}
         <span class="at${at.cur ? '' : ' off'}">${escapeHtml(at.cur || TT('ยังไม่เริ่มผลิต', 'not started'))}</span>
         ${at.curQty ? `<span style="font-size:11px;color:var(--muted)">${nn(at.curQty)} ${TT('ชิ้น', 'pcs')}</span>` : ''}
+        ${(() => { const w = lotsE.filter(l => l.st === 'wip' && (l.at || l.proc) === at.cur); const nx = w.length && w.every(l => l.next) ? w[0].next : '';   // ★ v4.33 ขั้นนี้ครบแล้วทุก Lot = รอขึ้นขั้นถัดไป
+          return nx ? `<span style="font-size:11.5px;font-weight:800;color:#B45309">✓ ${TT('ครบแล้ว', 'done')} · ⏳ ${TT('รอขึ้น', 'waiting for')} ${escapeHtml(nx)}</span>` : ''; })()}
         ${at.curDate ? `<span style="font-size:11px;color:var(--muted2)">${TT('ล่าสุด', 'last')} ${escapeHtml(at.curDate)}</span>` : ''}
         ${(at.machines || []).map(m => `<span class="ismp-mc">🏭 ${escapeHtml(m)}</span>`).join('')}
         ${r.remark ? r.remark.split(' · ').map(v => `<span class="isl-rm">${escapeHtml(v)}</span>`).join('') : ''}
@@ -18624,6 +18679,35 @@ function _wipPerProc(recs, valve){
     .sort((a,b)=>rankOf(a)-rankOf(b))
     .map(p=>({proc:p,qty:perProc[p],date:lastDate[p]||'',machines:[...(mcByProc[p]||[])]}));
 }
+/* ★ v4.33 (ผู้ใช้ 18/11 ข้อ 2 + รูป VV1914A0) "แผนบอกอยู่ COT ทั้งที่จริงอยู่ รอขึ้น IND"
+   เดิม: ตำแหน่งล็อต (curProc) = ขั้นไกลสุดที่พนักงานลงยอด เสมอ → Lot 2610S110031 รับเข้า 505 · COT 500 ครบแล้ว ยังขึ้น "อยู่ที่ COT"
+   ตอนนี้: ขั้นไกลสุด (ยอดพนักงาน หรือ 🔑 Admin เติม — แบบเดียวกับช่องในค้นหา Process) ทำได้ + Scrap ครบ = ล็อต "รอขึ้น" ขั้นถัดไปตาม Master
+     ครบ = เหลือ ≤ max(5, 2%) ของยอด Lot (planTol) หรือถึงเกณฑ์ closePct ของตัววางแผน (ค่าเริ่มต้น 90% — กติกาเดียวกับ v4.15)
+     ยังไม่ครบ = ยังทำอยู่ที่ขั้นนั้น (เช่น 2610S110461 SSG 450 + Scrap 3 จาก 544 = 83% → อยู่ที่ SSG ถูกแล้ว)
+   ยอด Lot = ใบรับเข้า WIP IN 1.5 (ไม่มีใบ = ขั้นที่ลงยอดมากสุด) · คืน { at, next } (next ว่าง = ยังทำอยู่ที่ at) · ไม่มีขั้นในเส้นทาง = null */
+function _lotPosOf(valve, lot, pop, base, scrap, closeF) {
+  const flow = [...new Set(_valveFlow(valve).map(_procCanon))];
+  const q = {};
+  for (const x of (pop || [])) q[x.proc] = (q[x.proc] || 0) + (Number(x.qty) || 0);
+  const adm = pfAdmOfJob(valve, lot);
+  for (const p in adm) if (!(q[p] > 0) && adm[p] && adm[p].qty > 0) q[p] = adm[p].qty;
+  let fi = -1;
+  for (let i = 0; i < flow.length; i++) if (q[flow[i]] > 0) fi = i;
+  if (fi < 0) return null;
+  const at = flow[fi];
+  let B = +base || 0;
+  if (!(B > 0)) for (const p in q) B = Math.max(B, q[p]);
+  const made = q[at] + Math.max(0, +scrap || 0);
+  const full = made >= B - planTol(B) || (closeF > 0 && made >= B * closeF - 1e-9);
+  return { at, next: full ? (flow[fi + 1] || '') : '' };
+}
+function _lotCloseF() { try { const c = +mpSettings().closePct; return c > 0 && c < 100 ? c / 100 : 0; } catch (e) { return 0.9; } }
+// ป้ายตำแหน่งสั้น: "รอขึ้น IND" / "COT" — o = รายการ WIP (atProc/nextProc/curProc) หรือรายการของ planLotAlloc (at/next/proc)
+function lotWhereTxt(o) {
+  if (!o) return '';
+  const nx = o.nextProc || o.next || '';
+  return nx ? `${TT('รอขึ้น', 'waiting for')} ${nx}` : (o.atProc || o.at || o.curProc || o.proc || '');
+}
 /* ★ 2026-07-30 — ตรวจ "ความถูกต้องของข้อมูล" ของรายการรับเข้า WIP IN 1.5
    เดิม WIP IN รับทุกอย่างที่พิมพ์เข้ามาโดยไม่ตรวจอะไรเลย (ต่างจาก WIP ที่ข้าม !isKnownValve
    และ WIP OUT ที่ติดธง unknown) → ข้อมูลผิดรูปเข้าไปแล้วไม่มีใครเห็น จนกลายเป็นยอดที่
@@ -18783,6 +18867,7 @@ function* _wipGen(){
      เฉพาะตอนดู VSM4 · สายอื่นเหมือนเดิมทุกประการ */
   const v4on = me === 'vsm4';
   if (v4on) { yield* _v4IdxGen(); yield* _mpRouteHistGen(); yield* _mpRouteMemoryGen(); }
+  const _closeF=_lotCloseF();   // ★ v4.33 ตำแหน่งล็อต: ขั้นล่าสุดครบแล้ว = รอขึ้นขั้นถัดไป (_lotPosOf)
   for(const k of Object.keys(wipInByJob)){
     if ((++_n & 127) === 0 && _sliceDue()) yield;   // ⚡ v3.81 พักให้จอ/การแตะได้ทำงาน (เฉพาะโหมดแบ่งช่วง)
     const first=wipInFirst[k]; if(!first) continue;
@@ -18801,7 +18886,8 @@ function* _wipGen(){
     const ve=v4on?v4EndOf(valve,lot):null, v4d=!!(ve&&ve.done);   // ★ v4.25
     if(v4d){ wip.v4end.total+=wipQty; wip.v4end.n++; wip.v4end.byCust[cust]=(wip.v4end.byCust[cust]||0)+wipQty; }
     else { wip.total+=wipQty; wip.byCust[cust]=(wip.byCust[cust]||0)+wipQty; }
-    wip.items.push({valve,lot,qty:wipQty,curProc:last?last.proc:'',customer:cust,date:last?last.date:String(first.ts||'').slice(0,10),
+    const pos=_lotPosOf(valve,lot,pop,inQty,scr,_closeF);   // ★ v4.33
+    wip.items.push({valve,lot,qty:wipQty,curProc:last?last.proc:'',atProc:pos?pos.at:'',nextProc:pos?pos.next:'',customer:cust,date:last?last.date:String(first.ts||'').slice(0,10),
       scrap:scr,wipIn:inQty,fgOut:fg,basis:'wipin',machines:[...(mcByJob[k]||[])],
       crossVsm:_peer && g && new Set(g.recs.map(vsmOf)).size>1, v4end:v4d?ve:null});
   }
@@ -18820,7 +18906,8 @@ function* _wipGen(){
     const q=Math.max(0,last.qty-(scrapByJob[k]||0));
     if(q<=0) continue;
     wip.noIntake.total+=q;
-    wip.noIntake.items.push({valve:g.valve,lot:g.lot,qty:q,curProc:last.proc,customer:custOf(vKey(g.valve)),
+    const pos=_lotPosOf(g.valve,g.lot,pop,0,scrapByJob[k]||0,_closeF);   // ★ v4.33 ไม่มีใบรับเข้า = ยอด Lot คือขั้นที่ลงยอดมากสุด
+    wip.noIntake.items.push({valve:g.valve,lot:g.lot,qty:q,curProc:last.proc,atProc:pos?pos.at:'',nextProc:pos?pos.next:'',customer:custOf(vKey(g.valve)),
       date:last.date,scrap:scrapByJob[k]||0,wipIn:0,basis:'produced',machines:[...(mcByJob[k]||[])],
       crossVsm:_peer && new Set(g.recs.map(vsmOf)).size>1});
   }
@@ -20888,7 +20975,7 @@ function wipDetailBody(bucket){
       ${isOut?'':`<td class="center" style="color:var(--blue)">${i.basis==='wipin'?nn(i.wipIn):`<span class="muted" title="${TT('ไม่มียอดรับเข้า — ใช้ยอดผลิตล่าสุด','no intake — using produced qty')}">${nn(i.qty+(i.scrap||0))}*</span>`}</td>
       <td class="center" style="color:#DC2626">${i.scrap?('-'+nn(i.scrap)):'0'}</td>`}
       <td class="center"><b>${nn(i.qty)}</b></td>
-      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml(i.curProc||'-')}</span>${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง และล็อตยังไม่ไปขั้นต่อ — แก้ใบด้วย ✏️ ที่ WIP IN 1.5 หรือ 🔑 Admin กด 🏁 ที่ค้นหา Process','Intake slip larger than what VSM4 made and the lot has not moved on — fix the slip with ✏️ in WIP IN 1.5, or 🔑 Admin taps 🏁 in Process search'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
+      <td class="center"><span class="tag ${isOut?'tag-green':'tag-orange'}">${escapeHtml((!isOut&&i.atProc)||i.curProc||'-')}</span>${!isOut&&i.nextProc?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(i.atProc+' '+TT('ครบแล้ว','is done')+' · '+TT('รอขึ้น','waiting for')+' '+i.nextProc)}">⏳ ${escapeHtml(i.nextProc)}</span>`:''}${i.v4end?` <span class="isl-rm" style="color:#0F766E" title="${escapeHtml(v4EndTxt(i.v4end))}">🏁 ${escapeHtml(v4EndTxt(i.v4end,true))}</span>`:''}${_chkSet.has(jobKey(i.valve,i.lot))?` <span class="isl-rm" style="color:#B45309" title="${escapeHtml(TT('ใบรับเข้ามากกว่ายอดที่ VSM4 ทำจริง และล็อตยังไม่ไปขั้นต่อ — แก้ใบด้วย ✏️ ที่ WIP IN 1.5 หรือ 🔑 Admin กด 🏁 ที่ค้นหา Process','Intake slip larger than what VSM4 made and the lot has not moved on — fix the slip with ✏️ in WIP IN 1.5, or 🔑 Admin taps 🏁 in Process search'))}">🔎</span>`:''}${i.crossVsm?` <span class="isl-rm" title="${TT('งานล็อตนี้ผลิตข้ามสาย VSM3 ⇄ VSM4 — นับเป็น WIP ของสายที่ทำ process ไกลสุดเพียงสายเดียว','this lot runs across VSM3 ⇄ VSM4 — counted as WIP on one line only')}">⇄</span>`:''}</td>
       ${/* ★ v4.29 (ผู้ใช้ 14/11 "การแสดงเครื่องจักรไม่ต้องแล้ว เอาออก") ไม่มีคอลัมน์เครื่องจักรใน WIP กำลังผลิต / WIP OUT */''}
       <td class="center"><button class="btn btn-outline btn-sm" onclick="showWipHistory('${encodeURIComponent(i.valve)}','${encodeURIComponent(i.lot||'')}')">🕘 ${TT('ประวัติ','History')}</button></td>
     </tr>`;
@@ -23730,7 +23817,7 @@ function cvLineWork(vk) {
   for (const it of o.wip) {
     const q = Number(it.qty) || 0; if (!(q > 0)) continue;
     if (pfAdmOfJob(it.valve, it.lot).FG && !postFgLeft(it.valve, it.lot).length) continue;
-    out.push({ lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: q, proc: it.curProc || '' });
+    out.push({ lot: it.lot, lk: lotKey(it.lot), st: 'wip', qty: q, proc: it.curProc || '', at: it.atProc || '', next: it.nextProc || '' });   // ★ v4.33
   }
   const inBy = new Map();
   for (const it of o.in) {
@@ -27849,18 +27936,55 @@ function upsertValve(entry, opts) {
 /* ★ v4.31 กัน "ข้อมูลเดิมกลับมาเอง" หลังกดบันทึก Valve — reload ที่ขอ /api/init ไปก่อนกดบันทึก แต่ผลมาถึงทีหลัง
    จะเอา Master ชุดเก่าทับเบอร์ที่เพิ่งแก้ (แก้ต่อจากนั้น = แก้บนของเก่า แล้วบันทึกทับของใหม่บน Cloud ด้วย)
    จำเบอร์ที่แก้ในเครื่องไว้ 10 นาที · ผลจาก Cloud ที่ "ขอ" ก่อนเวลาที่แก้ = ใช้ของในเครื่องแทนเฉพาะเบอร์นั้น */
-const _vEdits = new Map();
-function _vEditMark(entry) { try { _vEdits.set(vKey(entry.valveNo), { at: Date.now(), v: JSON.parse(JSON.stringify(entry)) }); } catch (e) {} }
+/* ★ v4.33 + ขอหลังกดบันทึกก็ยังได้ภาพถ่ายเก่าได้ (/api/init cache 60 วิ ที่ Cloudflare — ดู _tgtKeep) → 3 นาทีแรกของในเครื่องชนะเสมอ
+   + ลบ Valve (del) · Import Excel · จำใน localStorage (เปิดแอปใหม่ภายใน 3 นาทีก็ไม่กลับเป็นค่าเก่า) */
+const LS_V_EDITS = 'vsm4_valve_edits';
+const _vEdits = (() => { const m = new Map(); try { const o = JSON.parse(localStorage.getItem(LS_V_EDITS) || '{}'); for (const k in o) if (o[k] && Date.now() - o[k].at < 600000) m.set(k, o[k]); } catch (e) {} return m; })();
+function _vEditSave() { try { localStorage.setItem(LS_V_EDITS, JSON.stringify(Object.fromEntries(_vEdits))); } catch (e) {} }
+function _vEditMark(entry, del) {
+  try {
+    const now = Date.now();
+    for (const [k, e] of [..._vEdits]) if (now - e.at > 600000) _vEdits.delete(k);
+    _vEdits.set(vKey(entry.valveNo), del ? { at: now, del: 1 } : { at: now, v: JSON.parse(JSON.stringify(entry)) });
+    _vEditSave();
+  } catch (e) {}
+}
 function _vEditKeep(list, reqAt) {
   if (!_vEdits.size || !Array.isArray(list)) return list;
   const now = Date.now();
+  let gone = false;
   for (const [k, e] of [..._vEdits]) {
-    if (now - e.at > 600000) { _vEdits.delete(k); continue; }
-    if (!(+reqAt < e.at)) continue;          // ชุดนี้ขอหลังกดบันทึก = Cloud มีของใหม่แล้ว
+    if (now - e.at > 600000) { _vEdits.delete(k); gone = true; continue; }
+    if (!(+reqAt < e.at) && now - e.at >= EDIT_KEEP_MS) continue;   // ขอหลังกดบันทึก + พ้นอายุ cache แล้ว = Cloud มีของใหม่แล้ว
     const i = list.findIndex(v => vKey(v.valveNo) === k);
+    if (e.del) { if (i >= 0) list.splice(i, 1); continue; }
     if (i >= 0) list[i] = { ...list[i], ...e.v }; else list.push({ ...e.v });
   }
+  if (gone) _vEditSave();
   return list;
+}
+/* ★ v4.33 เครื่องจักร (Master Machine) — กติกาเดียวกัน: แก้ / ลบเครื่องแล้ว reload ได้ภาพถ่ายเก่า = เครื่องเดิมกลับมา */
+const LS_MC_EDITS = 'vsm4_mc_edits';
+let _mcEdits = (() => { try { const a = JSON.parse(localStorage.getItem(LS_MC_EDITS) || '[]'); return Array.isArray(a) ? a.filter(e => e && Date.now() - e.at < EDIT_KEEP_MS) : []; } catch (e) { return []; } })();
+function _mcEditMark(zone, id, m) {
+  const now = Date.now();
+  _mcEdits = _mcEdits.filter(e => now - e.at < EDIT_KEEP_MS && !(e.zone === zone && e.id === id));
+  _mcEdits.push({ at: now, zone, id, m: m ? JSON.parse(JSON.stringify(m)) : null });
+  try { localStorage.setItem(LS_MC_EDITS, JSON.stringify(_mcEdits)); } catch (e) {}
+}
+function _mcEditKeep(machines) {
+  const now = Date.now();
+  const L = _mcEdits.filter(e => now - e.at < EDIT_KEEP_MS);
+  if (!L.length || !machines || typeof machines !== 'object') return machines;
+  const out = { ...machines };
+  for (const e of L) {
+    const arr = (out[e.zone] || []).slice();
+    const i = arr.findIndex(x => x && x.id === e.id);
+    if (!e.m) { if (i >= 0) arr.splice(i, 1); }
+    else if (i >= 0) arr[i] = { ...arr[i], ...e.m }; else arr.push({ ...e.m });
+    out[e.zone] = arr;
+  }
+  return out;
 }
 async function saveValve(orig) {
   const valveNo  = $('m_v').value.trim();
@@ -27923,6 +28047,7 @@ async function saveValve(orig) {
 async function delValve(valveNo) {
   if (!(await confirmModal(`ลบ ${valveNo}?`))) return;
   state.valves = state.valves.filter(v => v.valveNo !== valveNo);
+  _vEditMark({ valveNo }, true);   // ★ v4.33 reload ที่ได้ภาพถ่ายเก่าไม่เอาเบอร์ที่ลบแล้วกลับมา
   lsSave(LS.VALVES, state.valves);
   if (state.vProc && state.vProc[vKey(valveNo)]) { delete state.vProc[vKey(valveNo)]; lsSave(LS.VPROC, state.vProc); }   // ลบ Process Master VSM1/2 ที่ผูกกับวาล์วนี้ด้วย
   if (state.valveVsm && state.valveVsm[vKey(valveNo)]) { delete state.valveVsm[vKey(valveNo)]; lsSave(LS.VVSM, state.valveVsm); }   // ลบการผูก Valve Master VSM ด้วย
@@ -27963,6 +28088,7 @@ async function importValves(ev) {
     if (!valves.length) return;
     // merge into local — valveNo ซ้ำ (ไม่สนตัวพิมพ์) ใช้ข้อมูลใหม่แทนที่
     for (const v of valves) upsertValve(v);
+    for (const v of valves) { const e = valveByKey(v.valveNo); if (e) _vEditMark(e); }   // ★ v4.33 กันภาพถ่ายเก่าจาก cache ทับ
     _mpVIdx = null;
     lsSave(LS.VALVES, state.valves);
     renderValveList();
@@ -29288,8 +29414,9 @@ async function refreshPostFgFromCloud(silent) {
   try {
     const init = await api('/api/init').catch(() => null);
     if (init?.targets) {
-      state.targets = { ...state.targets, ...init.targets }; lsSave(LS.TARGETS, state.targets);
-      syncMcProcFromCloud(init.targets);   // process ของเครื่องล่าสุด → คิดงานหลัง FG ให้ตรง
+      const it = _tgtKeep(init.targets);   // ★ v4.33 สถานะที่เพิ่งขยับ (DONE / ถอยกลับ) ไม่ถูกภาพถ่ายเก่าจาก cache ทับ
+      state.targets = { ...state.targets, ...it }; lsSave(LS.TARGETS, state.targets);
+      syncMcProcFromCloud(it);   // process ของเครื่องล่าสุด → คิดงานหลัง FG ให้ตรง
     }
     // โหลดชุดครบทุกช่วงไว้แล้ว (หน้าติดตามงาน) → ใช้ซ้ำ ไม่ต้องดึงก้อน ~10 MB อีกรอบ
     if (_allKpi) { _postFgRecs = _allKpi; }
@@ -29633,6 +29760,7 @@ async function addMachine() {
   const existing = state.machines[zone].findIndex(m => m.id === id);
   const entry = { id, target, man_std: std, process };
   if (existing >= 0) state.machines[zone][existing] = entry; else state.machines[zone].push(entry);
+  _mcEditMark(zone, id, entry);   // ★ v4.33
   lsSave(LS.MACHINES, state.machines);
   // เก็บ process แยก (รอด cloud reload เพราะ /api/init ไม่คืน field นี้)
   _machineProc[id] = process;
@@ -29647,6 +29775,7 @@ async function addMachine() {
 async function delMachine(zone, id) {
   if (!(await confirmModal(`ลบ ${id}?`))) return;
   if (state.machines[zone]) state.machines[zone] = state.machines[zone].filter(m => m.id !== id);
+  _mcEditMark(zone, id, null);   // ★ v4.33
   lsSave(LS.MACHINES, state.machines);
   delete _machineProc[id];
   _procVocabDirty();
@@ -34079,7 +34208,7 @@ function openMpHoles() {
     }).join('');
     return `<div class="mph-r"><button type="button" class="mpnp-v" onclick="_mpvNpGo('${vk}')" title="${TT('ค้นหาเบอร์นี้ในแผน', 'Find this valve in the plan')}">${escapeHtml(j.valve)}</button>
       <span class="l">${escapeHtml(j.lot || '-')}</span><span class="q">${nn(j.qty)} ${TT('ชิ้น', 'pcs')}</span>${j.due ? _mpvSaleS(j) : ''}
-      <div class="mph-cs">${cs}${f ? `<span class="mph-at">📍 ${TT('อยู่ที่', 'at')} ${escapeHtml(f.proc)}</span>` : ''}
+      <div class="mph-cs">${cs}${f ? `<span class="mph-at">${_mpPosTxt(_mpLotPos(j))}</span>` : ''}
         <button type="button" class="mph-go" onclick="_mpvHoleGoProc('${vk}')" title="${escapeHtml(TT('ดูยอดทุก Process ของเบอร์นี้ · Admin แตะช่องเหลืองเพื่อเติมยอด', 'See every process of this valve · an Admin taps the yellow cell to fill it'))}">${TT('ค้นหา Process', 'Find Process')} ›</button></div></div>`;
   };
   const byDue = (a, b) => String(a.due).localeCompare(String(b.due)) || String(a.valve).localeCompare(String(b.valve));
@@ -34648,10 +34777,27 @@ function _mpvSaleLine(j, S) {
   return `🛒 ${TT('ขาย', 'Sale')}: ${s.ds.map(o => `<b>${_mpD(o.date)}</b> ${nn(o.qty)} ${TT('ชิ้น', 'pcs')}${o.named ? ' 🔒' : ''}`).join(' · ')}${s.ds.some(o => o.named) ? ` <span class="muted">(🔒 ${TT('แผนขายระบุ Lot นี้', 'lot named in the sales plan')})</span>` : ''}`;
 }
 /* ★ v3.89 ล็อตอยู่ที่ไหนตอนนี้: Process ปัจจุบัน (ขั้นก่อนหน้าผ่านแล้ว) + Zone ของเครื่องล่าสุดที่ลงยอด */
+/* ★ v4.33 (ผู้ใช้ 18/11 ข้อ 2) ตำแหน่งล็อตในแผน: ขั้นไกลสุดที่มียอด (front) ทำครบแล้ว (need 0 — เหลือ ≤ planTol หรือถึง closePct) = รอขึ้นขั้นถัดไปที่ยังต้องทำ
+   เดิมขึ้น "📍 อยู่ที่ COT (500 ชิ้น)" ทั้งที่ COT ครบแล้ว ล็อตรอ IND · ยังไม่ครบ = อยู่ที่ขั้นนั้นเหมือนเดิม */
+function _mpLotPos(j) {
+  const f = j.front != null && j.steps ? j.steps[j.front] : null;
+  if (!f) return null;
+  if (f.need > 0) return { f, nx: null, full: false };
+  let nx = null;
+  for (let i = j.front + 1; i < j.steps.length; i++) if (j.steps[i].need > 0) { nx = j.steps[i]; break; }
+  return { f, nx, full: true };
+}
+function _mpPosTxt(p, html, qty) {
+  if (!p) return '';
+  const b = s => html ? `<b>${escapeHtml(s)}</b>` : escapeHtml(s);
+  const q = qty != null ? ` (${nn(qty)} ${TT('ชิ้น', 'pcs')})` : '';
+  if (!p.full) return `📍 ${TT('อยู่ที่', 'at')} ${b(p.f.proc)}${q}`;
+  return `📍 ${b(p.f.proc)} ${TT('ครบแล้ว', 'done')}${q}${p.nx ? ` · ⏳ ${TT('รอขึ้น', 'waiting for')} ${b(p.nx.proc)}` : ''}`;
+}
 function _mpvWhereLine(j) {
   const b = [];
   const f = j.front != null && j.steps ? j.steps[j.front] : null;
-  if (f) b.push(`📍 ${TT('อยู่ที่', 'at')} <b>${escapeHtml(f.proc)}</b> (${nn(f.done)} ${TT('ชิ้น', 'pcs')})${j.passedN ? ` · ${TT('ขั้นก่อนหน้า', 'earlier')} ${j.passedN} ${TT('ขั้นถือว่าผ่านแล้ว', 'steps count as passed')}` : ''}${j.from < j.front ? ` · ${TT('ล็อตทยอยผลิต — ยังวางตั้งแต่', 'batch lot — planned from')} ${escapeHtml(j.steps[j.from].proc)}` : ''}`);
+  if (f) b.push(`${_mpPosTxt(_mpLotPos(j), true, f.done)}${j.passedN ? ` · ${TT('ขั้นก่อนหน้า', 'earlier')} ${j.passedN} ${TT('ขั้นถือว่าผ่านแล้ว', 'steps count as passed')}` : ''}${j.from < j.front ? ` · ${TT('ล็อตทยอยผลิต — ยังวางตั้งแต่', 'batch lot — planned from')} ${escapeHtml(j.steps[j.from].proc)}` : ''}`);
   // ★ v4.09 ขั้นที่ถูกข้ามไป → แผนให้กลับมาทำก่อน (ทำแล้วแต่ไม่ได้ลงยอด = Admin เติมยอดที่หน้าค้นหา Process)
   if (j.holes && j.holes.length) b.push(`<span class="mpv-holel">⏪ ${TT('ข้ามไป', 'skipped')} <b>${j.holes.map(escapeHtml).join(' · ')}</b> — ${TT('ยังไม่มียอด แผนให้กลับมาทำก่อน', 'no output yet, planned first')}</span>`);
   // ★ v4.15 ขั้นที่ผลิตได้ + Scrap ถึงเกณฑ์ = ถือว่าจบ แผนไปขั้นถัดไป
@@ -36774,7 +36920,7 @@ function _mpbRenderList() {
   });
   const today = todayISO();
   const st = x => x.state === 'at' ? `<span class="q-at">📍 ${TT('อยู่ขั้นนี้', 'here')}</span>`
-    : x.state === 'up' ? `<span class="q-up">⏳ ${TT('อยู่ที่', 'at')} ${escapeHtml(x.j.steps[x.j.firstStep] ? x.j.steps[x.j.firstStep].proc : '-')}</span>`
+    : x.state === 'up' ? (() => { const s0 = x.j.steps[x.j.firstStep]; return `<span class="q-up">⏳ ${s0 && !(s0.done > 0) ? TT('รอขึ้น', 'waiting for') : TT('อยู่ที่', 'at')} ${escapeHtml(s0 ? s0.proc : '-')}</span>`; })()   // ★ v4.33 ขั้นนั้นยังไม่มียอด = รอขึ้น
     : `<span class="q-noin">📭 ${TT('ยังไม่มีของ', 'not received')}</span>`;
   const where = x => {
     if (x.pin) return `<span class="mpb-pt pin">📌 ${escapeHtml(x.pin.m)}${x.pin.lk === '*' ? '' : ' · ' + TT('ล็อตนี้', 'this lot')}</span>`;
