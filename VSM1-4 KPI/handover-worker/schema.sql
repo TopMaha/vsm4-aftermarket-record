@@ -41,3 +41,30 @@ CREATE TABLE IF NOT EXISTS wipin (
   updated_at TEXT NOT NULL             -- LWW
 );
 CREATE INDEX IF NOT EXISTS idx_wipin_updated ON wipin(updated_at);
+
+-- ============================================================
+-- ★ v4.34 เอกสารทั่วไป (qi = งานเฝ้าระวังคุณภาพ · hosign = ลงชื่อรับทราบต่อกะ) + รูปแนบ
+-- endpoints: /doc/list|put|bulk · /img/put · /img/<id>  (Worker สร้างตารางเองตอนเรียกครั้งแรก)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS docs (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  vsm TEXT,
+  data TEXT NOT NULL,                  -- JSON เนื้อหา
+  by_id TEXT,
+  by_name TEXT,
+  ts TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0,  -- soft delete
+  updated_at TEXT NOT NULL,            -- LWW (เวลาเครื่องผู้ใช้)
+  seen_at TEXT NOT NULL                -- เวลาที่ Worker รับ (ใช้กับ ?since=)
+);
+CREATE INDEX IF NOT EXISTS idx_docs_kind_seen ON docs(kind, seen_at);
+CREATE TABLE IF NOT EXISTS imgs (
+  id TEXT PRIMARY KEY,
+  ref TEXT,                            -- id ของเอกสารที่รูปนี้แนบ
+  mime TEXT NOT NULL,
+  data TEXT NOT NULL,                  -- base64
+  size INTEGER NOT NULL DEFAULT 0,
+  by_id TEXT,
+  ts TEXT NOT NULL
+);

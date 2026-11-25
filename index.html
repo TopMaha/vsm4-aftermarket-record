@@ -596,6 +596,170 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .cv-wip .cv-sil{color:#92400E}
 .cv-sec.busy{color:#B45309}
 @media (max-width:420px){.cv-mode button{padding:6px 5px}.cv-mode button b{font-size:12.5px}.cv-mode button small{font-size:10.5px}}
+/* ===== ★ v4.34 ⚠️ งานเฝ้าระวังคุณภาพ (การ์ดหน้าติดตามงาน · ป๊อปอัปค้นหา · ฟอร์ม · รายละเอียด · ครึ่งขวาของ TOP ปัญหาบน IOT) ===== */
+.qi-launch .cv-ic{background:linear-gradient(135deg,#B45309,#F59E0B);box-shadow:0 3px 10px rgba(180,83,9,.25)}
+.qi-n{font-size:11.5px;font-weight:800;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:999px;padding:1px 9px;margin-left:8px;vertical-align:1px;white-space:nowrap}
+.qi-top{display:flex;gap:8px;margin-bottom:8px}
+.qi-top input{flex:1;min-width:0;min-height:44px;border:1.5px solid var(--blue-soft);border-radius:10px;padding:8px 12px;font-size:15px;font-family:inherit}
+.qi-top .btn{flex:0 0 auto;min-height:44px;white-space:nowrap}
+.qi-flt{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}
+.qi-seg{display:inline-flex;border:1.5px solid var(--blue-soft);border-radius:10px;overflow:hidden;background:#fff}
+.qi-seg button{border:0;background:transparent;padding:7px 12px;font-family:inherit;font-size:12.5px;font-weight:800;color:#334155;cursor:pointer;min-height:36px;white-space:nowrap}
+.qi-seg button b{font-weight:800;color:var(--muted);margin-left:2px}
+.qi-seg button.on{background:var(--blue);color:#fff}
+.qi-seg button.on b{color:#DBEAFE}
+.qi-seg button:focus-visible,.qi-row:focus-visible,.qi-it:focus-visible{outline:3px solid rgba(26,86,219,.4);outline-offset:1px}
+.qi-dr{display:inline-flex;align-items:center;gap:5px}
+.qi-dr i{font-style:normal;color:var(--muted)}
+.qi-dr input{border:1.5px solid var(--blue-soft);border-radius:9px;padding:5px 7px;font-size:12.5px;font-family:inherit;min-height:36px;max-width:142px;background:#fff}
+.qi-all{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#334155;min-height:36px;cursor:pointer}
+.qi-all input{width:18px;height:18px;margin:0}
+.qi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:8px}
+.qi-row{display:flex;flex-direction:column;gap:4px;text-align:left;font-family:inherit;background:#fff;border:1.5px solid var(--blue-soft);border-left:4px solid #F59E0B;border-radius:11px;padding:9px 11px;cursor:pointer;min-width:0;transition:box-shadow .15s,border-color .15s}
+.qi-row:hover{box-shadow:0 4px 14px rgba(26,86,219,.14)}
+.qi-row.done,.qi-row.closed{border-left-color:#86EFAC}
+.qi-h{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
+.qi-h b{font-size:14.5px;font-weight:900;color:var(--blue-dark);white-space:nowrap}
+.qi-lot{font-size:12.5px;font-weight:700;color:#475569;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi-st{margin-left:auto;font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;white-space:nowrap;background:#FEF3C7;color:#92400E}
+.qi-st.done,.qi-st.closed{background:#DCFCE7;color:#166534}
+.qi-t{font-size:13.5px;line-height:1.5;color:#0f172a;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}
+.qi-m{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:11.5px;color:var(--muted);font-weight:600}
+.qi-none{padding:26px 10px;text-align:center;color:var(--muted);font-size:13.5px;font-weight:700}
+.qi-d{display:flex;flex-direction:column;gap:12px}
+.qi-d-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.qi-d-h b{font-size:20px;font-weight:900;color:var(--blue-dark)}
+.qi-d-h .qi-lot{font-size:15px}
+.qi-d-t{font-size:16px;line-height:1.65;color:#0f172a;white-space:pre-wrap;word-break:break-word;background:#FFFBEB;border:1px solid #FDE68A;border-radius:11px;padding:11px 13px}
+.qi-d-im{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(170px,46%),1fr));gap:8px}
+.qi-d-im button{border:1.5px solid #e2e8f0;border-radius:11px;overflow:hidden;padding:0;background:#f1f5f9;cursor:zoom-in;aspect-ratio:4/3;display:flex}
+.qi-d-im img{width:100%;height:100%;object-fit:cover;display:block}
+.qi-d-im .err::after,.qi-im.err::after{content:'⏳ รูปยังไม่ขึ้น';font-size:11.5px;font-weight:700;color:#64748b;margin:auto}
+.qi-d-im .err img,.qi-im.err img{display:none}
+.qi-d-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 14px}
+.qi-d-g span{font-size:14px;font-weight:700;color:#0f172a;min-width:0;word-break:break-word}
+.qi-d-g i{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:1px}
+.qi-d-f{font-size:11.5px;color:var(--muted)}
+.qi-d-b{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.qi-d-b .btn:first-child{margin-right:auto}
+.qi-lock{font-size:12px;color:var(--muted);font-weight:700}
+.qi-f{display:flex;flex-direction:column;gap:10px}
+.qi-f .fr{margin:0}
+.qi-f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:10px}
+.qi-f textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--blue-soft);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:16px;line-height:1.6;resize:vertical;min-height:104px}
+.qi-f textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.qi-where{font-size:12.5px;color:#334155;font-weight:600}
+.qi-where:empty{display:none}
+.qi-where .done{color:#92400E}
+.qi-ims{display:flex;flex-wrap:wrap;gap:8px}
+.qi-im{position:relative;width:104px;height:104px;border-radius:11px;overflow:hidden;border:1.5px solid #e2e8f0;background:#f1f5f9;display:flex}
+.qi-im img{width:100%;height:100%;object-fit:cover}
+.qi-im button{position:absolute;top:3px;right:3px;width:30px;height:30px;border:0;border-radius:50%;background:rgba(15,23,42,.72);color:#fff;font-size:13px;font-weight:800;cursor:pointer;line-height:1}
+.qi-add{width:104px;height:104px;border:1.5px dashed #94a3b8;border-radius:11px;background:#F8FAFC;font-family:inherit;font-size:12.5px;font-weight:800;color:#475569;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.qi-add b{font-size:24px;font-weight:400;line-height:1.1}
+.qi-add:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.qi-add.cam{display:none}
+@media (pointer:coarse){.qi-add.cam{display:flex}}
+.qi-err{font-size:13px;font-weight:800;color:var(--red)}
+.qi-err:empty{display:none}
+.qi-lb{position:fixed;inset:0;z-index:4800;background:rgba(8,12,20,.94);display:flex;align-items:center;justify-content:center;outline:none}
+.qi-lb img{max-width:100%;max-height:100%;object-fit:contain;touch-action:pinch-zoom}
+.qi-lb button{position:absolute;border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:50%;width:52px;height:52px;font-size:22px;font-weight:700;cursor:pointer;line-height:1}
+.qi-lb button:hover{background:rgba(255,255,255,.3)}
+.qi-lb .x{top:14px;right:14px}
+.qi-lb .p{left:12px;top:calc(50% - 26px)}
+.qi-lb .n{right:12px;top:calc(50% - 26px)}
+.qi-lb .c{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:800;background:rgba(0,0,0,.5);border-radius:999px;padding:4px 12px}
+/* IOT เต็มจอ: TOP ปัญหา | งานเฝ้าระวังคุณภาพ คนละครึ่ง */
+#iotQi{flex:1 1 280px;min-width:250px;display:flex;min-height:0}
+.qi-wrap{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;border:1.5px solid #FCD34D;background:#FFFBEB;border-radius:12px;padding:5px 10px 7px;min-width:0}
+.qi-wrap.none{border-color:#e2e8f0;background:#F8FAFC}
+.qi-hd{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;color:#92400E;white-space:nowrap}
+.qi-wrap.none .qi-hd{color:#64748B}
+.qi-hd b{background:#B45309;color:#fff;border-radius:999px;padding:0 8px;font-size:11px;line-height:17px}
+.qi-hd small{font-weight:700;opacity:.75;font-size:9.5px;overflow:hidden;text-overflow:ellipsis}
+.qi-list{display:flex;flex-direction:column;gap:3px;min-height:0;overflow-y:auto;max-height:121px;scroll-snap-type:y mandatory;scrollbar-width:thin}
+.qi-it{display:flex;align-items:center;gap:9px;width:100%;min-height:28px;padding:2px 9px;border:1px solid #FDE68A;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;min-width:0;flex:0 0 auto;scroll-snap-align:start}
+.qi-it:hover{border-color:#B45309;box-shadow:0 2px 8px rgba(180,83,9,.18)}
+.qi-it b{font-size:12.5px;font-weight:900;color:#0f172a;white-space:nowrap}
+.qi-it .l{font-size:11.5px;font-weight:700;color:#475569;white-space:nowrap;font-variant-numeric:tabular-nums}
+.qi-it .t{flex:1 1 auto;min-width:0;font-size:12px;font-weight:600;color:#7C2D12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qi-it .p{flex:0 0 auto;font-size:11px;font-weight:800;color:#475569}
+.qi-no{font-size:11.5px;font-weight:700;color:#94A3B8;padding:3px 0}
+@media (min-width:1600px){.qi-it b{font-size:13.5px}.qi-it .l{font-size:12.5px}.qi-it .t{font-size:13px}}
+@media (max-width:820px){.qi-list{max-height:none;scroll-snap-type:none}.qi-it{min-height:44px;flex-wrap:wrap;gap:1px 9px;padding:6px 10px}.qi-it .t{flex:1 1 100%;order:5;white-space:normal}.qi-it .p{margin-left:auto}}
+/* ===== ★ v4.34 ✍️ ลงชื่อรับทราบการต่อกะ ===== */
+.iot-hoal{display:inline-flex;align-items:center;gap:5px 8px;flex-wrap:wrap;font-family:inherit;font-size:12px;line-height:1.35;font-weight:700;text-align:left;border:1.5px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:9px;padding:4px 11px;margin:0 0 6px;cursor:pointer;max-width:100%}
+.iot-hoal.wait{border-color:#FCD34D;background:#FFFBEB;color:#92400E}
+.iot-hoal.late{border-color:#DC2626;background:#DC2626;color:#fff}
+.iot-hoal b{font-weight:900}
+.iot-hoal .sh{opacity:.85}
+.iot-hoal .nm{font-weight:900;background:rgba(255,255,255,.65);color:inherit;border-radius:999px;padding:1px 10px}
+.iot-hoal.late .nm{background:#fff;color:#B91C1C}
+.iot-hoal:focus-visible{outline:3px solid rgba(26,86,219,.45);outline-offset:1px}
+.iot-fs > #iotHoAlert{grid-area:info;justify-self:end;align-self:center;margin:0;font-size:13.5px;max-width:calc(100% - 290px);z-index:1}
+.iot-fs.iot-page3 > #iotHoAlert{display:none!important}
+@media (min-width:1600px){.iot-fs > #iotHoAlert{font-size:15px}}
+@media (max-width:820px){.iot-fs > #iotHoAlert{max-width:100%;justify-self:stretch;min-height:44px}.iot-hoal{min-height:40px}}
+.ho-sign-b{flex:0 0 auto;border:1.5px solid rgba(255,255,255,.55);background:rgba(255,255,255,.18);color:#fff;border-radius:999px;font-family:inherit;font-size:11.5px;font-weight:800;padding:3px 10px;cursor:pointer;white-space:nowrap;line-height:1.35}
+.ho-sign-b:hover{background:rgba(255,255,255,.34)}
+.ho-sign-b:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.ho-sign-b.ok{background:#16A34A;border-color:#BBF7D0}
+.ho-sign-b.wait{background:#F59E0B;border-color:#FDE68A;color:#1F1300}
+.ho-sign-b.late{background:#fff;border-color:#fff;color:#B91C1C}
+/* แผงแคบ (มือถือ / จอเล็ก): ปุ่มลงบรรทัดใหม่ ชื่อแผงไม่ถูกตัด */
+.ho-hd{flex-wrap:wrap;row-gap:6px}
+.ho-hd .ho-ttl{white-space:nowrap}
+.hs-bar{display:flex;flex-wrap:wrap;gap:3px 14px;width:100%;flex:0 0 auto;border:0;border-bottom:1px solid #e2e8f0;background:#F8FAFC;padding:6px 12px;font-family:inherit;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;line-height:1.5}
+.hs-bar:hover{background:#EFF6FF}
+.hs-bar .ok,.hs-li .ok,.hs-hr .ok{color:#166534}
+.hs-bar .wait,.hs-li .wait{color:#92400E}
+.hs-bar .late,.hs-li .late,.hs-hr .late{color:#B91C1C;font-weight:800}
+.hs-bar i,.hs-li i,.hs-hr i{font-style:normal;font-weight:600;opacity:.85}
+.hs-bar em,.hs-li em,.hs-hr em,.hs-who em{font-style:normal;font-weight:800;color:#B45309}
+.hs-modal{max-width:560px}
+.hs-modal .iotpop-cl{margin-left:auto}
+.hs-when{display:flex;flex-wrap:wrap;gap:3px 12px;align-items:baseline;font-size:13px;font-weight:700;color:#475569}
+.hs-when b{font-size:16px;font-weight:900;color:#0f172a}
+.hs-when .wait{color:#92400E;font-weight:800}
+.hs-when .late{color:#B91C1C;font-weight:800}
+.hs-in{display:flex;gap:8px}
+.hs-in input{flex:1;min-width:0;min-height:52px;border:2px solid var(--blue-soft);border-radius:12px;padding:8px 14px;font-size:20px;font-weight:800;font-family:inherit;letter-spacing:.5px;text-transform:uppercase}
+.hs-in input::placeholder{font-size:14px;font-weight:600;letter-spacing:0;text-transform:none}
+.hs-in input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.15)}
+.hs-in .btn{flex:0 0 auto;min-height:52px;font-size:14.5px}
+.hs-who{font-size:14px;line-height:1.55;color:#0f172a}
+.hs-who:empty{display:none}
+.hs-who span{color:var(--muted);font-weight:700}
+.hs-who.ok{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:9px 12px;color:#166534}
+.hs-who.bad{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:9px 12px;color:#991B1B}
+.hs-who.warn{background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:9px 12px;color:#92400E}
+.hs-grp{border:1px solid #e2e8f0;border-radius:11px;padding:8px 11px;margin-bottom:8px}
+.hs-gh{font-size:13px;font-weight:900;color:var(--blue-dark);margin-bottom:4px}
+.hs-gh b{font-size:11.5px;color:var(--muted)}
+.hs-li{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:700;padding:4px 0;border-top:1px dashed #eef2f7}
+.hs-li:first-of-type{border-top:0}
+.hs-li small{flex:0 0 auto;font-size:11px;color:var(--muted);font-weight:700;text-align:right;align-self:center}
+.hs-hr{display:flex;gap:12px;padding:6px 2px;border-bottom:1px solid #eef2f7;font-size:13px;align-items:baseline}
+.hs-hr b{flex:0 0 92px;font-weight:800;color:#334155;white-space:nowrap}
+.hs-hr > span{display:flex;flex-wrap:wrap;gap:2px 12px;font-weight:700}
+/* ตั้งค่า: ผู้ลงชื่อใต้ชื่อ Group Leader */
+#zoneGlWrap .zgl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:12px 16px;align-items:start}
+.hsp{margin-top:8px;border:1.5px solid var(--blue-soft);border-radius:11px;padding:8px 10px;background:#F8FAFF}
+.hsp-h{font-size:12.5px;font-weight:800;color:var(--blue-dark);margin-bottom:6px}
+.hsp-h em{font-style:normal;font-size:11px;font-weight:700;color:#B45309}
+.hsp-r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;border-top:1px dashed #DBE6FA;padding:7px 0}
+.hsp-r:first-child{border-top:0;padding-top:0}
+.hsp-r input.hsp-id,.hsp-r select{width:100%;min-height:38px;border:1.5px solid var(--blue-soft);border-radius:9px;padding:5px 9px;font-family:inherit;font-size:13.5px;background:#fff;box-sizing:border-box;min-width:0}
+.hsp-r .hsp-x{grid-column:2;grid-row:1;width:38px;height:38px;border:1px solid #e2e8f0;background:#fff;border-radius:9px;color:#64748b;font-size:13px;cursor:pointer}
+.hsp-r .hsp-x:hover{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
+.hsp-r .hsp-id{grid-column:1;grid-row:1}
+.hsp-r .hsp-sh,.hsp-r .hsp-ho{grid-column:1 / -1}
+.hsp-ho{display:flex;gap:6px 16px;flex-wrap:wrap}
+.hsp-ho label{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;min-height:32px;cursor:pointer;margin:0}
+.hsp-ho input{width:18px;height:18px;margin:0}
+.hsp-add{border:1.5px dashed #94a3b8;background:#fff;border-radius:9px;padding:7px 12px;font-family:inherit;font-size:12.5px;font-weight:800;color:#475569;cursor:pointer;width:100%}
+.hsp-add:hover{border-color:var(--blue);color:var(--blue)}
 /* ===== ผลค้นหา Process จาก Valve — ตาราง: คอลัมน์=Process แถว=Lot ช่อง=ยอด OPR ===== */
 .pf-legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
 .pf-lg{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
@@ -3272,6 +3436,7 @@ tr.s-short .isl-bar-t i{background:linear-gradient(90deg,#DC2626,#F87171)}
 .iah-zin{display:flex;align-items:baseline;gap:7px;min-width:0;max-width:246px}
 .iah-zn{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .iah-gl{flex:0 1 auto;min-width:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-weight:700;color:#64748B}
+.iah-gl.late{color:#DC2626;max-width:210px}   /* ★ v4.34 ยังไม่ลงชื่อต่อกะ */
 .iah-glh{font-weight:700;color:#64748B}
 .iah-cell{font-variant-numeric:tabular-nums;font-weight:800;border-bottom:1px solid #F1F5F9}
 .iah-good{background:#DCFCE7;color:#14532D}
@@ -3517,7 +3682,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.33</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.34</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -3609,8 +3774,10 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
       </div>
     </div>
     <div id="iotDateInfo" style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:6px;padding:4px 8px;background:#f1f5f9;border-radius:6px;display:inline-block"></div>
+    <!-- ★ v4.34 ✍️ ยังไม่ทำการต่อกะ — ชื่อคนที่ต้องลงชื่อกะนี้ (แตะ = ลงชื่อ) -->
+    <button type="button" id="iotHoAlert" class="iot-hoal" onclick="openHoSign()" style="display:none"></button>
     <div id="iotOaeStrip" aria-label="สรุป OAE รวมและรายโซน"></div>
-    <div id="iotWipStrip" aria-label="สรุป WIP IN 1.5 / WIP OUT + TOP ปัญหา"><div id="iotWipCards"></div><div id="iotTop5"></div></div>
+    <div id="iotWipStrip" aria-label="สรุป WIP IN 1.5 / WIP OUT + TOP ปัญหา"><div id="iotWipCards"></div><div id="iotTop5"></div><div id="iotQi"></div></div>
     <div id="mcViewList" style="display:none"></div>
     <div id="mcViewFloor"></div>
     <!-- ★ 2026-08-02 (req #6 + #8) — "หน้า 2" ของ IOT: รายการติดตามงานขายของเดือนนั้น (จากการวางแผนขาย) -->
@@ -3748,6 +3915,13 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
     <div id="procRangeNote" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px"></div>
     <div id="procFilterBar" style="margin-bottom:10px"></div>
     <div id="procGrid" class="pgrid"></div>
+  </div>
+
+  <!-- ★ v4.34 ⚠️ งานเฝ้าระวังคุณภาพ (ผู้ใช้ 25/11 ข้อ 1 + รูป: ระหว่าง Output ของ Process กับ เช็คงานที่พอดัดแปลงได้) -->
+  <div class="card cv-launch qi-launch" role="button" tabindex="0" onclick="openQiModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openQiModal();}">
+    <span class="cv-ic" aria-hidden="true">⚠️</span>
+    <span class="cv-tx"><b>งานเฝ้าระวังคุณภาพ<span id="qiCardN" class="qi-n" style="display:none"></span></b><small>บันทึกปัญหาไว้กันลืม · ค้นหาได้จาก Valve No · Lot · วันที่ · ผู้แจ้ง</small></span>
+    <span class="cv-go">เปิด<i aria-hidden="true">›</i></span>
   </div>
 
   <!-- ★ v4.07 🔧 เช็คงานที่พอดัดแปลงได้ (ผู้ใช้ 2/11: ปุ่มแทรกระหว่าง Output ของ Process กับ ค้นหา Process จาก Valve No)
@@ -4072,10 +4246,10 @@ try { if (localStorage.getItem('vsm4_user')) { document.getElementById('userChip
   <!-- ★ v4.21 (ผู้ใช้ 12/11) 👷 Group Leader ประจำ Zone — ตั้งราย VSM / QC ตามแถบสลับด้านบน · แสดงข้างชื่อ Zone ในหน้า IOT รวมทุกสาย -->
   <div class="section-title">👷 Group Leader ประจำ Zone</div>
   <div class="card">
-    <div class="muted mb-8" style="font-size:12px;line-height:1.6">ชื่อนี้แสดงในหน้า 🏭 IOT รวมทุกสาย ข้างชื่อ Zone (ตาราง KPI รายชั่วโมง) · ตั้งของ VSM / QC ที่เลือกอยู่ที่แถบด้านบน · เว้นว่าง = ไม่แสดง</div>
+    <div class="muted mb-8" style="font-size:12px;line-height:1.6">ชื่อ = แสดงข้าง Zone ในหน้า 🏭 IOT รวมทุกสาย · ✍️ = คนที่ต้องลงชื่อต่อกะ · ตั้งของ VSM / QC ที่เลือกอยู่ที่แถบด้านบน</div>
     <div id="zoneGlWrap"></div>
     <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
-      <button class="btn btn-blue btn-sm" onclick="saveZoneGl()">💾 บันทึกชื่อ Group Leader</button>
+      <button class="btn btn-blue btn-sm" onclick="saveZoneGl()">💾 บันทึก Group Leader</button>
       <span id="zoneGlState" class="muted" style="font-size:11px"></span>
     </div>
   </div>
@@ -6226,6 +6400,7 @@ async function _heartbeatConn() {
     flushUnsynced();                             // เชื่อมต่อได้แล้ว → ส่งข้อมูลที่ค้างขึ้น Cloud อัตโนมัติ
     flushPendingWrites();                        // ★ req #6: รวมข้อมูลอื่น ๆ (แผน/เป้า/วาล์ว/พนักงาน/IDs)
     try { if (typeof _hoFlush === 'function') _hoFlush(); } catch (e) {}       // ต่อกะ
+    try { if (docPendCount()) { docFlush(); imgFlush(); } } catch (e) {}       // ★ v4.34
     try { if (typeof _wipinFlush === 'function') _wipinFlush(); } catch (e) {} // WIP IN 1.5
     // ★ 2026-07-30: เน็ตกลับมาแล้วแต่ Master Valve ยังไม่ครบ (cache ถูกล้าง + reload ตอนเปิดแอปล้มเหลว)
     //   → ดึงใหม่ให้เอง ไม่ต้องรอผู้ใช้กดปุ่ม · ไม่งั้นยอดแยกกลุ่มลูกค้าเพี้ยนไปทั้งวัน
@@ -6485,6 +6660,7 @@ function _pendingSyncCount() {
   try { n += _countUnsynced(); } catch (e) {}
   try { n += (_wipinPending && _wipinPending.size) || 0; } catch (e) {}   // ประกาศทีหลังในไฟล์ → กัน TDZ
   try { n += (_hoPending && _hoPending.size) || 0; } catch (e) {}         // ต่อกะ
+  try { n += docPendCount(); } catch (e) {}                               // ★ v4.34 งานเฝ้าระวัง · ลงชื่อต่อกะ · รูป
   n += _pendW.length;                                                     // ข้อมูลอื่น ๆ (แผน/เป้า/วาล์ว/พนักงาน/IDs)
   return n;
 }
@@ -6494,6 +6670,12 @@ function _pendingSyncBreakdown() {
   try { const n = _countUnsynced(); if (n) p.push(`KPI/${TT('ยอดผลิต','production')} ${nn(n)}`); } catch (e) {}
   try { if (_wipinPending && _wipinPending.size) p.push(`WIP IN 1.5 ${nn(_wipinPending.size)}`); } catch (e) {}
   try { if (_hoPending && _hoPending.size) p.push(`${TT('ต่อกะ','handover')} ${nn(_hoPending.size)}`); } catch (e) {}
+  try {
+    const dq = Object.values(_docPend), a = dq.filter(e => e.kind === 'qi').length, b = dq.length - a;
+    if (a) p.push(`${TT('งานเฝ้าระวัง','quality watch')} ${a}`);
+    if (b) p.push(`${TT('ลงชื่อต่อกะ','handover sign')} ${b}`);
+    if (_imgPend.length) p.push(`${TT('รูป','photos')} ${_imgPend.length}`);
+  } catch (e) {}
   if (_pendW.length) {
     const by = {};
     for (const w of _pendW) by[w.label || w.path] = (by[w.label || w.path] || 0) + 1;
@@ -6536,6 +6718,7 @@ async function retrySyncNow() {
   try { await flushUnsynced(true); } catch (e) {}                              // KPI + ยอดผลิต
   try { if (typeof _wipinFlush === 'function') await _wipinFlush(); } catch (e) {}   // WIP IN 1.5
   try { if (typeof _hoFlush === 'function') await _hoFlush(); } catch (e) {}         // ต่อกะ
+  try { await docFlush(); await imgFlush(); } catch (e) {}                           // ★ v4.34
   try { await flushPendingWrites(); } catch (e) {}                             // แผน/เป้า/วาล์ว/พนักงาน/IDs
   _syncBusy = false;
   const left = _pendingSyncCount();
@@ -7136,6 +7319,7 @@ function _doSetPane(name) {
   //   (หลังบันทึกสำเร็จ saveKpi ล้างฟอร์มด้วย renderZone() เอง · "ออกโดยไม่บันทึก" ล้าง _zoneSig → วาดใหม่รอบหน้า)
   if (name === 'kpi')      renderZone({ keepIfSame: !_formDirty });
   if (name === 'prod')     renderHome();
+  if (name === 'prod' || name === 'home') { try { renderQiCard(); hsTick(true); docSync(); } catch (e) {} }   // ★ v4.34
   if (name === 'history')  loadHistory();
   if (name === 'plan')     pullPlans();
   if (name === 'settings') renderSettings();
@@ -10603,6 +10787,7 @@ function _bootSync() {
   // ถ้ามี API URL ก็ลอง sync เพิ่ม (ไม่บล็อก UI)
   if (API) { reload(); startAutoSync(); }
   else migratePdacTarget();   // โหมด local ไม่เรียก reload() → migrate เป้า PDAC ที่นี่
+  docStart();         // ★ v4.34 งานเฝ้าระวังคุณภาพ + ลงชื่อต่อกะ
   startWipinSync();   // WIP IN 1.5 ข้ามเครื่อง (รอบเดียวกับ AUTO_REFRESH_MS) — โชว์ทั้งหน้าติดตามงาน + IOT เต็มจอ
 }
 let _bootDeferred = false;
@@ -12056,7 +12241,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.33":"Production Record + KPI · v4.33",
+"ระบบบันทึกผลิต + KPI · v4.34":"Production Record + KPI · v4.34",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -12084,6 +12269,9 @@ const I18N_X = {
 "(เช่น N-202 = ROLL → OPR ของ N-202 เข้า ROLL) — ไม่อิงสิ่งที่พนักงานพิมพ์ · ตั้ง process ของเครื่องได้ที่ ⚙️ ตั้งค่า → เครื่องจักร (กดชิปเลือกแสดง · กดแถวดูวาล์ว)":"(e.g. N-202 = ROLL → N-202's OPR counts toward ROLL) — independent of what operators type · set a machine's process in ⚙️ Settings → Machines (tap chips to filter · tap a row for valves)",
 "ช่วงเวลาที่แสดง":"Period shown","ค้นหา Process จาก Valve No":"Find Process by Valve No",
 "เช็คงานที่พอดัดแปลงได้":"Check convertible work",
+"งานเฝ้าระวังคุณภาพ":"Quality watch list","บันทึกปัญหาไว้กันลืม · ค้นหาได้จาก Valve No · Lot · วันที่ · ผู้แจ้ง":"Log quality issues · search by Valve No, lot, date or reporter",
+"💾 บันทึก Group Leader":"💾 Save Group Leaders",
+"ชื่อ = แสดงข้าง Zone ในหน้า 🏭 IOT รวมทุกสาย · ✍️ = คนที่ต้องลงชื่อต่อกะ · ตั้งของ VSM / QC ที่เลือกอยู่ที่แถบด้านบน":"Name = shown beside the Zone on the all-lines IOT · ✍️ = who signs the handover · for the VSM / QC selected above",
 "🔎 ดูง่าย":"🔎 Simple","🛠️ จัดการแผน":"🛠️ Manage","แผนผลิตรายเครื่อง":"Machine production plan","เปิด":"Open",
 "วันนี้ผลิตอะไร เครื่องไหน · คิวเครื่องทีละ Zone":"What to make today, on which machine · queues by zone",
 "🔎 พิมพ์ Valve No หรือ Lot — เช่น 4796":"🔎 Type a Valve No or Lot — e.g. 4796",
@@ -12683,6 +12871,7 @@ function renderMachineStatusChecker(recs) {
     if (fw) fw.innerHTML = `<div class="card center muted" style="padding:24px">🗺️ ${TT(`ผังโรงงาน (IoT) สำหรับ ${VSM_LABEL[myVsm()]||''} ยังไม่เปิดใช้งาน — จะเพิ่มภายหลัง`,`Floor plan (IoT) for ${VSM_LABEL[myVsm()]||''} is not available yet — coming later`)}</div>`;
     if ($('iotDateInfo')) $('iotDateInfo').textContent = '';
     if ($('iotOaeStrip')) $('iotOaeStrip').innerHTML = '';
+    renderIotQi(); renderIotHoAlert();   // ★ v4.34
     if ($('iotTop5')) $('iotTop5').innerHTML = '';   // กัน TOP ปัญหาของ VSM อื่นค้าง (ไม่มีผัง = ไม่มีข้อมูลช่วงนี้)
     if ($('iotWipStrip')) renderIotWipStrip();
     return;
@@ -12713,6 +12902,8 @@ function renderMachineStatusChecker(recs) {
   renderIotOaeStrip(filtered);
   renderIotWipStrip();
   renderIotTop5();
+  renderIotQi();          // ★ v4.34
+  renderIotHoAlert();     // ★ v4.34
   renderFloorPlan(activeMachines, oaeMap);
   // ★ ถ้าเปิดอยู่ที่ "หน้า 2" (รายการงานขาย) ให้รีเฟรชด้วย ไม่งั้นตัวเลขค้างของเก่า
   if (_iotPage === 2 && typeof renderIotSales === 'function') renderIotSales();
@@ -15617,6 +15808,7 @@ function iotEnterFs(card){
   card.addEventListener('keydown',_iotMcKey);   // เปิดใช้ Enter/Space ที่เครื่อง (a11y) เฉพาะตอนเต็มจอ
   renderHandoverPanels();                       // เติมข้อมูลต่อกะลงแผง side (local ทันที) + auto-fit ขนาด
   startHandoverSync();                          // ดึงล่าสุดจาก cloud + poll ทุก 15 วิ (ข้ามเครื่อง)
+  renderIotQi(); renderIotHoAlert(); docSync(); // ★ v4.34
   startIotClock();                              // นาฬิกาเรียลไทม์ (เวลาไทย) มุมขวาบน
 }
 function iotExitFs(card){
@@ -15625,6 +15817,7 @@ function iotExitFs(card){
   closeHandoverAdd();                            // ปิด modal เพิ่มต่อกะถ้าเปิดค้าง
   closeHoHistory();                              // ปิดป๊อปอัปต่อกะย้อนหลังถ้าเปิดค้าง
   closeHoView();                                 // ปิดป๊อปอัปตั้งค่าแผงต่อกะถ้าเปิดค้าง
+  closeHoSign(); { const lb=document.getElementById('qiLb'); if(lb) lb.remove(); }   // ★ v4.34
   stopHandoverSync();                            // หยุด poll ต่อกะ
   stopIotClock();                               // หยุดนาฬิกาเรียลไทม์
   _iotMapReset(card);                            // เก็บสถานะกางผัง (มือถือ) กลับค่าเริ่มต้น
@@ -15645,6 +15838,8 @@ function iotExitFs(card){
 }
 function _iotFsKey(e){
   if(e.key==='Escape'){
+    if(document.getElementById('qiLb')){ e.preventDefault(); document.getElementById('qiLb').remove(); return; }   // ★ v4.34 รูปเต็มจอ
+    if(document.getElementById('hoSignOv')){ e.preventDefault(); closeHoSign(); return; }                          // ★ v4.34 ลงชื่อต่อกะ
     if(document.getElementById('hoViewOv')){ e.preventDefault(); closeHoView(); return; }       // ปิดป๊อปอัปตั้งค่าแผงต่อกะก่อน
     if(document.getElementById('hoAddOv')){ e.preventDefault(); closeHandoverAdd(); return; }   // ปิด modal เพิ่มต่อกะก่อน
     if(document.getElementById('hoHistOv')){ e.preventDefault(); closeHoHistory(); return; }    // ปิดป๊อปอัปย้อนหลังก่อน
@@ -15926,6 +16121,7 @@ function _iotAllData(){
 async function _iotAllSync(){
   // ★ v4.21 👷 ชื่อ Group Leader ราย Zone อยู่ใน mp_manual (ตารางเล็ก) → ดึงคู่กับ KPI ทุกรอบ (เปิดหน้า + ทุก 5 นาที) · ล่มก็ใช้ชื่อเดิมในเครื่อง
   const mp=API?mpManLoad().catch(()=>null):null;
+  docSync();   // ★ v4.34 ลงชื่อต่อกะ
   try{ await _iotAllSyncKpi(); } finally { await mp; }
 }
 async function _iotAllSyncKpi(){
@@ -16669,6 +16865,7 @@ function _iotAllRenderHourly(){
   for(const v of VSM_KEYS){
     const P=_iotAllD.per[v]; if(!P) continue;
     const mt=_IA_VSM_META[v];
+    const hsA=_iaGhost?null:hsAlert(v);   // ★ v4.34 ✍️ ใครยังไม่ลงชื่อต่อกะ (หมดเวลาแล้ว)
     const zoneSet=[...zonesForVsm(v)];
     for(const r of P.recs){ if(r.zone&&!zoneSet.includes(r.zone)) zoneSet.push(r.zone); }
     const zonesData=zoneSet.filter(z=>P.recs.some(r=>r.zone===z));
@@ -16699,9 +16896,10 @@ function _iotAllRenderHourly(){
       // ★ v4.21 👷 ชื่อ Group Leader ข้างชื่อ Zone (ตั้งในหน้าตั้งค่าของแต่ละ VSM / QC)
       const zl=escapeHtml(ZONE_LABEL[z]||z), gl=zoneGlName(z), glE=escapeHtml(gl);
       if(gl) anyGl=true;
+      const hsL=hsA&&!hsA.open?_hsNames(hsA.pend.filter(r=>r.zone===z)):[], hsT=escapeHtml(hsL.join(' · ')), hsF=escapeHtml(hsL.map(x=>x.split(' / ').map(n=>n.split(' ')[0]).join(' / ')).join(' · '));   // ★ v4.34 ชื่อต้นพอ (ช่องแคบ)
       rows+=`<tr class="iah-zrow" role="button" tabindex="0" aria-label="${zl}${gl?' · Group Leader '+glE:''} — ${mt.label}" onclick="iotAllVsmPop('${v}')" ${kd}>`
         +`<td class="iah-zh" title="${TT('กดดูรายละเอียด','tap for details')} · ${zl}${gl?' · Group Leader: '+glE:''}"><div class="iah-zin"><span class="iah-zn">${zl}</span>`
-        +(gl?`<span class="iah-gl">👤 ${glE}</span>`:'')+`</div></td>${cells}`
+        +(hsT?`<span class="iah-gl late" title="${TT('ยังไม่ทำการต่อกะ','Handover not signed')}: ${hsT}">⚠️ ${hsF} ${TT('ยังไม่ต่อกะ','not signed')}</span>`:gl?`<span class="iah-gl">👤 ${glE}</span>`:'')+`</div></td>${cells}`
         +`<td class="iah-cell iah-tot ${_iahCls(tot,metric,z)}" title="${TT('รวมทั้งวัน','whole day')}">${_iahFmt(tot,metric)}</td></tr>`;
     }
   }
@@ -17810,11 +18008,13 @@ function _hoPanelHtml(type){
       ${list.length?`<span class="ho-cnt">${list.length}</span>`:''}
       ${/* ★ 2026-09-01 (req) บอกให้ชัดว่าบอร์ดกำลังโชว์ช่วงไหน — ไม่งั้นคนหาโน้ตเก่าไม่เจอแล้วคิดว่าหาย */''}
       <span class="ho-sp"></span>
+      ${hsPanelBtn(type)}
       ${(_hoView.days|0)>0?`<span class="ho-win" title="${TT('บอร์ดโชว์เฉพาะช่วงนี้ — ของเก่ากว่านี้กด 🕘 ดูย้อนหลังได้','The board only shows this window — older notes are under 🕘')}">🕒 ${TT((_hoView.days|0)+' วันล่าสุด','last '+(_hoView.days|0)+'d')}</span>`:''}
       <button type="button" class="ho-hd-b" onclick="openHoView()"
         title="${TT('ปรับหน้าต่างต่อกะ — ช่วงย้อนหลัง / ขนาดตัวอักษร / ความสูงกล่อง','Adjust this panel — time window, text size, section height')}"
         aria-label="${TT('ปรับหน้าต่างต่อกะ','Adjust handover panel')}">⚙️</button>
     </div>
+    ${hsPanelBar(type)}
     <div class="ho-bd">
       <div class="ho-cols">
         ${showBroken?_hoSecHtml(type,'broken',broken):''}
@@ -18119,6 +18319,881 @@ function confirmDeleteHandover(type, id){
   closeHandoverAdd();
   renderHandoverPanels();
   toast(TT('ลบบันทึกต่อกะแล้ว','Handover note deleted'),'green');
+}
+
+/* ============================================================
+   ★ v4.34 (ผู้ใช้ 25/11) เอกสารข้ามเครื่อง (docs) — ⚠️ งานเฝ้าระวังคุณภาพ (qi) + ✍️ ลงชื่อรับทราบต่อกะ (hosign)
+   Worker ต่อกะ /doc/* (ตาราง docs) · รูปแนบ /img/* (ตาราง imgs) — แยกจากฐานข้อมูล KPI
+   • ในเครื่อง: ทั้งหมดอยู่ IndexedDB (DOC_KV) · ที่ยังไม่ขึ้น Cloud อยู่ localStorage (LS_DOC_PEND) → ปิดแอปก็ไม่หาย
+   • ดึงเฉพาะของใหม่ (?since= เวลาที่ Worker บอก) ทุก 2 นาทีตอนเปิด Dashboard / ติดตามงาน / หน้ารวม 4 VSM
+   • Worker รุ่นเก่า (ยังไม่มี /doc) หรือเน็ตหลุด = เก็บในเครื่องไว้ก่อน ส่งเองเมื่อส่งได้ (นับในแถบ "ยังไม่ขึ้น Cloud")
+   entry = { id, kind, vsm, data, byId, byName, ts, deleted, updatedAt } · แก้ = สร้าง object ใหม่เสมอ (docFlush เทียบตัวเดิม)
+   ============================================================ */
+const DOC_KINDS = ['qi', 'hosign'];
+const LS_DOC_PEND = 'vsm4_doc_pend', LS_IMG_PEND = 'vsm4_img_pend', DOC_KV = 'doc.v1', IMG_KV = 'docimg.';
+const DOC_POLL_MS = 2 * 60 * 1000, DOC_SIGN_DAYS = 40;
+let _docs = {}, _docPend = {}, _docSince = '', _docCloud = null, _docVer = 0, _docSyncAt = 0;
+let _docInitP = null, _docSyncP = null, _docFlushP = null, _docStoreT = 0, _docPollT = 0;
+let _imgPend = [], _imgFlushP = null;      // id รูปที่ยังไม่ขึ้น Cloud (ตัวรูปอยู่ IndexedDB)
+const _imgMem = new Map();                 // id → { id, ref, mime, data, by } รูปที่แนบจากเครื่องนี้
+try { const v = JSON.parse(localStorage.getItem(LS_DOC_PEND) || '{}'); if (v && typeof v === 'object' && !Array.isArray(v)) _docPend = v; } catch (e) {}
+try { const v = JSON.parse(localStorage.getItem(LS_IMG_PEND) || '[]'); if (Array.isArray(v)) _imgPend = v; } catch (e) {}
+Object.assign(_docs, _docPend);
+function _docPendSave() { try { localStorage.setItem(LS_DOC_PEND, JSON.stringify(_docPend)); } catch (e) {} }
+function _imgPendSave() { try { localStorage.setItem(LS_IMG_PEND, JSON.stringify(_imgPend)); } catch (e) {} }
+function docPendCount() { return Object.keys(_docPend).length + _imgPend.length; }
+function docInit() {
+  if (_docInitP) return _docInitP;
+  return (_docInitP = (async () => {
+    try {
+      const [c] = await _kvGetMany([DOC_KV]);
+      if (c && c.v === 1 && Array.isArray(c.list)) {
+        for (const e of c.list) { if (!_docOk(e)) continue; const l = _docs[e.id]; if (!l || String(l.updatedAt) < String(e.updatedAt)) _docs[e.id] = e; }
+        _docSince = String(c.since || ''); _docVer++;
+      }
+    } catch (e) {}
+    try { if (_imgPend.length) for (const r of await _kvGetMany(_imgPend.map(id => IMG_KV + id))) if (r && r.id) _imgMem.set(r.id, r); } catch (e) {}
+  })());
+}
+function _docStore() {
+  clearTimeout(_docStoreT);
+  _docStoreT = setTimeout(() => {
+    const cutS = _mpAddDays(todayISO(), -DOC_SIGN_DAYS), cutD = new Date(Date.now() - 30 * 864e5).toISOString();
+    for (const id in _docs) {
+      const e = _docs[id]; if (_docPend[id]) continue;
+      if ((e.kind === 'hosign' && String((e.data && e.data.day) || '') < cutS) || (e.deleted && String(e.updatedAt) < cutD)) delete _docs[id];
+    }
+    _kvPutMany([[DOC_KV, { v: 1, since: _docSince, list: Object.values(_docs) }]]).catch(() => {});
+  }, 800);
+}
+/* แก้ในเครื่องทันที แล้วส่ง Cloud · คืน Promise<true = ขึ้น Cloud แล้ว> */
+function docPut(e) {
+  const old = _docs[e.id];
+  e.updatedAt = new Date(Math.max(Date.now(), (old ? Date.parse(old.updatedAt) || 0 : 0) + 1)).toISOString();
+  _docs[e.id] = e; _docPend[e.id] = e; _docVer++;
+  _docPendSave(); _docStore(); renderSyncBar();
+  return docFlush().then(() => _docPend[e.id] !== e);
+}
+const DOC_ID_RE = /^[\w|.-]{3,160}$/;
+const _docOk = e => !!e && DOC_ID_RE.test(e.id) && !!e.data && typeof e.data === 'object' && (e.kind !== 'qi' || (typeof e.data.v === 'string' && Array.isArray(e.data.im)));   // ของจาก Cloud ต้องรูปแบบถูก (id ไปอยู่ในปุ่ม)
+const _docIs404 = e => /not found|HTTP 404/i.test(String((e && e.message) || ''));
+function docFlush() {
+  if (_docFlushP) return _docFlushP.then(ok => (ok && Object.keys(_docPend).length ? docFlush() : ok));
+  const list = Object.values(_docPend);
+  if (!list.length) return Promise.resolve(true);
+  _docFlushP = (async () => {
+    for (let i = 0; i < list.length; i += 100) {
+      const part = list.slice(i, i + 100);
+      await hoApi('/doc/bulk', { body: { entries: part }, timeout: 15000 });
+      for (const e of part) if (_docPend[e.id] === e) delete _docPend[e.id];   // แก้ซ้ำระหว่างส่ง = ยังค้างไว้ส่งรอบหน้า
+    }
+    _docCloud = true;
+    return true;
+  })().catch(e => { if (_docIs404(e)) _docCloud = false; return false; })
+    .finally(() => { _docFlushP = null; _docPendSave(); renderSyncBar(); });
+  return _docFlushP;
+}
+/* รูป: ลดขนาด → เก็บ IndexedDB ก่อน → ส่งทีละรูป · ส่งแล้วลบออกจากคิว */
+async function _imgQueue(recs) {
+  for (const r of recs) { _imgMem.set(r.id, r); if (!_imgPend.includes(r.id)) _imgPend.push(r.id); }
+  _imgPendSave(); renderSyncBar();
+  try { await _kvPutMany(recs.map(r => [IMG_KV + r.id, r])); } catch (e) {}
+}
+function imgFlush() {
+  if (_imgFlushP) return _imgFlushP.then(ok => (ok && _imgPend.length ? imgFlush() : ok));
+  if (!_imgPend.length) return Promise.resolve(true);
+  _imgFlushP = (async () => {
+    for (const id of [..._imgPend]) {
+      let r = _imgMem.get(id);
+      if (!r) { try { r = (await _kvGetMany([IMG_KV + id]))[0]; } catch (e) {} }
+      if (r) await hoApi('/img/put', { body: r, timeout: 45000 });
+      _imgPend = _imgPend.filter(x => x !== id); _imgPendSave(); renderSyncBar();
+      _kvPutMany([[IMG_KV + id, undefined]]).catch(() => {});
+    }
+    return true;
+  })().catch(e => { if (_docIs404(e)) _docCloud = false; return false; })
+    .finally(() => { _imgFlushP = null; renderSyncBar(); });
+  return _imgFlushP;
+}
+function imgSrc(id) { const r = _imgMem.get(id); return r ? `data:${r.mime};base64,${r.data}` : `${HANDOVER_API}/img/${encodeURIComponent(id)}`; }
+async function _imgCompress(file) {
+  let bmp, url = '';
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    bmp = await new Promise((res, rej) => { const im = new Image(); url = URL.createObjectURL(file); im.onload = () => res(im); im.onerror = () => rej(new Error('img')); im.src = url; });
+  }
+  const W = bmp.width || bmp.naturalWidth, H = bmp.height || bmp.naturalHeight;
+  let edge = 1600, q = 0.8, data = '';
+  for (let i = 0; i < 6; i++) {
+    const k = Math.min(1, edge / Math.max(W, H)), cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(W * k)); cv.height = Math.max(1, Math.round(H * k));
+    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(bmp, 0, 0, cv.width, cv.height);
+    data = cv.toDataURL('image/jpeg', q).split(',')[1] || '';
+    if (data.length <= QI_IMG_B64) break;
+    edge = Math.round(edge * 0.8); q = Math.max(0.55, q - 0.07);
+  }
+  if (bmp.close) bmp.close();
+  if (url) URL.revokeObjectURL(url);
+  if (!data) throw new Error('img');
+  return { mime: 'image/jpeg', data };
+}
+/* ดึงของใหม่จาก Cloud · คืน true = มีอะไรเปลี่ยน */
+function docSync(force) {
+  if (_docSyncP) return _docSyncP;
+  if (!force && Date.now() - _docSyncAt < 20000) return Promise.resolve(false);
+  _docSyncP = (async () => {
+    await docInit();
+    if (Object.keys(_docPend).length) await docFlush();
+    if (_imgPend.length) imgFlush();
+    const q = _docSince ? '&since=' + encodeURIComponent(_docSince) : '&hosignFrom=' + _mpAddDays(todayISO(), -DOC_SIGN_DAYS);
+    const d = await hoApi('/doc/list?kinds=' + DOC_KINDS.join(',') + q, { timeout: 15000 });
+    _docCloud = true; _docSyncAt = Date.now();
+    let ch = 0;
+    for (const e of (d.entries || [])) {
+      if (!_docOk(e)) continue;
+      const l = _docs[e.id];
+      if (l && String(l.updatedAt) >= String(e.updatedAt)) continue;   // LWW (ของเราที่ยังไม่ส่งและใหม่กว่า = คงไว้)
+      _docs[e.id] = e; ch++;
+    }
+    const t = Date.parse(d.now || '');
+    if (t) _docSince = new Date(t - 5000).toISOString();               // ซ้อน 5 วิ กันแถวที่เขียนพร้อมกันตกหล่น
+    _docStore();
+    if (ch) { _docVer++; _docChanged(); }
+    return ch > 0;
+  })().catch(e => { if (_docIs404(e)) _docCloud = false; return false; }).finally(() => { _docSyncP = null; });
+  return _docSyncP;
+}
+function _docChanged() {
+  try { renderQiCard(); } catch (e) {}
+  try { renderIotQi(); } catch (e) {}
+  try { if ($('qiBox')) qiRenderList(); } catch (e) {}
+  try { hsTick(true); } catch (e) {}
+}
+function docStart() {
+  if (_docPollT) return;
+  const on = () => {
+    if (document.hidden) return false;
+    const p = document.querySelector('section.pane.active')?.id;
+    return p === 'pane-home' || p === 'pane-prod' || !!document.getElementById('iotAllOv') || !!document.querySelector('#iotCard.iot-fs');
+  };
+  docInit().then(() => { _docChanged(); setTimeout(() => docSync(true), 2500); });
+  _docPollT = setInterval(() => { if (on() || (!document.hidden && docPendCount())) docSync(true); }, DOC_POLL_MS);
+  setInterval(qiAutoPage, 8000);
+  setInterval(() => hsTick(), 30000);   // เส้นเวลา 08:00 / 09:00 / 20:00 / 21:00 ผ่านไป → ป้ายเปลี่ยนเอง
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.34 (ผู้ใช้ 25/11 ข้อ 1) ⚠️ งานเฝ้าระวังคุณภาพ — จดปัญหาไว้กันลืม (การ์ดในหน้าติดตามงาน)
+   data = { v: Valve No, l: Lot ('' = ทุก Lot), d: วันที่, t: ปัญหา, by / bn: ผู้แจ้ง, im: [id รูป], cl: { at, by, bn } ปิดเอง }
+   • ค้นได้: Valve No · Lot · ปัญหา · ผู้แจ้ง · วันที่ · แนบรูปได้ 6 รูป (ลดเหลือ ≤ ~200 KB ต่อรูป)
+   • IOT เต็มจอ: ครึ่งขวาของ TOP ปัญหา = เฉพาะที่ยังผลิตไม่จบ ของสายที่ดูอยู่ · แตะ = รายละเอียด + รูป
+   • ผลิตจบ (_qiLotState) = จบงาน (DONE) / 🔑 ตรวจแล้ว / 🏁 งานส่วน VSM4 จบ / กดปิดเฝ้าระวัง
+     VSM3 · VSM4 มีใบรับเข้า: ผ่าน FG จนเหลือไม่เกินเกณฑ์จบขั้นของระบบ (closePct)
+     ไม่มีใบรับเข้า (VSM3 เดินต่อเนื่อง FG ออกตั้งแต่ชั่วโมงแรก — ไม่มียอดเทียบ): ผ่าน FG แล้ว + ไม่มียอดลงในวันผลิตนี้ (VSM4 = เงียบ 2 วัน)
+     VSM1 · VSM2 · QC (ไม่มีขั้น FG): สายถัดไปมียอด / รับเข้าแล้ว + สายนี้ไม่มียอดในวันผลิตนี้ หรือ สายนี้เงียบ 3 วัน
+     → หายจาก IOT · ยังค้นได้ในหน้าติดตามงาน · คิดสดทุกครั้ง (มียอดเพิ่ม / ยอดถูกแก้ = กลับมาเอง) ไม่ได้บันทึกสถานะไว้
+   • แก้ / ลบ / ปิด ได้เฉพาะคนบันทึก หรือ Admin (canEditRec — กติกาเดียวกับ KPI)
+   ═══════════════════════════════════════════════════════════════════════ */
+const QI_MAX_IMG = 6, QI_IMG_B64 = 280000;
+let _qi = { q: '', st: 'watch', from: '', to: '', all: false, n: 40 }, _qiF = null, _qiBusy = false, _qiDraft = null;
+let _qiIx = null, _qiIxB = null, _qiRec = null;
+function qiList(vsm) {
+  return Object.values(_docs).filter(e => e && e.kind === 'qi' && !e.deleted && e.data && (!vsm || e.vsm === vsm))
+    .sort((a, b) => { const x = String(a.data.d || ''), y = String(b.data.d || ''); return x !== y ? (x < y ? 1 : -1) : (String(a.ts) < String(b.ts) ? 1 : -1); });
+}
+/* สถานะล็อตจากถัง WIP ของสายที่ดูอยู่ (ก้อนที่คำนวณไว้แล้ว — ไม่สั่งคำนวณใหม่) · null = ยังคำนวณไม่เสร็จ */
+function _qiLotIx() {
+  const b = _lastWipBuckets && _wbKey && _wbKey.vsm === viewVsm() ? _lastWipBuckets : null;
+  if (!b) return null;
+  if (_qiIxB === b && _qiIx) return _qiIx;
+  const m = new Map(), tol = 1 - (_lotCloseF() || 0.9);
+  const slip = new Set((hasVsmPeers() ? _wipinListPeer() : _wipinList()).map(e => jobKey(e.valve, e.lot)));
+  for (const i of (b.wipOut.items || [])) { const k = jobKey(i.valve, i.lot); m.set(k, { st: 'out', d: i.date || '', slip: slip.has(k) }); }
+  for (const i of (b.wipOut.v4fg || [])) { const k = jobKey(i.valve, i.lot); if (!m.has(k)) m.set(k, { st: 'out', d: i.date || '', slip: true }); }
+  for (const i of (b.wipIn.items || [])) if (!i.started) m.set(jobKey(i.valve, i.lot), { st: 'in' });
+  for (const i of [...(b.wip.items || []), ...((b.wip.noIntake && b.wip.noIntake.items) || [])]) {
+    const k = jobKey(i.valve, i.lot), out = m.get(k);
+    if (i.v4end) m.set(k, { st: 'out', d: i.v4end.date || '', v4: 1 });
+    else if (i.wipIn > 0 && i.fgOut > 0 && i.qty <= Math.max(5, i.wipIn * tol)) m.set(k, { st: 'out', d: (out && out.d) || '', slip: true });
+    else m.set(k, { st: 'run', w: lotWhereTxt(i), qty: i.qty });
+  }
+  _qiIxB = b;
+  return (_qiIx = m);
+}
+/* วันล่าสุดที่แต่ละสายลงยอด / รับเข้า ต่อ Lot — อ่านเฉพาะ Valve ที่อยู่ในรายการเฝ้าระวัง (+ ที่กำลังกรอก) · คิดใหม่เมื่อข้อมูลเปลี่ยน */
+function _qiRecIx(valve) {
+  const src = _wipProdSrc() || [], C = _qiRec;
+  if (C && C.src === src && C.n === src.length && C.fv === _fvVer && C.wi === _wipinVer && C.vs.has(vKey(valve))) return C.m;
+  const vs = new Set(qiList().map(e => vKey(e.data.v))), m = new Map();
+  vs.add(vKey(valve));
+  const add = (v, l, ln, d) => {
+    if (!d || !ln) return;
+    const k = jobKey(v, l); let o = m.get(k); if (!o) m.set(k, o = {});
+    if (!(o[ln] >= d)) o[ln] = d;
+  };
+  for (const arr of src === state.prodRecords ? [src] : [src, state.prodRecords || []]) for (const r of arr) {
+    const v = r.valve_no || r.valveNo; if (!v || !vs.has(vKey(v))) continue;
+    add(v, r.lot, vsmOf(r), String(r.shift_date || r.timestamp || '').slice(0, 10));
+  }
+  for (const e of Object.values(_wipin || {})) if (e && !e.deleted && vs.has(vKey(e.valve))) add(e.valve, e.lot, 'in:' + _wipinVsm(e), String(e.ts || '').slice(0, 10));
+  _qiRec = { src, n: src.length, fv: _fvVer, wi: _wipinVer, vs, m };
+  return m;
+}
+const QI_NEXT = { vsm1: ['vsm2', 'vsm3', 'vsm4', 'qc', 'in:vsm3', 'in:vsm4'], vsm2: ['vsm3', 'vsm4', 'qc', 'in:vsm3', 'in:vsm4'], qc: [] };
+function _qiLotState(valve, lot, vsm) {
+  if (!lotKey(lot)) return { st: 'watch', w: TT('ทุก Lot', 'all lots') };
+  if (getJobProc(valve, lot) === 'DONE' || lotChkDate(valve, lot) > 0) return { st: 'done' };
+  const me = vsm === viewVsm(), ix = me ? _qiLotIx() : null, k = jobKey(valve, lot);
+  if (me && !ix) return { st: 'watch', wait: 1 };                       // ถัง WIP ของสายที่ดูอยู่ยังคำนวณไม่เสร็จ
+  const x = ix && ix.get(k);
+  if (x && x.st !== 'out') return { st: 'watch', w: x.st === 'in' ? TT('รับเข้าแล้ว รอผลิต', 'received, waiting') : x.w };
+  if (x && (x.v4 || x.slip)) return { st: 'done', d: x.d, v4: x.v4 };
+  const R = _qiRecIx(valve).get(k) || {}, day = mpProdDay(), last = R[vsm] || '', nx = QI_NEXT[vsm];
+  if (nx) {                                                             // VSM1 · VSM2 · QC
+    if (x || (nx.some(v => R[v]) && (!last || last < day)) || (last && _mpDayDiff(last, day) >= 3)) return { st: 'done', d: last || (x && x.d) || '' };
+    return { st: 'watch', w: '' };
+  }
+  if (me && vsm === 'vsm4' && !x) { const e = v4EndOf(valve, lot); if (e && e.done) return { st: 'done', v4: 1, d: e.date || '' }; }
+  if (x || jobFgQty(valve, lot) > 0) {                                  // ผ่าน FG แล้วแต่ไม่มีใบรับเข้าให้เทียบ
+    if (!last || _mpDayDiff(last, day) >= (vsm === 'vsm4' ? 2 : 1)) return { st: 'done', d: (x && x.d) || last };
+    return { st: 'watch', w: TT('ผ่าน FG บางส่วน', 'partly past FG') };
+  }
+  return { st: 'watch', w: '' };
+}
+function qiState(e) {
+  const c = e.data || {};
+  if (c.cl) return { st: 'closed', d: String(c.cl.at || '').slice(0, 10) };
+  return _qiLotState(c.v, c.l, e.vsm);
+}
+function _qiStTxt(s) {
+  return s.st === 'watch' ? TT('เฝ้าระวัง', 'Watch') : s.st === 'closed' ? TT('ปิดแล้ว', 'Closed') : s.v4 ? TT('VSM4 จบแล้ว', 'VSM4 finished') : TT('ผลิตจบแล้ว', 'Finished');
+}
+const _qiDM = iso => { const s = String(iso || '').slice(0, 10).split('-'); return s.length === 3 ? `${+s[2]}/${+s[1]}/${s[0]}` : ''; };
+const _qiWho = c => (c.bn || c.by || '—');
+function _qiHay(e) {
+  const c = e.data, p = String(c.d || '').split('-');
+  return [c.v, c.l, c.t, c.by, c.bn, _qiDM(c.d), p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '', c.d, VSM_LABEL[e.vsm] || e.vsm].join(' ').toUpperCase();
+}
+function _qiMatch(e) {
+  const c = e.data, d = String(c.d || '');
+  if (_qi.from && d < _qi.from) return false;
+  if (_qi.to && d > _qi.to) return false;
+  const tk = _qi.q.toUpperCase().split(/\s+/).filter(Boolean);
+  if (!tk.length) return true;
+  const h = _qiHay(e);
+  return tk.every(t => h.includes(t));
+}
+/* การ์ดในหน้าติดตามงาน */
+function renderQiCard() {
+  const el = $('qiCardN'); if (!el) return;
+  const n = qiList(viewVsm()).reduce((s, e) => s + (qiState(e).st === 'watch' ? 1 : 0), 0);
+  el.textContent = n ? `${TT('เฝ้าระวังอยู่', 'watching')} ${n}` : '';
+  el.style.display = n ? '' : 'none';
+}
+function openQiModal() {
+  _qiF = null;
+  openModal('⚠️ ' + TT('งานเฝ้าระวังคุณภาพ', 'Quality watch list'), `
+    <div class="qi-top">
+      <input type="search" id="qiQ" value="${escapeHtml(_qi.q)}" placeholder="🔎 ${TT('Valve No · Lot · ปัญหา · ผู้แจ้ง', 'Valve No · Lot · issue · reporter')}" autocomplete="off" oninput="qiSet('q',this.value)">
+      <button type="button" class="btn btn-blue" onclick="qiForm()">＋ ${TT('บันทึกปัญหา', 'Add issue')}</button>
+    </div>
+    <div class="qi-flt">
+      <span class="qi-seg" id="qiSeg"></span>
+      <span class="qi-dr"><input type="date" id="qiFrom" value="${_qi.from}" aria-label="${TT('จากวันที่', 'From')}" onchange="qiSet('from',this.value)"><i>–</i><input type="date" id="qiTo" value="${_qi.to}" aria-label="${TT('ถึงวันที่', 'To')}" onchange="qiSet('to',this.value)"></span>
+      <label class="qi-all"><input type="checkbox" ${_qi.all ? 'checked' : ''} onchange="qiSet('all',this.checked)"> ${TT('ทุกสาย', 'All lines')}</label>
+    </div>
+    <div id="qiBox"></div>`, { wide: true });
+  qiRenderList();
+  if (!_lastWipBuckets) _wbKick();
+  docSync();
+}
+function qiSet(k, v) { _qi[k] = v; _qi.n = 40; qiRenderList(); }
+function qiMore() { _qi.n += 60; qiRenderList(); }
+function qiRenderList() {
+  const box = $('qiBox'); if (!box) return;
+  const base = qiList(_qi.all ? '' : viewVsm()).filter(_qiMatch).map(e => [e, qiState(e)]);
+  const nW = base.filter(x => x[1].st === 'watch').length, nD = base.length - nW;
+  const seg = $('qiSeg');
+  if (seg) seg.innerHTML = [['watch', TT('เฝ้าระวังอยู่', 'Watching'), nW], ['done', TT('จบแล้ว', 'Finished'), nD], ['all', TT('ทั้งหมด', 'All'), base.length]]
+    .map(([k, t, n]) => `<button type="button" class="${_qi.st === k ? 'on' : ''}" onclick="qiSet('st','${k}')">${t} <b>${n}</b></button>`).join('');
+  const L = base.filter(x => _qi.st === 'all' || (x[1].st === 'watch') === (_qi.st === 'watch'));
+  const row = ([e, s]) => {
+    const c = e.data, im = (c.im || []).length;
+    const meta = [_qiDM(c.d), `${TT('แจ้งโดย', 'by')} ${escapeHtml(_qiWho(c))}`, im ? `📷 ${im}` : '', _qi.all || e.vsm !== viewVsm() ? escapeHtml(VSM_LABEL[e.vsm] || e.vsm) : '',
+      s.st === 'watch' && s.w ? `📍 ${escapeHtml(s.w)}` : '', _docPend[e.id] ? `⏳ ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud')}` : ''].filter(Boolean);
+    return `<button type="button" class="qi-row ${s.st}" onclick="qiDetail('${e.id}')">
+      <span class="qi-h"><b>${escapeHtml(c.v)}</b><span class="qi-lot">${c.l ? 'Lot ' + escapeHtml(c.l) : TT('ทุก Lot', 'all lots')}</span><span class="qi-st ${s.st}">${_qiStTxt(s)}</span></span>
+      <span class="qi-t">${escapeHtml(c.t)}</span>
+      <span class="qi-m">${meta.map(x => `<span>${x}</span>`).join('')}</span>
+    </button>`;
+  };
+  const other = _qi.st === 'watch' ? nD : _qi.st === 'done' ? nW : 0;
+  const hint = other && (_qi.q || _qi.from || _qi.to) ? `<button type="button" class="btn btn-outline btn-sm btn-block" style="margin-top:8px" onclick="qiSet('st','all')">${TT(`ที่ค้นหามีอีก ${other} รายการใน "${_qi.st === 'watch' ? 'จบแล้ว' : 'เฝ้าระวังอยู่'}" — ดูทั้งหมด`, `${other} more under "${_qi.st === 'watch' ? 'Finished' : 'Watching'}" — show all`)}</button>` : '';
+  box.innerHTML = (L.length ? `<div class="qi-grid">${L.slice(0, _qi.n).map(row).join('')}</div>`
+      : `<div class="qi-none">${_qi.q || _qi.from || _qi.to ? TT('ไม่พบรายการที่ค้นหา', 'No matches') : TT('ยังไม่มีรายการ', 'Nothing here yet')}</div>`)
+    + (L.length > _qi.n ? `<button type="button" class="btn btn-outline btn-sm btn-block" style="margin-top:8px" onclick="qiMore()">${TT('ดูเพิ่ม', 'Show more')} (${L.length - _qi.n})</button>` : '') + hint
+    + (_docCloud === false ? `<div class="cv-note" style="margin-top:10px">⏳ ${TT('เซิร์ฟเวอร์ยังไม่รองรับระบบนี้ — บันทึกไว้ในเครื่องนี้ก่อน ส่งให้เองเมื่อพร้อม', 'Server not updated yet — kept on this device and sent later')}</div>` : '');
+}
+/* ---------- รายละเอียด (ใช้ทั้งหน้าติดตามงาน และ IOT — iot = ดูอย่างเดียว) ---------- */
+function _qiDetailHtml(e, iot) {
+  const c = e.data, s = qiState(e), own = canEditRec(e), im = c.im || [];
+  const g = [[TT('วันที่พบ', 'Found on'), _qiDM(c.d)], [TT('ผู้แจ้ง', 'Reported by'), `${c.by && c.bn ? escapeHtml(c.by) + ' — ' : ''}${escapeHtml(_qiWho(c))}`],
+    s.st === 'watch' && s.w ? [TT('ตอนนี้อยู่ที่', 'Now at'), escapeHtml(s.w)] : s.d ? [s.st === 'closed' ? TT('ปิดเมื่อ', 'Closed on') : TT('จบเมื่อ', 'Finished on'), _qiDM(s.d)] : null,
+    [TT('สาย', 'Line'), escapeHtml(VSM_LABEL[e.vsm] || e.vsm)]].filter(Boolean);
+  const rec = new Date(e.ts), p2 = n => String(n).padStart(2, '0');
+  return `<div class="qi-d" data-id="${e.id}">
+    <div class="qi-d-h"><b>${escapeHtml(c.v)}</b><span class="qi-lot">${c.l ? 'Lot ' + escapeHtml(c.l) : TT('ทุก Lot ของเบอร์นี้', 'all lots of this valve')}</span><span class="qi-st ${s.st}">${_qiStTxt(s)}</span></div>
+    <div class="qi-d-t">${escapeHtml(c.t)}</div>
+    ${im.length ? `<div class="qi-d-im">${im.map((id, i) => `<button type="button" onclick="qiImgView('${e.id}',${i})" aria-label="${TT('ดูรูป', 'View photo')} ${i + 1}"><img src="${imgSrc(id)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('err')"></button>`).join('')}</div>` : ''}
+    <div class="qi-d-g">${g.map(([k, v]) => `<span><i>${k}</i>${v}</span>`).join('')}</div>
+    <div class="qi-d-f">${TT('บันทึกโดย', 'Recorded by')} ${escapeHtml(_recOwnerTxt(e))}${isNaN(rec) ? '' : ` · ${rec.getDate()}/${rec.getMonth() + 1} ${p2(rec.getHours())}:${p2(rec.getMinutes())}`}${c.cl ? ` · ${TT('ปิดโดย', 'closed by')} ${escapeHtml(c.cl.bn || c.cl.by || '-')}` : ''}${_docPend[e.id] ? ` · ⏳ ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud yet')}` : ''}</div>
+    ${iot ? '' : `<div class="qi-d-b">
+      <button type="button" class="btn btn-outline" onclick="openQiModal()">‹ ${TT('รายการ', 'List')}</button>
+      ${own ? `<button type="button" class="btn btn-outline" style="color:var(--red);border-color:var(--red-bd)" onclick="qiDel('${e.id}')">🗑 ${TT('ลบ', 'Delete')}</button>
+      <button type="button" class="btn btn-outline" onclick="qiForm('${e.id}')">✏️ ${TT('แก้ไข', 'Edit')}</button>
+      ${c.cl ? `<button type="button" class="btn btn-blue" onclick="qiCloseSet('${e.id}',0)">↩ ${TT('เฝ้าระวังต่อ', 'Watch again')}</button>` : s.st === 'watch' ? `<button type="button" class="btn btn-green" onclick="qiCloseSet('${e.id}',1)">✓ ${TT('ปิดเฝ้าระวัง', 'Close')}</button>` : ''}`
+      : `<span class="qi-lock">🔒 ${TT('แก้ไข / ปิด ได้เฉพาะคนบันทึก หรือ Admin', 'Only the recorder or Admin can edit / close')}</span>`}
+    </div>`}
+  </div>`;
+}
+function qiDetail(id, iot) {
+  const e = _docs[id];
+  if (!e || e.deleted) { toast(TT('ไม่พบรายการนี้แล้ว', 'Item not found'), 'orange'); return; }
+  const t = '⚠️ ' + TT('งานเฝ้าระวังคุณภาพ', 'Quality watch');
+  if (iot && document.querySelector('#iotCard.iot-fs')) _openIotPop(t, _qiDetailHtml(e, true), true, true);
+  else { _qiF = null; openModal(t, _qiDetailHtml(e, !!iot), { wide: true }); }
+}
+/* ดูรูปเต็มจอ — อยู่ในตัวที่เต็มจออยู่ (IOT) ไม่งั้นมองไม่เห็น */
+function qiImgView(id, i) {
+  const e = _docs[id], im = (e && e.data && e.data.im) || (_qiF && _qiF.id === id ? _qiF.im : []) || [];
+  if (!im.length) return;
+  const old = $('qiLb'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'qiLb'; ov.className = 'qi-lb'; ov.tabIndex = -1;
+  let at = Math.max(0, Math.min(im.length - 1, i | 0));
+  const paint = () => {
+    ov.innerHTML = `<img src="${imgSrc(im[at])}" alt=""><button type="button" class="x" aria-label="${TT('ปิด', 'Close')}">✕</button>${im.length > 1 ? `<button type="button" class="p" aria-label="${TT('รูปก่อนหน้า', 'Previous')}">‹</button><button type="button" class="n" aria-label="${TT('รูปถัดไป', 'Next')}">›</button><span class="c">${at + 1} / ${im.length}</span>` : ''}`;
+  };
+  ov.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (b && b.className === 'p') { at = (at + im.length - 1) % im.length; paint(); }
+    else if (b && b.className === 'n') { at = (at + 1) % im.length; paint(); }
+    else if (b || ev.target === ov) ov.remove();
+  });
+  ov.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); ov.remove(); }
+    else if (ev.key === 'ArrowLeft' && im.length > 1) { at = (at + im.length - 1) % im.length; paint(); }
+    else if (ev.key === 'ArrowRight' && im.length > 1) { at = (at + 1) % im.length; paint(); }
+  });
+  paint();
+  (document.querySelector('#iotCard.iot-fs') || document.body).appendChild(ov);
+  ov.focus();
+}
+/* ---------- ฟอร์มบันทึก / แก้ไข ---------- */
+function qiForm(id) {
+  const e = id ? _docs[id] : null;
+  if (e && !canEditRec(e)) { _recLockToast(e); return; }
+  const dr = e ? null : _qiDraft, c = e ? e.data : (dr && dr.c) || {}, me = CURRENT_USER || {};   // ปิดหน้าต่างไปก่อนบันทึก = เปิดใหม่ได้ของเดิมคืน
+  _qiF = dr ? dr.F : { id: e ? e.id : 'qi_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), edit: !!e, im: [...(c.im || [])], fresh: new Map() };
+  const who = e ? (c.by && c.bn ? `${c.by} — ${c.bn}` : _qiWho(c)) : (dr && dr.w) || (me.id ? `${me.id} — ${me.name || ''}`.trim() : '');
+  openModal((e ? '✏️ ' : '＋ ') + (e ? TT('แก้ไขปัญหาคุณภาพ', 'Edit quality issue') : TT('บันทึกปัญหาคุณภาพ', 'Add quality issue')), `
+    <div class="qi-f" oninput="qiDraftKeep()" onpaste="qiPaste(event)" ondragover="event.preventDefault()" ondrop="qiDrop(event)">
+      <div class="qi-f2">
+        <div class="fr ac"><label>Valve No *</label>
+          <input type="search" id="qiV" value="${escapeHtml(c.v || '')}" placeholder="${TT('เช่น', 'e.g.')} VF1349M0" autocomplete="off" autocapitalize="characters" spellcheck="false" onfocus="$('qiL_dd').classList.remove('open')" oninput="qiAcV(event)">
+          <div class="ac-dd cv-dd" id="qiV_dd"></div></div>
+        <div class="fr ac"><label>Lot <span class="muted">${TT('(เว้นว่าง = ทุก Lot)', '(blank = all lots)')}</span></label>
+          <input type="search" id="qiL" value="${escapeHtml(c.l || '')}" placeholder="${TT('เช่น', 'e.g.')} 2611S110031" autocomplete="off" autocapitalize="characters" spellcheck="false" onfocus="qiAcL(event)" oninput="qiAcL(event)">
+          <div class="ac-dd cv-dd" id="qiL_dd"></div></div>
+      </div>
+      <div id="qiWhere" class="qi-where"></div>
+      <div class="fr"><label>${TT('ปัญหาที่พบ *', 'Issue *')}</label>
+        <textarea id="qiT" rows="4" maxlength="1500" placeholder="${TT('เช่น SD โต 0.02 ที่ COT — คัด 100% ก่อนส่ง IND', 'e.g. SD oversize 0.02 at COT — 100% sort before IND')}">${escapeHtml(c.t || '')}</textarea></div>
+      <div class="qi-f2">
+        <div class="fr"><label>${TT('วันที่พบ', 'Found on')}</label><input type="date" id="qiD" value="${escapeHtml(c.d || todayISO())}" max="${todayISO()}"></div>
+        <div class="fr"><label>${TT('ผู้แจ้ง', 'Reported by')}</label><input type="text" id="qiBy" list="qiEmpList" value="${escapeHtml(who)}" autocomplete="off" placeholder="${TT('รหัส / ชื่อพนักงาน', 'Employee code / name')}">
+          <datalist id="qiEmpList">${(state.employees || []).filter(x => resolveEmpVsm(x.id) === viewVsm()).map(x => `<option value="${escapeHtml(x.id + ' — ' + x.name)}"></option>`).join('')}</datalist></div>
+      </div>
+      <div class="fr"><label>${TT('รูปปัญหา', 'Photos')} <span class="muted">(${TT('ไม่เกิน', 'max')} ${QI_MAX_IMG})</span></label>
+        <div class="qi-ims" id="qiIms"></div></div>
+      <div id="qiErr" class="qi-err" role="alert"></div>
+      <div class="qi-d-b">
+        <button type="button" class="btn btn-outline" onclick="qiCancel()">${TT('ยกเลิก', 'Cancel')}</button>
+        <button type="button" class="btn btn-green" id="qiSaveB" onclick="qiSave()">💾 ${TT('บันทึก', 'Save')}</button>
+      </div>
+      <input type="file" id="qiFile" accept="image/*" multiple hidden onchange="qiAddFiles(this.files);this.value=''">
+      <input type="file" id="qiCam" accept="image/*" capture="environment" hidden onchange="qiAddFiles(this.files);this.value=''">
+    </div>`, { wide: true });
+  _qiImsPaint(); _qiWherePaint();
+  if (!e) setTimeout(() => $('qiV')?.focus(), 60);
+}
+function qiDraftKeep() {
+  const F = _qiF; if (!F || F.edit || !$('qiV')) return;
+  _qiDraft = { F, c: { v: $('qiV').value, l: $('qiL').value, t: $('qiT').value, d: $('qiD').value }, w: $('qiBy').value };
+}
+function qiCancel() { const F = _qiF; if (F && F.edit) { _qiF = null; qiDetail(F.id); return; } _qiDraft = null; openQiModal(); }
+function qiAcV(ev) {
+  const q = (ev.target.value || '').trim().toLowerCase();
+  _qiWherePaint();
+  if (!q) { $('qiV_dd')?.classList.remove('open'); return; }
+  const list = [];
+  for (const v of state.valves || []) {
+    const no = String(v.valveNo || '').trim(); if (!no || !no.toLowerCase().includes(q)) continue;
+    list.push({ id: no, valveNo: no, description: [v.customer, v.description].filter(Boolean).join(' · ') });
+    if (list.length >= 12) break;
+  }
+  acDropdown('qiV', list, function pickQiV(it, inputId) {
+    document.getElementById(inputId).value = it.valveNo;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+    _qiWherePaint(); qiDraftKeep();
+    const l = $('qiL'); if (l && !l.value) l.focus();
+  });
+}
+/* Lot ที่แนะนำ: ที่กำลังผลิต / รอผลิตของเบอร์นี้ก่อน (บอกตำแหน่ง) แล้วค่อย Lot อื่นที่เคยมียอด — พิมพ์เองได้ */
+function qiAcL(ev) {
+  const v = vKey($('qiV')?.value), q = lotKey(ev.target.value).toLowerCase(), dd = $('qiL_dd');
+  $('qiV_dd')?.classList.remove('open');
+  _qiWherePaint();
+  if (!v || !dd) { dd?.classList.remove('open'); return; }
+  const seen = new Set(), run = [], rest = [], ix = _qiLotIx(), pre = v + '::';
+  if (ix) for (const [k, x] of ix) {
+    if (!k.startsWith(pre) || x.st === 'out') continue;
+    const l = k.slice(pre.length); if (!l || (q && !l.toLowerCase().includes(q))) continue;
+    seen.add(l); run.push({ id: l, label: x.st === 'in' ? TT('รับเข้าแล้ว รอผลิต', 'received, waiting') : x.w });
+  }
+  for (const l of lotsForRecord(v)) { if (seen.has(l) || (q && !l.toLowerCase().includes(q))) continue; seen.add(l); rest.push({ id: l, label: ix && ix.get(pre + l)?.st === 'out' ? TT('ผลิตจบแล้ว', 'finished') : '' }); }
+  acDropdown('qiL', [...run.sort((a, b) => (a.id < b.id ? 1 : -1)), ...rest], function pickQiL(it, inputId) {
+    document.getElementById(inputId).value = it.id;
+    document.getElementById(inputId + '_dd').classList.remove('open');
+    _qiWherePaint(); qiDraftKeep();
+    const t = $('qiT'); if (t && !t.value) t.focus();
+  });
+}
+function _qiWherePaint() {
+  const el = $('qiWhere'); if (!el) return;
+  const v = vKey($('qiV')?.value), l = lotKey($('qiL')?.value);
+  if (!v || !l || !_qiF) { el.innerHTML = ''; return; }
+  const s = _qiLotState(v, l, (_docs[_qiF.id] || {}).vsm || viewVsm());
+  el.innerHTML = s.st === 'done' ? `<span class="done">✓ ${TT('Lot นี้ผลิตจบแล้ว — บันทึกและค้นหาได้ แต่ไม่ขึ้นที่ IOT', 'This lot is finished — saved and searchable, but not shown on IOT')}</span>`
+    : s.w ? `📍 ${TT('ตอนนี้', 'Now')}: <b>${escapeHtml(s.w)}</b>` : '';
+}
+function _qiImsPaint() {
+  const box = $('qiIms'); if (!box || !_qiF) return;
+  box.innerHTML = _qiF.im.map((id, i) => {
+    const r = _qiF.fresh.get(id);
+    return `<span class="qi-im"><img src="${r ? `data:${r.mime};base64,${r.data}` : imgSrc(id)}" alt="" onerror="this.parentNode.classList.add('err')"><button type="button" onclick="qiImgDel(${i})" aria-label="${TT('เอารูปออก', 'Remove photo')}">✕</button></span>`;
+  }).join('') + (_qiF.im.length < QI_MAX_IMG ? `<button type="button" class="qi-add cam" onclick="$('qiCam').click()"><b>📷</b>${TT('ถ่ายรูป', 'Camera')}</button><button type="button" class="qi-add" onclick="$('qiFile').click()"><b>🖼️</b>${TT('เลือกรูป', 'Choose')}</button>` : '');
+}
+function qiImgDel(i) { if (!_qiF) return; const id = _qiF.im[i]; _qiF.im.splice(i, 1); _qiF.fresh.delete(id); _qiImsPaint(); qiDraftKeep(); }
+async function qiAddFiles(files) {
+  const F = _qiF, list = [...(files || [])].filter(f => f && /^image\//.test(f.type || 'image/'));
+  if (!F || !list.length) return;
+  _qiErr('');
+  const room = QI_MAX_IMG - F.im.length, btn = $('qiSaveB');
+  if (list.length > room) _qiErr(TT(`แนบได้ไม่เกิน ${QI_MAX_IMG} รูป`, `Up to ${QI_MAX_IMG} photos`));
+  if (btn) btn.disabled = true;
+  for (const f of list.slice(0, room)) {
+    try {
+      const r = await _imgCompress(f);
+      if (_qiF !== F) return;
+      const id = 'im' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+      F.fresh.set(id, { id, ref: F.id, ...r, by: (CURRENT_USER && CURRENT_USER.id) || '' });
+      F.im.push(id); _qiImsPaint(); qiDraftKeep();
+    } catch (e) { _qiErr(TT('เปิดรูปนี้ไม่ได้ — ลองถ่ายใหม่ หรือเลือกไฟล์ JPG / PNG', 'Cannot open this photo — try again or use JPG / PNG')); }
+  }
+  if (btn) btn.disabled = false;
+}
+function qiPaste(ev) {
+  const f = [...((ev.clipboardData && ev.clipboardData.files) || [])].filter(x => /^image\//.test(x.type));
+  if (f.length) { ev.preventDefault(); qiAddFiles(f); }
+}
+function qiDrop(ev) { const f = ev.dataTransfer && ev.dataTransfer.files; if (f && f.length) { ev.preventDefault(); qiAddFiles(f); } }
+function _qiErr(t) { const el = $('qiErr'); if (el) el.textContent = t || ''; }
+async function qiSave() {
+  const F = _qiF; if (!F || _qiBusy) return;
+  const v = vKey($('qiV').value), l = lotKey($('qiL').value), t = $('qiT').value.trim(), d = $('qiD').value || todayISO(), w = $('qiBy').value.trim();
+  const bad = (msg, el) => { _qiErr(msg); $(el)?.focus(); };
+  if (!v) return bad(TT('ใส่ Valve No', 'Enter the Valve No'), 'qiV');
+  if (masterValveLoaded() && !isKnownValve(v)) return bad(TT(`ไม่พบ ${v} ใน Master Valve — เช็คเลขอีกครั้ง`, `${v} is not in the valve master`), 'qiV');
+  if (l && l.length < 8) return bad(TT('เลข Lot สั้นผิดปกติ — เช็คอีกครั้ง หรือเว้นว่าง = ทุก Lot', 'Lot looks too short — check it, or leave blank for all lots'), 'qiL');
+  if (t.length < 3) return bad(TT('ใส่ปัญหาที่พบ', 'Describe the issue'), 'qiT');
+  if (!w) return bad(TT('ใส่ผู้แจ้ง', 'Enter who reported it'), 'qiBy');
+  const old = F.edit ? _docs[F.id] : null, me = CURRENT_USER || {};
+  let by = '', bn = w;
+  const mm = w.split('—'), emp = empById(mm[0].trim());
+  if (emp) { by = emp.id; bn = emp.name || w; } else if (mm.length > 1) { by = mm[0].trim(); bn = mm.slice(1).join('—').trim(); }
+  const data = { v, l, d, t, by, bn, im: [...F.im], cl: (old && old.data.cl) || null };
+  const e = old ? { ...old, data } : { id: F.id, kind: 'qi', vsm: viewVsm(), data, byId: me.id || OP || '', byName: me.name || '', ts: new Date().toISOString(), deleted: 0 };
+  const fresh = F.im.map(id => F.fresh.get(id)).filter(Boolean);
+  _qiBusy = true; showBusy(TT('กำลังบันทึก…', 'Saving…'));
+  let ok = false, okImg = true;
+  try {
+    if (fresh.length) await _imgQueue(fresh);
+    const pd = docPut(e);
+    if (fresh.length) okImg = await imgFlush();
+    ok = await pd;
+  } finally { _qiBusy = false; hideBusy(); }
+  _qiF = null; _qiDraft = null;
+  _docChanged();
+  if (ok && okImg) { toast(`✅ ${v}${l ? ' · ' + l : ''} — ${TT('บันทึกงานเฝ้าระวังแล้ว', 'saved to the watch list')}`, 'green'); openQiModal(); }
+  else offlineSaveDialog(`${TT('งานเฝ้าระวังคุณภาพ', 'Quality watch')} — ${v}${l ? ' · ' + l : ''}`,
+    _docCloud === false ? TT('เซิร์ฟเวอร์ยังไม่รองรับระบบนี้', 'server not updated yet') : !ok ? TT('ส่งขึ้นเซิร์ฟเวอร์ไม่สำเร็จ', 'server unreachable') : TT('ข้อความขึ้นแล้ว แต่รูปยังส่งไม่ครบ', 'text sent, photos still pending'));
+}
+async function qiCloseSet(id, on) {
+  const e = _docs[id]; if (!e) return;
+  if (!canEditRec(e)) { _recLockToast(e); return; }
+  const c = e.data, nm = `${c.v}${c.l ? ' · Lot ' + c.l : ''}`;
+  if (on && !(await confirmModal(`${nm}\n${c.t}\n\n${TT('ปิดแล้วไม่ขึ้นที่ IOT · ยังค้นหาได้ในหน้าติดตามงาน', 'Closed items leave the IOT board but stay searchable')}`, { title: '✓ ' + TT('ปิดเฝ้าระวัง', 'Close this item'), yes: '✓ ' + TT('ปิดเฝ้าระวัง', 'Close'), danger: false }))) { qiDetail(id); return; }
+  const me = CURRENT_USER || {};
+  const pd = docPut({ ...e, data: { ...c, cl: on ? { at: new Date().toISOString(), by: me.id || '', bn: me.name || '' } : null } });
+  _docChanged(); qiDetail(id);
+  pd.then(() => { if (document.querySelector(`#modalBd .qi-d[data-id="${id}"]`)) qiDetail(id); });   // ขึ้น Cloud แล้ว → ป้าย ⏳ หาย
+  toast(on ? TT('ปิดเฝ้าระวังแล้ว', 'Closed') : TT('กลับมาเฝ้าระวังแล้ว', 'Watching again'), on ? 'green' : 'blue');
+}
+async function qiDel(id) {
+  const e = _docs[id]; if (!e) return;
+  if (!canEditRec(e)) { _recLockToast(e); return; }
+  const c = e.data;
+  if (!(await confirmModal(`${c.v}${c.l ? ' · Lot ' + c.l : ''}\n${c.t}\n\n${TT('ลบรายการนี้ออกจากระบบ?', 'Delete this item?')}`, { title: '🗑 ' + TT('ลบรายการ', 'Delete'), yes: TT('ลบ', 'Delete') }))) { qiDetail(id); return; }
+  docPut({ ...e, deleted: 1 });
+  _docChanged(); openQiModal();
+  toast(TT('ลบแล้ว', 'Deleted'), 'green');
+}
+/* ---------- IOT เต็มจอ: ครึ่งขวาของ TOP ปัญหา ---------- */
+function renderIotQi() {
+  const host = $('iotQi'); if (!host) return;
+  const all = qiList(viewVsm()).map(e => [e, qiState(e)]).filter(x => x[1].st === 'watch');
+  const wait = all.some(x => x[1].wait), L = all.filter(x => !x[1].wait);
+  const it = ([e, s]) => {
+    const c = e.data, im = (c.im || []).length;
+    return `<button type="button" class="qi-it" onclick="qiDetail('${e.id}',1)" title="${escapeHtml(`${c.v}${c.l ? ' · Lot ' + c.l : ''} — ${c.t}${s.w ? ' · ' + s.w : ''}`)}">
+      <b>${escapeHtml(c.v)}</b><span class="l">${c.l ? escapeHtml(c.l) : TT('ทุก Lot', 'all lots')}</span><span class="t">${escapeHtml(c.t)}</span>${im ? `<span class="p">📷${im}</span>` : ''}</button>`;
+  };
+  const html = `<div class="qi-wrap${L.length ? '' : ' none'}">
+    <div class="qi-hd">⚠️ ${TT('งานเฝ้าระวังคุณภาพ', 'Quality watch')}${L.length ? ` <b>${L.length}</b> <small>· ${TT('กดดูรายละเอียด / รูป', 'tap for details / photos')}</small>` : ''}</div>
+    ${L.length ? `<div class="qi-list" onpointerdown="_qiHold=Date.now()+30000" onwheel="_qiHold=Date.now()+30000">${L.map(it).join('')}</div>` : `<div class="qi-no">${wait ? TT('กำลังตรวจสถานะงาน…', 'Checking lots…') : TT('ไม่มีงานเฝ้าระวังตอนนี้', 'Nothing to watch right now')}</div>`}
+  </div>`;
+  if (host._h !== html || !host.firstChild) { host._h = html; host.innerHTML = html; }   // ไม่เปลี่ยน = ไม่วาดซ้ำ (ตำแหน่งเลื่อนไม่กระโดด)
+}
+
+/* จอ TV ไม่มีคนเลื่อน: รายการเกินกรอบ → พลิกหน้าเองทุก 8 วิ (เมาส์อยู่บนรายการ / เพิ่งแตะเลื่อนเอง = หยุดก่อน 30 วิ) */
+let _qiHold = 0;
+function qiAutoPage() {
+  const L = document.querySelector('#iotCard.iot-fs .qi-list');
+  if (!L || document.hidden || L.scrollHeight <= L.clientHeight + 4 || L.matches(':hover') || L.contains(document.activeElement) || Date.now() < _qiHold) return;
+  const end = L.scrollTop + L.clientHeight >= L.scrollHeight - 4;
+  L.scrollTo({ top: end ? 0 : L.scrollTop + L.clientHeight, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth' });
+}
+/* ═══════════════════════════════════════════════════════════════════════
+   ★ v4.34 (ผู้ใช้ 25/11 ข้อ 2) ✍️ ลงชื่อรับทราบการต่อกะ — หัวหน้างานใส่รหัสพนักงานตัวเอง
+   ช่องต่อกะตามแผงของแต่ละสาย: VSM4 = Machine + Induction · VSM3 = Machine · VSM1/2 = Forge · QC = QC (hsTypes)
+   ผู้ลงชื่อ: ตั้งค่า › 👷 Group Leader ประจำ Zone (Admin) — mp_manual id "hs|<ZONE>" { gl:1, hs:1, zone, people: [{ id, n, ho:'mi', sh }] }
+     (gl:1 = แอปรุ่นเก่าไม่ตีความเป็นเครื่องปิด · แยกจากแถว gl|<ZONE> → แอปรุ่นเก่าบันทึกชื่อแล้วไม่ทับ) · Worker หลักไม่ต้องแก้
+   กะของคน (sh): A / B = สลับทุก 2 สัปดาห์วันจันทร์ (A = กะเช้าในรอบ HO_ROT_ANCHOR) · D เช้าตลอด · N กลางคืนตลอด · '' ไม่ระบุ (ใครลงก็ได้)
+     วัดจริง KPI 20/10–25/11 ทุกสาย: 99% ของรายการอยู่กะเดียวทั้งรอบ · ข้ามรอบสลับกะ 247 ครั้ง ไม่สลับ 3 ครั้ง · รอบเริ่ม จ. 19/10 2/11 16/11
+   เวลาลงชื่อ = ชั่วโมงแรกของกะ (08:00–09:00 / 20:00–21:00) · หลังจากนั้นยังลงได้ แต่บันทึกว่าช้ากี่นาที
+   ยังไม่ลง: ป้ายบน IOT + แผงต่อกะ เป็นชื่อคนที่ต้องลง (ในเวลา = เหลือง รอลงชื่อ · หมดเวลา = แดง ยังไม่ทำการต่อกะ) · คนอื่นใน Zone + ช่องเดียวกันลงแทนได้
+   วันอาทิตย์: แจ้งเมื่อมีการผลิตในกะนั้นแล้วเท่านั้น
+   data = { day, sh: 'day'|'night', zone, type, emp, name, at, late, sub } · id = hs|vsm|day|sh|zone|type|emp
+   ═══════════════════════════════════════════════════════════════════════ */
+const HO_SIGN_MIN = 60, HO_ROT_ANCHOR = '2026-11-16', HO_ROT_DAYS = 14, MP_HS_PREFIX = 'hs|';
+let _hoNowFn = () => new Date();
+let _hsSub = '', _hsHistOn = false, _hsLast = '', _hsRanMemo = null;
+function hoShiftNow() {
+  const now = _hoNowFn(), day = mpProdDay(now), sh = mpShiftNow(now);
+  const st = new Date(day + (sh === 'day' ? 'T08:00:00' : 'T20:00:00')), min = (now - st) / 60000;
+  return { day, sh, min, open: min < HO_SIGN_MIN };
+}
+const _hsShTxt = sh => sh === 'day' ? TT('กะเช้า', 'Day shift') : TT('กะกลางคืน', 'Night shift');
+const _hsWin = sh => sh === 'day' ? '08:00–09:00' : '20:00–21:00';
+const _hsNm = n => String(n || '').replace(/^\s*(นางสาว|นาย|นาง|น\.ส\.|Mr\.?|Mrs\.?|Ms\.?)\s*/i, '').replace(/\s+/g, ' ').trim();
+const _hsHm = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+const _hsNorm = s => String(s || '').split('—')[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+function hsTypes(vsm) { return (vsm === 'vsm3' || _hoMergedVsm(vsm)) ? ['machine'] : HO_ORDER; }
+function hsItem(z) { const id = MP_HS_PREFIX + String(z || '').toUpperCase(); return _mpMan.find(x => x && x.id === id && x.hs) || null; }
+function hsPeople(vsm) {
+  const T = hsTypes(vsm), out = [];
+  for (const z of zonesForVsm(vsm)) for (const p of ((hsItem(z) || {}).people || [])) {
+    if (!p || !p.id) continue;
+    const types = T.length === 1 ? T : T.filter(t => String(p.ho || '').includes(t[0]));
+    out.push({ id: String(p.id).toUpperCase(), name: p.n || (empById(p.id) || {}).name || p.id, zone: z, types, sh: p.sh || '' });
+  }
+  return out;
+}
+function _hsCycEven(day) { const c = Math.floor(_mpDayDiff(HO_ROT_ANCHOR, day) / HO_ROT_DAYS); return ((c % 2) + 2) % 2 === 0; }
+function hsOnShift(p, day, sh) {   // true / false / null = ไม่ระบุ
+  if (p.sh === 'D') return sh === 'day';
+  if (p.sh === 'N') return sh === 'night';
+  if (p.sh === 'A' || p.sh === 'B') return ((p.sh === 'A') === _hsCycEven(day)) === (sh === 'day');
+  return null;
+}
+function hsSigns(vsm, day, sh) { return Object.values(_docs).filter(e => e && e.kind === 'hosign' && !e.deleted && e.vsm === vsm && e.data && e.data.day === day && e.data.sh === sh); }
+/* รายชื่อที่ต้องลงของกะนั้น: [{ zone, type, names, ids, sign }] · sign = เอกสารลงชื่อ (ของตัวเอง หรือคนในกลุ่มเดียวกันลงแทน) */
+function hsStatus(vsm, day, sh) {
+  const S = hsSigns(vsm, day, sh), G = new Map(), rows = [];
+  for (const p of hsPeople(vsm)) for (const t of p.types) { const k = p.zone + '|' + t; let a = G.get(k); if (!a) G.set(k, a = []); a.push(p); }
+  for (const [k, ps] of G) {
+    const [zone, type] = k.split('|'), s = S.filter(e => e.data.zone === zone && e.data.type === type);
+    const by = id => s.find(e => String(e.data.emp).toUpperCase() === id) || null;
+    const must = ps.filter(p => hsOnShift(p, day, sh) === true), maybe = ps.filter(p => hsOnShift(p, day, sh) === null);
+    if (must.length) {
+      const R = must.map(p => ({ zone, type, names: [p.name], ids: [p.id], sign: by(p.id) }));
+      const extra = s.filter(e => !must.some(p => p.id === String(e.data.emp).toUpperCase()));   // คนอื่นในกลุ่มลงแทน
+      for (const r of R) if (!r.sign && extra.length) { r.sign = extra.shift(); r.sub = 1; }
+      rows.push(...R);
+    } else if (maybe.length) rows.push({ zone, type, names: maybe.map(p => p.name), ids: maybe.map(p => p.id), sign: s[0] || null });
+  }
+  return rows;
+}
+// สายนี้มีการผลิตในกะนั้นไหม (KPI ที่ลงแล้ว)
+function hsRan(vsm, day, sh) {
+  const src = state.kpiRecords || [];
+  if (!_hsRanMemo || _hsRanMemo.src !== src || _hsRanMemo.n !== src.length) _hsRanMemo = { src, n: src.length, m: new Map() };
+  const k = `${vsm}|${day}|${sh}`;
+  let v = _hsRanMemo.m.get(k);
+  if (v === undefined) _hsRanMemo.m.set(k, v = src.some(r => String(r.shift_date || r.record_date || '').slice(0, 10) === day && r.shift_type === sh && vsmOf(r) === vsm));
+  return v;
+}
+function hsAlert(vsm) {
+  const n = hoShiftNow(), rows = hsStatus(vsm, n.day, n.sh);
+  if (!rows.length || (new Date(n.day + 'T12:00:00').getDay() === 0 && !hsRan(vsm, n.day, n.sh))) return null;
+  return { ...n, rows, pend: rows.filter(r => !r.sign) };
+}
+const _hsNames = rows => [...new Set(rows.map(r => r.names.map(_hsNm).join(' / ')))];
+/* ป้ายบน IOT (แถวเดียวกับช่วงวันที่) — แตะ = ลงชื่อ / ดูใครลงแล้ว */
+function renderIotHoAlert() {
+  const el = $('iotHoAlert'); if (!el) return;
+  const A = hsAlert(viewVsm());
+  let cls = '', html = '';
+  if (A) {
+    const n = A.pend.length;
+    cls = !n ? 'ok' : A.open ? 'wait' : 'late';
+    html = !n ? `✅ ${TT('ต่อกะครบแล้ว', 'Handover signed')} · ${_hsShTxt(A.sh)} ${A.rows.length}/${A.rows.length}`
+      : `${A.open ? '✍️' : '⚠️'} <b>${A.open ? TT(`รอลงชื่อต่อกะ ถึง ${_hsWin(A.sh).slice(-5)}`, `Sign handover by ${_hsWin(A.sh).slice(-5)}`) : TT('ยังไม่ทำการต่อกะ', 'Handover not signed')}</b> <span class="sh">${_hsShTxt(A.sh)}</span> ${_hsNames(A.pend).map(x => `<span class="nm">${escapeHtml(x)}</span>`).join('')}`;
+  }
+  el.className = 'iot-hoal ' + cls;
+  el.style.display = html ? '' : 'none';
+  if (el._h !== html) { el._h = html; el.innerHTML = html; }
+}
+/* หัวแผงต่อกะ: ปุ่ม ✍️ + แถวชื่อ */
+function hsPanelBtn(type) {
+  const A = hsAlert(viewVsm()), R = A ? A.rows.filter(r => r.type === type) : [], d = R.filter(r => r.sign).length;
+  const cls = !R.length ? '' : d === R.length ? ' ok' : A.open ? ' wait' : ' late';
+  return `<button type="button" class="ho-sign-b${cls}" onclick="openHoSign()" title="${TT('ลงชื่อรับทราบการต่อกะ', 'Sign the shift handover')}">✍️ ${TT('ลงชื่อ', 'Sign')}${R.length ? ` ${d}/${R.length}` : ''}</button>`;
+}
+function hsPanelBar(type) {
+  const A = hsAlert(viewVsm()), R = A ? A.rows.filter(r => r.type === type) : [];
+  if (!R.length) return '';
+  return `<button type="button" class="hs-bar" onclick="openHoSign()">${R.map(r => _hsRowTxt(r, A)).join('')}</button>`;
+}
+function _hsRowTxt(r, A) {
+  const nm = escapeHtml(r.names.map(_hsNm).join(' / '));
+  if (r.sign) {
+    const s = r.sign.data;
+    return `<span class="ok">✅ ${r.sub ? `${escapeHtml(_hsNm(s.name))} <i>(${TT('แทน', 'for')} ${nm})</i>` : nm} ${_hsHm(s.at)}${s.late ? ` <em>${TT('ช้า', 'late')} ${_hsLate(s.late)}</em>` : ''}</span>`;
+  }
+  return A.open ? `<span class="wait">⏳ ${nm} <i>${TT('รอลงชื่อ', 'to sign')}</i></span>` : `<span class="late">⚠️ ${nm} <i>${TT('ยังไม่ทำการต่อกะ', 'not signed')}</i></span>`;
+}
+const _hsLate = x => { const m = +x || 0; return m >= 60 ? `${Math.floor(m / 60)} ${TT('ชม.', 'h')}${m % 60 ? ` ${m % 60} ${TT('น.', 'm')}` : ''}` : `${m} ${TT('นาที', 'min')}`; };
+function hsSig() {
+  const v = viewVsm(), A = hsAlert(v);
+  return v + '|' + (A ? `${A.day}|${A.sh}|${A.open ? 1 : 0}|${A.rows.map(r => r.ids.join('+') + r.type + r.zone + (r.sign ? r.sign.id + r.sign.data.at : '')).join(',')}` : '');
+}
+function hsTick(force) {
+  if (document.hidden) return;
+  const fs = !!document.querySelector('#iotCard.iot-fs');
+  if ($('hsList')) _hsListPaint();
+  if (!fs && document.querySelector('section.pane.active')?.id !== 'pane-home') { _hsLast = ''; return; }
+  const s = hsSig();
+  if (!force && s === _hsLast) return;
+  const ch = s !== _hsLast;
+  _hsLast = s;
+  renderIotHoAlert();
+  if (fs && ch) renderHandoverPanels();
+}
+/* ---------- หน้าต่างลงชื่อ ---------- */
+function openHoSign() {
+  closeHoSign();
+  const card = $('iotCard'), fs = card && card.classList.contains('iot-fs'), host = fs ? card : document.body;
+  const ov = document.createElement('div');
+  ov.id = 'hoSignOv'; ov.className = 'ho-modal-bg'; ov.style.position = fs ? 'absolute' : 'fixed';
+  ov.addEventListener('click', ev => { if (ev.target === ov) closeHoSign(); });
+  _hsSub = ''; _hsHistOn = false;
+  ov.innerHTML = `<div class="ho-modal hs-modal" role="dialog" aria-modal="true" aria-label="${TT('ลงชื่อรับทราบการต่อกะ', 'Sign the shift handover')}">
+    <div class="ho-modal-hd" style="background:linear-gradient(135deg,#1A56DB,#1E3A8A)">✍️ ${TT('ลงชื่อรับทราบการต่อกะ', 'Sign shift handover')} — ${escapeHtml(VSM_LABEL[viewVsm()] || '')}
+      <button type="button" class="iotpop-cl" onclick="closeHoSign()" aria-label="${TT('ปิด', 'Close')}">✕</button></div>
+    <div class="ho-modal-bd">
+      <div class="hs-when" id="hsWhen"></div>
+      <div class="hs-in">
+        <input type="text" id="hsEmp" placeholder="${TT('รหัสพนักงานของคุณ', 'Your employee code')}" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="hsTyping()" onkeydown="if(event.key==='Enter'){event.preventDefault();hsSign();}">
+        <button type="button" class="btn btn-green" id="hsBtn" onclick="hsSign()">✍️ ${TT('ลงชื่อรับทราบ', 'Sign')}</button>
+      </div>
+      <div id="hsWho" class="hs-who" role="status"></div>
+      <div id="hsList"></div>
+      <button type="button" class="ho-hist-btn" id="hsHistB" onclick="hsHistToggle()">🕘 ${TT('ประวัติการลงชื่อ', 'Sign-off history')}</button>
+      <div id="hsHist"></div>
+    </div></div>`;
+  host.appendChild(ov);
+  _hsListPaint();
+  setTimeout(() => $('hsEmp')?.focus(), 50);
+  Promise.all([docSync(true), API ? mpManLoad(true).catch(() => null) : null]).then(() => { if ($('hsList')) _hsListPaint(); });
+}
+function closeHoSign() { const o = document.getElementById('hoSignOv'); if (o) o.remove(); }
+function _hsListPaint() {
+  const box = $('hsList'), when = $('hsWhen'); if (!box) return;
+  const v = viewVsm(), n = hoShiftNow(), rows = hsStatus(v, n.day, n.sh), T = hsTypes(v);
+  const lateM = Math.floor(n.min - HO_SIGN_MIN);
+  if (when) when.innerHTML = `<b>${n.sh === 'day' ? '☀️' : '🌙'} ${_hsShTxt(n.sh)} ${_mpDW(n.day)}</b><span>${TT('เวลาลงชื่อ', 'Sign between')} ${_hsWin(n.sh)}</span>${n.open ? `<span class="wait">${TT(`เหลือ ${Math.max(1, Math.ceil(HO_SIGN_MIN - n.min))} นาที`, `${Math.max(1, Math.ceil(HO_SIGN_MIN - n.min))} min left`)}</span>` : `<span class="late">${TT(`เลยเวลา ${_hsLate(Math.max(1, lateM))} — ลงตอนนี้บันทึกว่าช้า`, `${_hsLate(Math.max(1, lateM))} past — recorded as late`)}</span>`}`;
+  if (!rows.length) {
+    box.innerHTML = `<div class="ho-empty">${hsPeople(v).length ? TT('ไม่มีผู้ที่ต้องลงชื่อในกะนี้', 'Nobody is scheduled to sign this shift') : TT('ยังไม่ได้ตั้งผู้ลงชื่อ — Admin ตั้งที่ ⚙️ ตั้งค่า › 👷 Group Leader ประจำ Zone', 'No signers set — Admin: ⚙️ Settings › 👷 Group Leader per Zone')}</div>`;
+  } else {
+    box.innerHTML = T.map(t => {
+      const R = rows.filter(r => r.type === t); if (!R.length) return '';
+      const m = _hoTypeMeta(t);
+      return `<div class="hs-grp"><div class="hs-gh">${m.icon} ${escapeHtml(m.label)} <b>${R.filter(r => r.sign).length}/${R.length}</b></div>${R.map(r => `<div class="hs-li">${_hsRowTxt(r, n)}<small>${escapeHtml(ZONE_LABEL[r.zone] || r.zone)}</small></div>`).join('')}</div>`;
+    }).join('');
+  }
+  if (_hsHistOn) _hsHistPaint();
+}
+function hsFind(code) { const k = _hsNorm(code); return k.length >= 3 ? hsPeople(viewVsm()).filter(p => _hsNorm(p.id) === k) : []; }
+function _hsRoleTxt(P) { return [...new Set(P.flatMap(p => p.types.map(t => `${_hoTypeMeta(t).icon} ${_hoTypeMeta(t).label}`)))].join(' · ') + ' · ' + [...new Set(P.map(p => ZONE_LABEL[p.zone] || p.zone))].join(' / '); }
+function hsTyping() {
+  const inp = $('hsEmp'), who = $('hsWho'), btn = $('hsBtn'); if (!inp || !who) return;
+  _hsSub = ''; if (btn) btn.innerHTML = `✍️ ${TT('ลงชื่อรับทราบ', 'Sign')}`;
+  const P = hsFind(inp.value);
+  who.className = 'hs-who';
+  who.innerHTML = P.length ? `👤 <b>${escapeHtml(P[0].name)}</b> <span>${escapeHtml(_hsRoleTxt(P))}</span>` : '';
+}
+async function hsSign() {
+  const inp = $('hsEmp'), who = $('hsWho'), btn = $('hsBtn'); if (!inp || !who) return;
+  const say = (cls, html) => { who.className = 'hs-who ' + cls; who.innerHTML = html; };
+  const code = inp.value.trim(), P = hsFind(code), v = viewVsm(), n = hoShiftNow();
+  if (!code) { say('bad', TT('ใส่รหัสพนักงานของคุณก่อน', 'Enter your employee code')); inp.focus(); return; }
+  if (!P.length) {
+    say('bad', `${TT('รหัสนี้ไม่ได้อยู่ในรายชื่อผู้ลงชื่อต่อกะของ', 'Not on the handover signer list of')} ${escapeHtml(VSM_LABEL[v] || v)} — ${TT('Admin เพิ่มได้ที่ ⚙️ ตั้งค่า › 👷 Group Leader ประจำ Zone', 'Admin can add it in ⚙️ Settings › 👷 Group Leader per Zone')}`);
+    inp.focus(); return;
+  }
+  const off = P.every(p => hsOnShift(p, n.day, n.sh) === false), id = P[0].id;
+  if (off && _hsSub !== id) {   // ไม่ใช่กะของคนนี้ → ถามก่อนว่าลงแทน
+    _hsSub = id;
+    say('warn', `👤 <b>${escapeHtml(P[0].name)}</b> ${TT(`รอบนี้อยู่${_hsShTxt(n.sh === 'day' ? 'night' : 'day')} (ลงชื่อ ${_hsWin(n.sh === 'day' ? 'night' : 'day')}) — ถ้ามาแทนกะนี้ กดยืนยันอีกครั้ง`, `is on the other shift (${_hsWin(n.sh === 'day' ? 'night' : 'day')}) — press again to sign as a substitute`)}`);
+    if (btn) btn.innerHTML = `✍️ ${TT('ลงชื่อแทน', 'Sign as substitute')}`;
+    return;
+  }
+  const late = n.open ? 0 : Math.max(1, Math.floor(n.min - HO_SIGN_MIN)), at = _hoNowFn().toISOString(), me = CURRENT_USER || {}, put = [];
+  for (const p of P) for (const t of p.types) {
+    const did = ['hs', v, n.day, n.sh, p.zone, t, p.id.replace(/[^\w.-]/g, '_')].join('|'), old = _docs[did];
+    if (old && !old.deleted) continue;
+    put.push({ id: did, kind: 'hosign', vsm: v, data: { day: n.day, sh: n.sh, zone: p.zone, type: t, emp: p.id, name: p.name, at, late, ...(off ? { sub: 1 } : {}) }, byId: me.id || '', byName: me.name || '', ts: at, deleted: 0 });
+  }
+  if (!put.length) {
+    const x = hsSigns(v, n.day, n.sh).find(e => String(e.data.emp).toUpperCase() === id);
+    say('ok', `✅ <b>${escapeHtml(P[0].name)}</b> ${TT('ลงชื่อกะนี้แล้ว', 'already signed')}${x ? ' ' + _hsHm(x.data.at) : ''}`); return;
+  }
+  if (btn) btn.disabled = true;
+  const jobs = put.map(docPut);
+  inp.value = ''; _hsSub = '';
+  if (btn) btn.innerHTML = `✍️ ${TT('ลงชื่อรับทราบ', 'Sign')}`;
+  const done = `✅ <b>${escapeHtml(P[0].name)}</b> ${TT('ลงชื่อรับทราบการต่อกะแล้ว', 'signed the handover')} ${_hsHm(at)}${late ? ` <em>${TT('ช้า', 'late')} ${_hsLate(late)}</em>` : ''}`;
+  say('ok', done);
+  _hsListPaint(); hsTick(true);
+  const ok = (await Promise.all(jobs)).every(Boolean);
+  if (btn) btn.disabled = false;
+  if (!ok && $('hsWho')) say('warn', `${done}<br>⏳ ${TT('ยังไม่ขึ้น Cloud — เครื่องนี้จะส่งให้เองเมื่อออนไลน์', 'Not on Cloud yet — this device will send it when online')}`);
+}
+function hsHistToggle() { _hsHistOn = !_hsHistOn; const b = $('hsHist'); if (!b) return; if (_hsHistOn) _hsHistPaint(); else b.innerHTML = ''; }
+/* ย้อนหลัง 14 วันผลิต — เริ่มจากวันแรกที่สายนี้เริ่มลงชื่อ · กะที่ไม่มีการผลิตและไม่มีใครลง = ไม่แสดง */
+function _hsHistPaint() {
+  const box = $('hsHist'); if (!box) return;
+  const v = viewVsm(), n = hoShiftNow();
+  const first = Object.values(_docs).filter(e => e && e.kind === 'hosign' && !e.deleted && e.vsm === v && e.data).map(e => e.data.day).sort()[0] || n.day;
+  const out = [];
+  for (let i = 0; i < 14; i++) {
+    const day = _mpAddDays(n.day, -i); if (day < first) break;
+    for (const sh of ['night', 'day']) {
+      if (day === n.day && (sh === n.sh || (n.sh === 'day' && sh === 'night'))) continue;   // กะนี้อยู่ด้านบนแล้ว · กะที่ยังไม่ถึง
+      const S = hsSigns(v, day, sh); if (!S.length && !hsRan(v, day, sh)) continue;
+      const R = hsStatus(v, day, sh); if (!R.length && !S.length) continue;
+      const seen = new Set(R.filter(r => r.sign).map(r => r.sign.id));
+      const more = S.filter(e => !seen.has(e.id) && !R.some(r => r.sign && r.sign.data.emp === e.data.emp));
+      out.push(`<div class="hs-hr"><b>${sh === 'day' ? '☀️' : '🌙'} ${_mpDW(day)}</b><span>${_hsHistNames(R, more)}</span></div>`);
+    }
+  }
+  box.innerHTML = out.length ? out.join('') : `<div class="ho-empty">${TT('ยังไม่มีประวัติ', 'No history yet')}</div>`;
+}
+function _hsHistNames(R, more) {
+  const m = new Map();   // คนเดียวกันรับผิดชอบหลายช่อง = บรรทัดเดียว
+  for (const r of R) { const k = r.sign ? r.sign.data.emp : 'x' + r.ids.join('+'); if (!m.has(k)) m.set(k, r); }
+  return [...m.values()].map(r => r.sign
+      ? `<span class="ok">✅ ${escapeHtml(_hsNm(r.sign.data.name))} ${_hsHm(r.sign.data.at)}${r.sign.data.late ? ` <em>${TT('ช้า', 'late')} ${_hsLate(r.sign.data.late)}</em>` : ''}${r.sub ? ` <i>(${TT('แทน', 'for')} ${escapeHtml(_hsNm(r.names.join(' / ')))})</i>` : ''}</span>`
+      : `<span class="late">❌ ${escapeHtml(r.names.map(_hsNm).join(' / '))}</span>`)
+    .concat(more.map(e => `<span class="ok">✅ ${escapeHtml(_hsNm(e.data.name))} ${_hsHm(e.data.at)}</span>`)).join('');
+}
+/* ---------- ตั้งค่า: ผู้ลงชื่อ (ในการ์ด 👷 Group Leader ประจำ Zone) ---------- */
+function _hsShOpts(cur) {
+  const even = _hsCycEven(mpProdDay()), L = [[even ? 'A' : 'B', TT('สลับกะ · รอบนี้เช้า', 'Rotating · days now')], [even ? 'B' : 'A', TT('สลับกะ · รอบนี้กลางคืน', 'Rotating · nights now')], ['D', TT('เช้าตลอด', 'Always days')], ['N', TT('กลางคืนตลอด', 'Always nights')], ['', TT('ไม่ระบุกะ', 'No shift set')]];
+  return L.map(([v, t]) => `<option value="${v}"${v === (cur || '') ? ' selected' : ''}>${t}</option>`).join('');
+}
+/* ร่างครั้งแรกจากชื่อ Group Leader ที่ตั้งไว้: จับคู่ชื่อกับรายชื่อพนักงานของสาย (เจอคนเดียวเท่านั้น) + กะจากยอด KPI รอบนี้ (ไม่มี = ตรงข้ามกับอีกคน) */
+function _hsDraft(z) {
+  const v = viewVsm(), T = hsTypes(v), pool = (state.employees || []).filter(e => resolveEmpVsm(e.id) === v), even = _hsCycEven(mpProdDay());
+  const c0 = _mpAddDays(HO_ROT_ANCHOR, Math.floor(_mpDayDiff(HO_ROT_ANCHOR, mpProdDay()) / HO_ROT_DAYS) * HO_ROT_DAYS);
+  const ho = T.length === 1 ? '' : /INDUCTION/i.test(ZONE_LABEL[z] || '') ? 'i' : 'm';
+  const L = zoneGlName(z).split(/\s*[\/,]\s*/).map(s => _hsNm(s)).filter(Boolean).map(nm => {
+    const hit = pool.filter(e => { const n = _hsNm(e.name); return n === nm || n.startsWith(nm + ' '); });
+    const e = hit.length === 1 ? hit[0] : null;
+    let d = 0, k = 0;
+    if (e) for (const r of (state.kpiRecords || [])) {
+      if (String(r.shift_date || '').slice(0, 10) < c0 || !String(r.shift_ids || r.emp_id || '').toUpperCase().split(/[^A-Z0-9-]+/).includes(e.id.toUpperCase())) continue;
+      if (r.shift_type === 'day') d++; else k++;
+    }
+    return { id: e ? e.id : '', n: e ? e.name : nm, ho, on: d + k < 2 || d === k ? '' : d > k ? 'day' : 'night' };
+  });
+  if (L.length === 2) { const [a, b] = L; if (a.on && !b.on) b.on = a.on === 'day' ? 'night' : 'day'; else if (b.on && !a.on) a.on = b.on === 'day' ? 'night' : 'day'; }
+  return L.map(p => ({ id: p.id, n: p.n, ho: p.ho, sh: p.on ? ((p.on === 'day') === even ? 'A' : 'B') : '' }));
+}
+function hsRowHtml(p) {
+  const T = hsTypes(viewVsm()), val = p && p.id ? `${p.id} — ${p.n || (empById(p.id) || {}).name || ''}` : (p && p.n) || '';
+  return `<div class="hsp-r">
+    <input type="text" class="hsp-id" list="hspEmpList" value="${escapeHtml(val)}" placeholder="${TT('รหัส / ชื่อพนักงาน', 'Code / name')}" aria-label="${TT('รหัสพนักงาน', 'Employee code')}" autocomplete="off" oninput="_zglDirty=true">
+    <select class="hsp-sh" aria-label="${TT('กะ', 'Shift')}" onchange="_zglDirty=true">${_hsShOpts(p && p.sh)}</select>
+    ${T.length > 1 ? `<span class="hsp-ho">${T.map(t => { const m = HO_TYPES[t]; return `<label><input type="checkbox" value="${t[0]}"${p && String(p.ho || '').includes(t[0]) ? ' checked' : ''} onchange="_zglDirty=true"> ${m.icon} ${m.label}</label>`; }).join('')}</span>` : ''}
+    <button type="button" class="hsp-x" onclick="this.closest('.hsp-r').remove();_zglDirty=true" aria-label="${TT('เอาออก', 'Remove')}">✕</button>
+  </div>`;
+}
+function hsAddRow(z) {
+  const box = document.querySelector(`#zoneGlWrap .hsp[data-z="${z}"] .hsp-l`); if (!box) return;
+  box.insertAdjacentHTML('beforeend', hsRowHtml({ ho: hsTypes(viewVsm()).length > 1 ? (/INDUCTION/i.test(ZONE_LABEL[z] || '') ? 'i' : 'm') : '' }));
+  _zglDirty = true;
+  box.lastElementChild.querySelector('input').focus();
+}
+function hsZoneHtml(z) {
+  const it = hsItem(z), draft = !it, L = it ? it.people || [] : _hsDraft(z);
+  return `<div class="hsp" data-z="${z}"><div class="hsp-h">✍️ ${TT('ผู้ลงชื่อต่อกะ', 'Handover signers')}${draft && L.length ? ` <em>${TT('ร่างจากชื่อด้านบน — ตรวจแล้วกดบันทึก', 'Drafted from the names — check and save')}</em>` : it && it._local ? ` <em>⏳ ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud yet')}</em>` : ''}</div>
+    <div class="hsp-l">${L.map(hsRowHtml).join('')}</div>
+    <button type="button" class="hsp-add" onclick="hsAddRow('${z}')">＋ ${TT('เพิ่มผู้ลงชื่อ', 'Add signer')}</button></div>`;
+}
+/* อ่านจากฟอร์ม → { put, rm, err } */
+function hsCollect() {
+  const put = [], rm = [], T = hsTypes(viewVsm()), pool = state.employees || [];
+  for (const box of document.querySelectorAll('#zoneGlWrap .hsp')) {
+    const z = box.dataset.z, people = [];
+    for (const r of box.querySelectorAll('.hsp-r')) {
+      const inp = r.querySelector('.hsp-id'), raw = inp.value.trim(); if (!raw) continue;
+      const k = _hsNorm(raw), nm = _hsNm(raw);
+      let e = pool.find(x => _hsNorm(x.id) === k);
+      if (!e) { const hit = pool.filter(x => _hsNm(x.name) === nm); if (hit.length === 1) e = hit[0]; }
+      if (!e) return { err: `${ZONE_LABEL[z] || z}: ${TT(`ไม่พบรหัสพนักงาน "${raw}"`, `employee "${raw}" not found`)}`, el: inp };
+      const ho = T.length > 1 ? [...r.querySelectorAll('.hsp-ho input:checked')].map(x => x.value).join('') : '';
+      if (T.length > 1 && !ho) return { err: `${ZONE_LABEL[z] || z}: ${TT(`เลือกว่า ${_hsNm(e.name)} รับผิดชอบต่อกะ Machine หรือ Induction`, `choose Machine or Induction for ${_hsNm(e.name)}`)}`, el: inp };
+      if (people.some(x => x.id === e.id)) continue;
+      people.push({ id: e.id, n: e.name, ho, sh: r.querySelector('.hsp-sh').value });
+    }
+    const it = hsItem(z);
+    if (people.length) { if (!it || JSON.stringify(it.people || []) !== JSON.stringify(people)) put.push({ id: MP_HS_PREFIX + z, kind: 'off', gl: 1, hs: 1, zone: z, people }); }
+    else if (it) rm.push(MP_HS_PREFIX + z);
+  }
+  return { put, rm };
 }
 
 /* ============================================================
@@ -19036,6 +20111,7 @@ function _wbKick(){
 // วาดทุกจุดที่ใช้ยอด WIP ใหม่ (เรียกหลังคิดเบื้องหลังเสร็จ) — แต่ละตัวอ่าน cache ที่เพิ่งได้ = ไม่คิดซ้ำ
 function _wipViewsRefresh(){
   try{ renderWipBuckets(); }catch(e){}
+  try{ renderQiCard(); renderIotQi(); if($('qiBox')) qiRenderList(); }catch(e){}   // ★ v4.34 ล็อตจบ/ยังไม่จบ มาจากก้อนนี้
   try{ renderWipInSummary(); }catch(e){}
   const pane=document.querySelector('section.pane.active')?.id;
   if(pane==='pane-home' || pane==='pane-prod'){ try{ refreshProcOutput(true); }catch(e){} }
@@ -26909,7 +27985,7 @@ function renderZoneGl(fromCloud) {
   const wrap = $('zoneGlWrap');
   if (!wrap || (fromCloud && _zglDirty)) return;
   const p2 = n => String(n).padStart(2, '0');
-  wrap.innerHTML = `<div class="fg-auto">${currentZones().map(z => {
+  wrap.innerHTML = `<div class="zgl-grid">${currentZones().map(z => {
     const it = zoneGlItem(z), d = it && it.at ? new Date(it.at) : null;
     const meta = !it ? ''
       : it._local ? `⏳ ${TT('ยังไม่ขึ้น Cloud', 'not on Cloud yet')}`
@@ -26919,12 +27995,15 @@ function renderZoneGl(fromCloud) {
       <input type="text" id="zgl-${z}" maxlength="60" autocomplete="off" value="${escapeHtml(zoneGlName(z))}"
         placeholder="${TT('ชื่อ Group Leader', 'Group Leader name')}" oninput="_zglDirty=true">
       ${meta ? `<div class="muted" style="font-size:10.5px;margin-top:3px">${meta}</div>` : ''}
+      ${hsZoneHtml(z)}
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div><datalist id="hspEmpList">${(state.employees || []).map(e => `<option value="${escapeHtml(e.id + ' — ' + e.name)}"></option>`).join('')}</datalist>`;   // ★ v4.34 ผู้ลงชื่อต่อกะ
   _zglDirty = false;
 }
 async function saveZoneGl() {
-  const put = [], rm = [];
+  const hs = hsCollect();   // ★ v4.34 ผู้ลงชื่อต่อกะ
+  if (hs.err) { toast('⚠️ ' + hs.err, 'orange'); hs.el.focus(); return; }
+  const put = [...hs.put], rm = [...hs.rm];
   for (const z of currentZones()) {
     const el = $('zgl-' + z); if (!el) continue;
     const name = el.value.replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -26933,7 +28012,7 @@ async function saveZoneGl() {
     else if (zoneGlItem(z)) rm.push(MP_GL_PREFIX + z);
   }
   _zglDirty = false;
-  if (!put.length && !rm.length) { toast(TT('ชื่อ Group Leader ไม่มีการเปลี่ยนแปลง', 'No Group Leader changes'), 'blue'); return; }
+  if (!put.length && !rm.length) { toast(TT('Group Leader ไม่มีการเปลี่ยนแปลง', 'No Group Leader changes'), 'blue'); return; }
   if (put.length) mpManPut(put);
   if (rm.length) mpManRemove(rm);
   clearTimeout(_mpManTimer);                       // ส่งขึ้น Cloud ทันที (ไม่รอ 0.9 วิ) เพื่อบอกผลได้ตรง
@@ -26941,7 +28020,8 @@ async function saveZoneGl() {
   const r = await _mpManFlush();
   renderZoneGl();
   if (st) st.textContent = '';
-  if (r.ok) toast('👷 ' + TT('บันทึกชื่อ Group Leader แล้ว', 'Group Leader names saved'), 'green');
+  hsTick(true);   // ★ v4.34
+  if (r.ok) toast('👷 ' + TT('บันทึก Group Leader แล้ว', 'Group Leaders saved'), 'green');
   else toast('⚠️ ' + TT('บันทึกในเครื่องแล้ว — ยังไม่ขึ้น Cloud (ส่งให้เองเมื่อออนไลน์)', 'Saved on this device — not on Cloud yet (will send when online)'), 'orange');
   if (document.getElementById('iotAllOv')) _iotAllRenderHourly();
 }

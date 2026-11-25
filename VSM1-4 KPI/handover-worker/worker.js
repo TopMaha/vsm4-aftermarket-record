@@ -10,6 +10,11 @@
 //   GET  /wipin/list[?since=ISO] → WIP IN 1.5 (งานรับเข้าจาก VSM2) ทั้งหมด
 //   POST /wipin/put         → upsert 1 entry WIP IN 1.5 (LWW)
 //   POST /wipin/bulk        → upsert หลาย entry WIP IN 1.5 (flush คิว offline)
+//   GET  /doc/list?kinds=qi,hosign[&since=ISO][&<kind>From=ISO] → ★ v4.34 เอกสารทั่วไป (รวม tombstone deleted=1)
+//   POST /doc/put           → upsert 1 เอกสาร (LWW ตาม updated_at)
+//   POST /doc/bulk          → upsert หลายเอกสาร (flush คิว offline)
+//   POST /img/put           → เก็บรูป 1 รูป {id,ref,mime,data(base64),by} — id ใหม่เสมอ (รูปไม่ถูกแก้ทับ)
+//   GET  /img/<id>          → ตัวรูป (cache ถาวร — id ผูกกับเนื้อรูป)
 //
 // wipin entry = {id,vsm,valve,lot,qty,byId,byName,ts,deleted,updatedAt}
 //
@@ -44,6 +49,18 @@ const SCHEMA_WIPIN = `CREATE TABLE IF NOT EXISTS wipin (
   by_id TEXT, by_name TEXT, ts TEXT NOT NULL,
   deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);`;
 
+/* ★ v4.34 (2026-11-25) เอกสารทั่วไป — ตารางเดียวใช้ได้หลายระบบ (ไม่ต้อง deploy Worker ใหม่ทุกครั้งที่เพิ่มระบบเล็ก ๆ)
+   kind: qi = งานเฝ้าระวังคุณภาพ · hosign = ลงชื่อรับทราบต่อกะ
+   updated_at = เวลาที่เครื่องผู้ใช้แก้ (ตัดสินว่าใครใหม่กว่า) · seen_at = เวลาที่ Worker รับ (ใช้กับ ?since= — นาฬิกาเครื่องผู้ใช้เพี้ยนก็ไม่ตกหล่น)
+   imgs: รูปแนบ เก็บเป็น base64 (D1 คืน BLOB เป็น array ตัวเลข — แปลงช้ากว่า base64 มาก) */
+const SCHEMA_DOCS = `CREATE TABLE IF NOT EXISTS docs (
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL, vsm TEXT, data TEXT NOT NULL,
+  by_id TEXT, by_name TEXT, ts TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL, seen_at TEXT NOT NULL);`;
+const SCHEMA_IMGS = `CREATE TABLE IF NOT EXISTS imgs (
+  id TEXT PRIMARY KEY, ref TEXT, mime TEXT NOT NULL, data TEXT NOT NULL, size INTEGER NOT NULL DEFAULT 0,
+  by_id TEXT, ts TEXT NOT NULL);`;
+
 let _ready = false;
 async function ensure(env) {
   if (_ready) return;
@@ -65,6 +82,9 @@ async function ensure(env) {
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_wipin_updated ON wipin(updated_at)').run(); } catch (e) {}
   // note = เหตุผลที่บันทึกรับเข้าเกินแผน/ซ้ำ (P1-18)
   try { await env.DB.prepare('ALTER TABLE wipin ADD COLUMN note TEXT').run(); } catch (e) {}
+  await env.DB.prepare(SCHEMA_DOCS).run();
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_docs_kind_seen ON docs(kind, seen_at)').run(); } catch (e) {}
+  await env.DB.prepare(SCHEMA_IMGS).run();
   _ready = true;
 }
 
@@ -147,6 +167,33 @@ const UPSERT_WIPIN = `INSERT INTO wipin (id,vsm,valve,lot,qty,by_id,by_name,note
   WHERE excluded.updated_at >= wipin.updated_at`;
 const wipinBind = (stmt, e) => stmt.bind(e.id, e.vsm, e.valve, e.lot, e.qty, e.byId, e.byName, e.note, e.ts, e.deleted, e.updatedAt);
 
+// ── ★ v4.34 เอกสารทั่วไป + รูป ──
+const DOC_KIND_RE = /^[a-z]{2,16}$/, IMG_ID_RE = /^[A-Za-z0-9_-]{8,64}$/;
+const IMG_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const DOC_MAX = 16000, IMG_MAX = 1400000;             // ตัวอักษร JSON / base64 (≈ 1 MB · เพดาน 1 แถวของ D1 = 2 MB)
+function docRow(r) {
+  let d = {};
+  try { d = JSON.parse(r.data || '{}') || {}; } catch (e) { d = {}; }
+  return { id: r.id, kind: r.kind, vsm: r.vsm || '', data: d, byId: r.by_id || '', byName: r.by_name || '',
+    ts: r.ts, deleted: r.deleted ? 1 : 0, updatedAt: r.updated_at };
+}
+function normDoc(b) {
+  b = b || {};
+  const now = new Date().toISOString();
+  const kind = String(b.kind || ''), data = JSON.stringify(b.data && typeof b.data === 'object' ? b.data : {});
+  return { ok: DOC_KIND_RE.test(kind) && !!b.id && data.length <= DOC_MAX,
+    id: String(b.id || '').slice(0, 160), kind, vsm: String(b.vsm || '').slice(0, 16), data,
+    byId: String(b.byId || '').slice(0, 80), byName: String(b.byName || '').slice(0, 120),
+    ts: String(b.ts || now), deleted: b.deleted ? 1 : 0, updatedAt: String(b.updatedAt || now), seenAt: now };
+}
+const UPSERT_DOC = `INSERT INTO docs (id,kind,vsm,data,by_id,by_name,ts,deleted,updated_at,seen_at)
+  VALUES (?,?,?,?,?,?,?,?,?,?)
+  ON CONFLICT(id) DO UPDATE SET
+    kind=excluded.kind, vsm=excluded.vsm, data=excluded.data, by_id=excluded.by_id, by_name=excluded.by_name, ts=excluded.ts,
+    deleted=excluded.deleted, updated_at=excluded.updated_at, seen_at=excluded.seen_at
+  WHERE excluded.updated_at >= docs.updated_at`;
+const docBind = (stmt, e) => stmt.bind(e.id, e.kind, e.vsm, e.data, e.byId, e.byName, e.ts, e.deleted, e.updatedAt, e.seenAt);
+
 export default {
   async fetch(req, env) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
@@ -207,6 +254,57 @@ export default {
         const batch = arr.filter((x) => x && x.id).map((x) => wipinBind(stmt, normWipin(x)));
         if (batch.length) await env.DB.batch(batch);
         return J({ ok: true, n: batch.length });
+      }
+
+      // ── ★ v4.34 เอกสารทั่วไป (งานเฝ้าระวังคุณภาพ · ลงชื่อรับทราบต่อกะ) + รูปแนบ ──
+      if (req.method === 'GET' && p === '/doc/list') {
+        const kinds = String(url.searchParams.get('kinds') || '').split(',').map((k) => k.trim()).filter((k) => DOC_KIND_RE.test(k)).slice(0, 8);
+        if (!kinds.length) return J({ ok: false, error: 'kinds required' }, 400);
+        const now = new Date().toISOString(), since = url.searchParams.get('since') || '', out = [];
+        for (const k of kinds) {
+          const from = since ? '' : (url.searchParams.get(k + 'From') || '');   // ครั้งแรกขอเฉพาะช่วงหลัง ๆ ได้ (เช่น ลงชื่อ 40 วันล่าสุด)
+          let q = 'SELECT id,kind,vsm,data,by_id,by_name,ts,deleted,updated_at FROM docs WHERE kind = ?';
+          const binds = [k];
+          if (since) { q += ' AND seen_at > ?'; binds.push(since); }
+          else if (from) { q += ' AND ts >= ?'; binds.push(from); }
+          q += ' ORDER BY seen_at DESC LIMIT 5000';
+          const { results } = await env.DB.prepare(q).bind(...binds).all();
+          for (const r of results || []) out.push(docRow(r));
+        }
+        return J({ ok: true, entries: out, now });
+      }
+      if (req.method === 'POST' && p === '/doc/put') {
+        const e = normDoc(await req.json().catch(() => ({})));
+        if (!e.ok) return J({ ok: false, error: 'bad doc' }, 400);
+        await docBind(env.DB.prepare(UPSERT_DOC), e).run();
+        return J({ ok: true });
+      }
+      if (req.method === 'POST' && p === '/doc/bulk') {
+        const body = await req.json().catch(() => ({}));
+        const arr = (Array.isArray(body.entries) ? body.entries : []).slice(0, 200);
+        const stmt = env.DB.prepare(UPSERT_DOC);
+        const batch = arr.map(normDoc).filter((e) => e.ok).map((e) => docBind(stmt, e));
+        if (batch.length) await env.DB.batch(batch);
+        return J({ ok: true, n: batch.length });
+      }
+      if (req.method === 'POST' && p === '/img/put') {
+        const b = await req.json().catch(() => ({}));
+        const id = String(b.id || ''), mime = String(b.mime || ''), data = String(b.data || '');
+        if (!IMG_ID_RE.test(id) || !IMG_MIME.has(mime) || !data || data.length > IMG_MAX || !/^[A-Za-z0-9+/]+=*$/.test(data))
+          return J({ ok: false, error: 'bad image' }, 400);
+        await env.DB.prepare('INSERT OR IGNORE INTO imgs (id,ref,mime,data,size,by_id,ts) VALUES (?,?,?,?,?,?,?)')
+          .bind(id, String(b.ref || '').slice(0, 160), mime, data, Math.round(data.length * 3 / 4), String(b.by || '').slice(0, 80), new Date().toISOString()).run();
+        return J({ ok: true });
+      }
+      if (req.method === 'GET' && p.startsWith('/img/')) {
+        const id = p.slice(5);
+        if (!IMG_ID_RE.test(id)) return J({ ok: false, error: 'bad id' }, 400);
+        const r = await env.DB.prepare('SELECT mime,data FROM imgs WHERE id = ?').bind(id).first();
+        if (!r) return J({ ok: false, error: 'not found' }, 404);
+        const bin = atob(r.data), n = bin.length, u8 = new Uint8Array(n);
+        for (let i = 0; i < n; i++) u8[i] = bin.charCodeAt(i);
+        return new Response(u8, { headers: { 'Content-Type': IMG_MIME.has(r.mime) ? r.mime : 'image/jpeg',
+          'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff', ...CORS } });
       }
 
       return J({ ok: false, error: 'not found' }, 404);
