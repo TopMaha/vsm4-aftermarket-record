@@ -505,6 +505,25 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .oae-hq:active{transform:scale(.97)}
 .oae-help-err{display:none;margin-top:5px;font-size:11.5px;font-weight:800;color:#DC2626}
 .oae-help.err .oae-help-err{display:block}
+.oae-help[hidden]{display:none}
+/* ★ v4.35 VSM3 Auto Line: OAE ต่ำพร้อมกันทั้งสาย → พนักงานเลือกเครื่องที่มีปัญหาเอง (อย่างน้อย 1 เครื่องต่อสาย) */
+.oae-alg{background:#FEF2F2;border-bottom:1px solid #FECACA;padding:9px 16px}
+.oae-alg .t{font-size:12px;font-weight:800;color:#B91C1C;line-height:1.55}
+.oae-alg .t small{display:block;font-size:11.5px;font-weight:700;color:#7F1D1D;opacity:.85}
+.oae-alg .cs{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.oae-mc{font:inherit;font-size:12.5px;font-weight:800;line-height:1.2;min-height:34px;padding:4px 12px;border-radius:999px;border:1.5px solid #FCA5A5;background:#fff;color:#991B1B;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.oae-mc[aria-pressed="true"]{background:#DC2626;border-color:#DC2626;color:#fff}
+.oae-mc[aria-pressed="true"]::before{content:'🔧 '}
+.oae-mc:active,.oae-pick:active{transform:scale(.97)}
+.oae-alg.err{box-shadow:inset 0 0 0 2px #DC2626}
+.oae-alg-err{display:none;margin-top:6px;font-size:11.5px;font-weight:800;color:#DC2626}
+.oae-alg.err .oae-alg-err{display:block}
+.oae-pick{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;min-height:40px;padding:6px 12px;border:1.5px dashed #FCA5A5;border-radius:9px;background:#fff;color:#B91C1C;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.oae-pick::before{content:'';flex:0 0 18px;height:18px;box-sizing:border-box;border:2px solid #FCA5A5;border-radius:5px;background:#fff}
+.oae-pick small{margin-left:auto;font-size:11px;font-weight:700;opacity:.8;white-space:nowrap}
+.oae-pick[aria-pressed="true"]{border-style:solid;border-color:#DC2626;background:#DC2626;color:#fff}
+.oae-pick[aria-pressed="true"]::before{content:'✓';border-color:#fff;color:#DC2626;font-size:12px;line-height:14px;text-align:center}
+.oae-al.pk{background:#FEF2F2!important;border-color:#FCA5A5!important}
 .mic-btn.rec{background:#fee2e2;border-color:#ef4444;animation:micPulse 1s infinite}
 @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
 /* ── ตัวแก้ลำดับ Process ใน modal Valve (v3.7) — เปลี่ยน/ย้าย/ลบทีละตำแหน่ง ไม่ต้องลบทำใหม่ ── */
@@ -670,6 +689,97 @@ tr.hv-detail.hv-done>td{opacity:.55}
 .qi-lb .p{left:12px;top:calc(50% - 26px)}
 .qi-lb .n{right:12px;top:calc(50% - 26px)}
 .qi-lb .c{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:800;background:rgba(0,0,0,.5);border-radius:999px;padding:4px 12px}
+/* ★ v4.35 📄 Report งานเฝ้าระวังคุณภาพ — หน้ารายงานเต็มจอ + พิมพ์ A4 / PDF (ธีมน้ำเงิน-ขาว) */
+.qi-rpt-b{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 13px;border:1.5px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.qi-rpt-b:hover{background:var(--blue-light)}
+.qi-rpt-b b{font-weight:800;color:#fff;background:var(--blue);border-radius:999px;padding:0 7px;font-size:11px;line-height:18px}
+.qi-rpt-b:disabled{opacity:.45;cursor:default;background:#fff}
+.qi-rpt-b:focus-visible{outline:3px solid rgba(26,86,219,.4);outline-offset:1px}
+.qi-rpt{position:fixed;inset:0;z-index:4500;background:#E6EDFA;overflow:auto;-webkit-overflow-scrolling:touch;outline:none}
+.qr-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--border);box-shadow:0 2px 12px rgba(30,58,138,.08)}
+.qr-bar .t{flex:1;min-width:0;font-weight:800;font-size:14px;color:var(--blue-dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qr-bar .btn{white-space:nowrap}
+.qr-doc{max-width:940px;margin:18px auto 40px;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(30,58,138,.16);overflow:hidden;color:#0F172A}
+.qr-hd{position:relative;background:linear-gradient(135deg,#1E3A8A 0%,#1A56DB 68%,#3B82F6 100%);color:#fff;padding:26px 30px 22px;display:flex;gap:10px 18px;align-items:flex-end;flex-wrap:wrap;overflow:hidden}
+.qr-hd::after{content:'';position:absolute;right:-60px;top:-70px;width:220px;height:220px;border-radius:50%;border:28px solid rgba(255,255,255,.07)}
+.qr-hd-l{flex:1;min-width:240px;position:relative;z-index:1}
+.qr-k{font-size:11px;font-weight:800;letter-spacing:2.6px;opacity:.78}
+.qr-hd h1{margin:4px 0 8px;font-size:26px;font-weight:800;line-height:1.25}
+.qr-sub{display:flex;flex-wrap:wrap;gap:6px}
+.qr-sub span{font-size:12.5px;font-weight:700;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:2px 11px}
+.qr-hd-r{position:relative;z-index:1;font-size:12px;line-height:1.7;text-align:right;opacity:.92}
+.qr-hd-r b{font-weight:800}
+.qr-body{padding:22px 30px 26px}
+.qr-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin-bottom:24px}
+.qr-kpi div{border:1.5px solid var(--border);border-top:4px solid var(--blue);border-radius:12px;padding:9px 12px 10px;background:#F8FAFF}
+.qr-kpi i{display:block;font-style:normal;font-size:11.5px;font-weight:700;color:#475569;white-space:nowrap}
+.qr-kpi b{display:block;font-size:26px;font-weight:800;color:var(--blue-dark);line-height:1.2;margin-top:2px}
+.qr-kpi small{font-size:11.5px;font-weight:700;color:#64748B;margin-left:3px}
+.qr-kpi .w b{color:#B45309}.qr-kpi .d b{color:#15803D}.qr-kpi .c b{color:#334155}
+.qr-h2{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:800;color:var(--blue-dark);margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--blue)}
+.qr-h2 small{margin-left:auto;font-size:12px;font-weight:700;color:#64748B}
+.qr-tw{margin-bottom:26px}
+.qr-tb{width:100%;border-collapse:collapse;font-size:12.5px}
+.qr-tb th{background:var(--blue-dark);color:#fff;font-weight:700;text-align:left;padding:7px 8px;white-space:nowrap}
+.qr-tb th:first-child{border-radius:8px 0 0 0}.qr-tb th:last-child{border-radius:0 8px 0 0}
+.qr-tb td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}
+.qr-tb tbody tr:nth-child(even) td{background:#F5F8FF}
+.qr-tb .n{text-align:center;color:#64748B;font-weight:700;width:28px}
+.qr-tb .v{font-weight:800;color:var(--blue-dark);white-space:nowrap}
+.qr-tb .nw,.qr-it-g .nw{white-space:nowrap}
+.qr-tb .tx{min-width:180px;word-break:break-word}
+.qr-tb .ic{text-align:center;white-space:nowrap;color:var(--blue);font-weight:800}
+.qr-st{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:1px 9px;white-space:nowrap;background:#FEF3C7;color:#92400E}
+.qr-st.done{background:#DCFCE7;color:#166534}.qr-st.closed{background:#E2E8F0;color:#334155}
+.qr-it{border:1.5px solid var(--border);border-left:5px solid var(--blue);border-radius:12px;padding:13px 16px 14px;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}
+.qr-it-h{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.qr-no{flex:0 0 auto;min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:var(--blue);color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.qr-it-h b{font-size:17px;font-weight:800;color:var(--blue-dark)}
+.qr-it-h .l{font-size:13.5px;font-weight:700;color:#475569}
+.qr-it-h .qr-st{margin-left:auto}
+.qr-it-t{margin:10px 0;font-size:14.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:#F5F8FF;border:1px solid #DBEAFE;border-radius:9px;padding:9px 12px}
+.qr-it-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 14px;font-size:12.5px;font-weight:700;word-break:break-word}
+.qr-it-g i{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#64748B}
+.qr-ims{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.qr-ims figure{margin:0;border:1px solid #DBEAFE;border-radius:9px;overflow:hidden;background:#F1F5F9;aspect-ratio:4/3;position:relative;cursor:zoom-in;break-inside:avoid}
+.qr-ims img{width:100%;height:100%;object-fit:contain;display:block}
+.qr-ims figcaption{position:absolute;left:6px;bottom:6px;font-size:10.5px;font-weight:800;color:#fff;background:rgba(30,58,138,.82);border-radius:999px;padding:0 8px;line-height:17px}
+.qr-ims .err::after{content:'⏳ รูปยังไม่ขึ้น';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#64748B}
+.qr-ims .err img{visibility:hidden}
+.qr-it-f{margin-top:9px;font-size:11px;color:#64748B}
+.qr-ft{display:flex;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;font-size:11px;color:#64748B;border-top:1px solid var(--border);padding:12px 30px;background:#F8FAFF}
+@media (max-width:640px){
+  .qr-bar{padding:8px 10px}
+  .qr-bar .t{font-size:13px}
+  .qr-doc{margin:0;border-radius:0}
+  .qr-hd{padding:20px 16px 16px}.qr-hd h1{font-size:21px}.qr-hd-r{text-align:left}
+  .qr-body{padding:16px}
+  .qr-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .qr-tb{min-width:760px}
+  .qr-it{padding:12px}
+  .qr-it-g{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .qr-ims{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .qr-ft{padding:12px 16px}
+}
+@media print{
+  @page{size:A4;margin:11mm 10mm 12mm}
+  body.qi-rpt-on>*:not(#qiRpt){display:none!important}
+  html,body.qi-rpt-on{background:#fff!important;overflow:visible!important}
+  body.qi-rpt-on{padding:0!important;margin:0!important;min-height:0!important}
+  .qi-rpt{position:static!important;overflow:visible!important;background:#fff!important}
+  .qr-bar{display:none!important}
+  .qr-doc{max-width:none;margin:0;border-radius:0;box-shadow:none}
+  .qi-rpt,.qi-rpt *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .qr-hd{border-radius:10px}
+  .qr-body{padding:18px 4px 10px}
+  .qr-ft{padding:10px 4px;background:#fff}
+  .qr-tw{overflow:visible}.qr-tb{min-width:0}
+  .qr-tb thead{display:table-header-group}
+  .qr-tb tr{break-inside:avoid}
+  .qr-h2{break-after:avoid}
+  .qr-it-g{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .qr-ims{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 /* IOT เต็มจอ: TOP ปัญหา | งานเฝ้าระวังคุณภาพ คนละครึ่ง */
 #iotQi{flex:1 1 280px;min-width:250px;display:flex;min-height:0}
 .qi-wrap{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;border:1.5px solid #FCD34D;background:#FFFBEB;border-radius:12px;padding:5px 10px 7px;min-width:0}
@@ -3682,7 +3792,7 @@ html:not(.app-ready) #zone-machines:empty{height:330px;margin-top:10px;
   <div class="hdr-row">
     <div class="hdr-titlewrap">
       <div class="hdr-title" id="hdrTitle">⚙️ VSM AFTERMARKET RECORD</div>
-      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.34</div>
+      <div class="hdr-sub">ระบบบันทึกผลิต + KPI · v4.35</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-icon-btn" onclick="reload()" title="โหลดข้อมูลใหม่" aria-label="โหลดข้อมูลใหม่">🔄</button>
@@ -12241,7 +12351,7 @@ const I18N_X = {
 "กรอกรหัสพนักงาน":"Enter employee code",
 "ยังไม่ได้เข้าใช้งาน":"Not signed in",
 "ออกจากระบบ?":"Log out?","ออกจากระบบ":"Log out","⏏ ออกจากระบบ":"⏏ Log out","⏏ ออก":"⏏ Exit","ออก":"Exit",
-"ระบบบันทึกผลิต + KPI · v4.34":"Production Record + KPI · v4.34",
+"ระบบบันทึกผลิต + KPI · v4.35":"Production Record + KPI · v4.35",
 "โหลดข้อมูลใหม่":"Reload data","ตั้งค่า":"Settings","เชื่อมต่อ…":"Connecting…",
 "เชื่อมต่อสำเร็จ":"Connected","เชื่อมต่อล้มเหลว":"Connection failed",
 // ── ปุ่ม/คำทั่วไป ──
@@ -18601,6 +18711,7 @@ function openQiModal() {
       <span class="qi-seg" id="qiSeg"></span>
       <span class="qi-dr"><input type="date" id="qiFrom" value="${_qi.from}" aria-label="${TT('จากวันที่', 'From')}" onchange="qiSet('from',this.value)"><i>–</i><input type="date" id="qiTo" value="${_qi.to}" aria-label="${TT('ถึงวันที่', 'To')}" onchange="qiSet('to',this.value)"></span>
       <label class="qi-all"><input type="checkbox" ${_qi.all ? 'checked' : ''} onchange="qiSet('all',this.checked)"> ${TT('ทุกสาย', 'All lines')}</label>
+      <button type="button" class="qi-rpt-b" id="qiRptB" onclick="qiReport()" title="${TT('รายงานทุกรายการตามช่วงวันที่ที่เลือก (ทุกสถานะ) พร้อมรูปแนบ — พิมพ์ / บันทึก PDF ได้', 'Report of every item in the selected dates (all statuses) with photos — print / save PDF')}">📄 Report <b id="qiRptN"></b></button>
     </div>
     <div id="qiBox"></div>`, { wide: true });
   qiRenderList();
@@ -18616,6 +18727,9 @@ function qiRenderList() {
   const seg = $('qiSeg');
   if (seg) seg.innerHTML = [['watch', TT('เฝ้าระวังอยู่', 'Watching'), nW], ['done', TT('จบแล้ว', 'Finished'), nD], ['all', TT('ทั้งหมด', 'All'), base.length]]
     .map(([k, t, n]) => `<button type="button" class="${_qi.st === k ? 'on' : ''}" onclick="qiSet('st','${k}')">${t} <b>${n}</b></button>`).join('');
+  const rb = $('qiRptB'), rn = $('qiRptN');   // ★ v4.35 Report = ทุกสถานะในช่วงที่เลือก
+  if (rb) rb.disabled = !base.length;
+  if (rn) { rn.textContent = base.length || ''; rn.style.display = base.length ? '' : 'none'; }
   const L = base.filter(x => _qi.st === 'all' || (x[1].st === 'watch') === (_qi.st === 'watch'));
   const row = ([e, s]) => {
     const c = e.data, im = (c.im || []).length;
@@ -18858,6 +18972,127 @@ async function qiDel(id) {
   docPut({ ...e, deleted: 1 });
   _docChanged(); openQiModal();
   toast(TT('ลบแล้ว', 'Deleted'), 'green');
+}
+/* ---------- ★ v4.35 (ผู้ใช้ 26/11 ข้อ 1) 📄 Report งานเฝ้าระวังคุณภาพ ----------
+   รายการ = ทุกสถานะ (เฝ้าระวัง / ผลิตจบ / ปิด) ตามช่วงวันที่พบ + สาย (ติ๊กทุกสาย) + คำค้น ที่เลือกไว้ในหน้ารายการ · แท็บสถานะไม่มีผล
+   หน้ารายงานเต็มจอในแอป (ไม่เปิดหน้าต่างใหม่ — แอปที่ติดตั้งบนมือถือเปิดหน้าต่างใหม่ไม่ได้ทุกเครื่อง)
+   หัวรายงาน · สรุปตัวเลข · ตารางสรุป · รายละเอียดทีละรายการ + รูปแนบ (แตะรูป = ดูเต็มจอ)
+   🖨️ พิมพ์ / บันทึก PDF: A4 · โหลดรูปให้ครบก่อน · ซ่อนส่วนอื่นของแอปตอนพิมพ์ (body.qi-rpt-on) · ชื่อไฟล์ PDF = ชื่อรายงาน */
+function _qiRptItems() { return qiList(_qi.all ? '' : viewVsm()).filter(_qiMatch).map(e => [e, qiState(e)]); }
+function qiReport() {
+  const L = _qiRptItems();
+  if (!L.length) { toast(TT('ไม่มีรายการในช่วงที่เลือก', 'Nothing in the selected range'), 'orange'); return; }
+  const allL = !!_qi.all, me = CURRENT_USER || {}, now = new Date(), p2 = n => String(n).padStart(2, '0'), E = escapeHtml;
+  const ds = L.map(x => String(x[0].data.d || '').slice(0, 10)).filter(Boolean).sort();
+  const from = _qi.from || ds[0] || '', to = _qi.to || ds[ds.length - 1] || '';
+  const per = from === to ? _qiDM(from) : `${_qiDM(from) || '…'} – ${_qiDM(to) || '…'}`;
+  const line = allL ? TT('ทุกสาย', 'All lines') : (VSM_LABEL[viewVsm()] || viewVsm());
+  const n = { watch: 0, done: 0, closed: 0 }, vs = new Set();
+  let nImg = 0;
+  for (const [e, s] of L) { n[s.st] = (n[s.st] || 0) + 1; nImg += (e.data.im || []).length; vs.add(vKey(e.data.v)); }
+  const nowTxt = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} ${p2(now.getHours())}:${p2(now.getMinutes())}`;
+  const lotTxt = c => c.l ? E(c.l) : TT('ทุก Lot', 'All lots');
+  const nwW = s => String(s || '').trim().split(/\s+/).map(w => `<span class="nw">${E(w)}</span>`).join(' ');   // ชื่อไทยตัดบรรทัดได้แค่ตรงเว้นวรรค (ไม่ขาดกลางชื่อ)
+  const whoTxt = c => `${c.by && c.bn ? `<span class="nw">${E(c.by)} —</span> ` : ''}${nwW(_qiWho(c))}`;
+  const rows = L.map(([e, s], i) => {
+    const c = e.data, im = (c.im || []).length;
+    return `<tr><td class="n">${i + 1}</td><td class="nw">${_qiDM(c.d)}</td><td class="v">${E(c.v)}</td><td class="nw">${lotTxt(c)}</td>
+      <td class="tx">${E(c.t)}</td><td>${nwW(_qiWho(c))}</td>${allL ? `<td class="nw">${E(VSM_LABEL[e.vsm] || e.vsm)}</td>` : ''}
+      <td><span class="qr-st ${s.st}">${_qiStTxt(s)}</span></td><td class="ic">${im ? '📷 ' + im : '–'}</td></tr>`;
+  }).join('');
+  const cards = L.map(([e, s], i) => {
+    const c = e.data, im = c.im || [], rec = new Date(e.ts);
+    const g = [[TT('วันที่พบ', 'Found on'), _qiDM(c.d)], [TT('ผู้แจ้ง', 'Reported by'), whoTxt(c)],
+      s.st === 'watch' ? [TT('ตอนนี้อยู่ที่', 'Now at'), s.w && c.l ? E(s.w) : '—'] :[s.st === 'closed' ? TT('ปิดเฝ้าระวังเมื่อ', 'Closed on') : TT('ผลิตจบเมื่อ', 'Finished on'), s.d ? _qiDM(s.d) : '—'],
+      [TT('สาย', 'Line'), E(VSM_LABEL[e.vsm] || e.vsm)]];
+    return `<article class="qr-it ${s.st}">
+      <div class="qr-it-h"><span class="qr-no">${i + 1}</span><b>${E(c.v)}</b><span class="l">Lot ${lotTxt(c)}</span><span class="qr-st ${s.st}">${_qiStTxt(s)}</span></div>
+      <div class="qr-it-t">${E(c.t)}</div>
+      <div class="qr-it-g">${g.map(([k, v]) => `<span><i>${k}</i>${v}</span>`).join('')}</div>
+      ${im.length ? `<div class="qr-ims">${im.map((id, j) => `<figure data-im="${e.id}|${j}" role="button" tabindex="0" aria-label="${TT('ดูรูป', 'View photo')} ${j + 1}"><img src="${imgSrc(id)}" alt="${E(c.v)} ${TT('รูป', 'photo')} ${j + 1}" loading="lazy" onerror="this.parentNode.classList.add('err')"><figcaption>${TT('รูป', 'Photo')} ${j + 1}</figcaption></figure>`).join('')}</div>` : ''}
+      <div class="qr-it-f">${TT('บันทึกโดย', 'Recorded by')} ${E(_recOwnerTxt(e))}${isNaN(rec) ? '' : ` · ${rec.getDate()}/${rec.getMonth() + 1}/${rec.getFullYear()} ${p2(rec.getHours())}:${p2(rec.getMinutes())}`}${c.cl ? ` · ${TT('ปิดโดย', 'closed by')} ${E(c.cl.bn || c.cl.by || '-')}` : ''}</div>
+    </article>`;
+  }).join('');
+  const title = TT('รายงานงานเฝ้าระวังคุณภาพ', 'Quality Watch Report');
+  const old = $('qiRpt'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'qiRpt'; ov.className = 'qi-rpt'; ov.tabIndex = -1;
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', title);
+  ov.dataset.fn = `${title} ${line} ${from}${to && to !== from ? '_' + to : ''}`.trim();
+  ov.innerHTML = `
+    <div class="qr-bar">
+      <button type="button" class="btn btn-outline qr-x">‹ ${TT('กลับ', 'Back')}</button>
+      <span class="t">📄 ${title} · ${L.length} ${TT('รายการ', 'items')}</span>
+      <button type="button" class="btn btn-blue qr-pr">🖨️ ${TT('พิมพ์ / บันทึก PDF', 'Print / Save PDF')}</button>
+    </div>
+    <div class="qr-doc">
+      <header class="qr-hd">
+        <div class="qr-hd-l">
+          <div class="qr-k">VSM AFTERMARKET · QUALITY WATCH REPORT</div>
+          <h1>⚠️ ${title}</h1>
+          <div class="qr-sub"><span>🏭 ${E(line)}</span><span>📅 ${per}</span>${_qi.q.trim() ? `<span>🔎 ${E(_qi.q.trim())}</span>` : ''}</div>
+        </div>
+        <div class="qr-hd-r">${TT('ออกรายงาน', 'Generated')} <b>${nowTxt}</b>${me.name || me.id ? `<br>${TT('โดย', 'by')} <b>${E(me.name || me.id)}</b>` : ''}<br>${TT('ทั้งหมด', 'Total')} <b>${L.length}</b> ${TT('รายการ', 'items')}</div>
+      </header>
+      <div class="qr-body">
+        <section class="qr-kpi">
+          <div><i>${TT('รายการทั้งหมด', 'All items')}</i><b>${L.length}</b></div>
+          <div><i>Valve</i><b>${vs.size}<small>${TT('เบอร์', 'nos.')}</small></b></div>
+          <div class="w"><i>${TT('เฝ้าระวังอยู่', 'Watching')}</i><b>${n.watch || 0}</b></div>
+          <div class="d"><i>${TT('ผลิตจบแล้ว', 'Finished')}</i><b>${n.done || 0}</b></div>
+          <div class="c"><i>${TT('ปิดเฝ้าระวัง', 'Closed')}</i><b>${n.closed || 0}</b></div>
+          <div><i>${TT('รูปแนบ', 'Photos')}</i><b>${nImg}<small>${TT('รูป', '')}</small></b></div>
+        </section>
+        <h2 class="qr-h2">📋 ${TT('สรุปรายการ', 'Summary')}<small>${TT('เรียงวันที่พบล่าสุดก่อน', 'newest first')}</small></h2>
+        <div class="qr-tw"><table class="qr-tb"><thead><tr><th>#</th><th>${TT('วันที่พบ', 'Found')}</th><th>Valve No</th><th>Lot</th><th>${TT('ปัญหาที่พบ', 'Issue')}</th><th>${TT('ผู้แจ้ง', 'Reporter')}</th>${allL ? `<th>${TT('สาย', 'Line')}</th>` : ''}<th>${TT('สถานะ', 'Status')}</th><th>${TT('รูป', 'Photos')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <h2 class="qr-h2">🔍 ${TT('รายละเอียด + รูปแนบ', 'Details + photos')}<small>${L.length} ${TT('รายการ', 'items')}</small></h2>
+        ${cards}
+      </div>
+      <footer class="qr-ft"><span>⚙️ VSM AFTERMARKET RECORD — ${TT('ระบบบันทึกผลิต + KPI', 'Production Record + KPI')}</span><span>${TT('พิมพ์จากระบบ', 'Printed from the system')} ${nowTxt}</span></footer>
+    </div>`;
+  ov.addEventListener('click', ev => {
+    const f = ev.target.closest('[data-im]');
+    if (f) { const [id, j] = f.dataset.im.split('|'); qiImgView(id, +j); return; }
+    if (ev.target.closest('.qr-x')) qiReportClose();
+    else if (ev.target.closest('.qr-pr')) qiReportPrint();
+  });
+  ov.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); qiReportClose(); }
+    else if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('[data-im]')) { ev.preventDefault(); ev.target.click(); }
+  });
+  document.body.appendChild(ov);
+  document.body.classList.add('qi-rpt-on');
+  ov.focus();
+}
+function qiReportClose() {
+  const ov = $('qiRpt'); if (ov) ov.remove();
+  document.body.classList.remove('qi-rpt-on');
+  if (ov && ov._t0) document.title = ov._t0;
+  $('qiRptB')?.focus();
+}
+async function qiReportPrint() {
+  const ov = $('qiRpt'); if (!ov || ov._busy) return;
+  ov._busy = 1;
+  try {
+    const ims = [...ov.querySelectorAll('.qr-ims img')];
+    ims.forEach(i => { i.loading = 'eager'; });                     // รูปที่ยังไม่เลื่อนไปถึง (lazy) ต้องโหลดก่อนพิมพ์
+    const pend = ims.filter(i => !i.complete);
+    if (pend.length) {
+      showBusy(TT(`กำลังโหลดรูป ${pend.length} รูป…`, `Loading ${pend.length} photos…`));
+      try {
+        await Promise.race([
+          Promise.all(pend.map(i => new Promise(r => { if (i.complete) return r(); i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); }))),
+          new Promise(r => setTimeout(r, 20000)),
+        ]);
+      } finally { hideBusy(); }
+    }
+    if (!$('qiRpt')) return;                                          // ปิดรายงานไปก่อนรูปครบ
+    if (!ov._t0) ov._t0 = document.title;
+    document.title = ov.dataset.fn || ov._t0;                         // ชื่อไฟล์ PDF ตั้งจากชื่อหน้า
+    const back = () => { window.removeEventListener('afterprint', back); if (ov._t0) document.title = ov._t0; };
+    window.addEventListener('afterprint', back);
+    window.print();
+  } finally { ov._busy = 0; }
 }
 /* ---------- IOT เต็มจอ: ครึ่งขวาของ TOP ปัญหา ---------- */
 function renderIotQi() {
@@ -23729,15 +23964,31 @@ function _oaeHelpPick(btn) {
   ta.value = segs.join(' / ');
   _oaeHelpSync(box);
 }
+/* ★ v4.35 (ผู้ใช้ 26/11 ข้อ 2) VSM3 Auto Line: ลงครั้งเดียวทุกเครื่องในสาย → OAE ต่ำพร้อมกันทุกเครื่อง ทั้งที่เครื่องที่มีปัญหาจริงมีแค่บางเครื่อง
+   → สาย (+ ช่วงเวลา) ที่มีเครื่อง OAE < 75%: พนักงานเลือก "เครื่องที่มีปัญหา" เอง (ปุ่มเครื่องบนแถบแดง หรือ 🔧 ในการ์ด) · ต้องเลือกอย่างน้อย 1 เครื่องต่อสาย
+     เครื่องที่เลือก = ต้องกรอกสาเหตุ (เหมือน v4.20) · ไม่ได้เลือก = บันทึกโดยไม่มีสาเหตุ (ไม่ขึ้นในรายการขอความช่วยเหลือ)
+     สายนั้นมีเครื่อง OAE ต่ำเครื่องเดียว = เลือกให้เลย · รายเครื่อง / VSM อื่น = ต้องกรอกทุกเครื่องเหมือนเดิม */
 function _showSubmitSummary(records, prodDate) {
   return new Promise(resolve => {
-    const lowCount = records.filter(r => (+r.oae||0) < OAE_HELP_THRESHOLD).length;
+    const isLow = r => (+r.oae||0) < OAE_HELP_THRESHOLD;
+    const isAl = r => isLow(r) && !!r.line_key && (r.vsm || zoneVsm(r.zone)) === 'vsm3';
+    const alG = new Map();   // สาย|ช่วง → { label, idx: [index ใน records] }
+    records.forEach((rec, i) => {
+      if (!isAl(rec)) return;
+      const si = (rec.shifts?.[0]?.si) || 0, k = `${rec.line_key}|${si}`;
+      if (!alG.has(k)) alG.set(k, { n: alG.size, label: `${rec.line_label || rec.line_key}${records.some(r => r.line_key === rec.line_key && ((r.shifts?.[0]?.si) || 0) !== si) ? ` — ช่วงที่ ${si + 1}` : ''}`, idx: [] });
+      alG.get(k).idx.push(i);
+    });
+    const alOf = new Map(), pick0 = new Set();
+    for (const g of alG.values()) { for (const i of g.idx) alOf.set(i, g); if (g.idx.length === 1) pick0.add(g.idx[0]); }
+    const mcLbl = (g, i) => { const r = records[i], dup = g.idx.filter(j => records[j].machine_id === r.machine_id).length > 1; return `${r.machine_id}${dup && r.lot ? ` · ${r.lot}` : ''}`; };
+    const lowCount = records.filter((r, i) => isLow(r) && !alOf.has(i)).length;
     const rows = records.map((rec, i) => {
       const s = rec.shifts?.[0] || {};
       const oaePct = (Math.min(+rec.oae||0, 9.99) * 100).toFixed(1);
-      const low = (+rec.oae||0) < OAE_HELP_THRESHOLD;
+      const low = isLow(rec), al = alOf.has(i), pk = pick0.has(i);
       const existingHelp = (rec.shifts?.[0]?.help?.text) || '';
-      return `<div style="border:1.5px solid ${low?'#FCA5A5':'var(--border)'};border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;background:${low?'#FEF2F2':'var(--blue-light)'}">
+      return `<div id="_sumc_${i}" class="${al ? `oae-al${pk ? ' pk' : ''}` : ''}" style="border:1.5px solid ${low&&!al?'#FCA5A5':'var(--border)'};border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;background:${low&&!al?'#FEF2F2':'var(--blue-light)'}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <span style="font-weight:800;color:var(--blue-dark)">${rec.line_label?`⚡ ${escapeHtml(rec.line_label)} · `:''}🏭 ${escapeHtml(rec.machine_id)}</span>
           <span style="font-weight:400;color:var(--muted)">${escapeHtml(rec.zone)}</span>
@@ -23754,7 +24005,8 @@ function _showSubmitSummary(records, prodDate) {
           ${rec.lot ? `<span>Lot: <b>${escapeHtml(rec.lot)}</b></span>` : ''}
           ${(rec._linkProcs && rec._linkProcs.length) || rec.last_process ? `<span style="grid-column:1/-1">Process: <b>${escapeHtml(rec._linkProcs && rec._linkProcs.length ? rec._linkProcs.join(', ') : rec.last_process)}</b></span>` : ''}
         </div>
-        ${low ? `<div class="oae-help" id="_helpbox_${i}">
+        ${al ? `<button type="button" class="oae-pick" data-pick="${i}" aria-pressed="${pk}">🔧 เครื่องนี้มีปัญหา<small>${pk ? 'เครื่องเดียวในสายที่ OAE ต่ำ' : 'แตะ = เลือก แล้วกรอกสาเหตุ'}</small></button>` : ''}
+        ${low ? `<div class="oae-help" id="_helpbox_${i}"${al && !pk ? ' hidden' : ''}>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <label for="_help_${i}" style="flex:1;font-size:11px;font-weight:800;color:#B91C1C;margin:0">🆘 OAE ต่ำกว่า 75% — สาเหตุ / ต้องการให้ช่วยอะไร <span style="color:#DC2626">* ต้องกรอก</span></label>
             <button type="button" class="mic-btn" id="_help_${i}_mic"
@@ -23782,6 +24034,11 @@ function _showSubmitSummary(records, prodDate) {
         <span style="margin-left:auto;font-size:12px;opacity:.8">${records.length} record</span>
       </div>
       ${lowCount ? `<div style="background:#FEF2F2;color:#B91C1C;font-size:12px;font-weight:700;padding:8px 16px;border-bottom:1px solid #FECACA">⚠️ มี ${lowCount} เครื่อง OAE ต่ำกว่า 75% — ต้องกรอกสาเหตุ / ขอความช่วยเหลือก่อนบันทึก</div>` : ''}
+      ${[...alG.values()].map(g => `<div class="oae-alg" data-g="${g.n}">
+        <div class="t">⚡ ${escapeHtml(g.label)} · Auto Line — OAE ต่ำกว่า 75% ${g.idx.length} เครื่อง<small>${g.idx.length > 1 ? 'เลือกเฉพาะเครื่องที่มีปัญหาจริง (อย่างน้อย 1 เครื่อง) แล้วกรอกสาเหตุที่เครื่องนั้น — เครื่องที่ไม่ได้เลือกไม่ต้องกรอก' : 'กรอกสาเหตุที่เครื่องนี้'}</small></div>
+        <div class="cs" role="group" aria-label="เครื่องที่มีปัญหา">${g.idx.map(i => `<button type="button" class="oae-mc" data-pick="${i}" aria-pressed="${pick0.has(i)}">${escapeHtml(mcLbl(g, i))}</button>`).join('')}</div>
+        <div class="oae-alg-err" role="alert">⚠️ เลือกเครื่องที่มีปัญหาอย่างน้อย 1 เครื่อง</div>
+      </div>`).join('')}
       <div style="padding:14px;max-height:58vh;overflow-y:auto">
         ${rows}
       </div>
@@ -23791,10 +24048,29 @@ function _showSubmitSummary(records, prodDate) {
       </div>
     </div>`;
     document.body.appendChild(overlay);
+    // ★ v4.35 Auto Line: เลือก / ยกเลิก "เครื่องที่มีปัญหา" — ปุ่มบนแถบแดง กับ 🔧 ในการ์ด = ตัวเดียวกัน
+    const _picked = i => { const b = overlay.querySelector('#_helpbox_' + i); return !!b && !b.hidden; };
+    const _setPick = (i, on) => {
+      const card = overlay.querySelector('#_sumc_' + i), box = overlay.querySelector('#_helpbox_' + i);
+      if (!card || !box) return;
+      card.classList.toggle('pk', on);
+      box.hidden = !on;
+      if (!on) box.classList.remove('err');
+      overlay.querySelectorAll(`[data-pick="${i}"]`).forEach(b => b.setAttribute('aria-pressed', on ? 'true' : 'false'));
+      const sm = card.querySelector('.oae-pick small'); if (sm) sm.textContent = on ? 'แตะอีกครั้ง = ยกเลิก' : 'แตะ = เลือก แล้วกรอกสาเหตุ';
+      const g = alOf.get(i), gb = g && overlay.querySelector(`.oae-alg[data-g="${g.n}"]`);
+      if (gb && g.idx.some(_picked)) gb.classList.remove('err');
+    };
+    overlay.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-pick]'); if (!b || !overlay.contains(b)) return;
+      const i = +b.dataset.pick, on = b.getAttribute('aria-pressed') !== 'true';
+      _setPick(i, on);
+      if (on && b.classList.contains('oae-mc')) overlay.querySelector('#_helpbox_' + i)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
     const collectHelp = () => {
       records.forEach((rec, i) => {
         const ta = overlay.querySelector('#_help_' + i);
-        if (!ta) return;
+        if (!ta || (alOf.has(i) && !_picked(i))) return;   // Auto Line เครื่องที่ไม่ได้เลือก = ไม่มีสาเหตุ
         const txt = ta.value.trim();
         if (!rec.shifts || !rec.shifts[0]) rec.shifts = [{}];
         if (txt) {
@@ -23809,21 +24085,32 @@ function _showSubmitSummary(records, prodDate) {
       });
     };
     // ★ v4.20 OAE < 75% ต้องมีสาเหตุทุกเครื่อง — ว่าง = ไม่บันทึก ชี้กล่องแรกที่ยังว่าง (✏️ แก้ไข ยังกดกลับไปแก้ได้เสมอ)
+    //   v4.35 Auto Line VSM3: เฉพาะเครื่องที่เลือกว่ามีปัญหา + ทุกสายต้องเลือกอย่างน้อย 1 เครื่อง (ตรวจแถบสายก่อน)
     const missingHelp = () => {
+      let gErr = null;
+      for (const g of alG.values()) {
+        const gb = overlay.querySelector(`.oae-alg[data-g="${g.n}"]`), bad = !g.idx.some(_picked);
+        if (gb) gb.classList.toggle('err', bad);
+        if (bad && !gErr) gErr = { gb, g };
+      }
       let first = null;
       records.forEach((rec, i) => {
         const box = overlay.querySelector('#_helpbox_' + i), ta = overlay.querySelector('#_help_' + i);
         if (!box || !ta) return;
+        if (box.hidden) { box.classList.remove('err'); return; }
         const bad = !ta.value.trim();
         box.classList.toggle('err', bad);
         if (bad && !first) first = { box, ta };
       });
-      if (first) {
+      if (gErr) {
+        gErr.gb?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        toast(`⚠️ ${gErr.g.label} — เลือกเครื่องที่มีปัญหาอย่างน้อย 1 เครื่อง แล้วกรอกสาเหตุ`, 'orange');
+      } else if (first) {
         first.box.scrollIntoView({ block: 'center', behavior: 'smooth' });
         try { first.ta.focus({ preventScroll: true }); } catch (e) {}
         toast('⚠️ OAE ต่ำกว่า 75% — กรุณาเลือกหรือกรอกสาเหตุก่อนบันทึก', 'orange');
       }
-      return !!first;
+      return !!(gErr || first);
     };
     let _done = false;   // กัน double-tap/ghost-click บนปุ่มยืนยัน → resolve ครั้งเดียว
     const _ok = overlay.querySelector('#_sumOk');
